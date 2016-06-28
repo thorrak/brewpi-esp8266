@@ -18,7 +18,13 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+#if defined(ESP8266)
+#error Incorrect processor type!
+#endif
+
 #include <avr/eeprom.h>
+
 
 class ArduinoEepromAccess
 {

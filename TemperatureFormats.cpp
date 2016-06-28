@@ -23,6 +23,20 @@
 #include <limits.h>
 #include "TempControl.h"
 
+#ifdef ESP8266
+// Appears this isn't defined in the ESP8266 implementation
+char *
+strchrnul(const char *s, int c_in)
+{
+	char c = c_in;
+	while (*s && (*s != c))
+		s++;
+
+	return (char *)s;
+}
+#endif
+
+
 // See header file for details about the temp format used.
 
 // result can have maximum length of : sign + 3 digits integer part + point + 3 digits fraction part + '\0' = 9 bytes;

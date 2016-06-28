@@ -35,7 +35,7 @@
 #include "OneWireTempSensor.h"
 #include "OneWireActuator.h"
 #include "DS2413.h"
-#include "OneWire.h"
+#include <OneWire.h>
 #include "DallasTemperature.h"
 #include "ActuatorArduinoPin.h"
 #include "SensorArduinoPin.h"
@@ -45,6 +45,7 @@
 /*
  * Defaults for sensors, actuators and temperature sensors when not defined in the eeprom.
  */
+
 ValueSensor<bool> defaultSensor(false);			// off
 ValueActuator defaultActuator;
 DisconnectedTempSensor defaultTempSensor;
@@ -210,6 +211,7 @@ inline void setSensor(DeviceFunction f, void** ppv, BasicTempSensor* sensor) {
  * /param config The device to remove. The fields that are used are
  *		chamber, beer, hardware and function.
  */
+
 void DeviceManager::uninstallDevice(DeviceConfig& config)
 {
 	DeviceType dt = deviceType(config.deviceFunction);
@@ -226,20 +228,20 @@ void DeviceManager::uninstallDevice(DeviceConfig& config)
 			s = &unwrapSensor(config.deviceFunction, *ppv);
 			if (s!=&defaultTempSensor) {
 				setSensor(config.deviceFunction, ppv, &defaultTempSensor);
-				DEBUG_ONLY(logInfoInt(INFO_UNINSTALL_TEMP_SENSOR, config.deviceFunction));
+//				DEBUG_ONLY(logInfoInt(INFO_UNINSTALL_TEMP_SENSOR, config.deviceFunction));
 				delete s;
 			}
 			break;
 		case DEVICETYPE_SWITCH_ACTUATOR:
 			if (*ppv!=&defaultActuator) {
-				DEBUG_ONLY(logInfoInt(INFO_UNINSTALL_ACTUATOR, config.deviceFunction));
+//				DEBUG_ONLY(logInfoInt(INFO_UNINSTALL_ACTUATOR, config.deviceFunction));
 				delete (Actuator*)*ppv;
 				*ppv = &defaultActuator;
 			}
 			break;
 		case DEVICETYPE_SWITCH_SENSOR:
 			if (*ppv!=&defaultSensor) {
-				DEBUG_ONLY(logInfoInt(INFO_UNINSTALL_SWITCH_SENSOR, config.deviceFunction));
+//				DEBUG_ONLY(logInfoInt(INFO_UNINSTALL_SWITCH_SENSOR, config.deviceFunction));
 				delete (SwitchSensor*)*ppv;
 				*ppv = &defaultSensor;
 			}
@@ -910,6 +912,7 @@ void DeviceManager::listDevices(Stream& p) {
 /**
  * Determines the class of device for the given DeviceID.
  */
+
 DeviceType deviceType(DeviceFunction id) {
 	switch (id) {
 	case DEVICE_CHAMBER_DOOR:

@@ -37,7 +37,9 @@
 #include "Display.h"
 
 #ifdef ARDUINO
+#ifndef ESP8266
 #include "util/delay.h"
+#endif
 #endif
 
 #if BREWPI_SIMULATE
@@ -587,9 +589,16 @@ int readNext()
 {
 	uint8_t retries = 0;
 	while (piStream.available()==0) {
+#ifdef ESP8266
+		// delayMicroseconds is the ESP equivalent of _delay_us
+		// Adding a 'yield' here, as delayMicroseconds doesnt yield like delay does
+		delayMicroseconds(100);
+		yield();
+#else
 		_delay_us(100);
+#endif
 		retries++;
-		if(retries >= 10){
+		if (retries >= 10) {
 			return -1;
 		}
 	}

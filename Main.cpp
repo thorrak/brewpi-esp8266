@@ -37,12 +37,24 @@ void handleReset()
 { 
 	// resetting using the watchdog timer (which is a full reset of all registers) 
 	// might not be compatible with old Arduino bootloaders. jumping to 0 is safer.
+#if defined(ESP8266)
+	// The asm volatile method doesn't work on ESP8266. Instead, use ESP.restart
+	ESP.restart();
+#else
 	asm volatile ("  jmp 0");
+#endif
 }
 
-void main() __attribute__ ((noreturn)); // tell the compiler main doesn't return.
+#ifndef ESP8266
+// TODO - Determine if this actually is required
+void main() __attribute__((noreturn)); // tell the compiler main doesn't return.
+#endif
 
+#if defined(ESP8266)
+int main(void)
+#else
 void main(void)
+#endif
 {
 	init();
 
@@ -54,12 +66,16 @@ void main(void)
 	
 	for (;;) {
 		loop();
-		if (serialEventRun) serialEventRun();
+//		if (serialEventRun) serialEventRun();
 	}
+
+#if defined(ESP8266)
+	return 0;
+#endif
 }
 
 // catch bad interrupts here, uncomment while only when debugging
-ISR(BADISR_vect){
+//ISR(BADISR_vect){
 	;//while (1);
-}
+//}
 

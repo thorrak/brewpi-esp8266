@@ -42,7 +42,8 @@ bool OneWireTempSensor::init(){
 	// save address and pinNr for log messages
 	char addressString[17];
 	printBytes(sensorAddress, 8, addressString);
-	uint8_t pinNr = oneWire->pinNr();
+	// TODO - fix the following to use the defined OneWire pin
+	DEBUG_ONLY(uint8_t pinNr = oneWire->pinNr());
 
 	bool success = false;
 
@@ -84,10 +85,14 @@ void OneWireTempSensor::setConnected(bool connected) {
 	printBytes(sensorAddress, 8, addressString);
 	this->connected = connected;
 	if(connected){
-		logInfoIntString(INFO_TEMP_SENSOR_CONNECTED, this->oneWire->pinNr(), addressString);
+		// TODO - fix the following to use the defined OneWire pin
+		logInfoIntString(INFO_TEMP_SENSOR_CONNECTED, 0, addressString);
+//		logInfoIntString(INFO_TEMP_SENSOR_CONNECTED, this->oneWire->pinNr(), addressString);
 	}
 	else{
-		logWarningIntString(WARNING_TEMP_SENSOR_DISCONNECTED, this->oneWire->pinNr(), addressString);
+		// TODO - fix the following to use the defined OneWire pin
+		logWarningIntString(WARNING_TEMP_SENSOR_DISCONNECTED, 0, addressString);
+//		logWarningIntString(WARNING_TEMP_SENSOR_DISCONNECTED, this->oneWire->pinNr(), addressString);
 	}
 }
 

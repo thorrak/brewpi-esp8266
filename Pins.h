@@ -66,9 +66,17 @@
 
 #if BREWPI_STATIC_CONFIG==BREWPI_SHIELD_REV_A || BREWPI_STATIC_CONFIG==BREWPI_SHIELD_REV_C
 
+#ifndef doorPin
 #define doorPin		4
+#endif
+
+#ifndef alarmPin
 #define alarmPin	3
+#endif
+
+#ifndef lcdLatchPin
 #define lcdLatchPin 10
+#endif
 
 // If you change the interrupt pins, you will also have to review the interrupt vectors of the rotary encoder
 #define rotarySwitchPin 7 // INT6 on leo or PCINT23 on uno
@@ -80,21 +88,43 @@
 #elif BREWPI_STATIC_CONFIG==BREWPI_SHIELD_DIY
 
 // pins
+
+#ifndef beerSensorPin
 #define beerSensorPin    10
+#endif
+
+#ifndef fridgeSensorPin
 #define fridgeSensorPin  11
+#endif
 
 // Pay attention when changing the pins for the rotary encoder.
 // They should be connected to external interrupt INT0, INT1 and INT3
 
+#ifndef rotaryAPin
 #define rotaryAPin 2 // INT1
+#endif
+
+#ifndef rotaryBPin
 #define rotaryBPin 1 // INT3
+#endif
+
+#ifndef rotarySwitchPin
 #define rotarySwitchPin 0 // INT2
+#endif
 
-
+#ifndef coolingPin
 #define coolingPin 12
-#define heatingPin 13
-#define doorPin    A5
+#endif
 
+#ifndef heatingPin
+#define heatingPin 13
+#endif
+
+#ifndef doorPin
+#define doorPin    A5
+#endif
+
+// TODO - Fix the code for the LCD module
 #define DISP_RS 9
 #define DISP_RW 8
 #define DISP_EN 7
@@ -103,7 +133,10 @@
 #define DISP_D6 4
 #define DISP_D7 3
 
+#ifndef BREWPI_INVERT_ACTUATORS
 #define BREWPI_INVERT_ACTUATORS 0
+#endif
+
 
 #endif
 

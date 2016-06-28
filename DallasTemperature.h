@@ -69,7 +69,7 @@
 
 
 #include <inttypes.h>
-#include "OneWire.h"
+#include <OneWire.h>
 
 // Model IDs
 #if REQUIRESDS18S20MODEL

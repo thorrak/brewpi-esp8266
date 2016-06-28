@@ -17,6 +17,9 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "Brewpi.h"
+
+#if BREWPI_LCD
 #include "OLEDFourBit.h"
 
 #include <Arduino.h>
@@ -320,3 +323,5 @@ void OLEDFourBit::printSpacesToRestOfLine(void){
 		print(' ');
 	}
 }
+
+#endif

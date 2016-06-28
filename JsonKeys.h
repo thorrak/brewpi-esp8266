@@ -22,7 +22,12 @@
 #include "Brewpi.h"
 
 #ifdef ARDUINO
+#if defined(ESP8266)
+// There is no concept of PROGMEM with the ESP8266
+#include <pgmspace.h>
+#else
 #include <avr/pgmspace.h>
+#endif
 #endif
 
 static const char JSONKEY_mode[] PROGMEM = "mode";

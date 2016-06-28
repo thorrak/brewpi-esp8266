@@ -40,6 +40,7 @@
 #include "Ticks.h"
 #include "Sensor.h"
 #include "SettingsManager.h"
+#include "EepromFormat.h"
 
 #if BREWPI_SIMULATE
 	#include "Simulator.h"
@@ -50,21 +51,27 @@
 // instantiate and configure the sensors, actuators and controllers we want to use
 
 
-void setup(void);
-void loop (void);
+
+//void loop (void);
 
 /* Configure the counter and delay timer. The actual type of these will vary depending upon the environment.
  * They are non-virtual to keep code size minimal, so typedefs and preprocessing are used to select the actual compile-time type used. */
-TicksImpl ticks = TicksImpl(TICKS_IMPL_CONFIG);
+/*TicksImpl ticks = TicksImpl(TICKS_IMPL_CONFIG);
 DelayImpl wait = DelayImpl(DELAY_IMPL_CONFIG);
 
 DisplayType realDisplay;
 DisplayType DISPLAY_REF display = realDisplay;
 
-ValueActuator alarm;
-
+ValueActuator alarm;*/
+/*
 void setup()
 {
+
+#if defined(ESP8266)
+	// We need to initialize the EEPROM on ESP8266
+	EEPROM.begin(MAX_EEPROM_SIZE_LIMIT);
+#endif
+
 #if BREWPI_BUZZER	
 	buzzer.init();
 	buzzer.beep(2, 500);
@@ -142,3 +149,4 @@ void loop() {
 	#endif
 }
 
+*/

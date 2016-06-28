@@ -35,6 +35,7 @@
 #define BREWPI_BOARD_STANDARD 's'
 #define BREWPI_BOARD_MEGA 'm'
 #define BREWPI_BOARD_UNKNOWN '?'
+#define BREWPI_BOARD_ESP8266 'e'
 
 /*
  * Defines global config for the brewpi project. This file is included in every file in the project to ensure conditional
