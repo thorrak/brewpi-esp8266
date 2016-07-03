@@ -55,7 +55,7 @@ void Logger::logMessageVaArg(char type, LOG_ID_TYPE errorID, const char * varTyp
 		}
 	}
 	va_end (args);
-	piLink.print(']');
+	piLink.print_P(PSTR("]"));
 	piLink.sendJsonClose();
 }
 

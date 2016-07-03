@@ -248,15 +248,14 @@ public:
 	int8_t enumOneWirePins(uint8_t offset)
 	{		
 #ifdef ARDUINO            
-#if BREWPI_STATIC_CONFIG<=BREWPI_SHIELD_REV_A
+#ifdef oneWirePin
+		if (offset == 0)
+			return oneWirePin;
+#elif defined(beerSensorPin) && defined(fridgeSensorPin)
 		if (offset==0)
 			return beerSensorPin;
 		if (offset==1)
 			return fridgeSensorPin;
-#endif
-#if BREWPI_STATIC_CONFIG>=BREWPI_SHIELD_REV_C
-		if (offset==0)
-			return oneWirePin;
 #endif
 #endif
 		return -1;								
@@ -317,14 +316,14 @@ private:
 
 #ifdef ARDUINO
 	
-#if BREWPI_STATIC_CONFIG<=BREWPI_SHIELD_REV_A	
+// There is no reason to separate the OneWire busses - if we have a single bus, use it.
+#ifdef oneWirePin
+	static OneWire primaryOneWireBus;
+#else
 	static OneWire beerSensorBus;
-	static OneWire fridgeSensorBus;	
-#endif	
-#if BREWPI_STATIC_CONFIG>=BREWPI_SHIELD_REV_C
-	static OneWire primaryOneWireBus;	
+	static OneWire fridgeSensorBus;        
 #endif
-        
+
 #endif
 	static bool firstDeviceOutput;
 };

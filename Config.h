@@ -181,8 +181,9 @@
 // Pin Configuration - Change the below to match your individual pinout
 //
 // pins
-#define beerSensorPin    2
-#define fridgeSensorPin  1
+#define oneWirePin 2  // If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
+//#define beerSensorPin    2
+//#define fridgeSensorPin  1
 
 // Pay attention when changing the pins for the rotary encoder.
 // They should be connected to external interrupt INT0, INT1 and INT3
