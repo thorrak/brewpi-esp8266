@@ -278,7 +278,7 @@ public:
 	static void uninstallDevice(DeviceConfig& config);
 	
 	static void parseDeviceDefinition(Stream& p);
-	static void printDevice(device_slot_t slot, DeviceConfig& config, const char* value, Print& p);
+	static void printDevice(device_slot_t slot, DeviceConfig& config, const char* value);
 		
 	/**
 	 * Iterate over the defined devices.
@@ -292,15 +292,15 @@ public:
 	/**
 	 * read hardware spec from stream and output matching devices
 	 */
-	static void enumerateHardware(Stream& p);
+	static void enumerateHardware();
 	
 	static bool enumDevice(DeviceDisplay& dd, DeviceConfig& dc, uint8_t idx);
 
-	static void listDevices(Stream& p);
+	static void listDevices();
 	
 private:
 	
-	static void enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback f, DeviceOutput& output);	
+	static void enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output);
 	static void enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output);
 	static void OutputEnumeratedDevices(DeviceConfig* config, void* pv);
 	static void handleEnumeratedDevice(DeviceConfig& config, EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& out);

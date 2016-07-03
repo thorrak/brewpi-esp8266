@@ -49,7 +49,9 @@ class PiLink{
 	typedef void (*ParseJsonCallback)(const char* key, const char* val, void* data);
 
 	static void parseJson(ParseJsonCallback fn, void* data=NULL);
-	
+
+	static int read(void);  // Adding so we can completely abstract away piStream outside of piLink
+
 	private:
 	
 	static void sendControlSettings(void);
@@ -60,13 +62,16 @@ class PiLink{
 	static void receiveJson(void); // receive settings as JSON key:value pairs
 	
 	static void print(char *fmt, ...); // use when format string is stored in RAM
+#ifdef ARDUINO
 	static void print(char c)       // inline for arduino
-#ifdef ARDUINO        
-         { Serial.print(c); } 
+#ifndef ESP8266
+	{ Serial.print(c); }
 #else
-        ;
+		;
 #endif
-        
+#endif
+
+
 	static void print_P(const char *fmt, ...); // use when format string is stored in PROGMEM with PSTR("string")
 	static void printNewLine(void);
 	static void printChamberCount();
@@ -146,6 +151,7 @@ class PiLink{
 	friend class PiLinkTest;
 	friend class Logger;
 	static char printfBuff[PRINTF_BUFFER_SIZE];
+//	static String printBuf;
 };
 
 extern PiLink piLink;

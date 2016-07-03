@@ -431,7 +431,7 @@ void DeviceManager::parseDeviceDefinition(Stream& p)
 	}
 	piLink.printResponse('U');
 	deviceManager.beginDeviceOutput();
-	deviceManager.printDevice(dev.id, *print, NULL, p);
+	deviceManager.printDevice(dev.id, *print, NULL);
 	piLink.printNewLine();
 }
 
@@ -517,6 +517,17 @@ void printAttrib(Print& p, char c, int8_t val, bool first=false)
 	p.print(tempString);
 }
 
+// I really want to buffer stuff rather than printing directly to the serial stream
+void appendAttrib(String& str, char c, int8_t val, bool first = false)
+{
+	if (!first)
+		str += ",";
+
+	char tempString[32]; // resulting string limited to 128 chars
+	sprintf_P(tempString, PSTR("\"%c\":%d"), c, val);
+	str += tempString;
+}
+
 inline bool hasInvert(DeviceHardware hw)
 {
 	return hw==DEVICE_HARDWARE_PIN
@@ -535,50 +546,58 @@ inline bool hasOnewire(DeviceHardware hw)
 	hw==DEVICE_HARDWARE_ONEWIRE_TEMP;
 }
 
-void DeviceManager::printDevice(device_slot_t slot, DeviceConfig& config, const char* value, Print& p)
+void DeviceManager::printDevice(device_slot_t slot, DeviceConfig& config, const char* value)
 {	
+	String deviceString;
 	char buf[17];
 
 	DeviceType dt = deviceType(config.deviceFunction);
 	if (!firstDeviceOutput) {
 		// p.print('\n');
-		p.print(',');
+//		p.print(',');
+		deviceString = ",";
+	} else {
+		deviceString = "";
 	}
 	firstDeviceOutput = false;
-	p.print('{');
-	printAttrib(p, DEVICE_ATTRIB_INDEX, slot, true);
-	printAttrib(p, DEVICE_ATTRIB_TYPE, dt);
+	deviceString += "{";
+
+
+	appendAttrib(deviceString, DEVICE_ATTRIB_INDEX, slot, true);
+	appendAttrib(deviceString, DEVICE_ATTRIB_TYPE, dt);
 	
-	printAttrib(p, DEVICE_ATTRIB_CHAMBER, config.chamber);
-	printAttrib(p, DEVICE_ATTRIB_BEER, config.beer);
-	printAttrib(p, DEVICE_ATTRIB_FUNCTION, config.deviceFunction);	
-	printAttrib(p, DEVICE_ATTRIB_HARDWARE, config.deviceHardware);		
-	printAttrib(p, DEVICE_ATTRIB_DEACTIVATED, config.hw.deactivate);
-	printAttrib(p, DEVICE_ATTRIB_PIN, config.hw.pinNr);
+	appendAttrib(deviceString, DEVICE_ATTRIB_CHAMBER, config.chamber);
+	appendAttrib(deviceString, DEVICE_ATTRIB_BEER, config.beer);
+	appendAttrib(deviceString, DEVICE_ATTRIB_FUNCTION, config.deviceFunction);
+	appendAttrib(deviceString, DEVICE_ATTRIB_HARDWARE, config.deviceHardware);
+	appendAttrib(deviceString, DEVICE_ATTRIB_DEACTIVATED, config.hw.deactivate);
+	appendAttrib(deviceString, DEVICE_ATTRIB_PIN, config.hw.pinNr);
 	if (value && *value) {
-		p.print(",\"v\":");
-		p.print(value);
+		deviceString += ",\"v\":";
+		deviceString += value;
 	}
 	if (hasInvert(config.deviceHardware))	
-		printAttrib(p, DEVICE_ATTRIB_INVERT, config.hw.invert);
+		appendAttrib(deviceString, DEVICE_ATTRIB_INVERT, config.hw.invert);
 	
 	if (hasOnewire(config.deviceHardware)) {
-		p.print(",\"a\":\"");
+		deviceString += ",\"a\":\"";
 		printBytes(config.hw.address, 8, buf);
-		p.print(buf);
-		p.print('"');
+		deviceString += buf;
+		deviceString += '"';
 	}	
 #if BREWPI_DS2413		
 	if (config.deviceHardware==DEVICE_HARDWARE_ONEWIRE_2413) {
-		printAttrib(p, DEVICE_ATTRIB_PIO, config.hw.pio);		
+		appendAttrib(deviceString, DEVICE_ATTRIB_PIO, config.hw.pio);
 	}
 #endif	
 	if (config.deviceHardware==DEVICE_HARDWARE_ONEWIRE_TEMP) {
 		tempDiffToString(buf, temperature(config.hw.calibration)<<(TEMP_FIXED_POINT_BITS-CALIBRATION_OFFSET_PRECISION), 3, 8);
-		p.print(",\"j\":");
-		p.print(buf);
+		deviceString += ",\"j\":";
+		deviceString += buf;
 	}
-	p.print('}');
+	deviceString += '}';
+
+	piLink.print_P(deviceString.c_str());
 }	
 	
 bool DeviceManager::allDevices(DeviceConfig& config, uint8_t deviceIndex)
@@ -610,7 +629,7 @@ void printBytes(uint8_t* data, uint8_t len, char* buf) // prints 8-bit data in h
 void DeviceManager::OutputEnumeratedDevices(DeviceConfig* config, void* pv)
 {
 	DeviceOutput* out = (DeviceOutput*)pv;
-	printDevice(out->slot, *config, out->value, *out->pp);
+	printDevice(out->slot, *config, out->value);
 }
 
 bool DeviceManager::enumDevice(DeviceDisplay& dd, DeviceConfig& dc, uint8_t idx)
@@ -767,7 +786,7 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 			continue;
 		config.hw.pinNr = pin;
 		config.chamber = 1; // chamber 1 is default
-//		logDebug("Enumerating one-wire devices on pin %d", pin);				
+//		logDebug("Enumerating one-wire devices on pin %d", pin);
 		OneWire* wire = oneWireBus(pin);	
 		if (wire!=NULL) {
 			wire->reset_search();
@@ -785,7 +804,7 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 					default:
 						config.deviceHardware = DEVICE_HARDWARE_NONE;
 				}
-		
+
 				switch (config.deviceHardware) {
 		#if BREWPI_DS2413
 					// for 2408 this will require iterating 0..7
@@ -818,7 +837,7 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 #endif	
 }
 
-void DeviceManager::enumerateHardware( Stream& p )
+void DeviceManager::enumerateHardware()
 {
 	EnumerateHardware spec;
 	// set up defaults
@@ -830,7 +849,7 @@ void DeviceManager::enumerateHardware( Stream& p )
 	
 	piLink.parseJson(handleHardwareSpec, &spec);	
 	DeviceOutput out;
-	out.pp = &p;
+
 
 //	logDebug("Enumerating Hardware");
 	firstDeviceOutput = true;
@@ -886,7 +905,7 @@ void UpdateDeviceState(DeviceDisplay& dd, DeviceConfig& dc, char* val)
 	}
 }
 
-void DeviceManager::listDevices(Stream& p) {
+void DeviceManager::listDevices() {
 	DeviceConfig dc;
 	DeviceDisplay dd;
 	fill((int8_t*)&dd, sizeof(dd));
@@ -904,7 +923,7 @@ void DeviceManager::listDevices(Stream& p) {
 			char val[10];
 			val[0] = 0;
 			UpdateDeviceState(dd, dc, val);
-			deviceManager.printDevice(idx, dc, val, p);			
+			deviceManager.printDevice(idx, dc, val);			
 		}
 	}	
 }

@@ -133,15 +133,14 @@ public:
 //static TelnetSerial telnetSerial;
 //#define piStream telnetSerial
 
-#ifdef ESP8266_WiFi
+// Just use the serverClient object as it supports all the same functions as Serial
 extern WiFiServer server;
 extern WiFiClient serverClient;
-#endif
-
 #define piStream serverClient
 
 #else
-//	#define piStream Serial
+// Not using ESP8266 WiFi
+#define piStream Serial
 #endif
 
 bool PiLink::firstPair;
@@ -196,6 +195,20 @@ void PiLink::print(char *fmt, ... ){
 #endif
 }
 
+#ifdef ESP8266
+void PiLink::print(char out) {
+#ifdef ESP8266_WiFi
+	if (piStream && piStream.connected()) { // if WiFi client connected
+		piStream.print(out);
+	}
+#else
+	if (piStream) { // if Serial connected (on Leonardo)
+		piStream.print(out);
+	}
+#endif
+}
+#endif
+
 void PiLink::printNewLine(){
 #ifdef ESP8266_WiFi
 	if (piStream && piStream.connected()) { // if WiFi client connected
@@ -210,7 +223,7 @@ void PiLink::printNewLine(){
 #endif
 }
 
-
+#if BREWPI_EEPROM_HELPER_COMMANDS
 void printNibble(uint8_t n)
 {
 	n &= 0xF;
@@ -224,14 +237,30 @@ void printNibble(uint8_t n)
 	}
 #endif
 }
+#endif
+
+// Trying to enforce that the only thing to talk to piStream is piLink
+int PiLink::read() {
+	return piStream.read();
+}
 
 void PiLink::receive(void){
 	while (piStream.available() > 0) {
-		char inByte = piStream.read();              
+		char inByte = read();              
 		switch(inByte){
 		case ' ':
 		case '\n':
 		case '\r':
+#ifdef ESP8266_WiFi  // Control characters sent when establishing a telnet session 
+		case 1:
+		case 3:
+		case 29:
+		case 31:
+		case '\'':
+		case 251:
+		case 253:
+		case 255:
+#endif
 			break;
 
 #if BREWPI_SIMULATE==1
@@ -298,18 +327,16 @@ void PiLink::receive(void){
 				BREWPI_BOARD,
 				BREWPI_LOG_MESSAGES_VERSION);
 #endif
-
 			printNewLine();
 			break;
 		case 'l': // Display content requested
-			printResponse('L');						
-			piStream.print('[');
+			openListResponse('L');
 			char stringBuffer[21];
 			for(uint8_t i=0;i<4;i++){
 				display.getLine(i, stringBuffer);
 				print_P(PSTR("\"%s\""), stringBuffer);
 				char close = (i<3) ? ',':']';
-				piStream.print(close);
+				print(close);
 			}							
 			printNewLine();						
 			break;
@@ -345,7 +372,7 @@ void PiLink::receive(void){
 
 		case 'd': // list devices in eeprom order
 			openListResponse('d');
-			deviceManager.listDevices(piStream);
+			deviceManager.listDevices();
 			closeListResponse();
 			break;
 
@@ -357,7 +384,7 @@ void PiLink::receive(void){
 			
 		case 'h': // hardware query
 			openListResponse('h');
-			deviceManager.enumerateHardware(piStream);
+			deviceManager.enumerateHardware();
 			closeListResponse();
 			break;
 
@@ -467,7 +494,7 @@ void PiLink::sendJsonTemp(const char* name, temperature temp)
 	char tempString[9];
 	tempToString(tempString, temp, 2, 9);
 	printJsonName(name);
-	piStream.print(tempString);
+	print(tempString);
 }
 
 void PiLink::printTemperatures(void){
@@ -524,13 +551,13 @@ void PiLink::debugMessage(const char * message, ...){
 	va_start (args, message );
 	vsnprintf_P(printfBuff, PRINTF_BUFFER_SIZE, message, args);
 	va_end (args);
-//	piStream.print(printfBuff);
+	print(printfBuff);
 	printNewLine();
 }
 
 
 void PiLink::sendJsonClose() {
-	piStream.print('}');
+	print("}");
 	printNewLine();
 }
 
@@ -678,27 +705,31 @@ void PiLink::sendControlVariables(void){
 void PiLink::printJsonName(const char * name)
 {
 	printJsonSeparator();
-	piStream.print('"');
+	print('"');
 	print_P(name);
-	piStream.print('"');
-	piStream.print(':');
+	print("\":");
 }
 
 inline void PiLink::printJsonSeparator() {
-	piStream.print(firstPair ? '{' : ',');	
+	print(firstPair ? '{' : ',');	
 	firstPair = false;
 }
 
 void PiLink::sendJsonPair(const char * name, const char * val){
 	printJsonName(name);
+	// TODO - Fix this to use PiLink.print in all cases
+#ifndef ESP8266
 	piStream.print(val);
+#else
+	print_P(val);
+#endif
 }
 
 void PiLink::sendJsonPair(const char * name, char val){
 	printJsonName(name);
-	piStream.print('"');
-	piStream.print(val);
-	piStream.print('"');
+	print('"');
+	print(val);
+	print('"');
 }
 
 void PiLink::sendJsonPair(const char * name, uint16_t val){
@@ -715,9 +746,9 @@ int readNext()
 	uint8_t retries = 0;
 	while (piStream.available()==0) {
 #ifdef ESP8266
-		// delayMicroseconds is the ESP equivalent of _delay_us
-		// Adding a 'yield' here, as delayMicroseconds doesnt yield like delay does
-		delayMicroseconds(100);
+		// changing to delay as delayMicroseconds doesn't yield like delay does
+//		delayMicroseconds(100);
+		delay(1);
 		yield();
 #else
 		_delay_us(100);
@@ -727,7 +758,7 @@ int readNext()
 			return -1;
 		}
 	}
-	return piStream.read();		
+	return piLink.read();		
 }
 /**
  * Parses a token from the piStream.

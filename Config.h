@@ -181,7 +181,24 @@
 // Pin Configuration - Change the below to match your individual pinout
 //
 // pins
-#define oneWirePin 2  // If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
+
+#define NODEMCU_PIN_A0 17	// Analog 
+
+#define NODEMCU_PIN_D0 16	// No interrupt, do not use for rotary encoder
+#define NODEMCU_PIN_D1 5	// Generally used for I2C
+#define NODEMCU_PIN_D2 4	// Generally used for I2C
+#define NODEMCU_PIN_D3 9
+#define NODEMCU_PIN_D4 2
+#define NODEMCU_PIN_D5 14
+#define NODEMCU_PIN_D6 12
+#define NODEMCU_PIN_D7 13
+#define NODEMCU_PIN_D8 15
+
+#define NODEMCU_PIN_D9 3	// Do not use - USB
+#define NODEMCU_PIN_D10 1	// Do not use - USB
+
+
+#define oneWirePin NODEMCU_PIN_D6  // If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
 //#define beerSensorPin    2
 //#define fridgeSensorPin  1
 
@@ -192,9 +209,9 @@
 //#define rotarySwitchPin 0 // INT2
 
 
-#define coolingPin 3
-#define heatingPin 4
-#define doorPin    6
+#define coolingPin NODEMCU_PIN_D3
+#define heatingPin NODEMCU_PIN_D4
+#define doorPin    NODEMCU_PIN_D5
 
 #ifdef ESP8266
 #define ESP8266_WiFi 1
