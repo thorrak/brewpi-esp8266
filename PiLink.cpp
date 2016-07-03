@@ -36,6 +36,10 @@
 #include "Buzzer.h"
 #include "Display.h"
 
+#ifdef ESP8266_WiFi
+#include <ESP8266WiFi.h>          //ESP8266 Core WiFi Library
+#endif
+
 #ifdef ARDUINO
 #ifndef ESP8266
 #include "util/delay.h"
@@ -46,7 +50,7 @@
 #include "Simulator.h"
 #endif
 
-// Rename Serial to piStream, to abstract it for later platform independence
+ // Rename Serial to piStream, to abstract it for later platform independence
 
 #if BREWPI_EMULATE
 	class MockSerial : public Stream
@@ -70,15 +74,83 @@
 #elif !defined(ARDUINO)
         StdIO stdIO;
         #define piStream stdIO
+#elif defined(ESP8266_WiFi)
+/*class TelnetSerial : public Stream
+{
+private:
+	String inputBuf = "";
+	String outputBuf = "";
+
+public:
+	void print(char c) {}
+	void print(const char* c) {}
+	void printNewLine() {}
+	void println() {}
+
+	int read() { 
+		return -1; 
+	}
+
+	int available() { return -1; }
+	void begin(unsigned long) {}
+	size_t write(uint8_t w) { return 1; }
+	int peek() { return -1; }
+	void flush() { };
+
+	void bufferFromConnected() {
+		uint8_t i;
+		//check clients for data
+		for (i = 0; i < MAX_SRV_CLIENTS; i++) {
+			if (serverClients[i] && serverClients[i].connected()) {
+				if (serverClients[i].available()) {
+					//get data from the telnet client and push it to the UART
+					while (serverClients[i].available())
+						inputBuf.concat(serverClients[i].read());
+				}
+			}
+		}
+		nukeBufferIfDisconneted();
+		return;
+	}
+
+	void nukeBufferIfDisconneted() {
+		uint8_t i;
+		bool clientConnected = false;
+		for (i = 0; i < MAX_SRV_CLIENTS; i++)
+			if (serverClients[i] && serverClients[i].connected())
+				clientConnected = true;
+
+		if (!clientConnected) {
+			// Nuke the buffers if no clients are connected
+			inputBuf = "";
+			outputBuf = "";
+		}
+	}
+
+	operator bool() { return true; }
+};*/
+
+//static TelnetSerial telnetSerial;
+//#define piStream telnetSerial
+
+#ifdef ESP8266_WiFi
+extern WiFiServer server;
+extern WiFiClient serverClient;
+#endif
+
+#define piStream serverClient
+
 #else
-	#define piStream Serial
+//	#define piStream Serial
 #endif
 
 bool PiLink::firstPair;
 char PiLink::printfBuff[PRINTF_BUFFER_SIZE];
                 
 void PiLink::init(void){
-	piStream.begin(57600);	
+#ifndef ESP8266_WiFi
+piStream.begin(57600);
+#endif
 }
 
 extern void handleReset();
@@ -88,10 +160,20 @@ void PiLink::print_P(const char *fmt, ... ){
 	va_list args;
 	va_start (args, fmt );
 	vsnprintf_P(printfBuff, PRINTF_BUFFER_SIZE, fmt, args);
+//	vsnprintf(printfBuff, PRINTF_BUFFER_SIZE, fmt, args);
 	va_end (args);
+#ifdef ESP8266_WiFi
+	if (piStream && piStream.connected()) { // if WiFi client connected
+//		yield();
+		piStream.print(printfBuff);
+//		yield();
+//		delay(5);
+	}
+#else
 	if(piStream){ // if Serial connected (on Leonardo)
 		piStream.print(printfBuff);
 	}
+#endif
 }
 
 // create a printf like interface to the Arduino Serial function. Format string stored in RAM
@@ -100,20 +182,47 @@ void PiLink::print(char *fmt, ... ){
 	va_start (args, fmt );
 	vsnprintf(printfBuff, PRINTF_BUFFER_SIZE, fmt, args);
 	va_end (args);
-	if(piStream){
+#ifdef ESP8266_WiFi
+	if (piStream && piStream.connected()) { // if WiFi client connected
+//		yield();
 		piStream.print(printfBuff);
-	}	
+//		yield();
+//		delay(5);
+	}
+#else
+	if (piStream) { // if Serial connected (on Leonardo)
+		piStream.print(printfBuff);
+	}
+#endif
 }
 
 void PiLink::printNewLine(){
-	piStream.println();
+#ifdef ESP8266_WiFi
+	if (piStream && piStream.connected()) { // if WiFi client connected
+		piStream.println();
+		yield();
+		delay(100); // Give the controller enough time to transmit the full message
+	}
+#else
+	if (piStream) { // if Serial connected (on Leonardo)
+		piStream.println();
+	}
+#endif
 }
 
 
 void printNibble(uint8_t n)
 {
 	n &= 0xF;
-	piStream.print((char)(n>=10 ? n-10+'A' : n+'0'));
+#ifdef ESP8266_WiFi
+	if (piStream && piStream.connected()) { // if WiFi client connected
+		piStream.print((char)(n >= 10 ? n - 10 + 'A' : n + '0'));
+	}
+#else
+	if (piStream) { // if Serial connected (on Leonardo)
+		piStream.print((char)(n >= 10 ? n - 10 + 'A' : n + '0'));
+	}
+#endif
 }
 
 void PiLink::receive(void){
@@ -168,6 +277,7 @@ void PiLink::receive(void){
 			// s shield type
 			// y: simulator			
 			// b: board
+#ifndef ESP8266
 			print_P(PSTR("N:{\"v\":\"%S\",\"n\":%d,\"c\":\"%S\",\"s\":%d,\"y\":%d,\"b\":\"%c\",\"l\":\"%d\"}"), 
 					PSTR(VERSION_STRING), 
 					BUILD_NUMBER,
@@ -176,6 +286,19 @@ void PiLink::receive(void){
 					BREWPI_SIMULATE, 
 					BREWPI_BOARD,
 					BREWPI_LOG_MESSAGES_VERSION);
+#else
+			// Doesn't appear to be support for %S for some reason. Replacing by breaking everything out.
+			print("N:{\"v\":\"");
+			print(VERSION_STRING);
+			print("\",\"n\":%d,\"c\":\"", BUILD_NUMBER);
+			print(BUILD_NAME);
+			print("\",\"s\":%d,\"y\":%d,\"b\":\"%c\",\"l\":\"%d\"}", 
+				BREWPI_STATIC_CONFIG,
+				BREWPI_SIMULATE,
+				BREWPI_BOARD,
+				BREWPI_LOG_MESSAGES_VERSION);
+#endif
+
 			printNewLine();
 			break;
 		case 'l': // Display content requested
@@ -373,18 +496,20 @@ void PiLink::printFridgeAnnotation(const char * annotation, ...){
 }	 
  	  
 void PiLink::printResponse(char type) {
-	piStream.print(type);
-	piStream.print(':');
+
+	print("%c:", type);
+//	print(type);
+//	print(':');
 	firstPair = true;
 }
 
 void PiLink::openListResponse(char type) {
 	printResponse(type);
-	piStream.print('[');
+	print('[');
 }
 
 void PiLink::closeListResponse() {
-	piStream.print(']');
+	print(']');
 	printNewLine();
 }
 
@@ -399,7 +524,7 @@ void PiLink::debugMessage(const char * message, ...){
 	va_start (args, message );
 	vsnprintf_P(printfBuff, PRINTF_BUFFER_SIZE, message, args);
 	va_end (args);
-	piStream.print(printfBuff);
+//	piStream.print(printfBuff);
 	printNewLine();
 }
 

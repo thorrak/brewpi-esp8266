@@ -186,14 +186,20 @@
 
 // Pay attention when changing the pins for the rotary encoder.
 // They should be connected to external interrupt INT0, INT1 and INT3
-#define rotaryAPin 2 // INT1
-#define rotaryBPin 1 // INT3
-#define rotarySwitchPin 0 // INT2
+//#define rotaryAPin 2 // INT1
+//#define rotaryBPin 1 // INT3
+//#define rotarySwitchPin 0 // INT2
 
 
 #define coolingPin 3
 #define heatingPin 4
 #define doorPin    6
+
+#ifdef ESP8266
+#define ESP8266_WiFi 1
+#endif
+
+
 /*
 // Note - LCD module pins aren't used yet.
 #define DISP_RS 9

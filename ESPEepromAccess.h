@@ -66,4 +66,8 @@ public:
 
 	}
 
+	static void commit(void) {
+		EEPROM.commit();
+	}
+
 };

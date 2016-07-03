@@ -1,75 +1,17 @@
-#include <EEPROM.h>
+// Libraries have to be loaded in the main .ino file per Visual Micro. Load them here.
+#ifdef ESP8266
+#include "ESP8266mDNS.h"
+#include <EEPROM.h>               //For storing the configuration constants 
+#include <ESP8266WiFi.h>          //ESP8266 Core WiFi Library (you most likely already have this in your sketch)
+#include <DNSServer.h>            //Local DNS Server used for redirecting all requests to the configuration portal
+#include <ESP8266WebServer.h>     //Local WebServer used to serve the configuration portal
+#include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager WiFi Configuration Magic
+#include "ESP8266mDNS.h"
+#endif
+
 #include <OneWire.h>
-//#include "Brewpi.h"
-
-// setup and loop are in brewpi_config so they can be reused across projects
-//extern void setup(void);
-//extern void loop(void);
 
 
-void handleReset()
-{
-	// resetting using the watchdog timer (which is a full reset of all registers) 
-	// might not be compatible with old Arduino bootloaders. jumping to 0 is safer.
-#if defined(ESP8266)
-	// The asm volatile method doesn't work on ESP8266. Instead, use ESP.restart
-	ESP.restart();
-#else
-	asm volatile ("  jmp 0");
-#endif
-}
-/*
-#ifndef ESP8266
-// TODO - Determine if this actually is required
-void main() __attribute__((noreturn)); // tell the compiler main doesn't return.
-#endif
-
-#if defined(ESP8266)
-int main(void)
-#else
-void main(void)
-#endif
-{
-init();
-
-#if defined(USBCON)
-USBDevice.attach();
-#endif
-
-setup();
-
-for (;;) {
-loop();
-//		if (serialEventRun) serialEventRun();
-}
-
-#if defined(ESP8266)
-return 0;
-#endif
-}
-
-// catch bad interrupts here, uncomment while only when debugging
-//ISR(BADISR_vect){
-;//while (1);
-//}
-
-*/
-
-/*
-void setup() {
-	pinMode(LED_BUILTIN, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
-}
-
-// the loop function runs over and over again forever
-void loop() {
-	digitalWrite(LED_BUILTIN, LOW);   // Turn the LED on (Note that LOW is the voltage level
-									  // but actually the LED is on; this is because 
-									  // it is acive low on the ESP-01)
-	delay(1000);                      // Wait for a second
-	digitalWrite(LED_BUILTIN, HIGH);  // Turn the LED off by making the voltage HIGH
-	delay(2000);                      // Wait for two seconds (to demonstrate the active low LED)
-}
-*/
 #include "Brewpi.h"
 #include "Ticks.h"
 #include "Display.h"
@@ -96,9 +38,6 @@ void loop() {
 // instantiate and configure the sensors, actuators and controllers we want to use
 
 
-
-//void loop (void);
-
 /* Configure the counter and delay timer. The actual type of these will vary depending upon the environment.
 * They are non-virtual to keep code size minimal, so typedefs and preprocessing are used to select the actual compile-time type used. */
 TicksImpl ticks = TicksImpl(TICKS_IMPL_CONFIG);
@@ -109,12 +48,54 @@ DisplayType DISPLAY_REF display = realDisplay;
 
 ValueActuator alarm;
 
+#ifdef ESP8266_WiFi
+
+
+WiFiServer server(23);
+WiFiClient serverClient;
+#endif
+
+void handleReset()
+{
+#if defined(ESP8266)
+	// The asm volatile method doesn't work on ESP8266. Instead, use ESP.restart
+	ESP.restart();
+#else
+	// resetting using the watchdog timer (which is a full reset of all registers) 
+	// might not be compatible with old Arduino bootloaders. jumping to 0 is safer.
+	asm volatile ("  jmp 0");
+#endif
+}
+
+
 void setup()
 {
+
+#if defined(USBCON)
+	// This was in main(); before setup(); - Moving here as we're removing main();
+	USBDevice.attach();
+#endif
 
 #if defined(ESP8266)
 	// We need to initialize the EEPROM on ESP8266
 	EEPROM.begin(MAX_EEPROM_SIZE_LIMIT);
+
+#ifdef ESP8266_WiFi
+	// Next, if we're going to set up WiFi, let's do it
+	WiFiManager wifiManager;
+	wifiManager.setConfigPortalTimeout(5*60); // Time out after 5 minutes so that we can keep managing temps 
+	wifiManager.setDebugOutput(false); // In case we have a serial connection to BrewPi
+	// TODO - Add code here to 
+	wifiManager.autoConnect(); // Launch captive portal with auto generated name ESP + ChipID
+
+	String mdns_id = "ESP" + String(ESP.getChipId());
+
+	if (!MDNS.begin(mdns_id.c_str())) {
+		// TODO - Do something about it or log it or something
+	}
+
+#endif
+
 #endif
 
 #if BREWPI_BUZZER	
@@ -123,6 +104,12 @@ void setup()
 #endif	
 
 	piLink.init();
+
+#ifdef ESP8266_WiFi
+	// If we're using WiFi, initialize the bridge
+	server.begin();
+	server.setNoDelay(true);
+#endif
 
 	logDebug("started");
 	tempControl.init();
@@ -144,6 +131,21 @@ void setup()
 	logDebug("init complete");
 }
 
+#ifdef ESP8266_WiFi
+void connectClients() {
+	if (server.hasClient()) {
+		if (!serverClient || !serverClient.connected()) {
+			if (serverClient) serverClient.stop();
+			serverClient = server.available();
+		} else {
+			//no free/disconnected spot so reject
+			WiFiClient rejectClient = server.available();
+			rejectClient.stop();
+		}
+	}
+}
+
+#endif
 
 void brewpiLoop(void)
 {
@@ -182,6 +184,11 @@ void brewpiLoop(void)
 	}
 
 	//listen for incoming serial connections while waiting to update
+#ifdef ESP8266_WiFi
+	yield();
+	connectClients();
+	yield();
+#endif
 	piLink.receive();
 
 }
