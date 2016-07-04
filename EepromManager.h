@@ -23,6 +23,7 @@
 #include "Brewpi.h"
 
 #include "EepromAccess.h"
+#include "EepromStructs.h"
 
 
 void fill(int8_t* p, uint8_t size);
@@ -83,12 +84,24 @@ class EepromStream
 	void writeByte(uint8_t value) {
 		eepromAccess.writeByte(pv++, value);				
 	}
-	void writeBlock(void* source, uint16_t size)
+	// TODO - Clean this up
+/*	void writeBlock(void* source, uint16_t size)
 	{
 		eepromAccess.writeBlock(pv, source, size);
 		pv += size;
-	}		
-			
+	}*/
+	// Breaking this out into three functions so that we can have better control
+	void writeControlSettings(ControlSettings& source, uint16_t size) {
+		eepromAccess.writeControlSettings(pv, source, size);
+	}
+
+	void writeControlConstants(ControlConstants& source, uint16_t size) {
+		eepromAccess.writeControlConstants(pv, source, size);
+	}
+
+	void writeDeviceDefinition(const DeviceConfig& source, uint16_t size) {
+		eepromAccess.writeDeviceDefinition(pv, source, size);
+	}
 };
 
 extern EepromManager eepromManager;

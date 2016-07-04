@@ -27,6 +27,7 @@
 #include "Sensor.h"
 #include "EepromManager.h"
 #include "ActuatorAutoOff.h"
+#include "EepromStructs.h"
 
 
 // Set minimum off time to prevent short cycling the compressor in seconds
@@ -46,14 +47,7 @@ const uint16_t COOL_PEAK_DETECT_TIME = 1800;
 const uint16_t HEAT_PEAK_DETECT_TIME = 900;
 
 // These two structs are stored in and loaded from EEPROM
-struct ControlSettings{
-	char mode;
-	temperature beerSetting;
-	temperature fridgeSetting;
-	temperature heatEstimator; // updated automatically by self learning algorithm
-	temperature coolEstimator; // updated automatically by self learning algorithm
-};
-
+// struct ControlSettings was moved to EepromStructs.h
 struct ControlVariables{
 	temperature beerDiff;
 	long_temperature diffIntegral; // also uses 9 fraction bits, but more integer bits to prevent overflow
@@ -68,33 +62,7 @@ struct ControlVariables{
 	temperature posPeak;
 };
 
-struct ControlConstants{
-	char tempFormat;
-	temperature tempSettingMin;
-	temperature tempSettingMax;	
-	temperature Kp;
-	temperature Ki;
-	temperature Kd;
-	temperature iMaxError;
-	temperature idleRangeHigh;
-	temperature idleRangeLow;
-	temperature heatingTargetUpper;
-	temperature heatingTargetLower;
-	temperature coolingTargetUpper;
-	temperature coolingTargetLower;
-	uint16_t maxHeatTimeForEstimate; // max time for heat estimate in seconds
-	uint16_t maxCoolTimeForEstimate; // max time for heat estimate in seconds
-	// for the filter coefficients the b value is stored. a is calculated from b.
-	uint8_t fridgeFastFilter;	// for display, logging and on-off control
-	uint8_t fridgeSlowFilter;	// for peak detection
-	uint8_t fridgeSlopeFilter;	// not used in current control algorithm
-	uint8_t beerFastFilter;	// for display and logging
-	uint8_t beerSlowFilter;	// for on/off control algorithm
-	uint8_t beerSlopeFilter;	// for PID calculation
-	uint8_t lightAsHeater;		// use the light to heat rather than the configured heater device
-	uint8_t rotaryHalfSteps; // define whether to use full or half steps for the rotary encoder
-	temperature pidMax;
-};
+// struct ControlConstants was moved to EepromStructs.h
 
 #define EEPROM_TC_SETTINGS_BASE_ADDRESS 0
 #define EEPROM_CONTROL_SETTINGS_ADDRESS (EEPROM_TC_SETTINGS_BASE_ADDRESS+sizeof(uint8_t))

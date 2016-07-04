@@ -49,7 +49,7 @@
 #if BREWPI_SIMULATE
 #include "Simulator.h"
 #endif
-
+//#include <VM_DBG/VM_DBG.h>
  // Rename Serial to piStream, to abstract it for later platform independence
 
 #if BREWPI_EMULATE
@@ -145,12 +145,25 @@ extern WiFiClient serverClient;
 
 bool PiLink::firstPair;
 char PiLink::printfBuff[PRINTF_BUFFER_SIZE];
-                
+#ifdef BUFFER_PILINK_PRINTS
+String PiLink::printBuf;
+#endif
+
 void PiLink::init(void){
 #ifndef ESP8266_WiFi
 piStream.begin(57600);
 #endif
+
+#ifdef BUFFER_PILINK_PRINTS
+printBuf.reserve(2048); // Reserve 2kb for our string (waaaay more than we need, and we have space on the ESP!)
+printBuf = "";
+#endif
+
 }
+
+#ifdef ESP8266
+void formatStandardAnnotation(String &annotation, const char* str_1, const char* str_2, const char* str_3);
+#endif
 
 extern void handleReset();
 
@@ -163,10 +176,11 @@ void PiLink::print_P(const char *fmt, ... ){
 	va_end (args);
 #ifdef ESP8266_WiFi
 	if (piStream && piStream.connected()) { // if WiFi client connected
-//		yield();
+#ifdef BUFFER_PILINK_PRINTS
+		printBuf += printfBuff;
+#else
 		piStream.print(printfBuff);
-//		yield();
-//		delay(5);
+#endif
 	}
 #else
 	if(piStream){ // if Serial connected (on Leonardo)
@@ -183,10 +197,11 @@ void PiLink::print(char *fmt, ... ){
 	va_end (args);
 #ifdef ESP8266_WiFi
 	if (piStream && piStream.connected()) { // if WiFi client connected
-//		yield();
+#ifdef BUFFER_PILINK_PRINTS
+		printBuf += printfBuff;
+#else
 		piStream.print(printfBuff);
-//		yield();
-//		delay(5);
+#endif
 	}
 #else
 	if (piStream) { // if Serial connected (on Leonardo)
@@ -199,7 +214,12 @@ void PiLink::print(char *fmt, ... ){
 void PiLink::print(char out) {
 #ifdef ESP8266_WiFi
 	if (piStream && piStream.connected()) { // if WiFi client connected
+
+#ifdef BUFFER_PILINK_PRINTS
+		printBuf += out;
+#else
 		piStream.print(out);
+#endif
 	}
 #else
 	if (piStream) { // if Serial connected (on Leonardo)
@@ -212,6 +232,11 @@ void PiLink::print(char out) {
 void PiLink::printNewLine(){
 #ifdef ESP8266_WiFi
 	if (piStream && piStream.connected()) { // if WiFi client connected
+#ifdef BUFFER_PILINK_PRINTS
+		if (printBuf.length() > 0)
+			piStream.print(printBuf);
+		printBuf = "";
+#endif
 		piStream.println();
 		yield();
 		delay(100); // Give the controller enough time to transmit the full message
@@ -224,16 +249,16 @@ void PiLink::printNewLine(){
 }
 
 #if BREWPI_EEPROM_HELPER_COMMANDS
-void printNibble(uint8_t n)
+void PiLink::printNibble(uint8_t n)
 {
 	n &= 0xF;
 #ifdef ESP8266_WiFi
 	if (piStream && piStream.connected()) { // if WiFi client connected
-		piStream.print((char)(n >= 10 ? n - 10 + 'A' : n + '0'));
+		print((char)(n >= 10 ? n - 10 + 'A' : n + '0'));
 	}
 #else
 	if (piStream) { // if Serial connected (on Leonardo)
-		piStream.print((char)(n >= 10 ? n - 10 + 'A' : n + '0'));
+		print((char)(n >= 10 ? n - 10 + 'A' : n + '0'));
 	}
 #endif
 }
@@ -349,8 +374,8 @@ void PiLink::receive(void){
 			openListResponse('E');
 			for (uint16_t i=0; i<1024;) {
 				if (i>0) {
-					piLink.printNewLine();
-					piLink.print(',');
+					printNewLine();
+					print(',');
 				}
 				piLink.print('\"');
 				for (uint8_t j=0; j<64; j++) {
@@ -378,7 +403,7 @@ void PiLink::receive(void){
 
 		case 'U': // update device		
 			//printResponse('U'); // moved into function below, because installing devices can cause printing in between
-			deviceManager.parseDeviceDefinition(piStream);
+			deviceManager.parseDeviceDefinition();
 			//piLink.printNewLine();
 			break;
 			
@@ -396,8 +421,8 @@ void PiLink::receive(void){
 #endif
 
 		case 'R': // reset 
-                        handleReset();
-                        break;
+            handleReset();
+            break;
 		default:
 			logWarningInt(WARNING_INVALID_COMMAND, inByte);
 		}
@@ -442,7 +467,7 @@ void PiLink::receive(void){
 	#define changed(a,b)  1
 #endif
 
-void PiLink::printTemperaturesJSON(char * beerAnnotation, char * fridgeAnnotation){
+void PiLink::printTemperaturesJSON(const char * beerAnnotation, const char * fridgeAnnotation){
 	printResponse('T');	
 
 	temperature t;
@@ -502,6 +527,7 @@ void PiLink::printTemperatures(void){
 	printTemperaturesJSON(0, 0);
 }
 
+#ifndef ESP8266 // There is a bug with the ESP8266 which prevents this from working. Removing it so we aren't tempted to use it.
 void PiLink::printBeerAnnotation(const char * annotation, ...){
 	char tempString[128]; // resulting string limited to 128 chars
 	va_list args;	
@@ -520,8 +546,9 @@ void PiLink::printFridgeAnnotation(const char * annotation, ...){
 	vsnprintf_P(tempString, 128, annotation, args);
 	va_end (args);
 	printTemperaturesJSON(0, tempString);
-}	 
- 	  
+}
+#endif
+
 void PiLink::printResponse(char type) {
 
 	print("%c:", type);
@@ -747,7 +774,6 @@ int readNext()
 	while (piStream.available()==0) {
 #ifdef ESP8266
 		// changing to delay as delayMicroseconds doesn't yield like delay does
-//		delayMicroseconds(100);
 		delay(1);
 		yield();
 #else
@@ -830,29 +856,69 @@ static const char STR_FMT_SET_TO[] PROGMEM = "%S set to %s %S";
 void PiLink::setMode(const char* val) {
 	char mode = val[0];
 	tempControl.setMode(mode);
+#ifdef ESP8266
+	String annotation = "";
+	formatStandardAnnotation(annotation, STR_MODE, val, "in web interface");
+	printTemperaturesJSON(0, annotation.c_str());
+#else
 	piLink.printFridgeAnnotation(STR_FMT_SET_TO, STR_MODE, val, STR_WEB_INTERFACE);
+#endif
 }
 
 void PiLink::setBeerSetting(const char* val) {
+#ifdef ESP8266
+	String annotation = "";
+#endif
 	const char* source = NULL;
 	temperature newTemp = stringToTemp(val);
-	if(tempControl.cs.mode == 'p'){
-		if(abs(newTemp-tempControl.cs.beerSetting) > 100){ // this excludes gradual updates under 0.2 degrees
+	if (tempControl.cs.mode == 'p') {
+		if (abs(newTemp - tempControl.cs.beerSetting) > 100) { // this excludes gradual updates under 0.2 degrees
+#ifdef ESP8266
+			formatStandardAnnotation(annotation, STR_BEER_TEMP, val, "by temperature profile");
+#else
 			source = STR_TEMPERATURE_PROFILE;
+#endif
 		}
-	}
-	else {
+	} else {
+#ifdef ESP8266
+		formatStandardAnnotation(annotation, STR_BEER_TEMP, val, "in web interface");
+#else
 		source = STR_WEB_INTERFACE;
+#endif
 	}
+#ifdef ESP8266
+	if (annotation.length() > 0)
+		printTemperaturesJSON(annotation.c_str(), 0);
+#else
 	if (source)
 		printBeerAnnotation(STR_FMT_SET_TO, STR_BEER_TEMP, val, source);
+#endif
 	tempControl.setBeerTemp(newTemp);		
 }
+
+//There's some kind of strange bug with the ESP8266 (probably a memory issue) where if I pass STR_WEB_INTERFACE
+//as str_3, everything dies. Same with using "printFridgeAnnotation" - Everything dies. 
+#ifdef ESP8266
+void formatStandardAnnotation(String &annotation, const char* str_1, const char* str_2, const char* str_3) {
+	annotation += str_1;
+	annotation += " set to ";
+	annotation += str_2;
+	annotation += " ";
+	annotation += str_3;
+}
+#endif
+
 
 void PiLink::setFridgeSetting(const char* val) {
 	temperature newTemp = stringToTemp(val);
 	if(tempControl.cs.mode == 'f'){
+#ifdef ESP8266
+		String annotation = "";
+		formatStandardAnnotation(annotation, STR_FRIDGE_TEMP, val, "in web interface");
+		printTemperaturesJSON(0, annotation.c_str());
+#else
 		printFridgeAnnotation(STR_FMT_SET_TO, STR_FRIDGE_TEMP, val, STR_WEB_INTERFACE);
+#endif
 	}
 	tempControl.setFridgeTemp(newTemp);	
 }

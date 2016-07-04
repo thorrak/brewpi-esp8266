@@ -47,14 +47,22 @@ void EepromManager::zapEeprom()
 {
 	for (uint16_t offset=0; offset<EepromFormat::MAX_EEPROM_SIZE; offset++)
 		eepromAccess.writeByte(offset, 0xFF);		
+#ifdef ESP8266
+	eepromAccess.commit();
+#endif
+
 }
 
 
 void EepromManager::initializeEeprom()
 {
 	// clear all eeprom
-	for (uint16_t offset=0; offset<EepromFormat::MAX_EEPROM_SIZE; offset++)
-		eepromAccess.writeByte(offset, 0);	
+//	for (uint16_t offset=0; offset<EepromFormat::MAX_EEPROM_SIZE; offset++)
+//		eepromAccess.writeByte(offset, 0);	
+#ifdef ESP8266
+	eepromAccess.set_manual_commit(true);
+#endif
+	zapEeprom();
 
 	deviceManager.setupUnconfiguredDevices();
 
@@ -80,6 +88,11 @@ void EepromManager::initializeEeprom()
 	saveDefaultDevices();
 	// set state to startup
 	tempControl.init();
+
+#ifdef ESP8266
+	eepromAccess.set_manual_commit(false);
+	eepromAccess.commit();
+#endif
 }
 
 uint8_t EepromManager::saveDefaultDevices() 
@@ -144,7 +157,7 @@ bool EepromManager::fetchDevice(DeviceConfig& config, uint8_t deviceIndex)
 {
 	bool ok = (hasSettings() && deviceIndex<EepromFormat::MAX_DEVICES);
 	if (ok)
-		eepromAccess.readBlock(&config, pointerOffset(devices)+sizeof(DeviceConfig)*deviceIndex, sizeof(DeviceConfig));
+		eepromAccess.readDeviceDefinition(config, pointerOffset(devices)+sizeof(DeviceConfig)*deviceIndex, sizeof(DeviceConfig));
 	return ok;
 }	
 
@@ -152,7 +165,7 @@ bool EepromManager::storeDevice(const DeviceConfig& config, uint8_t deviceIndex)
 {
 	bool ok = (hasSettings() && deviceIndex<EepromFormat::MAX_DEVICES);
 	if (ok)
-		eepromAccess.writeBlock(pointerOffset(devices)+sizeof(DeviceConfig)*deviceIndex, &config, sizeof(DeviceConfig));	
+		eepromAccess.writeDeviceDefinition(pointerOffset(devices)+sizeof(DeviceConfig)*deviceIndex, config, sizeof(DeviceConfig));	
 	return ok;
 }
 

@@ -214,7 +214,14 @@ void TempControl::updateState(void){
 		
 	if(newDoorOpen!=doorOpen) {
 		doorOpen = newDoorOpen;
+#ifdef ESP8266  // ESP8266 Doesn't support %S
+		String annotation = "";
+		annotation += "Fridge door ";
+		annotation += doorOpen ? "opened" : "closed";
+		piLink.printTemperaturesJSON(0, annotation.c_str());
+#else
 		piLink.printFridgeAnnotation(PSTR("Fridge door %S"), doorOpen ? PSTR("opened") : PSTR("closed"));
+#endif
 	}
 
 	if(cs.mode == MODE_OFF){
@@ -509,23 +516,23 @@ void TempControl::loadDefaultSettings(){
 }
 
 void TempControl::storeConstants(eptr_t offset){	
-	eepromAccess.writeBlock(offset, (void *) &cc, sizeof(ControlConstants));
+	eepromAccess.writeControlConstants(offset,  cc, sizeof(ControlConstants));
 }
 
 void TempControl::loadConstants(eptr_t offset){
-	eepromAccess.readBlock((void *) &cc, offset, sizeof(ControlConstants));
+	eepromAccess.readControlConstants(cc, offset, sizeof(ControlConstants));
 	initFilters();	
 }
 
 // write new settings to EEPROM to be able to reload them after a reset
 // The update functions only write to EEPROM if the value has changed
 void TempControl::storeSettings(eptr_t offset){
-	eepromAccess.writeBlock(offset, (void *) &cs, sizeof(ControlSettings));
+	eepromAccess.writeControlSettings(offset, cs, sizeof(ControlSettings));
 	storedBeerSetting = cs.beerSetting;		
 }
 
 void TempControl::loadSettings(eptr_t offset){
-	eepromAccess.readBlock((void *) &cs, offset, sizeof(ControlSettings));	
+	eepromAccess.readControlSettings(cs, offset, sizeof(ControlSettings));	
 	logDebug("loaded settings");
 	storedBeerSetting = cs.beerSetting;
 	setMode(cs.mode, true);		// force the mode update

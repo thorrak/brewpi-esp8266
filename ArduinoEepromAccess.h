@@ -20,11 +20,15 @@
 
 
 #if defined(ESP8266)
+
 #error Incorrect processor type!
-#endif
+
+#else
 
 #include <avr/eeprom.h>
+#include "EepromStructs.h"
 
+//TODO - Update to match ESPEepromAccess.h
 
 class ArduinoEepromAccess
 {
@@ -43,3 +47,4 @@ public:
 		eeprom_update_block(source, (void*)target, size);
 	}	
 };
+#endif

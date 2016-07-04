@@ -22,52 +22,64 @@
 #endif
 
 #include <EEPROM.h>
+#include "Logger.h" // Remove this once done
+#include "EepromStructs.h"
 
 
 //TODO - Clean this up
 class ESPEepromAccess
 {
 public:
+	// TODO - Add a constructor to set the value of manual commit somewhere other than 
+//	static bool manual_commit;
+
 	static uint8_t readByte(eptr_t offset) {
 		return EEPROM.read(offset);
-//		return eeprom_read_byte((uint8_t*)offset);
 	}
 	static void writeByte(eptr_t offset, uint8_t value) {
 		EEPROM.write(offset, value);
-//		eeprom_update_byte((uint8_t*)offset, value);
 	}
 
-/*	static void readBlock(uint8_t* target, eptr_t offset, uint16_t size) {
-//		eeprom_read_block(target, (uint8_t*)offset, size);
-		int i;
-		for (i = 0; i<size; i++) {
-			target[i] = EEPROM.read(offset + i);
-		}
-	}
-	static void writeBlock(eptr_t target, const uint8_t* source, uint16_t size) {
-//		eeprom_update_block(source, (void*)target, size);
-		int i;
-		for (i = 0; i<size; i++) {
-			EEPROM.write(target + i, source[i]);
-		}
-		EEPROM.commit();
-
-	}*/
-
-	static void readBlock(void* target, eptr_t offset, uint16_t size) {
-		//		eeprom_read_block(target, (uint8_t*)offset, size);
+	static void readControlSettings(ControlSettings& target, eptr_t offset, uint16_t size) {
 		EEPROM.get(offset, target);
 	}
 
-	static void writeBlock(eptr_t target, const void* source, uint16_t size) {
-		//		eeprom_update_block(source, (void*)target, size);
-		EEPROM.put(target, source);
-		EEPROM.commit();
+	static void readControlConstants(ControlConstants& target, eptr_t offset, uint16_t size) {
+		EEPROM.get(offset, target);
+	}
 
+	static void readDeviceDefinition(DeviceConfig& target, eptr_t offset, uint16_t size) {
+		EEPROM.get(offset, target);
+	}
+
+	static void writeControlSettings(eptr_t target, ControlSettings& source, uint16_t size) {
+		EEPROM.put(target, source);
+//		if (!manual_commit)
+			EEPROM.commit();
+//		logWarningIntString(0, size, "writeControlSettings called");
+	}
+
+	static void writeControlConstants(eptr_t target, ControlConstants& source, uint16_t size) {
+		EEPROM.put(target, source);
+//		if(!manual_commit)
+			EEPROM.commit();
+//		logWarningIntString(0, size, "writeControlConstants called");
+	}
+
+	static void writeDeviceDefinition(eptr_t target, const DeviceConfig& source, uint16_t size) {
+		EEPROM.put(target, source);
+//		if (!manual_commit)
+			EEPROM.commit();
+		logWarningIntString(0, sizeof(source), "writeDeviceDefinition called");
 	}
 
 	static void commit(void) {
 		EEPROM.commit();
 	}
+
+	static void set_manual_commit(const bool status) {
+//		manual_commit = status;
+	}
+
 
 };

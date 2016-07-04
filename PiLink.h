@@ -39,8 +39,10 @@ class PiLink{
 	static void init(void);
 	static void receive(void);
 	
+#ifndef ESP8266 // There is a bug in the ESP8266 implementation that causes these not to work. 
 	static void printFridgeAnnotation(const char * annotation, ...);	
 	static void printBeerAnnotation(const char * annotation, ...);
+#endif
 
 	static void debugMessage(const char * message, ...);
 
@@ -71,17 +73,20 @@ class PiLink{
 #endif
 #endif
 
-
+	static void test_functionality(void);
 	static void print_P(const char *fmt, ...); // use when format string is stored in PROGMEM with PSTR("string")
 	static void printNewLine(void);
 	static void printChamberCount();
-	
+	static void printNibble(uint8_t n);
+
 	private:
 	static void soundAlarm(bool enabled);
 	static void printResponse(char responseChar);
 	static void printChamberInfo();
 	
-	static void printTemperaturesJSON(char * beerAnnotation, char * fridgeAnnotation);
+public:
+	static void printTemperaturesJSON(const char * beerAnnotation, const char * fridgeAnnotation);
+private:
 	static void sendJsonPair(const char * name, const char * val); // send one JSON pair with a string value as name:val,
 	static void sendJsonPair(const char * name, char val); // send one JSON pair with a char value as name:val,
 	static void sendJsonPair(const char * name, uint16_t val); // send one JSON pair with a uint16_t value as name:val,
@@ -151,7 +156,9 @@ class PiLink{
 	friend class PiLinkTest;
 	friend class Logger;
 	static char printfBuff[PRINTF_BUFFER_SIZE];
-//	static String printBuf;
+#ifdef BUFFER_PILINK_PRINTS
+	static String printBuf;
+#endif
 };
 
 extern PiLink piLink;

@@ -136,10 +136,18 @@ void selectMode() {
 		menu.pickFridgeSetting();
 	}
 	else if(mode == MODE_BEER_PROFILE){
+#ifdef ESP8266
+		piLink.printTemperaturesJSON("Changed to profile mode in menu.", 0);
+#else
 		piLink.printBeerAnnotation(PSTR("Changed to profile mode in menu."));
+#endif
 	}
 	else if(mode == MODE_OFF){
+#ifdef ESP8266
+		piLink.printTemperaturesJSON("Temp control turned off in menu.", 0);
+#else
 		piLink.printBeerAnnotation(PSTR("Temp control turned off in menu."));
+#endif
 	}	
 }
 
@@ -201,11 +209,13 @@ void pickTempSetting(ReadTemp readTemp, WriteTemp writeTemp, const char* tempNam
 }
 
 void Menu::pickFridgeSetting(void){
-	pickTempSetting(tempControl.getFridgeSetting, tempControl.setFridgeTemp, PSTR("Fridge"), piLink.printFridgeAnnotation, 2);
+	// TODO - Fix this
+//	pickTempSetting(tempControl.getFridgeSetting, tempControl.setFridgeTemp, PSTR("Fridge"), piLink.printFridgeAnnotation, 2);
 }
 
 void Menu::pickBeerSetting(void){
-	pickTempSetting(tempControl.getBeerSetting, tempControl.setBeerTemp, PSTR("Beer"), piLink.printBeerAnnotation, 1);
+	// TODO - Fix This
+//	pickTempSetting(tempControl.getBeerSetting, tempControl.setBeerTemp, PSTR("Beer"), piLink.printBeerAnnotation, 1);
 }
 
 
