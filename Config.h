@@ -187,8 +187,8 @@
 #define NODEMCU_PIN_D0 16	// No interrupt, do not use for rotary encoder
 #define NODEMCU_PIN_D1 5	// Generally used for I2C
 #define NODEMCU_PIN_D2 4	// Generally used for I2C
-#define NODEMCU_PIN_D3 9
-#define NODEMCU_PIN_D4 2
+#define NODEMCU_PIN_D3 0
+#define NODEMCU_PIN_D4 2    // Also controls the LED on the ESP8266 module
 #define NODEMCU_PIN_D5 14
 #define NODEMCU_PIN_D6 12
 #define NODEMCU_PIN_D7 13
@@ -210,7 +210,7 @@
 
 
 #define coolingPin NODEMCU_PIN_D3
-#define heatingPin NODEMCU_PIN_D4
+#define heatingPin NODEMCU_PIN_D7
 #define doorPin    NODEMCU_PIN_D5
 
 #ifdef ESP8266
@@ -233,3 +233,4 @@
 // TODO - FIgure out what the hell this actually does
 #define BREWPI_INVERT_ACTUATORS 0
 
+#define BUFFER_PILINK_PRINTS 1
