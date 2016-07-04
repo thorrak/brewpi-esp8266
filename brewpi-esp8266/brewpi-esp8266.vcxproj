@@ -1,0 +1,216 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{A71FCFB3-6902-4FB6-8885-C44522E8EBD5}</ProjectGuid>
+    <RootNamespace>brewpiesp8266</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <PreprocessorDefinitions>__ESP8266_ESp8266__;__ESP8266_ESP8266__;__ets__;ICACHE_FLASH;F_CPU=80000000L;LWIP_OPEN_SRC;ARDUINO=10609;ARDUINO_ESP8266_NODEMCU;ARDUINO_ARCH_ESP8266;ESP8266;__cplusplus=201103L;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="brewpi-esp8266.ino">
+      <FileType>CppCode</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Actuator.h" />
+    <ClInclude Include="ActuatorArduinoPin.h" />
+    <ClInclude Include="ActuatorAutoOff.h" />
+    <ClInclude Include="ArduinoEepromAccess.h" />
+    <ClInclude Include="Brewpi.h" />
+    <ClInclude Include="BrewpiStrings.h" />
+    <ClInclude Include="Buzzer.h" />
+    <ClInclude Include="Config.h" />
+    <ClInclude Include="ConfigDefault.h" />
+    <ClInclude Include="DallasTemperature.h" />
+    <ClInclude Include="DeviceManager.h" />
+    <ClInclude Include="Display.h" />
+    <ClInclude Include="DisplayBase.h" />
+    <ClInclude Include="DisplayLcd.h" />
+    <ClInclude Include="DS2413.h" />
+    <ClInclude Include="EepromAccess.h" />
+    <ClInclude Include="EepromFormat.h" />
+    <ClInclude Include="EepromManager.h" />
+    <ClInclude Include="EepromStructs.h" />
+    <ClInclude Include="EepromTypes.h" />
+    <ClInclude Include="ESP8266mDNS.h" />
+    <ClInclude Include="ESPEepromAccess.h" />
+    <ClInclude Include="FastDigitalPin.h" />
+    <ClInclude Include="FilterCascaded.h" />
+    <ClInclude Include="FilterFixed.h" />
+    <ClInclude Include="JsonKeys.h" />
+    <ClInclude Include="Logger.h" />
+    <ClInclude Include="LogMessages.h" />
+    <ClInclude Include="Menu.h" />
+    <ClInclude Include="NullLcdDriver.h" />
+    <ClInclude Include="OLEDFourBit.h" />
+    <ClInclude Include="OneWireActuator.h" />
+    <ClInclude Include="OneWireDevices.h" />
+    <ClInclude Include="OneWireTempSensor.h" />
+    <ClInclude Include="PiLink.h" />
+    <ClInclude Include="Pins.h" />
+    <ClInclude Include="RotaryEncoder.h" />
+    <ClInclude Include="Sensor.h" />
+    <ClInclude Include="SensorArduinoPin.h" />
+    <ClInclude Include="SettingsManager.h" />
+    <ClInclude Include="Simulator.h" />
+    <ClInclude Include="SpiLcd.h" />
+    <ClInclude Include="TempControl.h" />
+    <ClInclude Include="TemperatureFormats.h" />
+    <ClInclude Include="TempSensor.h" />
+    <ClInclude Include="TempSensorBasic.h" />
+    <ClInclude Include="TempSensorDisconnected.h" />
+    <ClInclude Include="TempSensorExternal.h" />
+    <ClInclude Include="TempSensorMock.h" />
+    <ClInclude Include="Ticks.h" />
+    <ClInclude Include="TicksArduino.h" />
+    <ClInclude Include="Version.h" />
+    <ClInclude Include="__vm\.brewpi-esp8266.vsarduino.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Actuator.cpp" />
+    <ClCompile Include="ActuatorArduinoPin.cpp" />
+    <ClCompile Include="ArduinoFunctions.cpp" />
+    <ClCompile Include="Brewpi.cpp" />
+    <ClCompile Include="BrewpiStrings.cpp" />
+    <ClCompile Include="Buzzer.cpp" />
+    <ClCompile Include="DallasTemperature.cpp" />
+    <ClCompile Include="DeviceManager.cpp" />
+    <ClCompile Include="Display.cpp" />
+    <ClCompile Include="DisplayLcd.cpp" />
+    <ClCompile Include="DS2413.cpp" />
+    <ClCompile Include="EepromManager.cpp" />
+    <ClCompile Include="ESP8266mDNS.cpp" />
+    <ClCompile Include="FilterCascaded.cpp" />
+    <ClCompile Include="FilterFixed.cpp" />
+    <ClCompile Include="Logger.cpp" />
+    <ClCompile Include="Menu.cpp" />
+    <ClCompile Include="NullLcdDriver.cpp" />
+    <ClCompile Include="OLEDFourBit.cpp" />
+    <ClCompile Include="OneWireTempSensor.cpp" />
+    <ClCompile Include="PiLink.cpp" />
+    <ClCompile Include="Random.cpp" />
+    <ClCompile Include="RotaryEncoder.cpp" />
+    <ClCompile Include="Sensor.cpp" />
+    <ClCompile Include="SettingsManager.cpp" />
+    <ClCompile Include="Simulator.cpp" />
+    <ClCompile Include="SpiLcd.cpp" />
+    <ClCompile Include="TempControl.cpp" />
+    <ClCompile Include="TemperatureFormats.cpp" />
+    <ClCompile Include="TempSensor.cpp" />
+    <ClCompile Include="Ticks.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties debug.local.portname="COM3" arduino.build.auto_discover_includes="1" debug.local.portspeed="115200" />
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>
