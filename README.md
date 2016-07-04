@@ -31,3 +31,4 @@ When possible, I've broken out ESP8266 specific code using preprocessor logic. A
 
 Due to the fact that this is an unsupported board, I have had to rewrite a small portion of brewpi-script to support it. I've also merged in (some of the) changes that were proposed to the official repo late last year to support network sockets (and therefore, WiFi). As a result, to use brewpi-esp8266 you will need to also use this modified brewpi-script. 
 
+
