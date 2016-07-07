@@ -27,7 +27,17 @@ went back to using contributed libraries in favor of local copies when
 possible. To compile this project you will need to make sure you have updated
 copies of the following available in your Arduino environment:
 * OneWire
+* EEPROM (may be included with ESP8266 by default)
 * (TODO - Fill out this list, I think there are others)
+
+## Key differences from the Arduino version
+One key difference to be aware of is that unlike the Arduino the ESP8266 doesn't
+contain a dedicated EEPROM. The EEPROM emulation works perfectly for our
+purposes, but every write to the EEPROM results in the entire EEPROM being
+overwritten. This means that frequent configuration changes will cause the
+controller to wear out faster than it might on an Arduino. We're still talking
+about 100,000 write cycles so it should last for years, but this remains
+something to be aware of.
 
 
 ## A note from your friendly developer

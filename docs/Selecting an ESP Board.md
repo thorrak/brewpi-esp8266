@@ -25,7 +25,9 @@ Retailers:
 
 ### NodeMCU v2
 This is the board I initially developed this firmware with. It's larger than
-the Wemos board, but has extra pins broken out.
+the Wemos board, but has extra pins broken out. As of the time of writing, I've
+also tested flashing this board with a Raspberry Pi. It works perfectly, and
+doesn't require drivers.
 
 Retailers:
 * [Amazon](https://www.amazon.com/HiLetgo-Version-NodeMCU-Internet-Development/dp/B010O1G1ES) - $8.79 (Prime)
@@ -43,9 +45,9 @@ for hooking up hardware. If you want this form factor, go with a v2 board and
 you'll have that much more room to tinker.
 
 ### ESP-01
-This thing is the granddaddy of the ESP boards. Originally purposed for use as
+This thing is the granddaddy of the popular ESP boards. Originally purposed for use as
 a serial-to-WiFi bridge for things such as the Arduino, this is probably the
-most common board in the ESP8266 family, and the one most people have
+most common board in the ESP8266 family, and is certainly the one most people have
 familiarity with.
 
 Unfortunately, this thing also only has 2 GPIO pins, 512kb of flash, no UART
