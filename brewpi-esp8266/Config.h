@@ -198,9 +198,13 @@
 #define NODEMCU_PIN_D10 1	// Do not use - USB
 
 
+
+#define coolingPin NODEMCU_PIN_D3
+#define heatingPin NODEMCU_PIN_D4
+
+#define doorPin    NODEMCU_PIN_D5
 #define oneWirePin NODEMCU_PIN_D6  // If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
-//#define beerSensorPin    2
-//#define fridgeSensorPin  1
+
 
 // Pay attention when changing the pins for the rotary encoder.
 // They should be connected to external interrupt INT0, INT1 and INT3
@@ -209,12 +213,9 @@
 //#define rotarySwitchPin 0 // INT2
 
 
-#define coolingPin NODEMCU_PIN_D3
-#define heatingPin NODEMCU_PIN_D7
-#define doorPin    NODEMCU_PIN_D5
-
 #ifdef ESP8266
-#define ESP8266_WiFi 1
+#define ESP8266_WiFi 1			// This disables Serial and enables WiFi support 
+#define ESP8266_WiFi_Control 1	// This adds the headers for WiFi support (so you can disconnect from WiFi via serial)
 #endif
 
 

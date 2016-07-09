@@ -34,6 +34,7 @@ THE SOFTWARE.
 // - Multicast DNS: http://www.ietf.org/rfc/rfc6762.txt
 // - MDNS-SD: https://tools.ietf.org/html/rfc6763
 
+#ifdef ESP8266_WiFi_Control
 #ifndef LWIP_OPEN_SRC
 #define LWIP_OPEN_SRC
 #endif
@@ -1056,3 +1057,4 @@ void MDNSResponder::_reply(uint8_t replyMask, char * service, char *proto, uint1
 }
 
 MDNSResponder MDNS = MDNSResponder();
+#endif
