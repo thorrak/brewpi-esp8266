@@ -10,6 +10,13 @@ This project seeks to implement the BrewPi firmware onto an ESP8266 controller.
 * [Installing the Firmware](Installing the Firmware.md)
 * [Developing/Contributing](DEVELOP.md)
 
+## Expected Pinout
+* D3 - Cool
+* D4 - Heat
+* D5 - Door
+* D6 - OneWire Data
+* D7 - Buzzer *(currently unsupported)*
+
 ## Supported Features
 * OneWire Temperature Sensors
 * EEPROM configuration saving

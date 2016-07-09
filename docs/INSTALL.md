@@ -30,20 +30,20 @@ instructions below for your operating system.
 7. *Optional* - [Configure WiFi](https://www.raspberrypi.org/documentation/configuration/wireless/wireless-cli.md) on your Raspberry Pi (if needed)
 
 
-### 2. Install BrewPi using custom brewpi-tools - [[Video]]()
+### 2. Install BrewPi using custom brewpi-tools - [[Video]](http://www.youtube.com/watch?v=vUaPao_wBGI)
 
 1. Log into your BrewPi and Ddownload the custom brewpi tools. `git clone https://github.com/thorrak/brewpi-tools`.
 2. Launch the `install.sh` script as root
 3. Launch the `install-esp8266.sh` script as root
 
 
-### 3. Flash the firmware to the ESP8266 board.
+### 3. Flash the firmware to the ESP8266 board. - [[Video]](http://www.youtube.com/watch?v=vUaPao_wBGI)
 As there are a number of ways to do this (depending on your operating system,
 the board you are using, etc.) these instructions are located in a
 [different file](Installing the Firmware.md). Go read them, and come back.
 
 
-### 4. Set up the firmware
+### 4. Set up the firmware - [[Video]](http://www.youtube.com/watch?v=vUaPao_wBGI)
 Once you have flashed the firmware to the ESP8266 board, you will need to
 configure it for use. If you are using the "serial" version of the firmware
 then congratulations - you're done! For the WiFi version, you will need to
@@ -57,7 +57,7 @@ configure access to your wireless network.
 5. Click "connect"
 
 
-### 5. Configure BrewPi to use your firmware
+### 5. Configure BrewPi to use your firmware - [[Video]](http://www.youtube.com/watch?v=xtkuAVaX8JQ)
 Now that you've set up the firmware you need to point the BrewPi script at it.
 1. Log into the Raspberry Pi, and change user to brewpi (`sudo su brewpi`)
 2. Copy the default configuration file (`cp ~/settings/config.cfg.example ~/settings/config.cfg`)
@@ -85,4 +85,10 @@ step from here is hooking up hardware and giving everything a try. Good luck,
 and enjoy!
 
 
-## Post-Brewpi Installation
+## Manual Installation
+If you have already installed BrewPi but want to use the ESP8266 firmware,
+you will need to do the following:
+1. Replace the default brewpi-script with the custom brewpi-script that will work with ESP8266 devices (Located [here](https://github.com/thorrak/brewpi-script))
+2. Clone the brewpi-esp8266 firmware (this repo) into `~brewpi/`
+3. Install esptool `sudo pip install esptool --upgrade`
+4. Follow the instructions above beginning with step 3.
