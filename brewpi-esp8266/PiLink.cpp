@@ -36,7 +36,7 @@
 #include "Buzzer.h"
 #include "Display.h"
 
-#ifdef ESP8266_WiFi
+#ifdef ESP8266_WiFi_Control
 #include <ESP8266WiFi.h>          //ESP8266 Core WiFi Library
 #endif
 
@@ -75,69 +75,10 @@
         StdIO stdIO;
         #define piStream stdIO
 #elif defined(ESP8266_WiFi)
-/*class TelnetSerial : public Stream
-{
-private:
-	String inputBuf = "";
-	String outputBuf = "";
-
-public:
-	void print(char c) {}
-	void print(const char* c) {}
-	void printNewLine() {}
-	void println() {}
-
-	int read() { 
-		return -1; 
-	}
-
-	int available() { return -1; }
-	void begin(unsigned long) {}
-	size_t write(uint8_t w) { return 1; }
-	int peek() { return -1; }
-	void flush() { };
-
-	void bufferFromConnected() {
-		uint8_t i;
-		//check clients for data
-		for (i = 0; i < MAX_SRV_CLIENTS; i++) {
-			if (serverClients[i] && serverClients[i].connected()) {
-				if (serverClients[i].available()) {
-					//get data from the telnet client and push it to the UART
-					while (serverClients[i].available())
-						inputBuf.concat(serverClients[i].read());
-				}
-			}
-		}
-		nukeBufferIfDisconneted();
-		return;
-	}
-
-	void nukeBufferIfDisconneted() {
-		uint8_t i;
-		bool clientConnected = false;
-		for (i = 0; i < MAX_SRV_CLIENTS; i++)
-			if (serverClients[i] && serverClients[i].connected())
-				clientConnected = true;
-
-		if (!clientConnected) {
-			// Nuke the buffers if no clients are connected
-			inputBuf = "";
-			outputBuf = "";
-		}
-	}
-
-	operator bool() { return true; }
-};*/
-
-//static TelnetSerial telnetSerial;
-//#define piStream telnetSerial
-
 // Just use the serverClient object as it supports all the same functions as Serial
 extern WiFiServer server;
 extern WiFiClient serverClient;
 #define piStream serverClient
-
 #else
 // Not using ESP8266 WiFi
 #define piStream Serial
@@ -412,6 +353,12 @@ void PiLink::receive(void){
 			deviceManager.enumerateHardware();
 			closeListResponse();
 			break;
+
+#ifdef ESP8266_WiFi_Control
+		case 'w': // Reset WiFi settings
+			WiFi.disconnect(true);
+			break;
+#endif
 
 #if (BREWPI_DEBUG > 0)			
 		case 'Z': // zap eeprom

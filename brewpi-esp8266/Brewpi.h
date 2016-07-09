@@ -37,6 +37,12 @@
 #define BREWPI_BOARD_UNKNOWN '?'
 #define BREWPI_BOARD_ESP8266 'e'
 
+#ifdef ESP8266_WiFi
+#ifndef ESP8266_WiFi_Control
+#define ESP8266_WiFi_Control 1	// This adds the headers for WiFi support (so you can disconnect from WiFi via serial)
+#endif
+#endif
+
 /*
  * Defines global config for the brewpi project. This file is included in every file in the project to ensure conditional
  * compilation directives are recognized.
