@@ -34,6 +34,8 @@ THE SOFTWARE.
 // - Multicast DNS: http://www.ietf.org/rfc/rfc6762.txt
 // - MDNS-SD: https://tools.ietf.org/html/rfc6763
 
+#include "Brewpi.h"
+
 #ifdef ESP8266_WiFi_Control
 #ifndef LWIP_OPEN_SRC
 #define LWIP_OPEN_SRC

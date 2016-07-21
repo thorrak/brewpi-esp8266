@@ -360,6 +360,12 @@ void PiLink::receive(void){
 			break;
 #endif
 
+#ifdef ESP8266
+		case 'b': // Toggle Backlight
+			toggleBacklight = !toggleBacklight;
+			break;
+#endif
+
 #if (BREWPI_DEBUG > 0)			
 		case 'Z': // zap eeprom
 			eepromManager.zapEeprom();

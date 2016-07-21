@@ -33,7 +33,12 @@
 
 uint8_t LcdDisplay::stateOnDisplay;
 uint8_t LcdDisplay::flags;
+#if defined(BREWPI_IIC)
+// TODO: Change this. I2C address should be in config file.
+LcdDriver LcdDisplay::lcd(0x27, 20, 4);
+#else
 LcdDriver LcdDisplay::lcd;
+#endif
 
 // Constant strings used multiple times
 static const char STR_Beer_[] PROGMEM = "Beer ";
@@ -46,7 +51,14 @@ static const char STR_Wait_to_[] PROGMEM = "Wait to ";
 static const char STR__time_left[] PROGMEM = " time left";
 static const char STR_empty_string[] PROGMEM = "";
 
+#ifdef ESP8266
+bool toggleBacklight;
+#endif
+
 void LcdDisplay::init(void){
+#ifdef ESP8266
+	toggleBacklight = false;
+#endif
 	stateOnDisplay = 0xFF; // set to unknown state to force update
 	flags = LCD_FLAG_ALTERNATE_ROOM;
 	lcd.init(); // initialize LCD

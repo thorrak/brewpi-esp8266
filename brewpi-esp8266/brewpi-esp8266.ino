@@ -14,6 +14,8 @@
 
 #include <OneWire.h>
 
+#include <Wire.h>
+
 #include "Ticks.h"
 #include "Display.h"
 #include "TempControl.h"
