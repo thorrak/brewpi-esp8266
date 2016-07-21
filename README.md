@@ -11,8 +11,8 @@ This project seeks to implement the BrewPi firmware onto an ESP8266 controller.
 * [Developing/Contributing](DEVELOP.md)
 
 ## Expected Pinout
-* D1 - I2C 
-* D2 - I2C 
+* D1 - I2C SCL
+* D2 - I2C SDA
 * D3 - Cool
 * D4 - Heat
 * D5 - Door
