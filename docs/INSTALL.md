@@ -62,7 +62,7 @@ Now that you've set up the firmware you need to point the BrewPi script at it.
 1. Log into the Raspberry Pi, and change user to brewpi (`sudo su brewpi`)
 2. Copy the default configuration file (`cp ~/settings/config.cfg.example ~/settings/config.cfg`)
 3. Open the configuration file with your favorite text editor (I prefer `nano`)
-4. Update the configuration as follows:
+4. Update the configuration as follows: (Note - You will only need one of these - WiFi for the WiFi firmware, Serial for the serial firmware)
 
 ####WiFi Config:
 `wwwPath = /var/www/html`  
@@ -75,8 +75,8 @@ Note - Replace ESPXXXXXX with the name of the access point you wrote down above.
 `wwwPath = /var/www/html`  
 `port = /dev/cu.USBXXXXXXX`
 
-Note - Replace USBXXXXXXX with the name of the USB device you used when
-flashing the firmware.
+Note - Replace `cu.USBXXXXXXX` with the name of the USB device you used when
+flashing the firmware. (Probably cu.USBXXXX or ttyUSBX)
 
 ### Next Steps
 At this point you have a working BrewPi installation, a working BrewPi script,
