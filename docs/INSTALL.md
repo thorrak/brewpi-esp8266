@@ -65,14 +65,14 @@ Now that you've set up the firmware you need to point the BrewPi script at it.
 4. Update the configuration as follows:
 
 ####WiFi Config:
-`wwwPath = /var/www/html`
-`wifiHost = ESPXXXXXXX.local`
+`wwwPath = /var/www/html`  
+`wifiHost = ESPXXXXXXX.local`  
 `wifiPort = 23`
 
 Note - Replace ESPXXXXXX with the name of the access point you wrote down above.
 
 ####Serial Config
-`wwwPath = /var/www/html`
+`wwwPath = /var/www/html`  
 `port = /dev/cu.USBXXXXXXX`
 
 Note - Replace USBXXXXXXX with the name of the USB device you used when
