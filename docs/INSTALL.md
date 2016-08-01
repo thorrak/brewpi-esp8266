@@ -32,7 +32,7 @@ instructions below for your operating system.
 
 ### 2. Install BrewPi using custom brewpi-tools - [[Video]](http://www.youtube.com/watch?v=vUaPao_wBGI)
 
-1. Log into your BrewPi and Ddownload the custom brewpi tools. `git clone https://github.com/thorrak/brewpi-tools`.
+1. Log into your BrewPi and download the custom brewpi tools using this command: `git clone https://github.com/thorrak/brewpi-tools`.
 2. Launch the `install.sh` script as root
 3. Launch the `install-esp8266.sh` script as root
 
@@ -88,6 +88,7 @@ and enjoy!
 ## Manual Installation
 If you have already installed BrewPi but want to use the ESP8266 firmware,
 you will need to do the following:
+
 1. Replace the default brewpi-script with the custom brewpi-script that will work with ESP8266 devices (Located [here](https://github.com/thorrak/brewpi-script))
 2. Clone the brewpi-esp8266 firmware (this repo) into `~brewpi/`
 3. Install esptool `sudo pip install esptool --upgrade`
