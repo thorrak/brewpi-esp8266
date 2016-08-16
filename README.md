@@ -11,6 +11,8 @@ This project seeks to implement the BrewPi firmware onto an ESP8266 controller.
 * [Developing/Contributing](DEVELOP.md)
 
 ## Expected Pinout
+* D1 - I2C SCL
+* D2 - I2C SDA
 * D3 - Cool
 * D4 - Heat
 * D5 - Door
@@ -23,9 +25,9 @@ This project seeks to implement the BrewPi firmware onto an ESP8266 controller.
 * Relay
 * WiFi Soft-AP Configuration
 * OTA (WiFi) connection to BrewPi 
+* I2C LCD (20x4) Screen (Currently I2C Address 0x27 only)
 
 ## Currently Unsupported/Untested
-* LCD Support
 * Rotary Encoder Support
 * Door Sensor Support (Note - May work, untested)
 * Buzzer Support
