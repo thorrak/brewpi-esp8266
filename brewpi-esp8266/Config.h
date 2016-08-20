@@ -189,7 +189,7 @@
 #define NODEMCU_PIN_D0 16	// No interrupt, do not use for rotary encoder
 #define NODEMCU_PIN_D1 5	// Generally used for I2C
 #define NODEMCU_PIN_D2 4	// Generally used for I2C
-#define NODEMCU_PIN_D3 0
+#define NODEMCU_PIN_D3 0	// Has some degree of noise at startup
 #define NODEMCU_PIN_D4 2    // Also controls the LED on the ESP8266 module
 #define NODEMCU_PIN_D5 14
 #define NODEMCU_PIN_D6 12
@@ -201,11 +201,19 @@
 
 
 
-#define coolingPin NODEMCU_PIN_D3
+/*#define coolingPin NODEMCU_PIN_D3
 #define heatingPin NODEMCU_PIN_D4
 
 #define doorPin    NODEMCU_PIN_D5
 #define oneWirePin NODEMCU_PIN_D6  // If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
+*/
+
+#define heatingPin NODEMCU_PIN_D0
+#define coolingPin NODEMCU_PIN_D5
+
+#define oneWirePin NODEMCU_PIN_D6  // If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
+#define doorPin    NODEMCU_PIN_D7
+
 
 
 // Pay attention when changing the pins for the rotary encoder.
@@ -240,3 +248,5 @@
 #define BREWPI_INVERT_ACTUATORS 0
 
 #define BUFFER_PILINK_PRINTS 1
+
+#define FORCE_DEVICE_DEFAULTS 1	 // Locks Chamber 1/Beer 1

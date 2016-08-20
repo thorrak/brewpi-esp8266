@@ -379,6 +379,15 @@ void DeviceManager::parseDeviceDefinition()
 	
 	if (!inRangeInt8(dev.id, 0, MAX_DEVICE_SLOT))			// no device id given, or it's out of range, can't do anything else.
 		return;
+
+#ifdef FORCE_DEVICE_DEFAULTS
+	// If FORCE_DEVICE_DEFAULTS is set, overwrite the chamber/beer number to prevent user error.
+	dev.chamber = 1;
+	if (dev.deviceFunction >= 9 && dev.deviceFunction <= 15)
+		dev.beer = 1;
+	else
+		dev.beer = 0;
+#endif
 	
 	// save the original device so we can revert
 	DeviceConfig target;
@@ -387,10 +396,12 @@ void DeviceManager::parseDeviceDefinition()
 	// todo - should ideally check if the eeprom is correctly initialized.
 	eepromManager.fetchDevice(original, dev.id);
 	memcpy(&target, &original, sizeof(target));
-	
+
+	/*
 	piLink.print("Dev Chamber: %d, Dev Beer: %d, Dev Function: %d, Dev Hardware: %d, Dev PinNr: %d\r\n", dev.chamber, dev.beer, dev.deviceFunction, dev.deviceHardware, dev.pinNr);
 	piLink.print("target Chamber: %d, target Beer: %d, target Function: %d, target Hardware: %d, target PinNr: %d\r\n", target.chamber, 
 		target.beer, target.deviceFunction, target.deviceHardware, target.hw.pinNr);
+	*/
 
 	assignIfSet(dev.chamber, &target.chamber);
 	assignIfSet(dev.beer, &target.beer);
