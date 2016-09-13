@@ -1,5 +1,18 @@
 # BrewPi ESP8266 PCB Information
 
+Four different versions of the support PCB are listed here.  Each provide different funtionality and/or form factors:
+
+*   No LCD Support, no buzzer, with screw connectors, and through-hole components
+*   LCD Support with screw connectors, through-hole components, and a SparkFun-based level converter sub-board
+*   LCD Support with DuPont connectors, through-hole components, and a SparkFun-based level converter sub-board
+*   LCD Support with DuPont connectors, and surface-mount level converter components
+
+You may either purchase the boards using the links provided through pcbs.io, or you may download and use the Eagle files provided with a board supplier of your choice.  If you use the pcbs.io links, Thorakk will receive a smal credit on the site. 
+
+The BOM links provided are intended to serve as examples of the parts needed and are not the only place to source the parts listed.  Generally speaking, AliExpress is less expensive for parts.  The trade-off is that sometimes you are buying 100 at a time, and in most cases you are waiting for shipping.  Mouser or other project part suppliers will probably have these parts as well.
+
+Here are the boards, files, and BoM's:
+
 ## No LCD Support, no buzzer, with screw connectors, and through-hole components.
 
 [Purchase Boards](https://pcbs.io/share/zMGb8)  
@@ -16,8 +29,7 @@ Eagle Files:
 1x [RJ-11 Jack](https://www.aliexpress.com/item/RJ11-socket-outlet-90-degree-6-core-crystal-head-95001-6P6C-black-base-HXDD2/32685158354.html)  
 1x [WeMos D1 Mini ESP8266 board](https://www.aliexpress.com/store/product/D1-mini-Mini-NodeMcu-4M-bytes-Lua-WIFI-Internet-of-Things-development-board-based-ESP8266/1331105_32529101036.html)
 
-##   
-LCD Support with DuPont connectors, and surface-mount level converter components.
+## LCD Support with DuPont connectors, and surface-mount level converter components.
 
 [Purchase Boards](https://pcbs.io/share/rJA3K)  
 
@@ -37,8 +49,7 @@ Eagle Files:
 1x [WeMos D1 Mini ESP8266 board](https://www.aliexpress.com/store/product/D1-mini-Mini-NodeMcu-4M-bytes-Lua-WIFI-Internet-of-Things-development-board-based-ESP8266/1331105_32529101036.html)  
 1x [LCD 20x4 I2C LCD Screen](https://www.aliexpress.com/item/Free-shipping-LCD-module-Blue-screen-IIC-I2C-2004-5V-20X4-LCD-board-provides-library-files/1873368596.html)
 
-##   
-LCD Support with DuPont connectors, through-hole components, and a SparkFun-based level converter sub-board.
+## LCD Support with DuPont connectors, through-hole components, and a SparkFun-based level converter sub-board.
 
 [Purchase Boards](https://pcbs.io/share/46AL1)   
 
@@ -58,8 +69,7 @@ Eagle Files:
 1x [WeMos D1 Mini ESP8266 board](https://www.aliexpress.com/store/product/D1-mini-Mini-NodeMcu-4M-bytes-Lua-WIFI-Internet-of-Things-development-board-based-ESP8266/1331105_32529101036.html)  
 1x [LCD 20x4 I2C LCD Screen](https://www.aliexpress.com/item/Free-shipping-LCD-module-Blue-screen-IIC-I2C-2004-5V-20X4-LCD-board-provides-library-files/1873368596.html)
 
-##   
-LCD Support with screw connectors, through-hole components, and a SparkFun-based level converter sub-board.
+## LCD Support with screw connectors, through-hole components, and a SparkFun-based level converter sub-board.
 
 [Purchase Boards](https://pcbs.io/share/46AR1)  
 
