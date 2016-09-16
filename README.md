@@ -5,10 +5,11 @@ An implementation of the BrewPi device code on an ESP8266 (No arduino needed!) /
 This project seeks to implement the BrewPi firmware onto an ESP8266 controller.
 
 ### Documentation:
-* [Selecting an ESP8266 Board](Selecting an ESP Board.md)
-* [Full Installation Instructions](INSTALL.md) (including custom brewpi-script)
-* [Installing the Firmware](Installing the Firmware.md)
-* [Developing/Contributing](DEVELOP.md)
+* [Selecting an ESP8266 Board](docs/Selecting an ESP Board.md)
+* [Full Installation Instructions](docs/INSTALL.md) (including custom brewpi-script)
+* [Installing the Firmware](docs/Installing the Firmware.md)
+* [Developing/Contributing](docs/DEVELOP.md)
+* [PCB Information](docs/PCB Information.md) - PCB files, ordering and BOMs
 
 ## Expected Pinout *(NOTE - CHANGED IN v0.3!)*
 * D0 - Heat
