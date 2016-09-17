@@ -33,8 +33,8 @@ instructions below for your operating system.
 ### 2. Install BrewPi using custom brewpi-tools - [[Video]](http://www.youtube.com/watch?v=vUaPao_wBGI)
 
 1. Log into your BrewPi and download the custom brewpi tools using this command: `git clone https://github.com/thorrak/brewpi-tools`.
-2. Launch the `install.sh` script as root
-3. Launch the `install-esp8266.sh` script as root
+2. Execute `sudo brewpi-tools/install.sh`
+3. Execute `sudo brewpi-tools/install-esp8266.sh`
 
 
 ### 3. Flash the firmware to the ESP8266 board. - [[Video]](http://www.youtube.com/watch?v=vUaPao_wBGI)
@@ -49,34 +49,41 @@ configure it for use. If you are using the "serial" version of the firmware
 then congratulations - you're done! For the WiFi version, you will need to
 configure access to your wireless network.
 
-1. From a wifi-enabled device (computer, phone, etc.) look for a new access point named "ESPXXXXXXX" where XXXXX is a number.
-2. Connect to this access point and open a web browser. (Some devices may automatically open one)
-3. **Write down the access point name. (ESPXXXXXX) You will need this later.**
-3. Click "Scan for WiFi"
-4. Select your wireless network & enter your password
-5. Click "connect"
+**Note:  You will lose connectivity to the Internet following these instructions. Ensure you are either on a second device, or you have these instructions printed out.**
+
+1.	From a wifi-enabled device (computer, phone, etc.) look for a new access point named "ESPXXXXXXX" where XXXXX is a number.
+2.	**Write down the access point name (ESPXXXXXX).  You will need this later.**
+3.	Connect to this access point and open a web browser to any page.  Some devices may automatically open a web browser.  
+4.	The ESP8266 will display its web page.
+5.	Click "Configure WiFi"
+6.	Select your local wireless network & enter your password
+7.	Click "Save"
+
+At this point you may re-connect to your regular Wi-Fi.
 
 
 ### 5. Configure BrewPi to use your firmware - [[Video]](http://www.youtube.com/watch?v=xtkuAVaX8JQ)
 Now that you've set up the firmware you need to point the BrewPi script at it.
-1. Log into the Raspberry Pi, and change user to brewpi (`sudo su brewpi`)
-2. Copy the default configuration file (`cp ~/settings/config.cfg.example ~/settings/config.cfg`)
-3. Open the configuration file with your favorite text editor (I prefer `nano`)
-4. Update the configuration as follows: (Note - You will only need one of these - WiFi for the WiFi firmware, Serial for the serial firmware)
+
+1. Copy the default configuration file: `sudo cp /home/brewpi/settings/config.cfg.example /home/brewpi/settings/config.cfg`
+2. Open the configuration file with your favorite text editor (I prefer `nano`):  `sudo nano /home/brewpi/settings/config.cfg`
+3. Update the configuration as follows (Note - You will only need one of these - WiFi for the WiFi firmware, Serial for the serial firmware):
 
 ####WiFi Config:
 `wwwPath = /var/www/html`  
 `wifiHost = ESPXXXXXXX.local`  
 `wifiPort = 23`
 
-Note - Replace ESPXXXXXX with the name of the access point you wrote down above.
+**Note - Replace ESPXXXXXX with the name of the access point you wrote down above.**
+
+... or ...
 
 ####Serial Config
 `wwwPath = /var/www/html`  
 `port = /dev/cu.USBXXXXXXX`
 
-Note - Replace `cu.USBXXXXXXX` with the name of the USB device you used when
-flashing the firmware. (Probably cu.USBXXXX or ttyUSBX)
+**Note - Replace `cu.USBXXXXXXX` with the name of the USB device you used when
+flashing the firmware. (Probably cu.USBXXXX or ttyUSBX)**
 
 ### Next Steps
 At this point you have a working BrewPi installation, a working BrewPi script,
