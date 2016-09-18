@@ -84,6 +84,7 @@ public:
 	void backlight();
 	void autoscroll();
 	void noAutoscroll();
+	void scan_address();
 
 	void createChar(uint8_t, uint8_t[]);
 	void setCursor(uint8_t, uint8_t);
