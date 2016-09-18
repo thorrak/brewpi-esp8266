@@ -34,8 +34,7 @@
 uint8_t LcdDisplay::stateOnDisplay;
 uint8_t LcdDisplay::flags;
 #if defined(BREWPI_IIC)
-// TODO: Change this. I2C address should be in config file.
-LcdDriver LcdDisplay::lcd(0x27, 20, 4);
+LcdDriver LcdDisplay::lcd(0x27, 20, 4);  // NOTE - The address here doesn't get used. Address is autodetected at startup.
 #else
 LcdDriver LcdDisplay::lcd;
 #endif

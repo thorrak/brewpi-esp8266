@@ -46,21 +46,39 @@ extern "C" {
 
 IIClcd::IIClcd(uint8_t lcd_Addr, uint8_t lcd_cols, uint8_t lcd_rows)
 {
-	_Addr = lcd_Addr;
+	_Addr = lcd_Addr;  // This now gets ignored
 	_cols = lcd_cols;
 	_rows = lcd_rows;
 	_backlightval = LCD_NOBACKLIGHT;
 }
+
+void IIClcd::scan_address() {
+//	Wire.begin();
+	for (byte i = 8; i < 120; i++)
+	{
+		Wire.beginTransmission(i);
+		if (Wire.endTransmission() == 0)
+		{
+			// We found the i2c device address. 
+			_Addr = i;
+			i = 120;
+			delay(1);
+		}
+	}
+}
+
 
 void IIClcd::init() {
 	init_priv();
 	_backlightTime = 0;
 }
 
+
 void IIClcd::init_priv()
 {
 #ifdef ESP8266
 	Wire.begin(IIC_SDA, IIC_SCL);
+	scan_address();
 #else
 	Wire.begin();
 #endif
@@ -326,6 +344,7 @@ void IIClcd::printSpacesToRestOfLine(void) {
 		print(' ');
 	}
 }
+
 
 #ifndef print_P_inline
 void IIClcd::print_P(const char * str) { // print a string stored in PROGMEM
