@@ -24,16 +24,7 @@
     <ClInclude Include="Ticks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TicksArduino.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Version.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Actuator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ActuatorArduinoPin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ActuatorAutoOff.h">
@@ -117,12 +108,6 @@
     <ClInclude Include="OLEDFourBit.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="OneWireActuator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="OneWireDevices.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="OneWireTempSensor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -142,9 +127,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SettingsManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Simulator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SpiLcd.h">
@@ -177,6 +159,150 @@
     <ClInclude Include="EepromStructs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="IicLcd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ModeControl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Platform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="fixed_point.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="fixstl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="str_functions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Control.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Pid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ActuatorInterfaces.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ControllerMixins.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="json_adapter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="json_lexer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stringer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="platform_selector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="json_ex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="convert.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TempSensorFallback.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="defaultDevices.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ActuatorMocks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SetPoint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ActuatorTimeLimited.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ActuatorForwarder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TicksImpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TicksWiring.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ActuatorSetPoint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ActuatorPwm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ActuatorMutexDriver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ActuatorMutexGroup.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ActuatorPin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ActuatorOneWire.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OneWireSwitch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OneWireAddress.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ValveController.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DS2408.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Nameable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ActuatorInstallHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="json_writer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DisplayLcdImpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Board.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TicksDeclaration.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PiLinkHandlers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EepromAccessImpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SensorPin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Arduino.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AppConfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AppConfigDefault.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OneWirePin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Menu.cpp">
@@ -194,19 +320,10 @@
     <ClCompile Include="PiLink.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Random.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="RotaryEncoder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Sensor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SettingsManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Simulator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SpiLcd.cpp">
@@ -216,21 +333,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TemperatureFormats.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TempSensor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Ticks.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Actuator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ActuatorArduinoPin.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ArduinoFunctions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Brewpi.cpp">
@@ -270,6 +372,75 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ESP8266mDNS.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="IicLcd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Control.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Pid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ControllerMixins.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TempSensorFallback.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="defaultDevices.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SetPoint.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ActuatorTimeLimited.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TicksWiring.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ActuatorPwm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ActuatorMutexGroup.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ActuatorPin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OneWireSwitch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OneWireAddress.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ValveController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DS2408.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ActuatorInstallHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RotaryEncoderBase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Platform.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Board.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="str_functions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OneWirePin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

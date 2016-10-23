@@ -1,33 +1,35 @@
 /*
- * Copyright 2012 BrewPi/Elco Jacobs.
- *
- * This file is part of BrewPi.
- * 
- * BrewPi is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * BrewPi is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
- */
+* Copyright 2012 BrewPi/Elco Jacobs.
+*
+* This file is part of BrewPi.
+*
+* BrewPi is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* BrewPi is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
-/* This is an adaptation of the Arduino LiquidCrystal library for the 
- * NHD-0420DZW-AY5-ND OLED display, made by NewHaven. The display should be HD44780 compatible but isn't.
- * Differences are some of the control commands (cursor on/off), language setting and especially initialization sequence.
- */ 
+/* This is an adaptation of the Arduino LiquidCrystal library for the
+* NHD-0420DZW-AY5-ND OLED display, made by NewHaven. The display should be HD44780 compatible but isn't.
+* Differences are some of the control commands (cursor on/off), language setting and especially initialization sequence.
+*/
 
 #ifndef OLEDFourBit_h
 #define OLEDFourBit_h
 
+#if defined(BREWPI_OLED)
+
 #include <inttypes.h>
 #include "Print.h"
-#include "Pins.h"
+#include "Board.h"
 
 // commands
 #define LCD_CLEARDISPLAY 0x01
@@ -68,8 +70,8 @@
 #define LCD_WESTERN_EUROPEAN_2 0x03
 
 class OLEDFourBit : public Print {
-	public:
-	OLEDFourBit(){};
+public:
+	OLEDFourBit() {};
 
 #if BREWPI_STATIC_CONFIG==BREWPI_SHIELD_DIY
 	void init() {
@@ -105,17 +107,13 @@ class OLEDFourBit : public Print {
 
 	size_t print_P(const char * str) { // print a string stored in PROGMEM
 		char buf[21]; // create buffer in RAM
-#if defined(ARDUINO_ARCH_ESP8266)
-		strlcpy(buf, str, 20); // ESP8266 has no concept of PROGMEM - we're good
-#else
 		strlcpy_P(buf, str, 20); // copy string to RAM
-#endif
 		return print(buf); // print from RAM
 	}
-	
+
 	// copy a line from the shadow copy to a string buffer and correct the degree sign
-	void getLine(uint8_t lineNumber, char * buffer); 
-	
+	void getLine(uint8_t lineNumber, char * buffer);
+
 	void readContent(void); // read the content from the display to the shadow copy buffer
 
 	void command(uint8_t);
@@ -124,14 +122,14 @@ class OLEDFourBit : public Print {
 	void setBufferOnly(bool bufferOnly) {}
 
 	void printSpacesToRestOfLine();
-	
-	void resetBacklightTimer(void){ /* not implemented for OLED, doesn't have a backlight. */ }
 
-	void updateBacklight(void){ /* not implemented for OLED, doesn't have a backlight. */ }
+	void resetBacklightTimer(void) { /* not implemented for OLED, doesn't have a backlight. */ }
+
+	void updateBacklight(void) { /* not implemented for OLED, doesn't have a backlight. */ }
 
 	using Print::write;
 
-	private:
+private:
 	void send(uint8_t, uint8_t);
 	void write4bits(uint8_t);
 	void pulseEnable();
@@ -150,11 +148,13 @@ class OLEDFourBit : public Print {
 	uint8_t _currline;
 	uint8_t _currpos;
 	uint8_t _numlines;
-	
+
 	char content[4][21]; // always keep a copy of the display content in this variable
-	
+
 	bool	_bufferOnly;
 
 };
+
+#endif
 
 #endif

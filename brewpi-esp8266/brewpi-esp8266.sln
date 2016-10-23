@@ -5,6 +5,10 @@ VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "brewpi-esp8266", "brewpi-esp8266.vcxproj", "{A71FCFB3-6902-4FB6-8885-C44522E8EBD5}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wifi-reset", "C:\Users\John Beeler\Documents\Arduino\wifi-reset\wifi-reset.vcxproj", "{8A3EC75D-4825-4D87-9975-3102C13AC544}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ram-test", "C:\Users\John Beeler\Documents\Arduino\ram-test\ram-test.vcxproj", "{86A6C20F-0047-4DDB-8DE6-71F52138AB19}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +25,22 @@ Global
 		{A71FCFB3-6902-4FB6-8885-C44522E8EBD5}.Release|x64.Build.0 = Release|x64
 		{A71FCFB3-6902-4FB6-8885-C44522E8EBD5}.Release|x86.ActiveCfg = Release|Win32
 		{A71FCFB3-6902-4FB6-8885-C44522E8EBD5}.Release|x86.Build.0 = Release|Win32
+		{8A3EC75D-4825-4D87-9975-3102C13AC544}.Debug|x64.ActiveCfg = Debug|x64
+		{8A3EC75D-4825-4D87-9975-3102C13AC544}.Debug|x64.Build.0 = Debug|x64
+		{8A3EC75D-4825-4D87-9975-3102C13AC544}.Debug|x86.ActiveCfg = Debug|Win32
+		{8A3EC75D-4825-4D87-9975-3102C13AC544}.Debug|x86.Build.0 = Debug|Win32
+		{8A3EC75D-4825-4D87-9975-3102C13AC544}.Release|x64.ActiveCfg = Release|x64
+		{8A3EC75D-4825-4D87-9975-3102C13AC544}.Release|x64.Build.0 = Release|x64
+		{8A3EC75D-4825-4D87-9975-3102C13AC544}.Release|x86.ActiveCfg = Release|Win32
+		{8A3EC75D-4825-4D87-9975-3102C13AC544}.Release|x86.Build.0 = Release|Win32
+		{86A6C20F-0047-4DDB-8DE6-71F52138AB19}.Debug|x64.ActiveCfg = Debug|x64
+		{86A6C20F-0047-4DDB-8DE6-71F52138AB19}.Debug|x64.Build.0 = Debug|x64
+		{86A6C20F-0047-4DDB-8DE6-71F52138AB19}.Debug|x86.ActiveCfg = Debug|Win32
+		{86A6C20F-0047-4DDB-8DE6-71F52138AB19}.Debug|x86.Build.0 = Debug|Win32
+		{86A6C20F-0047-4DDB-8DE6-71F52138AB19}.Release|x64.ActiveCfg = Release|x64
+		{86A6C20F-0047-4DDB-8DE6-71F52138AB19}.Release|x64.Build.0 = Release|x64
+		{86A6C20F-0047-4DDB-8DE6-71F52138AB19}.Release|x86.ActiveCfg = Release|Win32
+		{86A6C20F-0047-4DDB-8DE6-71F52138AB19}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

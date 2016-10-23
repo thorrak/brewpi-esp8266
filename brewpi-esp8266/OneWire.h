@@ -1,14 +1,4 @@
-#ifndef OneWire_h
-#define OneWire_h
-
-#include <inttypes.h>
-
-#if ARDUINO >= 100
-#include "Arduino.h"       // for delayMicroseconds, digitalPinToBitMask, etc
-#else
-#include "WProgram.h"      // for delayMicroseconds
-#include "pins_arduino.h"  // for digitalPinToBitMask, etc
-#endif
+#pragma once
 
 // You can exclude certain features from OneWire.  In theory, this
 // might save some space.  In practice, the compiler automatically
@@ -45,105 +35,66 @@
 #define ONEWIRE_CRC16 1
 #endif
 
+#ifndef FALSE
 #define FALSE 0
+#endif
+#ifndef TRUE
 #define TRUE  1
-
-// Platform specific I/O definitions
-
-#if defined(__AVR__)
-#define PIN_TO_BASEREG(pin)             (portInputRegister(digitalPinToPort(pin)))
-#define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
-#define IO_REG_TYPE uint8_t
-#define IO_REG_ASM asm("r30")
-#define DIRECT_READ(base, mask)         (((*(base)) & (mask)) ? 1 : 0)
-#define DIRECT_MODE_INPUT(base, mask)   ((*((base)+1)) &= ~(mask))
-#define DIRECT_MODE_OUTPUT(base, mask)  ((*((base)+1)) |= (mask))
-#define DIRECT_WRITE_LOW(base, mask)    ((*((base)+2)) &= ~(mask))
-#define DIRECT_WRITE_HIGH(base, mask)   ((*((base)+2)) |= (mask))
-
-#elif defined(__MK20DX128__)
-#define PIN_TO_BASEREG(pin)             (portOutputRegister(pin))
-#define PIN_TO_BITMASK(pin)             (1)
-#define IO_REG_TYPE uint8_t
-#define IO_REG_ASM
-#define DIRECT_READ(base, mask)         (*((base)+512))
-#define DIRECT_MODE_INPUT(base, mask)   (*((base)+640) = 0)
-#define DIRECT_MODE_OUTPUT(base, mask)  (*((base)+640) = 1)
-#define DIRECT_WRITE_LOW(base, mask)    (*((base)+256) = 1)
-#define DIRECT_WRITE_HIGH(base, mask)   (*((base)+128) = 1)
-
-#elif defined(__SAM3X8E__)
-// Arduino 1.5.1 may have a bug in delayMicroseconds() on Arduino Due.
-// http://arduino.cc/forum/index.php/topic,141030.msg1076268.html#msg1076268
-// If you have trouble with OneWire on Arduino Due, please check the
-// status of delayMicroseconds() before reporting a bug in OneWire!
-#define PIN_TO_BASEREG(pin)             (&(digitalPinToPort(pin)->PIO_PER))
-#define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
-#define IO_REG_TYPE uint32_t
-#define IO_REG_ASM
-#define DIRECT_READ(base, mask)         (((*((base)+15)) & (mask)) ? 1 : 0)
-#define DIRECT_MODE_INPUT(base, mask)   ((*((base)+5)) = (mask))
-#define DIRECT_MODE_OUTPUT(base, mask)  ((*((base)+4)) = (mask))
-#define DIRECT_WRITE_LOW(base, mask)    ((*((base)+13)) = (mask))
-#define DIRECT_WRITE_HIGH(base, mask)   ((*((base)+12)) = (mask))
-#ifndef PROGMEM
-#define PROGMEM
-#endif
-#ifndef pgm_read_byte
-#define pgm_read_byte(addr) (*(const uint8_t *)(addr))
 #endif
 
-#elif defined(__PIC32MX__)
-#define PIN_TO_BASEREG(pin)             (portModeRegister(digitalPinToPort(pin)))
-#define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
-#define IO_REG_TYPE uint32_t
-#define IO_REG_ASM
-#define DIRECT_READ(base, mask)         (((*(base+4)) & (mask)) ? 1 : 0)  //PORTX + 0x10
-#define DIRECT_MODE_INPUT(base, mask)   ((*(base+2)) = (mask))            //TRISXSET + 0x08
-#define DIRECT_MODE_OUTPUT(base, mask)  ((*(base+1)) = (mask))            //TRISXCLR + 0x04
-#define DIRECT_WRITE_LOW(base, mask)    ((*(base+8+1)) = (mask))          //LATXCLR  + 0x24
-#define DIRECT_WRITE_HIGH(base, mask)   ((*(base+8+2)) = (mask))          //LATXSET + 0x28
-
-#elif defined(ARDUINO_ARCH_ESP8266)
-#define PIN_TO_BASEREG(pin)             ((volatile uint32_t*) GPO)
-#define PIN_TO_BITMASK(pin)             (1 << pin)
-#define IO_REG_TYPE uint32_t
-#define IO_REG_ASM
-#define DIRECT_READ(base, mask)         ((GPI & (mask)) ? 1 : 0)    //GPIO_IN_ADDRESS
-#define DIRECT_MODE_INPUT(base, mask)   (GPE &= ~(mask))            //GPIO_ENABLE_W1TC_ADDRESS
-#define DIRECT_MODE_OUTPUT(base, mask)  (GPE |= (mask))             //GPIO_ENABLE_W1TS_ADDRESS
-#define DIRECT_WRITE_LOW(base, mask)    (GPOC = (mask))             //GPIO_OUT_W1TC_ADDRESS
-#define DIRECT_WRITE_HIGH(base, mask)   (GPOS = (mask))             //GPIO_OUT_W1TS_ADDRESS
-
-#else
-#error "Please define I/O register types here"
+#ifndef ONEWIRE_PARASITE_SUPPORT
+#define ONEWIRE_PARASITE_SUPPORT 1
 #endif
 
+#include <inttypes.h>
+#include "OneWireImpl.h"
 
-class OneWire
-{
+class OneWire {
+public:
+	// Argument is PinNr for OneWirePin device, address for bus master IC
+
+	OneWire(uint8_t pa) : driver(pa) {
+		// base class OneWireLowLevelInterface configures pin or bus master IC
+#if ONEWIRE_SEARCH
+		reset_search();
+#endif
+	}
+
 private:
-	IO_REG_TYPE bitmask;
-	volatile IO_REG_TYPE *baseReg;
-	uint8_t pin;
-
 #if ONEWIRE_SEARCH
 	// global search state
-	unsigned char ROM_NO[8];
+	uint8_t ROM_NO[8];
 	uint8_t LastDiscrepancy;
 	uint8_t LastFamilyDiscrepancy;
 	uint8_t LastDeviceFlag;
+	OneWireDriver driver;
 #endif
 
 public:
-	OneWire(uint8_t pin, bool pullup = true);
+	// wrappers for low level functions
+	bool init() {
+		return driver.init();
+	}
+	uint8_t read() {
+		return driver.read();
+	}
+	void write(uint8_t b, uint8_t power = 0) {
+		driver.write(b, power);
+	}
+	void write_bit(uint8_t bit) {
+		driver.write_bit(bit);
+	}
+	uint8_t read_bit() {
+		return driver.read_bit();
+	}
+	uint8_t pinNr() {
+		return driver.pinNr(); // return pin number or lower bits of I2C address
+	}
+	bool reset() {
+		return driver.reset();
+	}
 
-	uint8_t pinNr() const { return pin; }
-
-	// Perform a 1-Wire reset cycle. Returns 1 if a device responds
-	// with a presence pulse.  Returns 0 if there is no device or the
-	// bus is shorted or otherwise held low for more than 250uS
-	uint8_t reset(void);
+	// high level functions
 
 	// Issue a 1-Wire rom select command, you do the reset first.
 	void select(const uint8_t rom[8]);
@@ -151,32 +102,9 @@ public:
 	// Issue a 1-Wire rom skip command, to address all on bus.
 	void skip(void);
 
-	// Write a byte. If 'power' is one then the wire is held high at
-	// the end for parasitically powered devices. You are responsible
-	// for eventually depowering it by calling depower() or doing
-	// another read or write.
-	void write(uint8_t v, uint8_t power = 0);
-
-	void write_bytes(const uint8_t *buf, uint16_t count, bool power = 0);
-
-	// Read a byte.
-	uint8_t read(void);
+	void write_bytes(const uint8_t *buf, uint16_t count);
 
 	void read_bytes(uint8_t *buf, uint16_t count);
-
-	// Write a bit. The bus is always left powered at the end, see
-	// note in write() about that.
-	void write_bit(uint8_t v);
-
-	// Read a bit.
-	uint8_t read_bit(void);
-
-	// Stop forcing power onto the bus. You only need to do this if
-	// you used the 'power' flag to write() or used a write_bit() call
-	// and aren't about to do another read or write. You would rather
-	// not leave this powered if you don't have to, just in case
-	// someone shorts your bus.
-	void depower(void);
 
 #if ONEWIRE_SEARCH
 	// Clear the search state so that if will start from the beginning again.
@@ -239,5 +167,3 @@ public:
 #endif
 #endif
 };
-
-#endif

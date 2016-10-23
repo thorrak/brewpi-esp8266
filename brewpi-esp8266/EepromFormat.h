@@ -1,22 +1,22 @@
 /*
- * Copyright 2013 BrewPi/Elco Jacobs.
- * Copyright 2013 Matthew McGowan
- *
- * This file is part of BrewPi.
- * 
- * BrewPi is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * BrewPi is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
- */
+* Copyright 2013 BrewPi/Elco Jacobs.
+* Copyright 2013 Matthew McGowan
+*
+* This file is part of BrewPi.
+*
+* BrewPi is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* BrewPi is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #pragma once
 
@@ -24,35 +24,35 @@
 #include "DeviceManager.h"
 #include "TempControl.h"
 
-#define MAX_EEPROM_SIZE_LIMIT 1024
+
 
 struct ChamberSettings
 {
 	ControlConstants cc;
-	byte reserved[1];	// was 3, but added pidMax
+	uint8_t reserved[1];	// was 3, but added pidMax
 };
 
 struct BeerBlock {
 	ControlSettings cs;
-	byte reserved[2];
+	uint8_t reserved[2];
 };
 
 struct ChamberBlock
 {
-	static const uint8_t MAX_BEERS = 6;	
-	ChamberSettings chamberSettings;	
-	BeerBlock		beer[MAX_BEERS];	
+	static const uint8_t MAX_BEERS = 2;
+	ChamberSettings chamberSettings;
+	BeerBlock   beer[MAX_BEERS];
 };
 
 struct EepromFormat
 {
-	static const uint16_t MAX_EEPROM_SIZE = MAX_EEPROM_SIZE_LIMIT;
-	static const uint8_t MAX_CHAMBERS = 4;
+	static const uint16_t MAX_EEPROM_SIZE = 1024;
+	static const uint8_t MAX_CHAMBERS = 1;
 	static const uint8_t MAX_DEVICES = MAX_DEVICE_SLOT;
 
-	byte version;
-	byte numChambers;		// todo - remove this - and increase reserved space.
-	byte reserved[4];	
+	uint8_t version;
+	uint8_t numChambers;		// todo - remove this - and increase reserved space.
+	uint8_t reserved[4];
 	ChamberBlock chambers[MAX_CHAMBERS];
 	DeviceConfig devices[MAX_DEVICES];
 };
@@ -70,25 +70,27 @@ void eepromSizeCheck() {
 }
 
 
-/**  
- * If the eeprom data is not initialized or is not the same version as expected, all chambers go until the valid data is provided. This is done by making the default mode offline. 
- * The external script will either reset the eeprom settings or manage the upgrade between versions. 
- * Note that this is typically only necessary after flashing new firmware, which is usually watched by an operator.
- * If the arduino restarts after a power failure, the settings will have been upgraded
- * and operation can continue from the saved settings.
- */
+/**
+* If the eeprom data is not initialized or is not the same version as expected, all chambers go until the valid data is provided. This is done by making the default mode offline.
+* The external script will either reset the eeprom settings or manage the upgrade between versions.
+* Note that this is typically only necessary after flashing new firmware, which is usually watched by an operator.
+* If the arduino restarts after a power failure, the settings will have been upgraded
+* and operation can continue from the saved settings.
+*/
 
 /*
- * Increment this value each time a change is made that is not backwardly-compatible.
- * Either the eeprom will be reset to defaults, or external code will re-establish the values via the piLink interface. 
- */
-#define EEPROM_FORMAT_VERSION 4
+* Increment this value each time a change is made that is not backwardly-compatible.
+* Either the eeprom will be reset to defaults, or external code will re-establish the values via the piLink interface.
+*/
+#define EEPROM_FORMAT_VERSION 8
 
 /*
- * Version history:
- *
- * rev 1: static config (original avr code)
- * rev 2: initial version dynaconfig
- * rev 3: deactivate flag in DeviceConfig, and additinoal padding to allow for some future expansion.
- * rev 4: added padding at start and reduced device count to 16. We can always increase later.
- */
+* Version history:
+*
+* rev 1: static config (original avr code)
+* rev 2: initial version dynaconfig
+* rev 3: deactivate flag in DeviceConfig, and additinoal padding to allow for some future expansion.
+* rev 4: added padding at start and reduced device count to 16. We can always increase later.
+* rev 5: PWM actuators alpha/temporary release. Changes in control constants, control variables. Removed peak detection and added PWM settings.
+* rev 6: Entirely new control structure, new temp format, new actuator classes, etc (2-11-2015)
+*/

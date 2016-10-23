@@ -5,7 +5,7 @@
 	        all non-arduino files created by visual micro and all visual studio project or solution files can be freely deleted and are not required to compile a sketch (do not delete your own code!).
 	        note: debugger breakpoints are stored in '.sln' or '.asln' files, knowledge of last uploaded breakpoints is stored in the upload.vmps.xml file. Both files are required to continue a previous debug session without needing to compile and upload again
 	
-	Hardware: WeMos D1 R2 & mini, Platform=esp8266, Package=esp8266
+	Hardware: NodeMCU 1.0 (ESP-12E Module), Platform=esp8266, Package=esp8266
 */
 
 #ifndef _VSARDUINO_H_
@@ -17,7 +17,7 @@
 #define F_CPU 80000000L
 #define LWIP_OPEN_SRC
 #define ARDUINO 10609
-#define ARDUINO_ESP8266_WEMOS_D1MINI
+#define ARDUINO_ESP8266_NODEMCU
 #define ARDUINO_ARCH_ESP8266
 #define ESP8266
 #define __cplusplus 201103L
@@ -28,6 +28,7 @@
 #define __arm__
 #define __inline__
 #define __asm__(x)
+#define __asm__
 #define __extension__
 #define __ATTR_PURE__
 #define __ATTR_CONST__
@@ -77,7 +78,10 @@ typedef int __gnuc_va_list;
 typedef unsigned char byte;
 extern "C" void __cxa_pure_virtual() {;}
 
+
 #include "new"
+#include "Esp.h"
+
 
 #include <arduino.h>
 #include <pins_arduino.h> 
@@ -90,90 +94,5 @@ extern "C" void __cxa_pure_virtual() {;}
 #define interrupts() sei()
 #define noInterrupts() cli()
 
-#include <brewpi-esp8266.ino>
-#include <Actuator.cpp>
-#include <Actuator.h>
-#include <ActuatorArduinoPin.cpp>
-#include <ActuatorArduinoPin.h>
-#include <ActuatorAutoOff.h>
-#include <ArduinoEepromAccess.h>
-#include <ArduinoFunctions.cpp>
-#include <Brewpi.cpp>
-#include <Brewpi.h>
-#include <BrewpiStrings.cpp>
-#include <BrewpiStrings.h>
-#include <Buzzer.cpp>
-#include <Buzzer.h>
-#include <Config.h>
-#include <ConfigDefault.h>
-#include <DS2413.cpp>
-#include <DS2413.h>
-#include <DallasTemperature.cpp>
-#include <DallasTemperature.h>
-#include <DeviceManager.cpp>
-#include <DeviceManager.h>
-#include <Display.cpp>
-#include <Display.h>
-#include <DisplayBase.h>
-#include <DisplayLcd.cpp>
-#include <DisplayLcd.h>
-#include <ESP8266mDNS.cpp>
-#include <ESP8266mDNS.h>
-#include <ESPEepromAccess.h>
-#include <EepromAccess.h>
-#include <EepromFormat.h>
-#include <EepromManager.cpp>
-#include <EepromManager.h>
-#include <EepromStructs.h>
-#include <EepromTypes.h>
-#include <FastDigitalPin.h>
-#include <FilterCascaded.cpp>
-#include <FilterCascaded.h>
-#include <FilterFixed.cpp>
-#include <FilterFixed.h>
-#include <IicLcd.cpp>
-#include <IicLcd.h>
-#include <JsonKeys.h>
-#include <LogMessages.h>
-#include <Logger.cpp>
-#include <Logger.h>
-#include <Menu.cpp>
-#include <Menu.h>
-#include <NullLcdDriver.cpp>
-#include <NullLcdDriver.h>
-#include <OLEDFourBit.cpp>
-#include <OLEDFourBit.h>
-#include <OneWireActuator.h>
-#include <OneWireDevices.h>
-#include <OneWireTempSensor.cpp>
-#include <OneWireTempSensor.h>
-#include <PiLink.cpp>
-#include <PiLink.h>
-#include <Pins.h>
-#include <Random.cpp>
-#include <RotaryEncoder.cpp>
-#include <RotaryEncoder.h>
-#include <Sensor.cpp>
-#include <Sensor.h>
-#include <SensorArduinoPin.h>
-#include <SettingsManager.cpp>
-#include <SettingsManager.h>
-#include <Simulator.cpp>
-#include <Simulator.h>
-#include <SpiLcd.cpp>
-#include <SpiLcd.h>
-#include <TempControl.cpp>
-#include <TempControl.h>
-#include <TempSensor.cpp>
-#include <TempSensor.h>
-#include <TempSensorBasic.h>
-#include <TempSensorDisconnected.h>
-#include <TempSensorExternal.h>
-#include <TempSensorMock.h>
-#include <TemperatureFormats.cpp>
-#include <TemperatureFormats.h>
-#include <Ticks.cpp>
-#include <Ticks.h>
-#include <TicksArduino.h>
-#include <Version.h>
+#include "brewpi-esp8266.ino"
 #endif

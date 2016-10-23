@@ -17,7 +17,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+#lib/
 lib64/
 parts/
 sdist/
@@ -480,3 +480,6 @@ paket-files/
 # JetBrains Rider
 .idea/
 *.sln.iml
+
+.DS_Store
+

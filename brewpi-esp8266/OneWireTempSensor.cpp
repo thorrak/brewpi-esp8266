@@ -1,120 +1,134 @@
 /*
- * Copyright 2012-2013 BrewPi/Elco Jacobs.
- * Copyright 2013 Matthew McGowan.
- *
- * This file is part of BrewPi.
- * 
- * BrewPi is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * BrewPi is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
- */
+* Copyright 2012-2013 BrewPi/Elco Jacobs.
+* Copyright 2013 Matthew McGowan.
+*
+* This file is part of BrewPi.
+*
+* BrewPi is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* BrewPi is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
-#include "Brewpi.h"
+#include "temperatureFormats.h"
 #include "OneWireTempSensor.h"
+#include "OneWireAddress.h"
 #include "DallasTemperature.h"
-#include "OneWire.h"
-#include "OneWireDevices.h"
-#include "PiLink.h"
+#include <OneWire.h>
 #include "Ticks.h"
-#include "TemperatureFormats.h"
+#include "Logger.h"
 
-OneWireTempSensor::~OneWireTempSensor(){
+OneWireTempSensor::~OneWireTempSensor() {
 	delete sensor;
 };
 
 /**
- * Initializes the temperature sensor.
- * This method is called when the sensor is first created and also any time the sensor reports it's disconnected.
- * If the result is TEMP_SENSOR_DISCONNECTED then subsequent calls to read() will also return TEMP_SENSOR_DISCONNECTED.
- * Clients should attempt to re-initialize the sensor by calling init() again. 
- */
-bool OneWireTempSensor::init(){
+* Initializes the temperature sensor.
+* This method is called when the sensor is first created and also any time the sensor reports it's disconnected.
+* If the result is TEMP_SENSOR_DISCONNECTED then subsequent calls to read() will also return TEMP_SENSOR_DISCONNECTED.
+* Clients should attempt to re-initialize the sensor by calling init() again.
+*/
+bool OneWireTempSensor::init() {
 
 	// save address and pinNr for log messages
 	char addressString[17];
 	printBytes(sensorAddress, 8, addressString);
-	// TODO - fix the following to use the defined OneWire pin
-	DEBUG_ONLY(uint8_t pinNr = oneWire->pinNr());
+#if BREWPI_DEBUG
+	uint8_t pinNr = oneWire->pinNr();
+#endif
 
 	bool success = false;
 
-	if (sensor==NULL) {
+	if (sensor == NULL) {
 		sensor = new DallasTemperature(oneWire);
-		if (sensor==NULL) {
+		if (sensor == NULL) {
 			logErrorString(ERROR_SRAM_SENSOR, addressString);
 		}
 	}
-	
+
 	logDebug("init onewire sensor");
-	// This quickly tests if the sensor is connected and initializes the reset detection.
-	// During the main TempControl loop, we don't want to spend many seconds
-	// scanning each sensor since this brings things to a halt.
-	if (sensor && sensor->initConnection(sensorAddress) && requestConversion()) {
-		logDebug("init onewire sensor - wait for conversion");
-		waitForConversion();
-		temperature temp = readAndConstrainTemp();
+	// This quickly tests if the sensor is connected and initializes the reset detection if necessary.
+	if (sensor) {
+		// If this is the first conversion after power on, the device will return DEVICE_DISCONNECTED_RAW
+		// Because HIGH_ALARM_TEMP will be copied from EEPROM
+		int16_t temp = sensor->getTempRaw(sensorAddress);
+		if (temp == DEVICE_DISCONNECTED_RAW) {
+			// Device was just powered on and should be initialized
+			if (sensor->initConnection(sensorAddress)) {
+				requestConversion();
+				waitForConversion();
+				temp = sensor->getTempRaw(sensorAddress);
+			}
+		}
 		DEBUG_ONLY(logInfoIntStringTemp(INFO_TEMP_SENSOR_INITIALIZED, pinNr, addressString, temp));
-		success = temp!=DEVICE_DISCONNECTED && requestConversion();
-	}	
+		success = temp != DEVICE_DISCONNECTED_RAW;
+		if (success) {
+			requestConversion(); // piggyback request for a new conversion
+		}
+	}
 	setConnected(success);
 	logDebug("init onewire sensor complete %d", success);
 	return success;
 }
 
-bool OneWireTempSensor::requestConversion()
-{	
-	bool ok = sensor->requestTemperaturesByAddress(sensorAddress);
-	setConnected(ok);
-	return ok;
+void OneWireTempSensor::requestConversion() {
+	sensor->requestTemperaturesByAddress(sensorAddress);
 }
 
 void OneWireTempSensor::setConnected(bool connected) {
-	if (this->connected==connected)
+	if (this->connected == connected)
 		return; // state is stays the same
-		
+
 	char addressString[17];
 	printBytes(sensorAddress, 8, addressString);
 	this->connected = connected;
-	if(connected){
-		// TODO - fix the following to use the defined OneWire pin
+	if (connected) {
 		logInfoIntString(INFO_TEMP_SENSOR_CONNECTED, 0, addressString);
 //		logInfoIntString(INFO_TEMP_SENSOR_CONNECTED, this->oneWire->pinNr(), addressString);
-	}
-	else{
-		// TODO - fix the following to use the defined OneWire pin
+	} else {
 		logWarningIntString(WARNING_TEMP_SENSOR_DISCONNECTED, 0, addressString);
 //		logWarningIntString(WARNING_TEMP_SENSOR_DISCONNECTED, this->oneWire->pinNr(), addressString);
 	}
 }
 
-temperature OneWireTempSensor::read(){
-	
+temp_t OneWireTempSensor::read() const {
+
 	if (!connected)
 		return TEMP_SENSOR_DISCONNECTED;
-	
-	temperature temp = readAndConstrainTemp();
-	requestConversion();
-	return temp;
+
+	return cachedValue;
 }
 
-temperature OneWireTempSensor::readAndConstrainTemp()
-{
-	temperature temp = sensor->getTempRaw(sensorAddress);
-	if(temp == DEVICE_DISCONNECTED){
-		setConnected(false);
-		return TEMP_SENSOR_DISCONNECTED;
+void OneWireTempSensor::update() {
+	cachedValue = readAndConstrainTemp();
+
+	if (cachedValue.isDisabledOrInvalid()) {
+		// Try to reconnect once
+		if (init()) {
+			// successfully re-initialized
+			cachedValue = readAndConstrainTemp();
+		}
 	}
-	
-	const uint8_t shift = TEMP_FIXED_POINT_BITS-ONEWIRE_TEMP_SENSOR_PRECISION; // difference in precision between DS18B20 format and temperature adt
-	temp = constrainTemp(temp+calibrationOffset+(C_OFFSET>>shift), ((int) MIN_TEMP)>>shift, ((int) MAX_TEMP)>>shift)<<shift;
-	return temp;
+	requestConversion();
+}
+
+temp_t OneWireTempSensor::readAndConstrainTemp() {
+	int16_t tempRaw = sensor->getTempRaw(sensorAddress);
+	if (tempRaw == DEVICE_DISCONNECTED_RAW) {
+		setConnected(false);
+		return temp_t::invalid();
+	}
+
+	const uint8_t shift = temp_t::fractional_bit_count - ONEWIRE_TEMP_SENSOR_PRECISION; // difference in precision between DS18B20 format and temperature adt
+	temp_t temp;
+	temp.setRaw(tempRaw << shift);
+	return temp + calibrationOffset;
 }

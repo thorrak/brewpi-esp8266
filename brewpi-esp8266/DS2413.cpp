@@ -1,94 +1,152 @@
 /*
- * Copyright 2013 Matthew McGowan
- * Copyright 2013 BrewPi/Elco Jacobs.
- *
- * This file is part of BrewPi.
- * 
- * BrewPi is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * BrewPi is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
- */
+* Copyright 2013 Matthew McGowan
+* Copyright 2013 BrewPi/Elco Jacobs.
+*
+* This file is part of BrewPi.
+*
+* BrewPi is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* BrewPi is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
-#include "Brewpi.h"
-#include "OneWire.h"
+
+#include <OneWire.h>
 
 #include "DS2413.h"
 
-
-
-/*
-	* Read all values at once, both current state and sensed values. The read performs data-integrity checks.
-	* Returns a negative result if the device cannot be read successfully within the given number of tries.
-	* The lower 4-bits are the values as described under PIO ACCESSS READ [F5h] in the ds2413 datasheet:	 
-	* b0: PIOA state
-	* b1: PIOA output latch state
-	* b2: PIOB state
-	* b3: PIOB output latch state
-	*/
-byte DS2413::accessRead(uint8_t maxTries) /* const */
-{		
-	#define ACCESS_READ 0xF5
-		
-	oneWire->reset();
-	oneWire->select(address);
-	oneWire->write(ACCESS_READ);
-		
-	bool success = false;
-	uint8_t data;
-	do 
-	{
-		data = oneWire->read();
-		success = (data>>4)==(!data&0xF);
-		data &= 0xF;
-	} while (!success && maxTries-->0);
-		
-	oneWire->reset();		
-	return success ? data : data|0x80;
-}
-	
-/*
-	* Writes the state of all PIOs in one operation.
-	* /param b pio data - PIOA is bit 0 (lsb), PIOB is bit 1	 
-	* /param maxTries the maximum number of attempts before giving up.
-	* /return true on success
-	*/
-bool DS2413::accessWrite(uint8_t b, uint8_t maxTries)
+bool DS2413::cacheIsValid() const
 {
-	#define ACCESS_WRITE 0x5A
-	#define ACK_SUCCESS 0xAA
-	#define ACK_ERROR 0xFF
-		
-	b |= 0xFC;   		/* Upper 6 bits should be set to 1's */
-	uint8_t ack = 0;
-	do
-	{
-		oneWire->reset();
-		oneWire->select(address);
-		oneWire->write(ACCESS_WRITE);
-		oneWire->write(b);
-			
-		/* data is sent again, inverted to guard against transmission errors */
-		oneWire->write(~b);
-		/* Acknowledgement byte, 0xAA for success, 0xFF for failure. */
-		ack = oneWire->read();
-						
-		if (ack==ACK_SUCCESS)
-			oneWire->read();		// status byte sent after ack
-			
-		//out.print("tries "); out.print(maxTries); out.print(" ack ");out.print(ack, HEX);out.print(" newValues ");out.print(newSettings, HEX);
-		//out.println();
-	} while (ack!=ACK_SUCCESS && maxTries-->0);
-		
-	oneWire->reset();
-	return ack==ACK_SUCCESS;
+	uint8_t upperInverted = (~cachedState & 0xf0) >> 4;
+	uint8_t lower = cachedState & 0x0f;
+
+	return upperInverted == lower;
 }
 
+bool DS2413::latchWrite(pio_t pio,
+	bool  set,
+	bool  useCached)
+{
+	bool    ok = false;
+	uint8_t retries = 5;
+
+	if (!useCached || !cacheIsValid())
+	{
+		// read a fresh value form the device
+		do
+		{
+			update();
+		} while (!cacheIsValid() && (retries-- > 0));
+
+		if (!cacheIsValid())
+		{
+			return false;    // cannot read from device successfully
+		}
+	}
+
+	uint8_t mask = latchWriteMask(pio);
+	uint8_t oldVal = writeByteFromCache();
+	uint8_t newVal = oldVal;
+
+	if (set)
+	{
+		newVal &= ~mask; // 0 means latch transistor is active
+	}
+	else
+	{
+		newVal |= mask; // 1 means latch transistor is inactive
+	}
+
+	if (oldVal == newVal)
+	{
+		ok = true;    // skip write if already correct value to reduce OneWire communication
+	}
+	else
+	{
+		ok = channelWriteAll(newVal);
+		update();
+	}
+
+	return ok;
+}
+
+bool DS2413::latchRead(pio_t pio,
+	bool defaultValue,
+	bool useCached)
+{
+	if (!useCached || !cacheIsValid()) {
+		update();
+	}
+
+	return latchReadCached(pio, defaultValue);
+}
+
+bool DS2413::latchReadCached(pio_t pio,
+	bool defaultValue) const
+{
+	if (cacheIsValid()) {
+		return ((cachedState & latchReadMask(pio)) == 0);
+	}
+	else
+	{
+		return defaultValue;
+	}
+}
+
+void DS2413::update()
+{
+	cachedState = accessRead();
+	bool success = cacheIsValid();
+	if (connected && !success) {
+		connected = false;
+		char addressString[17];
+		printBytes(address, 8, addressString);
+		logWarningString(DS2413_DISCONNECTED, addressString);
+	}
+	else if (!connected && success) {
+		connected = true;
+		char addressString[17];
+		printBytes(address, 8, addressString);
+		logInfoString(DS2413_CONNECTED, addressString);
+	}
+}
+
+uint8_t DS2413::writeByteFromCache()
+{
+	uint8_t returnval = 0;
+
+	for (uint8_t i = 0; i < 2; i++)
+	{
+		if (cachedState & latchReadMask(i))
+		{
+			returnval |= latchWriteMask(i);
+		}
+	}
+
+	return returnval;
+}
+
+#if DS2413_SUPPORT_SENSE
+bool DS2413::sense(pio_t pio,
+	bool  defaultValue)
+{
+	update();
+
+	if (cacheIsValid())
+	{
+		return ((cachedState & senseMask(pio)) != 0);
+	}
+	else
+	{
+		return defaultValue;
+	}
+}
+#endif

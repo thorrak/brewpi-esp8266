@@ -22,12 +22,12 @@
 
 #include "Brewpi.h"
 #include "Ticks.h"
-#include "Pins.h"
+#include "Board.h"
+
+ // TODO - Implement
+#if BREWPI_BUZZER
 #include "Buzzer.h"
 
-// TODO - Implement
-
-#if BREWPI_BUZZER
 #include <util/delay.h>
 #include "FastDigitalPin.h"
 

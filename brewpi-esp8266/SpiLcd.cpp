@@ -17,6 +17,8 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if BREWPI_SHIFT_LCD
+
 #include "SpiLcd.h"
 
 #include "Brewpi.h"
@@ -31,7 +33,6 @@
 #include <util/atomic.h>
 #endif
 
-#if BREWPI_SHIFT_LCD
 
 // MDM - removed the latchPin parameter since it's never changed, and having a compile time constant makes the
 // compiled code smaller and more efficient. If a more convenient way to specifying the constant latch pin number is needed,

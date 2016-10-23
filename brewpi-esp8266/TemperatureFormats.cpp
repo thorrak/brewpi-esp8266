@@ -1,27 +1,24 @@
 /*
- * Copyright 2012-2013 BrewPi/Elco Jacobs.
- *
- * This file is part of BrewPi.
- * 
- * BrewPi is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * BrewPi is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
- */
+* Copyright 2015 BrewPi/Elco Jacobs.
+*
+* This file is part of BrewPi.
+*
+* BrewPi is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* BrewPi is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
-#include "Brewpi.h"
-#include "TemperatureFormats.h"
-#include <string.h>
-#include <limits.h>
-#include "TempControl.h"
+#include <stdlib.h>     /* lldiv, lldiv_t */
+#include "temperatureFormats.h"
 
 #ifdef ESP8266
 // Appears this isn't defined in the ESP8266 implementation
@@ -36,202 +33,469 @@ strchrnul(const char *s, int c_in)
 }
 #endif
 
+// Converting constructors, which shift and constrain the value.
 
-// See header file for details about the temp format used.
+temp_t::temp_t(temp_precise_t const & rhs) {
+	unsigned char const shift = temp_precise_t::fractional_bit_count
+		- temp_t::fractional_bit_count;
+	this->value_ = rhs.value_ >> shift; // could result in a 1 bit error due to rounding
+}
 
-// result can have maximum length of : sign + 3 digits integer part + point + 3 digits fraction part + '\0' = 9 bytes;
-// only 1, 2 or 3 decimals allowed.
-// returns pointer to the string
-// long_temperature is used to prevent overflow
-char * tempToString(char * s, long_temperature rawValue, uint8_t numDecimals, uint8_t maxLength){ 
-	if(rawValue == INVALID_TEMP){
-		strcpy_P(s, PSTR("null")); 
-		return s;
+temp_t::temp_t(temp_long_t const & rhs) {
+	// temp and temp_long have same number of fraction bits, no shifting needed
+	static_assert(temp_t::fractional_bit_count == temp_long_t::fractional_bit_count,
+		"temp and temp_long should have same number of fraction bits");
+
+	if (rhs.value_ < min_val) {
+		this->value_ = min_val;
 	}
-	rawValue = convertFromInternalTemp(rawValue);
-	return fixedPointToString(s, rawValue, numDecimals, maxLength);
+	else if (rhs.value_ > max_val) {
+		this->value_ = max_val;
+	}
+	else {
+		this->value_ = rhs.value_;
+	}
 }
 
-char * tempDiffToString(char * s, long_temperature rawValue, uint8_t numDecimals, uint8_t maxLength){
-	rawValue = convertFromInternalTempDiff(rawValue);
-	return fixedPointToString(s, rawValue, numDecimals, maxLength);
-}
-	
-char * fixedPointToString(char * s, temperature rawValue, uint8_t numDecimals, uint8_t maxLength){ 
-	return fixedPointToString(s, long_temperature(rawValue), numDecimals, maxLength);
+temp_precise_t::temp_precise_t(temp_t const & rhs) {
+	// temp and temp_precise have same number of integer bits, so this will not overflow
+	static_assert(temp_t::integer_bit_count == temp_precise_t::integer_bit_count,
+		"temp and temp_long should have same number of integer bits");
+
+	unsigned char shift = temp_precise_t::fractional_bit_count
+		- temp_t::fractional_bit_count;
+	this->value_ = temp_precise_t::base_type(rhs.value_) << shift;
 }
 
-// this gets rid of snprintf_P
-void mysnprintf_P(char* buf, int len, const char* fmt, ...)
+temp_precise_t::temp_precise_t(temp_long_t const & rhs) {
+	unsigned char const shift = temp_precise_t::fractional_bit_count
+		- temp_long_t::fractional_bit_count;
+
+	// convert to temp first to make sure it fits
+	temp_t t = rhs;
+	this->value_ = temp_precise_t::base_type(t.value_) << shift;
+}
+
+temp_long_t::temp_long_t(temp_t const & rhs) {
+	this->value_ = rhs.value_;
+}
+
+temp_long_t::temp_long_t(temp_precise_t const & rhs) {
+	unsigned char const shift = temp_precise_t::fractional_bit_count
+		- temp_long_t::fractional_bit_count;
+	this->value_ = rhs.value_ >> shift; //// could result in a 1 bit error due to rounding
+}
+
+// With operators for mixed types always returns the bigger type
+// which is automatically converted afterwards if assigned to a small type
+
+// Addition
+
+// this looks recursive, but it prevents ambiguity
+temp_t temp_t::operator+(temp_t const & rhs) {
+	temp_t result(*this);
+	result += rhs;
+	return result;
+}
+
+temp_precise_t temp_t::operator+(temp_precise_t const & rhs) {
+	temp_precise_t result(*this);
+	result += rhs;
+	return result;
+}
+
+temp_long_t temp_t::operator+(temp_long_t const & rhs) {
+	temp_long_t result(*this);
+	result += rhs;
+	return result;
+}
+
+temp_long_t temp_long_t::operator+(temp_long_t const & rhs) {
+	temp_long_t result(*this);
+	result += rhs;
+	return result;
+}
+
+temp_long_t temp_long_t::operator+(temp_precise_t const & rhs) {
+	temp_long_t result(*this);
+	result += temp_long_t(rhs);
+	return result;
+}
+
+temp_long_t temp_long_t::operator+(temp_t const & rhs) {
+	temp_long_t result(*this);
+	result += temp_long_t(rhs);
+	return result;
+}
+
+temp_precise_t temp_precise_t::operator+(temp_precise_t const & rhs) {
+	temp_precise_t result(*this);
+	result += rhs;
+	return result;
+}
+
+temp_precise_t temp_precise_t::operator+(temp_t const & rhs) {
+	temp_precise_t result(*this);
+	result += temp_precise_t(rhs);
+	return result;
+}
+
+temp_long_t temp_precise_t::operator+(temp_long_t const & rhs) {
+	temp_long_t result(*this);
+	result += temp_long_t(rhs);
+	return result;
+}
+
+// Unary Minus (change sign)
+temp_t temp_t::operator-() const {
+	temp_t result(*this);
+	result.value_ = -result.value_;
+	return result;
+}
+
+temp_long_t temp_long_t ::operator-() const {
+	temp_long_t result(*this);
+	result.value_ = -result.value_;
+	return result;
+}
+
+temp_precise_t temp_precise_t::operator-() const {
+	temp_precise_t result(*this);
+	result.value_ = -result.value_;
+	return result;
+}
+
+
+// Subtraction
+
+// this looks recursive, but it prevents ambiguity
+temp_t temp_t::operator-(temp_t const & rhs) {
+	temp_t result(*this);
+	result -= rhs;
+	return result;
+}
+
+temp_precise_t temp_t::operator-(temp_precise_t const & rhs) {
+	temp_precise_t result(*this);
+	result -= rhs;
+	return result;
+}
+
+temp_long_t temp_t::operator-(temp_long_t const & rhs) {
+	temp_long_t result(*this);
+	result -= rhs;
+	return result;
+}
+
+temp_long_t temp_long_t::operator-(temp_long_t const & rhs) {
+	temp_long_t result(*this);
+	result -= rhs;
+	return result;
+}
+
+temp_long_t temp_long_t::operator-(temp_precise_t const & rhs) {
+	temp_long_t result(*this);
+	result -= temp_long_t(rhs);
+	return result;
+}
+
+temp_long_t temp_long_t::operator-(temp_t const & rhs) {
+	temp_long_t result(*this);
+	result -= temp_long_t(rhs);
+	return result;
+}
+
+temp_precise_t temp_precise_t::operator-(temp_precise_t const & rhs) {
+	temp_precise_t result(*this);
+	result -= rhs;
+	return result;
+}
+
+temp_precise_t temp_precise_t::operator-(temp_t const & rhs) {
+	temp_precise_t result(*this);
+	result -= temp_precise_t(rhs);
+	return result;
+}
+
+temp_long_t temp_precise_t::operator-(temp_long_t const & rhs) {
+	temp_long_t result(*this);
+	result -= temp_long_t(rhs);
+	return result;
+}
+
+// Multiplication
+
+temp_t temp_t::operator*(temp_t const & rhs) {
+	temp_t result(*this);
+	result *= rhs;
+	return result;
+}
+
+temp_precise_t temp_t::operator*(temp_precise_t const & rhs) {
+	temp_precise_t result(*this);
+	result *= rhs;
+	return result;
+}
+
+temp_long_t temp_t::operator*(temp_long_t const & rhs) {
+	temp_long_t result(*this);
+	result *= rhs;
+	return result;
+}
+
+temp_long_t temp_long_t::operator*(temp_long_t const & rhs) {
+	temp_long_t result(*this);
+	result *= rhs;
+	return result;
+}
+
+temp_long_t temp_long_t::operator*(temp_precise_t const & rhs) {
+	temp_long_t result(*this);
+	result *= temp_long_t(rhs);
+	return result;
+}
+
+temp_long_t temp_long_t::operator*(temp_t const & rhs) {
+	temp_long_t result(*this);
+	result *= temp_long_t(rhs);
+	return result;
+}
+
+temp_precise_t temp_precise_t::operator*(temp_precise_t const & rhs) {
+	temp_precise_t result(*this);
+	result *= rhs;
+	return result;
+}
+
+temp_precise_t temp_precise_t::operator*(temp_t const & rhs) {
+	temp_precise_t result(*this);
+	result *= temp_precise_t(rhs);
+	return result;
+}
+
+temp_long_t temp_precise_t::operator*(temp_long_t const & rhs) {
+	temp_long_t result(*this);
+	result *= temp_long_t(rhs);
+	return result;
+}
+
+// multiplication with uint16_t returns long temperature. Will be constrained later if assigned to temp_t
+temp_long_t temp_t::operator*(uint16_t const rhs) {
+	temp_long_t result(*this);
+	result.value_ *= rhs;
+	return result;
+}
+
+temp_long_t temp_precise_t::operator*(uint16_t const rhs) {
+	temp_long_t resultUpper(*this); // lower precision bits will be discarded
+	temp_precise_t resultLower(*this);
+	uint8_t const duplicatedBits = temp_precise_t::fractional_bit_count - temp_long_t::fractional_bit_count;
+
+	resultLower.value_ = resultLower.value_ & ((0x1 << duplicatedBits) - 1); // discard upper bits from lower, which are already in upper
+	resultUpper.value_ *= rhs;
+	resultLower.value_ *= rhs;
+
+	return resultUpper + resultLower;
+}
+
+// Division
+
+temp_t temp_t::operator/(temp_t const & rhs) {
+	temp_t result(*this);
+	result /= rhs;
+	return result;
+}
+
+temp_precise_t temp_t::operator/(temp_precise_t const & rhs) {
+	temp_precise_t result(*this);
+	result /= rhs;
+	return result;
+}
+
+temp_long_t temp_t::operator/(temp_long_t const & rhs) {
+	temp_long_t result(*this);
+	result /= rhs;
+	return result;
+}
+
+temp_long_t temp_long_t::operator/(temp_long_t const & rhs) {
+	temp_long_t result(*this);
+	result /= rhs;
+	return result;
+}
+
+temp_long_t temp_long_t::operator/(temp_precise_t const & rhs) {
+	temp_long_t result(*this);
+	result /= temp_long_t(rhs);
+	return result;
+}
+
+temp_long_t temp_long_t::operator/(temp_t const & rhs) {
+	temp_long_t result(*this);
+	result /= temp_long_t(rhs);
+	return result;
+}
+
+temp_precise_t temp_precise_t::operator/(temp_precise_t const & rhs) {
+	temp_precise_t result(*this);
+	result /= rhs;
+	return result;
+}
+
+temp_precise_t temp_precise_t::operator/(temp_t const & rhs) {
+	temp_precise_t result(*this);
+	result /= temp_precise_t(rhs);
+	return result;
+}
+
+temp_long_t temp_precise_t::operator/(temp_long_t const & rhs) {
+	temp_long_t result(*this);
+	result /= temp_long_t(rhs);
+	return result;
+}
+
+temp_t temp_t::operator/(uint16_t const rhs) {
+	temp_t result(*this);
+	result.value_ = (result.value_ + (rhs >> 1)) / rhs; // rounded divide
+	return result;
+}
+
+temp_precise_t temp_precise_t::operator/(uint16_t const rhs) {
+	temp_precise_t result(*this);
+	result.value_ = (result.value_ + (rhs >> 1)) / rhs; // rounded divide
+	return result;
+}
+
+temp_long_t temp_long_t::operator/(uint16_t const rhs) {
+	temp_long_t result(*this);
+	result.value_ = (result.value_ + (rhs >> 1)) / rhs; // rounded divide
+	return result;
+}
+
+// converts fixed point value to string, without using double/float
+// resulting string is always length len (including \0). Spaces are prepended to achieve that
+char * toStringImpl(const int32_t raw, // raw value of fixed point
+	unsigned char const F, // number of fraction bits
+	char buf[], // target buffer
+	uint8_t const numDecimals, // number of decimals to print
+	uint8_t const len, // maximum number of characters to print
+	char format, // C or F
+	bool absolute) // is this an absolute temperature? need to subtract 32 for F
 {
-	va_list args;
-	va_start (args, fmt );
-	vsnprintf_P(buf, len, fmt, args);
-	va_end (args);
-}
 
-char * fixedPointToString(char * s, long_temperature rawValue, uint8_t numDecimals, uint8_t maxLength){ 
-	s[0] = ' ';
-	if(rawValue < 0l){
-		s[0] = '-';
-		rawValue = -rawValue;
-	}
-	
-	int intPart = longTempDiffToInt(rawValue); // rawValue is supposed to be without internal offset
-	uint16_t fracPart;
-	const char* fmt;
-	uint16_t scale;
-	switch (numDecimals)
-	{
-		case 1:
-			fmt = PSTR("%d.%01d");
-			scale = 10;
-			break;
-		case 2:
-			fmt = PSTR("%d.%02d");
-			scale = 100;
-			break;
-		default:
-			fmt = PSTR("%d.%03d");
-			scale = 1000;
-	}
-	fracPart = ((rawValue & TEMP_FIXED_POINT_MASK) * scale + TEMP_FIXED_POINT_SCALE/2) >> TEMP_FIXED_POINT_BITS; // add 256 for rounding
-	if(fracPart >= scale){
-		intPart++;
-		fracPart = 0;
-	}
-	mysnprintf_P(&s[1], maxLength-1, fmt,  intPart, fracPart);
-	return s;
-}
+	char const digit[] = "0123456789";
+	char* p;
+	bool negative = false;
 
-temperature stringToTemp(const char * numberString){
-	long_temperature rawTemp = stringToFixedPoint(numberString);
-	rawTemp = convertToInternalTemp(rawTemp);
-	return constrainTemp16(rawTemp);
-}
+	// Use larger type to prevent overflow.
+	int64_t shifter = raw;
 
-temperature stringToTempDiff(const char * numberString){
-	long_temperature rawTempDiff = stringToFixedPoint(numberString);
-	rawTempDiff = convertToInternalTempDiff(rawTempDiff);
-	return constrainTemp16(rawTempDiff);
-}
-
-long_temperature stringToFixedPoint(const char * numberString){
-	// receive new temperature as null terminated string: "19.20"
-	long_temperature intPart = 0;
-	long_temperature fracPart = 0;
-	
-	char * fractPtr = 0; //pointer to the point in the string
-	bool negative = 0;
-	if(numberString[0] == '-'){
-		numberString++;
-		negative = true; // by processing the sign here, we don't have to include strtol
-	}
-	
-	// find the point in the string to split in the integer part and the fraction part
-	fractPtr = strchrnul(numberString, '.'); // returns pointer to the point.
-	
-	intPart = atol(numberString);
-	if(fractPtr != 0){
-		// decimal point was found
-		fractPtr++; // add 1 to pointer to skip point
-		int8_t numDecimals = (int8_t) strlen(fractPtr);
-		fracPart = atol(fractPtr);
-		fracPart = fracPart << TEMP_FIXED_POINT_BITS; // bits for fraction part
-		while(numDecimals > 0){
-			fracPart = (fracPart + 5) / 10; // divide by 10 rounded
-			numDecimals--;
+	if (format == 'F') {
+		int8_t rounder = (shifter < 0) ? -25 : 25;
+		shifter = (shifter * 90 + rounder) / 50;
+		if (absolute) {
+			shifter += 32 << F;
 		}
 	}
-	long_temperature absVal = (intPart << TEMP_FIXED_POINT_BITS) + fracPart;
-	return negative ? -absVal:absVal;
+
+	if (shifter < 0) {
+		shifter = -shifter;
+		negative = true;
+	}
+	// code below looks a bit cryptic, but what it does is * 10^numDecimals / 2^F
+	for (uint8_t i = 0; i < numDecimals; i++) {
+		shifter = shifter * 5; // *5 instead of 10, combined with reduced shift below. Less chance of overflow
+	}
+	shifter = (shifter + (1 << (F - numDecimals - 1))) >> (F - numDecimals); // divide rounded by fixed point scale
+
+	p = &buf[len - 1]; // start at the end of buffer
+	*p = '\0';
+	lldiv_t dv{};
+	dv.quot = shifter;
+	do { //Move back, inserting digits as u go
+		if (p == &buf[len - 1 - numDecimals]) {
+			*--p = '.'; // insert decimal point at right moment
+		}
+		else {
+			dv = lldiv(dv.quot, 10);
+			if ((dv.quot || dv.rem)) { // check if end of digits
+				*--p = digit[std::abs(dv.rem)];
+			}
+			else if ((p - buf) > (len - numDecimals - 3)) { // still need to print some leading zeros
+				*--p = '0';
+			}
+			else if (negative) {
+				// print minus sign if needed as last digit to print
+				*--p = '-';
+				break;
+			}
+			else {
+				break;
+			}
+		}
+	} while (p > buf);
+	char * pWithoutSpaces = p;
+	while (p > buf) {
+		*(--p) = ' '; // prepend digits with spaces
+	}
+	// return pointer to string skipping spaces
+	// programmer can choose to use original buf pointer with spaces or return value without spaces
+	return pWithoutSpaces;
 }
 
-// convertToInternalTemp receives the external temp format in fixed point and converts it to the internal format
-// It scales the value for Fahrenheit and adds the offset needed for absolute temperatures. For temperature differences, use no offset.
-long_temperature convertToInternalTempImpl(long_temperature rawTemp, bool addOffset){
-	if(tempControl.cc.tempFormat == 'F'){ // value received is in F, convert to C
-		rawTemp = (rawTemp) * 5 / 9;
-		if(addOffset){
-			rawTemp += F_OFFSET;
+// Converts string into fixed point and returns bool on success.
+bool fromStringImpl(int32_t * raw, // result is put in this variable upon success
+	unsigned char F, // number of fraction bits
+	char const * const s, // the string to convert
+	char format,
+	bool absolute,
+	int32_t minimum, // minimum value for result
+	int32_t maximum) // maximum value for result
+{
+	// receive new value as null terminated string: "19.20"
+	int64_t newValue;
+
+	// larger type to prevent overflow
+	int64_t decimalValue = 0;
+
+	char const * decimalPtr;
+	char* end;
+	// Check if - is in the string
+	bool positive = (0 == strchr(s, '-'));
+
+	newValue = strtol_impl(s, &end); // convert string to integer
+	if (invalidStrtolResult(s, end)) {
+		return false; // string was not valid
+	}
+	newValue = newValue << F; // shift to fixed point
+
+							  // find the point in the string to know whether we have decimals
+	decimalPtr = strchr(s, '.'); // returns pointer to the point.
+	if (decimalPtr != 0) {
+		decimalPtr++; // skip decimal point
+					  // convert decimals to integer
+		decimalValue = strtol_impl(decimalPtr, &end);
+		if (invalidStrtolResult(decimalPtr, end)) {
+			return false; // string was not valid
+		}
+
+		decimalValue = decimalValue << F;
+		uint8_t charsAfterPoint = end - decimalPtr; // actually used # digits after point
+		while (charsAfterPoint-- > 0) {
+			decimalValue = (decimalValue + 5) / 10;
 		}
 	}
-	else{
-		if(addOffset){
-			rawTemp += C_OFFSET;
-		}		
-	}
-	return rawTemp;
-}
-
-// convertAndConstrain adds an offset, then scales with *9/5 for Fahrenheit. Use it without the offset argument for temperature differences
-long_temperature convertFromInternalTempImpl(long_temperature rawTemp, bool addOffset){
-	if(tempControl.cc.tempFormat == 'F'){ // value received is in F, convert to C
-		if(addOffset){
-			rawTemp -= F_OFFSET;
+	newValue = positive ? newValue + decimalValue : newValue - decimalValue;
+	if (format == 'F') {
+		if (absolute) {
+			newValue -= 32 << F;
 		}
-		rawTemp = rawTemp * 9 / 5;
+		int8_t rounder = (newValue < 0) ? -45 : 45;
+		newValue = (newValue * 50 + rounder) / 90; // rounded conversion from F to C
 	}
-	else{
-		if(addOffset){
-			rawTemp -= C_OFFSET;
-		}
+	if (newValue >= minimum && newValue <= maximum) {
+		*raw = newValue;
+		return true;
 	}
-	return rawTemp;
-}
-
-int fixedToTenths(long_temperature temp){
-	temp = convertFromInternalTemp(temp);
-	return (int) ((10 * temp + intToTempDiff(5)/10) / intToTempDiff(1)); // return rounded result in tenth of degrees
-}
-
-temperature tenthsToFixed(int temp){
-	long_temperature fixedPointTemp = convertToInternalTemp(((long_temperature) temp * intToTempDiff(1) + 5) / 10);	
-	return constrainTemp16(fixedPointTemp);
-}
-
-temperature constrainTemp(long_temperature valLong, temperature lower, temperature upper){
-	temperature val = constrainTemp16(valLong);
-	
-	if(val < lower){
-		return lower;
-	}
-	
-	if(val > upper){
-		return upper;
-	}
-	return temperature(valLong);
-}
-
-
-temperature constrainTemp16(long_temperature val)
-{
-	if(val<MIN_TEMP){
-		return MIN_TEMP;
-	}
-	if(val>MAX_TEMP){
-		return MAX_TEMP;
-	}
-	return val;	
-}
-
-temperature multiplyFactorTemperatureLong(temperature factor, long_temperature b)
-{
-	return constrainTemp16(((long_temperature) factor * (b-C_OFFSET))>>TEMP_FIXED_POINT_BITS);
-}
-
-temperature multiplyFactorTemperatureDiffLong(temperature factor, long_temperature b)
-{
-	return constrainTemp16(((long_temperature) factor * b)>>TEMP_FIXED_POINT_BITS);
-}
-
-
-temperature multiplyFactorTemperature(temperature factor, temperature b)
-{
-	return constrainTemp16(((long_temperature) factor * ((long_temperature) b - C_OFFSET))>>TEMP_FIXED_POINT_BITS);
-}
-
-temperature multiplyFactorTemperatureDiff(temperature factor, temperature b)
-{
-	return constrainTemp16(((long_temperature) factor * (long_temperature) b )>>TEMP_FIXED_POINT_BITS);
+	return false; // if value is not within limits, it is likely invalid
 }

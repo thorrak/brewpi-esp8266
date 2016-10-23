@@ -1,25 +1,24 @@
 /*
- * Copyright 2012 BrewPi/Elco Jacobs.
- *
- * This file is part of BrewPi.
- * 
- * BrewPi is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * BrewPi is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
- */
+* Copyright 2012 BrewPi/Elco Jacobs.
+*
+* This file is part of BrewPi.
+*
+* BrewPi is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* BrewPi is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
-#include "Brewpi.h"
+#if defined(BREWPI_OLED)
 
-#if BREWPI_LCD
 #include "OLEDFourBit.h"
 
 #include <Arduino.h>
@@ -29,75 +28,75 @@
 
 
 void OLEDFourBit::init(uint8_t rs, uint8_t rw, uint8_t enable,
-					uint8_t d4, uint8_t d5, uint8_t d6, uint8_t d7)
+	uint8_t d4, uint8_t d5, uint8_t d6, uint8_t d7)
 {
 	_rs_pin = rs;
 	_rw_pin = rw;
 	_enable_pin = enable;
 	_busy_pin = d7;
-  
+
 	_data_pins[0] = d4;
 	_data_pins[1] = d5;
 	_data_pins[2] = d6;
-	_data_pins[3] = d7; 
+	_data_pins[3] = d7;
 
 
 	pinMode(_rs_pin, OUTPUT);
 	pinMode(_rw_pin, OUTPUT);
 	pinMode(_enable_pin, OUTPUT);
-  
+
 	_displayfunction = LCD_FUNCTIONSET | LCD_4BITMODE;
-   
+
 }
 
 void OLEDFourBit::begin(uint8_t cols, uint8_t lines) {
 	_numlines = lines;
 	_currline = 0;
 	_currpos = 0;
-  
+
 	pinMode(_rs_pin, OUTPUT);
 	pinMode(_rw_pin, OUTPUT);
 	pinMode(_enable_pin, OUTPUT);
-  
+
 	// Now we pull both RS and R/W low to begin commands
 	digitalWrite(_rs_pin, LOW);
 	digitalWrite(_enable_pin, LOW);
 	digitalWrite(_rw_pin, LOW);
-  
-  	for (int i = 0; i < 4; i++) {
+
+	for (int i = 0; i < 4; i++) {
 		pinMode(_data_pins[i], OUTPUT);
 		digitalWrite(_data_pins[i], LOW);
 	}
-	
+
 	// SEE PAGE 20 of NHD-0420DZW-AY5 
 	delayMicroseconds(50000); // wait 50 ms just to be sure tha the lcd is initialized
- 
+
 	delayMicroseconds(32000);
 	write4bits(0x03);
 	delayMicroseconds(32000);
 	write4bits(0x03);
 	delayMicroseconds(32000);
 	write4bits(0x03);
-	  
+
 	delayMicroseconds(32000);
 	write4bits(0x02);
 	delayMicroseconds(10000);
 	write4bits(0x02);
 	delayMicroseconds(10000);
 	write4bits(0x08);
-   
+
 	waitBusy();
-   
+
 	noDisplay();	// Display off
-		
+
 	clear();	// display clear
-	
-	// Entry Mode Set:
+
+				// Entry Mode Set:
 	leftToRight();
 	noAutoscroll();
-	
+
 	home();
-	
+
 	noCursor();
 	display();
 }
@@ -106,13 +105,13 @@ void OLEDFourBit::begin(uint8_t cols, uint8_t lines) {
 void OLEDFourBit::clear()
 {
 	command(LCD_CLEARDISPLAY);  // clear display, set cursor position to zero
-	
-	for(uint8_t i = 0; i<4; i++){
-		for(uint8_t j = 0; j<20; j++){
-			content[i][j]=' '; // initialize on all spaces
+
+	for (uint8_t i = 0; i<4; i++) {
+		for (uint8_t j = 0; j<20; j++) {
+			content[i][j] = ' '; // initialize on all spaces
 		}
-		content[i][20]='\0'; // NULL terminate string
-	}	
+		content[i][20] = '\0'; // NULL terminate string
+	}
 }
 
 void OLEDFourBit::home()
@@ -125,7 +124,7 @@ void OLEDFourBit::home()
 void OLEDFourBit::setCursor(uint8_t col, uint8_t row)
 {
 	uint8_t row_offsets[] = { 0x00, 0x40, 0x14, 0x54 };
-	if ( row >= _numlines ) {
+	if (row >= _numlines) {
 		row = 0;  //write to first line if out off bounds
 	}
 	_currline = row;
@@ -200,7 +199,7 @@ void OLEDFourBit::noAutoscroll(void) {
 void OLEDFourBit::createChar(uint8_t location, uint8_t charmap[]) {
 	location &= 0x7; // we only have 8 locations 0-7
 	command(LCD_SETCGRAMADDR | (location << 3));
-	for (int i=0; i<8; i++) {
+	for (int i = 0; i<8; i++) {
 		write(charmap[i]);
 	}
 }
@@ -228,7 +227,7 @@ void OLEDFourBit::send(uint8_t value, uint8_t mode) {
 	pinMode(_rw_pin, OUTPUT);
 	digitalWrite(_rw_pin, LOW);
 
-	write4bits(value>>4);
+	write4bits(value >> 4);
 	write4bits(value);
 }
 
@@ -253,7 +252,7 @@ void OLEDFourBit::waitBusy(void) {
 	digitalWrite(_rs_pin, LOW);
 	digitalWrite(_rw_pin, HIGH);
 	uint8_t tries = 0;
-	do{
+	do {
 		digitalWrite(_enable_pin, LOW);
 		digitalWrite(_enable_pin, HIGH);
 		delayMicroseconds(10);
@@ -261,17 +260,17 @@ void OLEDFourBit::waitBusy(void) {
 		digitalWrite(_enable_pin, LOW);
 		pulseEnable(); // get remaining 4 bits, which are not used.
 		tries++;
-		if(tries>200){
+		if (tries>200) {
 			break;
 		}
-	}while(busy);
+	} while (busy);
 
 	pinMode(_busy_pin, OUTPUT);
 	digitalWrite(_rw_pin, LOW);
 }
 
-char OLEDFourBit::readChar(void){
-	char value=0x00;
+char OLEDFourBit::readChar(void) {
+	char value = 0x00;
 	for (int i = 0; i < 4; i++) {
 		pinMode(_data_pins[i], INPUT);
 	}
@@ -280,7 +279,7 @@ char OLEDFourBit::readChar(void){
 	pulseEnable();
 	delayMicroseconds(600);
 	for (int i = 0; i < 4; i++) {
-		value = value | (digitalRead(_data_pins[i]) << (i+4));
+		value = value | (digitalRead(_data_pins[i]) << (i + 4));
 	}
 	pulseEnable();
 	delayMicroseconds(600);
@@ -290,36 +289,36 @@ char OLEDFourBit::readChar(void){
 	return value;
 }
 
-void OLEDFourBit::getLine(uint8_t lineNumber, char * buffer){
+void OLEDFourBit::getLine(uint8_t lineNumber, char * buffer) {
 	const char* src = content[lineNumber];
-	for(uint8_t i =0;i<20;i++){
+	for (uint8_t i = 0; i<20; i++) {
 		char c = src[i];
 		buffer[i] = (c == 0b11011111) ? 0xB0 : c;
 	}
 	buffer[20] = '\0'; // NULL terminate string
-}	
+}
 
 // Read the content from the display and store it in the local string buffer.
 // Buffer should always stay up to date, so this function is not really needed.
-void OLEDFourBit::readContent(void){
-	setCursor(0,0);
-	for(uint8_t i =0;i<20;i++){
+void OLEDFourBit::readContent(void) {
+	setCursor(0, 0);
+	for (uint8_t i = 0; i<20; i++) {
 		content[0][i] = readChar();
 	}
-	for(uint8_t i =0;i<20;i++){
+	for (uint8_t i = 0; i<20; i++) {
 		content[2][i] = readChar();
 	}
-	setCursor(0,1);
-	for(uint8_t i =0;i<20;i++){
+	setCursor(0, 1);
+	for (uint8_t i = 0; i<20; i++) {
 		content[1][i] = readChar();
 	}
-	for(uint8_t i =0;i<20;i++){
+	for (uint8_t i = 0; i<20; i++) {
 		content[3][i] = readChar();
 	}
 }
 
-void OLEDFourBit::printSpacesToRestOfLine(void){
-	while(_currpos < 20){
+void OLEDFourBit::printSpacesToRestOfLine(void) {
+	while (_currpos < 20) {
 		print(' ');
 	}
 }

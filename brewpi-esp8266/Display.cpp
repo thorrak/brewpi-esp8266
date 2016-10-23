@@ -17,7 +17,6 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Brewpi.h"
 #include <limits.h>
 
 #include "Display.h"
@@ -26,4 +25,3 @@
 #if DISPLAY_POLYMORPHIC
 Display::~Display() { }
 #endif	
-

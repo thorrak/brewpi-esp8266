@@ -20,7 +20,8 @@
 #pragma once
 
 #include "Brewpi.h"
-#include "Actuator.h"
+#include "ActuatorInterfaces.h"
+#include "ActuatorMocks.h"
 
 #if BREWPI_BUZZER
 class Buzzer : public ValueActuator

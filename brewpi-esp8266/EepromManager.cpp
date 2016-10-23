@@ -36,6 +36,10 @@ EepromManager::EepromManager()
 	eepromSizeCheck();
 }
 
+void EepromManager::init()
+{
+	// This is NOOP in the original code -- Not sure why in this case. 
+}
 
 bool EepromManager::hasSettings()
 {
@@ -57,8 +61,6 @@ void EepromManager::zapEeprom()
 void EepromManager::initializeEeprom()
 {
 	// clear all eeprom
-//	for (uint16_t offset=0; offset<EepromFormat::MAX_EEPROM_SIZE; offset++)
-//		eepromAccess.writeByte(offset, 0);	
 #ifdef ESP8266
 	eepromAccess.set_manual_commit(true);
 #endif
@@ -86,8 +88,6 @@ void EepromManager::initializeEeprom()
 	eepromAccess.writeByte(0, EEPROM_FORMAT_VERSION);
 		
 	saveDefaultDevices();
-	// set state to startup
-	tempControl.init();
 
 #ifdef ESP8266
 	eepromAccess.set_manual_commit(false);

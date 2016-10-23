@@ -17,6 +17,8 @@
  * You should have received a copy of the GNU General Public License
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "Brewpi.h"
 #include <stdarg.h>
@@ -24,7 +26,7 @@
 #include "stddef.h"
 #include "PiLink.h"
 
-#include "Version.h"
+//#include "Version.h"
 #include "TempControl.h"
 #include "Display.h"
 #include "JsonKeys.h"
@@ -33,8 +35,14 @@
 #include "EepromManager.h"
 #include "EepromFormat.h"
 #include "SettingsManager.h"
+#include "Display.h" // Not sure why this is listed twice
+#include "PiLinkHandlers.h"
+#include "UI.h"
 #include "Buzzer.h"
-#include "Display.h"
+#include "ActuatorInterfaces.h"
+#include "ActuatorMocks.h"
+#include "Control.h"
+#include "json_writer.h"
 
 #ifdef ESP8266_WiFi_Control
 #include <ESP8266WiFi.h>          //ESP8266 Core WiFi Library
@@ -71,10 +79,10 @@
 
 	static MockSerial mockSerial;
 	#define piStream mockSerial
-#elif !defined(ARDUINO)
+#elif !defined(WIRING)
         StdIO stdIO;
         #define piStream stdIO
-#elif defined(ESP8266_WiFi)
+#elifdef ESP8266_WiFi
 // Just use the serverClient object as it supports all the same functions as Serial
 extern WiFiServer server;
 extern WiFiClient serverClient;
@@ -82,6 +90,7 @@ extern WiFiClient serverClient;
 #else
 // Not using ESP8266 WiFi
 #define piStream Serial
+#define SERIAL_READY(x) x
 #endif
 
 bool PiLink::firstPair;
@@ -124,7 +133,7 @@ void PiLink::print_P(const char *fmt, ... ){
 #endif
 	}
 #else
-	if(piStream){ // if Serial connected (on Leonardo)
+	if (SERIAL_READY(piStream)) { // if Serial connected (on Leonardo)
 		piStream.print(printfBuff);
 	}
 #endif
@@ -145,7 +154,7 @@ void PiLink::print(char *fmt, ... ){
 #endif
 	}
 #else
-	if (piStream) { // if Serial connected (on Leonardo)
+	if (SERIAL_READY(piStream)) {
 		piStream.print(printfBuff);
 	}
 #endif
@@ -163,8 +172,8 @@ void PiLink::print(char out) {
 #endif
 	}
 #else
-	if (piStream) { // if Serial connected (on Leonardo)
-		piStream.print(out);
+	if (SERIAL_READY(piStream)) {
+		piStream.print(printfBuff);
 	}
 #endif
 }
@@ -180,11 +189,11 @@ void PiLink::printNewLine(){
 #endif
 		piStream.println();
 		yield();
-		delay(100); // Give the controller enough time to transmit the full message
+		delay(50); // Give the controller enough time to transmit the full message
 	}
 #else
-	if (piStream) { // if Serial connected (on Leonardo)
-		piStream.println();
+	if (SERIAL_READY(piStream)) {
+		piStream.print(printfBuff);
 	}
 #endif
 }
@@ -193,15 +202,7 @@ void PiLink::printNewLine(){
 void PiLink::printNibble(uint8_t n)
 {
 	n &= 0xF;
-#ifdef ESP8266_WiFi
-	if (piStream && piStream.connected()) { // if WiFi client connected
-		print((char)(n >= 10 ? n - 10 + 'A' : n + '0'));
-	}
-#else
-	if (piStream) { // if Serial connected (on Leonardo)
-		print((char)(n >= 10 ? n - 10 + 'A' : n + '0'));
-	}
-#endif
+	piStream.print((char)(n >= 10 ? n - 10 + 'A' : n + '0'));
 }
 #endif
 
@@ -217,6 +218,7 @@ void PiLink::receive(void){
 		case ' ':
 		case '\n':
 		case '\r':
+		case 'F': // Flash firmware not supported on ESP8266
 #ifdef ESP8266_WiFi  // Control characters sent when establishing a telnet session 
 		case 1:
 		case 3:
@@ -236,14 +238,15 @@ void PiLink::receive(void){
 		case 'Y':
 			printSimulatorSettings();
 			break;		
-#endif						
+#endif					
+#if BREWPI_BUZZER
 		case 'A': // alarm on
 			soundAlarm(true);
 			break;
 		case 'a': // alarm off
 			soundAlarm(false);
 			break;
-			
+#endif
 		case 't': // temperatures requested
 			printTemperatures();      
 			break;		
@@ -284,11 +287,11 @@ void PiLink::receive(void){
 #else
 			// Doesn't appear to be support for %S for some reason. Replacing by breaking everything out.
 			print("N:{\"v\":\"");
-			print(VERSION_STRING);
+			print(VERSION_STRING); // TODO - Determine if BUILD_NUMBER is still sent (and remove if it isn't)
 			print("\",\"n\":%d,\"c\":\"", BUILD_NUMBER);
 			print(BUILD_NAME);
 			print("\",\"s\":%d,\"y\":%d,\"b\":\"%c\",\"l\":\"%d\"}", 
-				BREWPI_STATIC_CONFIG,
+				BREWPI_STATIC_CONFIG,  // Now getShieldVersion in 0.4.x
 				BREWPI_SIMULATE,
 				BREWPI_BOARD,
 				BREWPI_LOG_MESSAGES_VERSION);
@@ -296,7 +299,8 @@ void PiLink::receive(void){
 			printNewLine();
 			break;
 		case 'l': // Display content requested
-			openListResponse('L');
+			printResponse('L');  // was openListResponse('L');
+			print('[');
 			char stringBuffer[21];
 			for(uint8_t i=0;i<4;i++){
 				display.getLine(i, stringBuffer);
@@ -350,7 +354,7 @@ void PiLink::receive(void){
 			
 		case 'h': // hardware query
 			openListResponse('h');
-			deviceManager.enumerateHardware();
+			deviceManager.enumerateHardwareToStream();
 			closeListResponse();
 			break;
 
@@ -423,15 +427,16 @@ void PiLink::receive(void){
 void PiLink::printTemperaturesJSON(const char * beerAnnotation, const char * fridgeAnnotation){
 	printResponse('T');	
 
-	temperature t;
+
+	temp_t t;
 	t = tempControl.getBeerTemp();
 	if (changed(beerTemp, t))
 		sendJsonTemp(PSTR(JSON_BEER_TEMP), t);
-	
+
 	t = tempControl.getBeerSetting();
-	if (changed(beerSet,t))
+	if (changed(beerSet, t))
 		sendJsonTemp(PSTR(JSON_BEER_SET), t);
-		
+
 	if (changed(beerAnn, beerAnnotation))
 		sendJsonAnnotation(PSTR(JSON_BEER_ANN), beerAnnotation);
 
@@ -442,22 +447,22 @@ void PiLink::printTemperaturesJSON(const char * beerAnnotation, const char * fri
 	t = tempControl.getFridgeSetting();
 	if (changed(fridgeSet, t))
 		sendJsonTemp(PSTR(JSON_FRIDGE_SET), t);
-	
+
 	if (changed(fridgeAnn, fridgeAnnotation))
 		sendJsonAnnotation(PSTR(JSON_FRIDGE_ANN), fridgeAnnotation);
-		
+
 	t = tempControl.getRoomTemp();
-	if (tempControl.ambientSensor->isConnected() && changed(roomTemp, t))
+	if (changed(roomTemp, t))
 		sendJsonTemp(PSTR(JSON_ROOM_TEMP), tempControl.getRoomTemp());
-		
+
 	if (changed(state, tempControl.getState()))
-		sendJsonPair(PSTR(JSON_STATE), tempControl.getState());		
+		sendJsonPair(PSTR(JSON_STATE), (uint8_t)tempControl.getState());
 
 #if BREWPI_SIMULATE	
 	printJsonName(PSTR(JSON_TIME));
-	print_P(PSTR("%lu"), ticks.millis()/1000);
+	print_P(PSTR("%lu"), ticks.millis() / 1000);
 #endif		
-	sendJsonClose();	
+	sendJsonClose();
 }
 
 void PiLink::sendJsonAnnotation(const char* name, const char* annotation)
@@ -467,12 +472,12 @@ void PiLink::sendJsonAnnotation(const char* name, const char* annotation)
 	print_P(fmtAnn, annotation);
 }
 
-void PiLink::sendJsonTemp(const char* name, temperature temp)
+void PiLink::sendJsonTemp(const char* name, const temp_t & temp)
 {
 	char tempString[9];
-	tempToString(tempString, temp, 2, 9);
+	char * withoutSpaces = temp.toTempString(tempString, 2, 9, tempControl.cc.tempFormat, true);
 	printJsonName(name);
-	print(tempString);
+	print(withoutSpaces);
 }
 
 void PiLink::printTemperatures(void){
@@ -481,23 +486,23 @@ void PiLink::printTemperatures(void){
 }
 
 #ifndef ESP8266 // There is a bug with the ESP8266 which prevents this from working. Removing it so we aren't tempted to use it.
-void PiLink::printBeerAnnotation(const char * annotation, ...){
+void PiLink::printBeerAnnotation(const char * annotation, ...) {
 	char tempString[128]; // resulting string limited to 128 chars
-	va_list args;	
+	va_list args;
 	// Using print_P for the Annotation fails. Arguments are not passed correctly. Use Serial directly as a work around.
-	va_start (args, annotation );
+	va_start(args, annotation);
 	vsnprintf_P(tempString, 128, annotation, args);
-	va_end (args);
+	va_end(args);
 	printTemperaturesJSON(tempString, 0);
 }
 
-void PiLink::printFridgeAnnotation(const char * annotation, ...){
+void PiLink::printFridgeAnnotation(const char * annotation, ...) {
 	char tempString[128]; // resulting string limited to 128 chars
-	va_list args;	
+	va_list args;
 	// Using print_P for the Annotation fails. Arguments are not passed correctly. Use Serial directly as a work around.
-	va_start (args, annotation );
+	va_start(args, annotation);
 	vsnprintf_P(tempString, 128, annotation, args);
-	va_end (args);
+	va_end(args);
 	printTemperaturesJSON(0, tempString);
 }
 #endif
@@ -547,10 +552,8 @@ void PiLink::sendControlSettings(void){
 	printResponse('S');
 	ControlSettings& cs = tempControl.cs;
 	sendJsonPair(JSONKEY_mode, cs.mode);
-	sendJsonPair(JSONKEY_beerSetting, tempToString(tempString, cs.beerSetting, 2, 12));
-	sendJsonPair(JSONKEY_fridgeSetting, tempToString(tempString, cs.fridgeSetting, 2, 12));
-	sendJsonPair(JSONKEY_heatEstimator, fixedPointToString(tempString, cs.heatEstimator, 3, 12));
-	sendJsonPair(JSONKEY_coolEstimator, fixedPointToString(tempString, cs.coolEstimator, 3, 12));	
+	sendJsonPair(JSONKEY_beerSetting, cs.beerSetting.toTempString(tempString, 2, 12, tempControl.cc.tempFormat, true));
+	sendJsonPair(JSONKEY_fridgeSetting, cs.fridgeSetting.toTempString(tempString, 2, 12, tempControl.cc.tempFormat, true));
 	sendJsonClose();
 }
 
@@ -571,23 +574,23 @@ void PiLink::jsonOutputUint16(const char* key, uint8_t offset) {
  * outputs the temperature at the given offset from tempControl.cc.
  * The temperature is assumed to be an internal fixed point value.
  */
-void PiLink::jsonOutputTempToString(const char* key,  uint8_t offset) {
+void PiLink::jsonOutputTempToString(const char* key, uint8_t offset) {
 	char buf[12];
-	piLink.sendJsonPair(key, tempToString(buf, *((temperature*)(jsonOutputBase+offset)), 1, 12));
+	piLink.sendJsonPair(key, ((temp_t*)(jsonOutputBase + offset))->toTempString(buf, 2, 12, tempControl.cc.tempFormat, true));
 }
 
 void PiLink::jsonOutputFixedPointToString(const char* key, uint8_t offset) {
 	char buf[12];
-	piLink.sendJsonPair(key, fixedPointToString(buf, *((temperature*)(jsonOutputBase+offset)), 3, 12));
+	piLink.sendJsonPair(key, ((temp_t*)(jsonOutputBase + offset))->toString(buf, 2, 12));
 }
 
 void PiLink::jsonOutputTempDiffToString(const char* key, uint8_t offset) {
 	char buf[12];
-	piLink.sendJsonPair(key, tempDiffToString(buf, *((temperature*)(jsonOutputBase+offset)), 3, 12));
+	piLink.sendJsonPair(key, ((temp_t*)(jsonOutputBase + offset))->toTempString(buf, 2, 12, tempControl.cc.tempFormat, false));
 }
 
-void PiLink::jsonOutputChar(const char* key, uint8_t offset) {	
-	piLink.sendJsonPair(key, *((char*)(jsonOutputBase+offset)));
+void PiLink::jsonOutputChar(const char* key, uint8_t offset) {
+	piLink.sendJsonPair(key, *((char*)(jsonOutputBase + offset)));
 }
 
 typedef void (*JsonOutputCCHandler)(const char* key, uint8_t offset);
@@ -616,34 +619,38 @@ const PiLink::JsonOutputHandler PiLink::JsonOutputHandlers[] = {
 
 const PiLink::JsonOutput PiLink::jsonOutputCCMap[] PROGMEM = {
 	JSON_OUTPUT_CC_MAP(tempFormat, JOCC_CHAR),
-	JSON_OUTPUT_CC_MAP(tempSettingMin, JOCC_TEMP_FORMAT),
-	JSON_OUTPUT_CC_MAP(tempSettingMax, JOCC_TEMP_FORMAT),
-	JSON_OUTPUT_CC_MAP(pidMax, JOCC_TEMP_DIFF),
 
-	JSON_OUTPUT_CC_MAP(Kp, JOCC_FIXED_POINT),
-	JSON_OUTPUT_CC_MAP(Ki, JOCC_FIXED_POINT),
-	JSON_OUTPUT_CC_MAP(Kd, JOCC_FIXED_POINT),
+	JSON_OUTPUT_CC_MAP(heater1_kp, JOCC_FIXED_POINT),
+	JSON_OUTPUT_CC_MAP(heater1_ti, JOCC_UINT16),
+	JSON_OUTPUT_CC_MAP(heater1_td, JOCC_UINT16),
+	JSON_OUTPUT_CC_MAP(heater1_infilt, JOCC_UINT8),
+	JSON_OUTPUT_CC_MAP(heater1_dfilt, JOCC_UINT8),
 
-	JSON_OUTPUT_CC_MAP(iMaxError, JOCC_TEMP_DIFF),
-	JSON_OUTPUT_CC_MAP(idleRangeHigh, JOCC_TEMP_DIFF),
-	JSON_OUTPUT_CC_MAP(idleRangeLow, JOCC_TEMP_DIFF),
-	JSON_OUTPUT_CC_MAP(heatingTargetUpper, JOCC_TEMP_DIFF),
-	JSON_OUTPUT_CC_MAP(heatingTargetLower, JOCC_TEMP_DIFF),
-	JSON_OUTPUT_CC_MAP(coolingTargetUpper, JOCC_TEMP_DIFF),
-	JSON_OUTPUT_CC_MAP(coolingTargetLower, JOCC_TEMP_DIFF),
-	JSON_OUTPUT_CC_MAP(maxHeatTimeForEstimate, JOCC_UINT16),
-	JSON_OUTPUT_CC_MAP(maxCoolTimeForEstimate, JOCC_UINT16),
+	JSON_OUTPUT_CC_MAP(heater2_kp, JOCC_FIXED_POINT),
+	JSON_OUTPUT_CC_MAP(heater2_ti, JOCC_UINT16),
+	JSON_OUTPUT_CC_MAP(heater2_td, JOCC_UINT16),
+	JSON_OUTPUT_CC_MAP(heater2_infilt, JOCC_UINT8),
+	JSON_OUTPUT_CC_MAP(heater2_dfilt, JOCC_UINT8),
 
-	JSON_OUTPUT_CC_MAP(fridgeFastFilter, JOCC_UINT8),
-	JSON_OUTPUT_CC_MAP(fridgeSlowFilter, JOCC_UINT8),
-	JSON_OUTPUT_CC_MAP(fridgeSlopeFilter, JOCC_UINT8),
-	JSON_OUTPUT_CC_MAP(beerFastFilter, JOCC_UINT8),
-	JSON_OUTPUT_CC_MAP(beerSlowFilter, JOCC_UINT8),
-	JSON_OUTPUT_CC_MAP(beerSlopeFilter, JOCC_UINT8),
-	
-	JSON_OUTPUT_CC_MAP(lightAsHeater, JOCC_UINT8),
-	JSON_OUTPUT_CC_MAP(rotaryHalfSteps, JOCC_UINT8)
-	
+	JSON_OUTPUT_CC_MAP(cooler_kp, JOCC_FIXED_POINT),
+	JSON_OUTPUT_CC_MAP(cooler_ti, JOCC_UINT16),
+	JSON_OUTPUT_CC_MAP(cooler_td, JOCC_UINT16),
+	JSON_OUTPUT_CC_MAP(cooler_infilt, JOCC_UINT8),
+	JSON_OUTPUT_CC_MAP(cooler_dfilt, JOCC_UINT8),
+
+	JSON_OUTPUT_CC_MAP(beer2fridge_kp, JOCC_FIXED_POINT),
+	JSON_OUTPUT_CC_MAP(beer2fridge_ti, JOCC_UINT16),
+	JSON_OUTPUT_CC_MAP(beer2fridge_td, JOCC_UINT16),
+	JSON_OUTPUT_CC_MAP(beer2fridge_infilt, JOCC_UINT8),
+	JSON_OUTPUT_CC_MAP(beer2fridge_dfilt, JOCC_UINT8),
+	JSON_OUTPUT_CC_MAP(beer2fridge_pidMax, JOCC_TEMP_DIFF),
+
+	JSON_OUTPUT_CC_MAP(minCoolTime, JOCC_UINT16),
+	JSON_OUTPUT_CC_MAP(minCoolIdleTime, JOCC_UINT16),
+	JSON_OUTPUT_CC_MAP(heater1PwmPeriod, JOCC_UINT16),
+	JSON_OUTPUT_CC_MAP(heater2PwmPeriod, JOCC_UINT16),
+	JSON_OUTPUT_CC_MAP(coolerPwmPeriod, JOCC_UINT16),
+	JSON_OUTPUT_CC_MAP(mutexDeadTime, JOCC_UINT16)
 };
 
 void PiLink::sendJsonValues(char responseType, const JsonOutput* /*PROGMEM*/ jsonOutputMap, uint8_t mapCount) {
@@ -662,6 +669,7 @@ void PiLink::sendControlConstants(void){
 	sendJsonValues('C', jsonOutputCCMap, sizeof(jsonOutputCCMap)/sizeof(jsonOutputCCMap[0]));	
 }
 
+/*
 const PiLink::JsonOutput PiLink::jsonOutputCVMap[] PROGMEM = {
 	JSON_OUTPUT_CV_MAP(beerDiff, JOCC_TEMP_DIFF),
 	JSON_OUTPUT_CV_MAP(diffIntegral, JOCC_TEMP_DIFF),
@@ -681,6 +689,16 @@ void PiLink::sendControlVariables(void){
 	jsonOutputBase = (uint8_t*)&tempControl.cv;
 	sendJsonValues('V', jsonOutputCVMap, sizeof(jsonOutputCVMap)/sizeof(jsonOutputCVMap[0]));
 }
+*/
+
+// This function now sends the entire Control object as json using ESJ
+void PiLink::sendControlVariables(void) {
+	piStream.print('V');
+	piStream.print(':');
+	JSON::serial_producer<Control>::convert(control, piStream);  // TODO - Make sure this doesn't die horribly
+	piStream.println();
+}
+
 
 void PiLink::printJsonName(const char * name)
 {
@@ -697,12 +715,7 @@ inline void PiLink::printJsonSeparator() {
 
 void PiLink::sendJsonPair(const char * name, const char * val){
 	printJsonName(name);
-	// TODO - Fix this to use PiLink.print in all cases
-#ifndef ESP8266
-	piStream.print(val);
-#else
 	print_P(val);
-#endif
 }
 
 void PiLink::sendJsonPair(const char * name, char val){
@@ -733,7 +746,7 @@ int readNext()
 		_delay_us(100);
 #endif
 		retries++;
-		if (retries >= 10) {
+		if (retries >= 10000) {  // This was increased from 10 to 10000 in 0.4.x
 			return -1;
 		}
 	}
@@ -800,15 +813,15 @@ void PiLink::receiveJson(void){
 
 
 static const char STR_WEB_INTERFACE[] PROGMEM = "in web interface";
-static const char STR_TEMPERATURE_PROFILE[] PROGMEM = "by temperature profile";
+static const char STR_TEMPERATURE_PROFILE[] PROGMEM = "by temp_t profile";
 static const char STR_MODE[] PROGMEM = "Mode";
 static const char STR_BEER_TEMP[] PROGMEM = "Beer temp";
 static const char STR_FRIDGE_TEMP[] PROGMEM = "Fridge temp";
-static const char STR_FMT_SET_TO[] PROGMEM = "%S set to %s %S";
+static const char STR_FMT_SET_TO[] PROGMEM = "%S set to %s %S";  // TODO - THis is changed to  PRINTF_PROGMEM " set to %s " PRINTF_PROGMEM; - Test that it still works
 
 void PiLink::setMode(const char* val) {
 	char mode = val[0];
-	tempControl.setMode(mode);
+	tempControl.setMode(mode, true);
 #ifdef ESP8266
 	String annotation = "";
 	formatStandardAnnotation(annotation, STR_MODE, val, "in web interface");
@@ -822,12 +835,17 @@ void PiLink::setBeerSetting(const char* val) {
 #ifdef ESP8266
 	String annotation = "";
 #endif
+
 	const char* source = NULL;
-	temperature newTemp = stringToTemp(val);
+	temp_t newTemp;
+	if (!newTemp.fromTempString(val, tempControl.cc.tempFormat, true)) {
+		return; // could not parse value
+	}
+
 	if (tempControl.cs.mode == 'p') {
-		if (abs(newTemp - tempControl.cs.beerSetting) > 100) { // this excludes gradual updates under 0.2 degrees
+		if ((newTemp - tempControl.cs.beerSetting) > temp_t(0.2) || (tempControl.cs.beerSetting - newTemp) > temp_t(0.2)) { // this excludes gradual updates under 0.2 degrees
 #ifdef ESP8266
-			formatStandardAnnotation(annotation, STR_BEER_TEMP, val, "by temperature profile");
+			formatStandardAnnotation(annotation, STR_BEER_TEMP, val, "by temp_t profile");
 #else
 			source = STR_TEMPERATURE_PROFILE;
 #endif
@@ -846,7 +864,7 @@ void PiLink::setBeerSetting(const char* val) {
 	if (source)
 		printBeerAnnotation(STR_FMT_SET_TO, STR_BEER_TEMP, val, source);
 #endif
-	tempControl.setBeerTemp(newTemp);		
+	tempControl.setBeerTemp(newTemp, true);
 }
 
 //There's some kind of strange bug with the ESP8266 (probably a memory issue) where if I pass STR_WEB_INTERFACE
@@ -863,7 +881,10 @@ void formatStandardAnnotation(String &annotation, const char* str_1, const char*
 
 
 void PiLink::setFridgeSetting(const char* val) {
-	temperature newTemp = stringToTemp(val);
+	temp_t newTemp;
+	if (!newTemp.fromTempString(val, tempControl.cc.tempFormat, true))
+		return; // could not parse value
+
 	if(tempControl.cs.mode == 'f'){
 #ifdef ESP8266
 		String annotation = "";
@@ -873,7 +894,7 @@ void PiLink::setFridgeSetting(const char* val) {
 		printFridgeAnnotation(STR_FMT_SET_TO, STR_FRIDGE_TEMP, val, STR_WEB_INTERFACE);
 #endif
 	}
-	tempControl.setFridgeTemp(newTemp);	
+	tempControl.setFridgeTemp(newTemp, true);
 }
 
 void PiLink::setTempFormat(const char* val) {
@@ -883,66 +904,59 @@ void PiLink::setTempFormat(const char* val) {
 }
 
 
-// todo - move these structs to PROGMEM.
-enum FilterType { FAST, SLOW, SLOPE };
-enum TempSensorTarget { FRIDGE, BEER };
 
-static uint8_t* const filterSettings[] = {
-		&tempControl.cc.fridgeFastFilter,
-		&tempControl.cc.fridgeSlowFilter,
-		&tempControl.cc.fridgeSlopeFilter,
-		&tempControl.cc.beerFastFilter,
-		&tempControl.cc.beerSlowFilter,
-		&tempControl.cc.beerSlopeFilter		
-	};
-	
-#define MAKE_FILTER_SETTING_TARGET(filterType, sensorTarget)  (void*)(uint8_t(filterType)+uint8_t(sensorTarget)*3)
-
-void applyFilterSetting(const char* val, void* target) {
-	// the cast was  (uint8_t(uint16_t(target), changed to unsigned int so that the
-	// first cast is the same width as a pointer, avoiding a warning
-	// On x64 builds, unsigned int is still 32 bits, so cast to uint64_t instead
-	#if defined(_M_X64) || defined(__amd64__)
-		uint8_t offset = uint8_t((uint64_t) target);		// target is really just an integer
-        #else
-        	uint8_t offset = uint8_t((unsigned int) target);		// target is really just an integer
-        #endif
-        
-	FilterType filterType = FilterType(offset&3);
-	TempSensorTarget sensorTarget = TempSensorTarget(offset/3);
-	
-	uint8_t value = atol(val);
-	uint8_t* const location = filterSettings[offset];
-	*location = value;
-	TempSensor* sensor = sensorTarget ? tempControl.beerSensor : tempControl.fridgeSensor;
-	switch (filterType) {
-		case FAST: sensor->setFastFilterCoefficients(value); break;
-		case SLOW: sensor->setSlowFilterCoefficients(value); break;
-		case SLOPE: sensor->setSlopeFilterCoefficients(value); break;
+void setFilter(const char* value, uint8_t* target) {
+	uint16_t received;
+	if (stringToUint16(&received, value)) {
+		uint8_t setting = received;
+		*target = setting;
+		eepromManager.storeTempConstantsAndSettings(); // value parsed correctly
 	}
-	eepromManager.storeTempConstantsAndSettings();
 }
 
-void setStringToFixedPoint(const char* value, temperature* target) {
-	*target = stringToFixedPoint(value);
-	eepromManager.storeTempConstantsAndSettings();
+void setStringToTemp(const char* value, temp_t* target) {
+	if (target->fromTempString(value, tempControl.cc.tempFormat, true)) {
+		eepromManager.storeTempConstantsAndSettings(); // value parsed correctly
+	}
 }
-void setStringToTemp(const char* value, temperature* target) {
-	*target = stringToTemp(value);
-	eepromManager.storeTempConstantsAndSettings();
+
+void setStringToTempDiff(const char* value, temp_t* target) {
+	if (target->fromTempString(value, tempControl.cc.tempFormat, false)) {
+		eepromManager.storeTempConstantsAndSettings(); // value parsed correctly
+	}
 }
-void setStringToTempDiff(const char* value, temperature* target) {
-	*target = stringToTempDiff(value);
-	eepromManager.storeTempConstantsAndSettings();
+
+void setStringToTempDiffLong(const char* value, temp_long_t* target) {
+	if (target->fromTempString(value, tempControl.cc.tempFormat, false)) {
+		eepromManager.storeTempConstantsAndSettings(); // value parsed correctly
+	}
 }
+
+void setStringToFixed(const char* value, temp_long_t* target) {
+	if (target->fromTempString(value, 'C', false)) {
+		eepromManager.storeTempConstantsAndSettings(); // value parsed correctly
+	}
+}
+
+void setStringToFixedLong(const char* value, temp_long_t* target) {
+	if (target->fromTempString(value, 'C', false)) {
+		eepromManager.storeTempConstantsAndSettings(); // value parsed correctly
+	}
+}
+
 void setUint16(const char* value, uint16_t* target) {
-	*target = atol(value);
-	eepromManager.storeTempConstantsAndSettings();
+	if (stringToUint16(target, value)) {
+		eepromManager.storeTempConstantsAndSettings(); // value parsed correctly
+	}
 }
 void setBool(const char* value, uint8_t* target) {
-	*target = (atol(value)!=0);
-	eepromManager.storeTempConstantsAndSettings();
+	bool result;
+	if (stringToBool(&result, value)) {
+		*target = result; // convert bool to uint8_t
+		eepromManager.storeTempConstantsAndSettings();
+	}
 }
+
 
 
 #define JSON_CONVERT(jsonKey, target, fn) { jsonKey, target, (JsonParserHandlerFn)&fn }
@@ -951,38 +965,37 @@ const PiLink::JsonParserConvert PiLink::jsonParserConverters[] PROGMEM = {
 	JSON_CONVERT(JSONKEY_mode, NULL, setMode),
 	JSON_CONVERT(JSONKEY_beerSetting, NULL, setBeerSetting),
 	JSON_CONVERT(JSONKEY_fridgeSetting, NULL, setFridgeSetting),
-	
-	JSON_CONVERT(JSONKEY_heatEstimator, &tempControl.cs.heatEstimator, setStringToFixedPoint),
-	JSON_CONVERT(JSONKEY_coolEstimator, &tempControl.cs.coolEstimator, setStringToFixedPoint),
-	
+
 	JSON_CONVERT(JSONKEY_tempFormat, NULL, setTempFormat),
-	
-	JSON_CONVERT(JSONKEY_tempSettingMin, &tempControl.cc.tempSettingMin, setStringToTemp),
-	JSON_CONVERT(JSONKEY_tempSettingMax, &tempControl.cc.tempSettingMax, setStringToTemp),
-	JSON_CONVERT(JSONKEY_pidMax, &tempControl.cc.pidMax, setStringToTempDiff),
 
-	JSON_CONVERT(JSONKEY_Kp, &tempControl.cc.Kp, setStringToFixedPoint),
-	JSON_CONVERT(JSONKEY_Ki, &tempControl.cc.Ki, setStringToFixedPoint),
-	JSON_CONVERT(JSONKEY_Kd, &tempControl.cc.Kd, setStringToFixedPoint),
+	JSON_CONVERT(JSONKEY_heater1_kp, &tempControl.cc.heater1_kp, setStringToFixedLong),
+	JSON_CONVERT(JSONKEY_heater1_ti, &tempControl.cc.heater1_ti, setUint16),
+	JSON_CONVERT(JSONKEY_heater1_td, &tempControl.cc.heater1_td,setUint16),
+	JSON_CONVERT(JSONKEY_heater1_infilt, &tempControl.cc.heater1_infilt, setFilter),
+	JSON_CONVERT(JSONKEY_heater1_dfilt, &tempControl.cc.heater1_dfilt, setFilter),
+	JSON_CONVERT(JSONKEY_heater2_kp, &tempControl.cc.heater2_kp, setStringToFixedLong),
+	JSON_CONVERT(JSONKEY_heater2_ti, &tempControl.cc.heater2_ti, setUint16),
+	JSON_CONVERT(JSONKEY_heater2_td, &tempControl.cc.heater2_td, setUint16),
+	JSON_CONVERT(JSONKEY_heater2_infilt, &tempControl.cc.heater2_infilt, setFilter),
+	JSON_CONVERT(JSONKEY_heater2_dfilt, &tempControl.cc.heater2_dfilt, setFilter),
+	JSON_CONVERT(JSONKEY_cooler_kp, &tempControl.cc.cooler_kp, setStringToFixedLong),
+	JSON_CONVERT(JSONKEY_cooler_ti, &tempControl.cc.cooler_ti, setUint16),
+	JSON_CONVERT(JSONKEY_cooler_td, &tempControl.cc.cooler_td, setUint16),
+	JSON_CONVERT(JSONKEY_cooler_infilt, &tempControl.cc.cooler_infilt, setFilter),
+	JSON_CONVERT(JSONKEY_cooler_dfilt, &tempControl.cc.cooler_dfilt, setFilter),
+	JSON_CONVERT(JSONKEY_beer2fridge_kp, &tempControl.cc.beer2fridge_kp, setStringToFixedLong),
+	JSON_CONVERT(JSONKEY_beer2fridge_ti, &tempControl.cc.beer2fridge_ti, setUint16),
+	JSON_CONVERT(JSONKEY_beer2fridge_td, &tempControl.cc.beer2fridge_td, setUint16),
+	JSON_CONVERT(JSONKEY_beer2fridge_infilt, &tempControl.cc.beer2fridge_infilt, setFilter),
+	JSON_CONVERT(JSONKEY_beer2fridge_dfilt, &tempControl.cc.beer2fridge_dfilt, setFilter),
+	JSON_CONVERT(JSONKEY_beer2fridge_pidMax, &tempControl.cc.beer2fridge_pidMax, setStringToFixedLong),
 
-	JSON_CONVERT(JSONKEY_iMaxError, &tempControl.cc.iMaxError, setStringToTempDiff),
-	JSON_CONVERT(JSONKEY_idleRangeHigh, &tempControl.cc.idleRangeHigh, setStringToTempDiff),
-	JSON_CONVERT(JSONKEY_idleRangeLow, &tempControl.cc.idleRangeLow, setStringToTempDiff),
-	JSON_CONVERT(JSONKEY_heatingTargetUpper, &tempControl.cc.heatingTargetUpper, setStringToTempDiff),
-	JSON_CONVERT(JSONKEY_heatingTargetLower, &tempControl.cc.heatingTargetLower, setStringToTempDiff),
-	JSON_CONVERT(JSONKEY_coolingTargetUpper, &tempControl.cc.coolingTargetUpper, setStringToTempDiff),
-	JSON_CONVERT(JSONKEY_coolingTargetLower, &tempControl.cc.coolingTargetLower, setStringToTempDiff),
-	JSON_CONVERT(JSONKEY_maxHeatTimeForEstimate, &tempControl.cc.maxHeatTimeForEstimate, setUint16),
-	JSON_CONVERT(JSONKEY_maxCoolTimeForEstimate, &tempControl.cc.maxCoolTimeForEstimate, setUint16),
-	JSON_CONVERT(JSONKEY_lightAsHeater, &tempControl.cc.lightAsHeater, setBool),
-	JSON_CONVERT(JSONKEY_rotaryHalfSteps, &tempControl.cc.rotaryHalfSteps, setBool),
-	
-	JSON_CONVERT(JSONKEY_fridgeFastFilter, MAKE_FILTER_SETTING_TARGET(FAST, FRIDGE), applyFilterSetting),
-	JSON_CONVERT(JSONKEY_fridgeSlowFilter, MAKE_FILTER_SETTING_TARGET(SLOW, FRIDGE), applyFilterSetting),
-	JSON_CONVERT(JSONKEY_fridgeSlopeFilter, MAKE_FILTER_SETTING_TARGET(SLOPE, FRIDGE), applyFilterSetting),
-	JSON_CONVERT(JSONKEY_beerFastFilter, MAKE_FILTER_SETTING_TARGET(FAST, BEER), applyFilterSetting),
-	JSON_CONVERT(JSONKEY_beerSlowFilter, MAKE_FILTER_SETTING_TARGET(SLOW, BEER), applyFilterSetting),
-	JSON_CONVERT(JSONKEY_beerSlopeFilter, MAKE_FILTER_SETTING_TARGET(SLOPE, BEER), applyFilterSetting)
+	JSON_CONVERT(JSONKEY_minCoolTime, &tempControl.cc.minCoolTime, setUint16),
+	JSON_CONVERT(JSONKEY_minCoolIdleTime, &tempControl.cc.minCoolIdleTime, setUint16),
+	JSON_CONVERT(JSONKEY_heater1PwmPeriod, &tempControl.cc.heater1PwmPeriod, setUint16),
+	JSON_CONVERT(JSONKEY_heater2PwmPeriod, &tempControl.cc.heater2PwmPeriod, setUint16),
+	JSON_CONVERT(JSONKEY_coolerPwmPeriod, &tempControl.cc.coolerPwmPeriod, setUint16),
+	JSON_CONVERT(JSONKEY_mutexDeadTime, &tempControl.cc.mutexDeadTime, setUint16)
 	
 };
 
@@ -1004,7 +1017,9 @@ void PiLink::processJsonPair(const char * key, const char * val, void* pv){
 
 void PiLink::soundAlarm(bool active)
 {
-	alarm.setActive(active);
+#if BREWPI_BUZZER
+	buzzer.setActive(active);
+#endif
 }
 
 

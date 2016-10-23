@@ -13,9 +13,8 @@
 #include "IicLcd.h"
 
 #include "Brewpi.h"
-#include <stdio.h>
+//#include <stdio.h>
 #include <string.h>
-#include <inttypes.h>
 #include <inttypes.h>
 #include "Arduino.h"
 

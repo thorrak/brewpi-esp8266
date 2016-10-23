@@ -21,7 +21,7 @@
 #pragma once
 
 #include "Brewpi.h"
-#include "TemperatureFormats.h"
+#include "temperatureFormats.h"
 #include "DeviceManager.h"
 #include "Logger.h"
 
@@ -39,6 +39,7 @@ class PiLink{
 	static void init(void);
 	static void receive(void);
 	
+	// TODO - Fix this
 #ifndef ESP8266 // There is a bug in the ESP8266 implementation that causes these not to work. 
 	static void printFridgeAnnotation(const char * annotation, ...);	
 	static void printBeerAnnotation(const char * annotation, ...);
@@ -73,11 +74,11 @@ class PiLink{
 #endif
 #endif
 
-	static void test_functionality(void);
+
 	static void print_P(const char *fmt, ...); // use when format string is stored in PROGMEM with PSTR("string")
 	static void printNewLine(void);
 	static void printChamberCount();
-	static void printNibble(uint8_t n);
+//	static void printNibble(uint8_t n);
 
 	private:
 	static void soundAlarm(bool enabled);
@@ -85,6 +86,8 @@ class PiLink{
 	static void printChamberInfo();
 	
 public:
+	// This is marked private in 0.4.x but public in 0.2.4.
+	// TODO - Determine if this needs to be public or can be private
 	static void printTemperaturesJSON(const char * beerAnnotation, const char * fridgeAnnotation);
 private:
 	static void sendJsonPair(const char * name, const char * val); // send one JSON pair with a string value as name:val,
@@ -92,7 +95,7 @@ private:
 	static void sendJsonPair(const char * name, uint16_t val); // send one JSON pair with a uint16_t value as name:val,
 	static void sendJsonPair(const char * name, uint8_t val); // send one JSON pair with a uint8_t value as name:val,
 	static void sendJsonAnnotation(const char* name, const char* annotation);
-	static void sendJsonTemp(const char* name, temperature temp);
+	static void sendJsonTemp(const char* name, const temp_t & temp);  // TODO - Originally, no 'const' keyword on this one. Keep an eye on this 
 	
 	static void processJsonPair(const char * key, const char * val, void* pv); // process one pair
 	

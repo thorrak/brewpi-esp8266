@@ -1,0 +1,38 @@
+# Boost for Arduino
+<https://github.com/vancegroup/arduino-boost>
+
+Yep, this is the world-famous [Boost][] set of C++ libraries brought to everybody's favorite hobbyist-friendly microcontroller development system (for some definition of "everybody"), the Arduino. If you've been itching to go beyond C-style code without re-inventing the wheel (or in this case, the C++ standard libraries and STL, Loki, and Boost), this is what you're looking for.
+
+This depends on [StandardCplusplus][], a port of uClibc++ to Arduino, to provide the C++ standard libraries.
+
+[Boost]:http://boost.org
+[StandardCplusplus]:https://github.com/rpavlik/StandardCplusplus
+
+## Setting Up
+This text assumes you're using the Arduino IDE.  If you aren't, you are undoubtedly clever enough to figure out where to put this so your build process can find it ;)
+
+Arduino denotes a special directory as your "Sketchbook".  Find that directory, create a subdirectory in it called `libraries` if there isn't one already, and go into the `libraries` directory.  This is where you'll want to clone this repo and its dependency. (You can also use submodules if you have your sketchbook in Git)
+
+Because of the way that Arduino handles determining if you use a library, you need to clone this repository into a specially-named directory. As of now, that directory name is `boost_1_51_0` (reflecting the Boost version this is based on). StandardCplusplus should be cloned into a directory named that. So, the following two commands should work:
+
+```sh
+git clone https://github.com/vancegroup/arduino-boost.git boost_1_51_0
+git clone https://github.com/rpavlik/StandardCplusplus.git
+```
+
+## Using It
+Once you've got the libraries in your sketchbook, it's time to use them!  In order to get the Arduino IDE to add StandardCplusplus and Boost to your include path, your main sketch file must have these two lines at the top with the rest of the include lines, in this order:
+
+```c++
+#include <StandardCplusplus.h>
+#include <boost_1_51_0.h>
+```
+
+(I don't think it matters if they come before or after including real headers from these libraries, but they must be there to enable the libraries.)
+
+## Details and Limitations
+This repository started out with just the `boost/` and `libs/` subdirectories (plus the license file) of a Boost release. The dummy header was added, but the goal is to not make any more modifications to Boost: if there's a bug elsewhere (StandardCplusplus, Arduino's tools) handle it there instead. Otherwise this becomes less of a "quick modification" to Boost and more of a fork, which isn't good for maintainability.
+
+Only the "header-only" libraries are available (along with the header-only parts of the compiled-optional libraries). Thus, you can't (but wouldn't want to) use `boost::filesystem`, but `boost::mpl` should work fine. Most files related to them have been removed, but there may be a few stragglers.
+
+This arose as a "scratch an itch" project: if you can contribute (probably to improving StandardCplusplus so some previously-untested piece of Boost works), please do: fork and send pull requests.

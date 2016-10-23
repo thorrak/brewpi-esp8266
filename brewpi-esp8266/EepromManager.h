@@ -21,9 +21,9 @@
 #pragma once
 
 #include "Brewpi.h"
+#include "Platform.h"
 
 #include "EepromAccess.h"
-#include "EepromStructs.h"
 
 
 void fill(int8_t* p, uint8_t size);
@@ -37,6 +37,11 @@ class EepromManager {
 public:		
 		
 	EepromManager();
+
+	/**
+	* Initialize the eeprom manager.
+	*/
+	static void init();
 	
 	/**
 	 * Write -1 to the entire eeprom, emulating the reset performed by avrdude.

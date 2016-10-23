@@ -22,8 +22,10 @@
 #endif
 
 #include <EEPROM.h>
-#include "Logger.h" // Remove this once done
+#include "Logger.h" // TODO - Remove this once done
 #include "EepromStructs.h"
+#include "TempControl.h"
+#include "DeviceManager.h"
 
 
 //TODO - Clean this up
@@ -79,6 +81,10 @@ public:
 
 	static void set_manual_commit(const bool status) {
 //		manual_commit = status;
+	}
+
+	static void init(void) {
+		//Noop
 	}
 
 

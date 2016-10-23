@@ -20,22 +20,29 @@
 
 #pragma once
 
-// have to use two levels of macro expansion to convert a symbol to a string. see http://gcc.gnu.org/onlinedocs/cpp/Stringification.html
+ // have to use two levels of macro expansion to convert a symbol to a string. see http://gcc.gnu.org/onlinedocs/cpp/Stringification.html
+#ifndef stringify
 #define stringify(s) _stringifyDo(s)
 #define _stringifyDo(s) #s
-
-
-// Most pins are only conditionally defined here, allowing definitions to be provided in Config.h for
-// local overrides
-#define BREWPI_SHIELD_DIY   0
-#define BREWPI_SHIELD_REV_A	1
-#define BREWPI_SHIELD_REV_C	2
+#endif
+ // Most pins are only conditionally defined here, allowing definitions to be provided in Config.h for
+ // local overrides
+enum {
+	BREWPI_SHIELD_DIY,
+	BREWPI_SHIELD_REV_A,
+	BREWPI_SHIELD_REV_C,
+	BREWPI_SHIELD_SPARK_V1,
+	BREWPI_SHIELD_SPARK_V2
+};
 
 #define BREWPI_BOARD_LEONARDO 'l'
 #define BREWPI_BOARD_STANDARD 's'
 #define BREWPI_BOARD_MEGA 'm'
+#define BREWPI_BOARD_SPARKCORE 'x'
+#define BREWPI_BOARD_PHOTON 'y'
 #define BREWPI_BOARD_UNKNOWN '?'
 #define BREWPI_BOARD_ESP8266 'e'
+
 
 #ifdef ESP8266_WiFi
 #ifndef ESP8266_WiFi_Control
@@ -58,12 +65,14 @@
 #endif
 #include "ConfigDefault.h"
 
-#include <Arduino.h>
+//#include <Arduino.h>
 
-#include "Actuator.h"
-
-extern ValueActuator alarm;
-#ifdef ESP8266
-extern bool toggleBacklight;  // To allow us to toggle the backlight
+#ifdef ARDUINO
+#include "AppConfig.h"
+#else
+#include <AppConfig.h>
 #endif
+#include "AppConfigDefault.h"
+
+#define VERSION_STRING "0.4.3"
 

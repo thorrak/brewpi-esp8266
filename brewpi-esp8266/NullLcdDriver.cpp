@@ -17,6 +17,8 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if BREWPI_EMULATE || !BREWPI_LCD || !ARDUINO
+
 #include "Brewpi.h"
 #include <stdio.h>
 #include <string.h>
@@ -147,3 +149,5 @@ void NullLcdDriver::printSpacesToRestOfLine(void){
 		print(' ')                                             ;
 	}
 }
+
+#endif
