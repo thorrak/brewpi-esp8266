@@ -76,6 +76,16 @@ uint16_t TempControl::lastCoolTime;
 uint16_t TempControl::waitTime;
 #endif
 
+
+#ifndef min
+#define min _min
+#endif
+
+#ifndef max
+#define max _max
+#endif
+
+
 void TempControl::init(void){
 	state=IDLE;		
 	cs.mode = MODE_OFF;
