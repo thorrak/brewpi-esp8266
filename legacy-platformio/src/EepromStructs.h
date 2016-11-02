@@ -7,15 +7,15 @@
 
 // These structs were moved from TempControl.h
 struct ControlSettings {
-	char mode;
 	temperature beerSetting;
 	temperature fridgeSetting;
 	temperature heatEstimator; // updated automatically by self learning algorithm
 	temperature coolEstimator; // updated automatically by self learning algorithm
+    char mode;
 };
 
+
 struct ControlConstants {
-	char tempFormat;
 	temperature tempSettingMin;
 	temperature tempSettingMax;
 	temperature Kp;
@@ -40,6 +40,7 @@ struct ControlConstants {
 	uint8_t lightAsHeater;		// use the light to heat rather than the configured heater device
 	uint8_t rotaryHalfSteps; // define whether to use full or half steps for the rotary encoder
 	temperature pidMax;
+    char tempFormat;
 };
 
 

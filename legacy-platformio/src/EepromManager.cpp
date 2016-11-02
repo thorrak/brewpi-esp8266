@@ -39,18 +39,16 @@ EepromManager::EepromManager()
 
 bool EepromManager::hasSettings()
 {
-	uint8_t version = eepromAccess.readByte(pointerOffset(version));	
-	return (version==EEPROM_FORMAT_VERSION);
+	// TODO - Technically, this acts as a version check as well.
+	// We're eliminating that by just returning if the settings exist
+//	uint8_t version = eepromAccess.readByte(pointerOffset(version));
+//	return (version==EEPROM_FORMAT_VERSION);
+	return eepromAccess.hasSettings();
 }
 
 void EepromManager::zapEeprom()
 {
-	for (uint16_t offset=0; offset<EepromFormat::MAX_EEPROM_SIZE; offset++)
-		eepromAccess.writeByte(offset, 0xFF);		
-#ifdef ESP8266
-	eepromAccess.commit();
-#endif
-
+	eepromAccess.zapData();
 }
 
 
@@ -71,7 +69,7 @@ void EepromManager::initializeEeprom()
 	tempControl.loadDefaultSettings();	
 	
 	// write the default constants 
-	for (uint8_t c=0; c<EepromFormat::MAX_CHAMBERS; c++) {
+/*	for (uint8_t c=0; c<EepromFormat::MAX_CHAMBERS; c++) {
 		eptr_t pv = pointerOffset(chambers)+(c*sizeof(ChamberBlock)) ;
 		tempControl.storeConstants(pv+offsetof(ChamberBlock, chamberSettings.cc));
 		pv += offsetof(ChamberBlock, beer)+offsetof(BeerBlock, cs);
@@ -80,19 +78,18 @@ void EepromManager::initializeEeprom()
 			tempControl.storeSettings(pv);	
 			pv += sizeof(BeerBlock);		// advance to next beer
 		}
-	}
+	}*/
+	// TODO - Eventually, restore ability to have more than one chamber/beer
+	tempControl.storeConstants(0); // Replacing 'pv' with 0 since we're no longer using EEPROM
+	tempControl.storeSettings(0); // Replacing 'pv' with 0 since we're no longer using EEPROM
 
 	// set the version flag - so that storeDevice will work
-	eepromAccess.writeByte(0, EEPROM_FORMAT_VERSION);
+//	eepromAccess.writeByte(0, EEPROM_FORMAT_VERSION);  // We don't save the EEPROM version anywhere now
 		
-	saveDefaultDevices();
+	saveDefaultDevices();  // noop
 	// set state to startup
 	tempControl.init();
 
-#ifdef ESP8266
-	eepromAccess.set_manual_commit(false);
-	eepromAccess.commit();
-#endif
 }
 
 uint8_t EepromManager::saveDefaultDevices() 
@@ -104,9 +101,10 @@ uint8_t EepromManager::saveDefaultDevices()
 
 
 bool EepromManager::applySettings()
-{	
-	if (!hasSettings())
-		return false;
+{
+    if (!hasSettings()) {
+        return false;  // TODO - This is where the EEPROM reset code should be called.
+    }
 
 	// start from a clean state		
 	deviceManager.setupUnconfiguredDevices();
@@ -153,19 +151,21 @@ void EepromManager::storeTempSettings()
 	tempControl.storeSettings(pv+offsetof(ChamberBlock, beer[0].cs));	
 }
 
-bool EepromManager::fetchDevice(DeviceConfig& config, uint8_t deviceIndex)
+bool EepromManager::fetchDevice(DeviceConfig& config, int8_t deviceIndex)
 {
 	bool ok = (hasSettings() && deviceIndex<EepromFormat::MAX_DEVICES);
 	if (ok)
-		eepromAccess.readDeviceDefinition(config, pointerOffset(devices)+sizeof(DeviceConfig)*deviceIndex, sizeof(DeviceConfig));
+		eepromAccess.readDeviceDefinition(config, deviceIndex, sizeof(DeviceConfig));
+//        eepromAccess.readDeviceDefinition(config, pointerOffset(devices)+sizeof(DeviceConfig)*deviceIndex, sizeof(DeviceConfig));
 	return ok;
 }	
 
-bool EepromManager::storeDevice(const DeviceConfig& config, uint8_t deviceIndex)
+bool EepromManager::storeDevice(const DeviceConfig& config, int8_t deviceIndex)
 {
 	bool ok = (hasSettings() && deviceIndex<EepromFormat::MAX_DEVICES);
 	if (ok)
-		eepromAccess.writeDeviceDefinition(pointerOffset(devices)+sizeof(DeviceConfig)*deviceIndex, config, sizeof(DeviceConfig));	
+        eepromAccess.writeDeviceDefinition(deviceIndex, config, sizeof(DeviceConfig));
+//        eepromAccess.writeDeviceDefinition(pointerOffset(devices)+sizeof(DeviceConfig)*deviceIndex, config, sizeof(DeviceConfig));
 	return ok;
 }
 

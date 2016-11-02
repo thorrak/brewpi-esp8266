@@ -96,7 +96,7 @@ piStream.begin(57600);
 #endif
 
 #ifdef BUFFER_PILINK_PRINTS
-printBuf.reserve(2048); // Reserve 2kb for our string (waaaay more than we need, and we have space on the ESP!)
+printBuf.reserve(1024); // Reserve 1kb for our string (waaaay more than we need, and we have space on the ESP!)
 printBuf = "";
 #endif
 

@@ -71,8 +71,8 @@ public:
 	 */
 	static void storeTempSettings();
 
-	static bool fetchDevice(DeviceConfig& config, uint8_t deviceIndex);
-	static bool storeDevice(const DeviceConfig& config, uint8_t deviceIndex);
+	static bool fetchDevice(DeviceConfig& config, int8_t deviceIndex);
+	static bool storeDevice(const DeviceConfig& config, int8_t deviceIndex);
 	
 	static uint8_t saveDefaultDevices();
 };
@@ -81,9 +81,9 @@ class EepromStream
 {
 	eptr_t pv;
 	
-	void writeByte(uint8_t value) {
+/*	void writeByte(uint8_t value) {
 		eepromAccess.writeByte(pv++, value);				
-	}
+	}*/
 	// TODO - Clean this up
 /*	void writeBlock(void* source, uint16_t size)
 	{
@@ -99,9 +99,9 @@ class EepromStream
 		eepromAccess.writeControlConstants(pv, source, size);
 	}
 
-	void writeDeviceDefinition(const DeviceConfig& source, uint16_t size) {
+/*	void writeDeviceDefinition(const DeviceConfig& source, uint16_t size) {
 		eepromAccess.writeDeviceDefinition(pv, source, size);
-	}
+	}*/
 };
 
 extern EepromManager eepromManager;

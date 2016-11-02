@@ -397,11 +397,10 @@ void DeviceManager::parseDeviceDefinition()
 	eepromManager.fetchDevice(original, dev.id);
 	memcpy(&target, &original, sizeof(target));
 
-	/*
-	piLink.print("Dev Chamber: %d, Dev Beer: %d, Dev Function: %d, Dev Hardware: %d, Dev PinNr: %d\r\n", dev.chamber, dev.beer, dev.deviceFunction, dev.deviceHardware, dev.pinNr);
-	piLink.print("target Chamber: %d, target Beer: %d, target Function: %d, target Hardware: %d, target PinNr: %d\r\n", target.chamber, 
-		target.beer, target.deviceFunction, target.deviceHardware, target.hw.pinNr);
-	*/
+//	piLink.print("Dev Chamber: %d, Dev Beer: %d, Dev Function: %d, Dev Hardware: %d, Dev PinNr: %d\r\n", dev.chamber, dev.beer, dev.deviceFunction, dev.deviceHardware, dev.pinNr);
+//	piLink.print("target Chamber: %d, target Beer: %d, target Function: %d, target Hardware: %d, target PinNr: %d\r\n", target.chamber,
+//		target.beer, target.deviceFunction, target.deviceHardware, target.hw.pinNr);
+
 
 	assignIfSet(dev.chamber, &target.chamber);
 	assignIfSet(dev.beer, &target.beer);
@@ -420,7 +419,6 @@ void DeviceManager::parseDeviceDefinition()
 	assignIfSet(dev.invert, (uint8_t*)&target.hw.invert);
 		
 	if (dev.address[0] != 0xFF) {// first byte is family identifier. I don't have a complete list, but so far 0xFF is not used.
-		piLink.print("Dev Address: %s, Target Address: %s\r\n", dev.address, target.hw.address);
 		memcpy(target.hw.address, dev.address, 8);
 	}
 	assignIfSet(dev.deactivate, (uint8_t*)&target.hw.deactivate);
@@ -461,7 +459,7 @@ void DeviceManager::parseDeviceDefinition()
  * for onewire temp devices, address must be unique.
  * for onewire ds2413 devices, address+pio must be unique.
  */
-bool DeviceManager::isDeviceValid(DeviceConfig& config, DeviceConfig& original, uint8_t deviceIndex)
+bool DeviceManager::isDeviceValid(DeviceConfig& config, DeviceConfig& original, int8_t deviceIndex)
 {
 #if 1
 	/* Implemented checks to ensure the system will not crash when supplied with invalid data.

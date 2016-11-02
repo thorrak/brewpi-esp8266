@@ -54,6 +54,15 @@ static const char STR_empty_string[] PROGMEM = "";
 bool toggleBacklight;
 #endif
 
+
+#ifndef min
+#define min _min
+#endif
+
+#ifndef max
+#define max _max
+#endif
+
 void LcdDisplay::init(void){
 #ifdef ESP8266
 	toggleBacklight = false;
