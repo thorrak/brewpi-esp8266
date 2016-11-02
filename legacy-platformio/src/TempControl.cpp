@@ -641,7 +641,6 @@ bool TempControl::stateIsHeating(void){
 const ControlConstants TempControl::ccDefaults PROGMEM =
 {
 	// Do Not change the order of these initializations!
-	/* tempFormat */ 'C',
 	/* tempSettingMin */ intToTemp(1),	// +1 deg Celsius
 	/* tempSettingMax */ intToTemp(30),	// +30 deg Celsius
 	
@@ -678,4 +677,5 @@ const ControlConstants TempControl::ccDefaults PROGMEM =
 	/* rotaryHalfSteps */ 0,
 
 	/* pidMax */ intToTempDiff(10),	// +/- 10 deg Celsius
+	/* tempFormat */ 'C',
 };

@@ -6,20 +6,16 @@
 
 
 // These structs were moved from TempControl.h
-#pragma pack(push,1)
 struct ControlSettings {
-	char mode;
 	temperature beerSetting;
 	temperature fridgeSetting;
 	temperature heatEstimator; // updated automatically by self learning algorithm
 	temperature coolEstimator; // updated automatically by self learning algorithm
+    char mode;
 };
-#pragma push(pop)
 
 
-#pragma pack(push,1)
 struct ControlConstants {
-	char tempFormat;
 	temperature tempSettingMin;
 	temperature tempSettingMax;
 	temperature Kp;
@@ -44,8 +40,8 @@ struct ControlConstants {
 	uint8_t lightAsHeater;		// use the light to heat rather than the configured heater device
 	uint8_t rotaryHalfSteps; // define whether to use full or half steps for the rotary encoder
 	temperature pidMax;
+    char tempFormat;
 };
-#pragma push(pop)
 
 
 
@@ -93,7 +89,6 @@ enum DeviceHardware {
 /*
 * A union of all device types.
 */
-#pragma pack(push,1)
 struct DeviceConfig {
 
 	uint8_t chamber;			// 0 means no chamber. 1 is the first chamber.	
@@ -121,4 +116,3 @@ struct DeviceConfig {
 	} hw;
 	bool reserved2;
 };
-#pragma push(pop)

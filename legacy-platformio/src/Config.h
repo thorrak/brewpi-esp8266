@@ -224,8 +224,8 @@
 
 
 #ifdef ESP8266
-//#define ESP8266_WiFi 1			// This disables Serial and enables WiFi support
-//#define ESP8266_WiFi_Control 1	// This adds the headers for WiFi support (so you can disconnect from WiFi via serial)
+#define ESP8266_WiFi 1			// This disables Serial and enables WiFi support
+#define ESP8266_WiFi_Control 1	// This adds the headers for WiFi support (so you can disconnect from WiFi via serial)
 #endif
 
 
@@ -244,7 +244,7 @@
 #define IIC_SCL NODEMCU_PIN_D1
 
 // BREWPI_INVERT_ACTUATORS
-// TODO - FIgure out what the hell this actually does
+// TODO - Figure out what the hell this actually does
 #define BREWPI_INVERT_ACTUATORS 0
 
 #define BUFFER_PILINK_PRINTS 1

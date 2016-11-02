@@ -102,12 +102,9 @@ uint8_t EepromManager::saveDefaultDevices()
 
 bool EepromManager::applySettings()
 {
-    Serial.println("applySettings called");
     if (!hasSettings()) {
-        Serial.println("hasSettings returned false");
-        return false;
+        return false;  // TODO - This is where the EEPROM reset code should be called.
     }
-    Serial.println("hasSettings returned true, setupUnconfiguredDevices");
 
 	// start from a clean state		
 	deviceManager.setupUnconfiguredDevices();
@@ -154,7 +151,7 @@ void EepromManager::storeTempSettings()
 	tempControl.storeSettings(pv+offsetof(ChamberBlock, beer[0].cs));	
 }
 
-bool EepromManager::fetchDevice(DeviceConfig& config, uint8_t deviceIndex)
+bool EepromManager::fetchDevice(DeviceConfig& config, int8_t deviceIndex)
 {
 	bool ok = (hasSettings() && deviceIndex<EepromFormat::MAX_DEVICES);
 	if (ok)
@@ -163,7 +160,7 @@ bool EepromManager::fetchDevice(DeviceConfig& config, uint8_t deviceIndex)
 	return ok;
 }	
 
-bool EepromManager::storeDevice(const DeviceConfig& config, uint8_t deviceIndex)
+bool EepromManager::storeDevice(const DeviceConfig& config, int8_t deviceIndex)
 {
 	bool ok = (hasSettings() && deviceIndex<EepromFormat::MAX_DEVICES);
 	if (ok)

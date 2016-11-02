@@ -95,15 +95,6 @@ void handleReset()
 void setup()
 {
 
-#if defined(USBCON)
-	// This was in main(); before setup(); - Moving here as we're removing main();
-	USBDevice.attach();
-#endif
-
-#if defined(ESP8266)
-	// We need to initialize the EEPROM on ESP8266
-	EEPROM.begin(MAX_EEPROM_SIZE_LIMIT);
-	eepromAccess.set_manual_commit(false); // TODO - Move this where it should actually belong (a class constructor)
 
 #ifdef ESP8266_WiFi
 	String mdns_id;
@@ -172,10 +163,8 @@ void setup()
 	if (!MDNS.begin(mdns_id.c_str())) {
 		// TODO - Do something about it or log it or something
 	}
-
 #endif
 
-#endif
 
 #if BREWPI_BUZZER	
 	buzzer.init();
@@ -212,7 +201,7 @@ void setup()
 	display.printStationaryText();
 	display.printState();
 
-	rotaryEncoder.init();
+//	rotaryEncoder.init();
 
 	logDebug("init complete");
 }
