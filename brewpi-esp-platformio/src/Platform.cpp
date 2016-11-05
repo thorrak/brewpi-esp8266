@@ -88,20 +88,17 @@ bool platform_init()
 			if (dns_name_file) {
 				// Assuming everything goes well, read in the mdns name
 				mdns_id = dns_name_file.readStringUntil('\n');
-			}
-			else {
+			} else {
 				// The file exists, but we weren't able to read from it
 				mdns_id = "ESP" + String(ESP.getChipId());
 			}
-		}
-		else {
+		} else {
 			// The file doesn't exist	
 			mdns_id = "ESP" + String(ESP.getChipId());
 		}
-	}
-	else {
+	} else {
 		// There's some kind of issue with SPIFFS.
-		// TODO - Log this one or something
+        logErrorString(ERROR_SPIFFS_FAILURE, "/mdns.txt".c_str());
 		mdns_id = "ESP" + String(ESP.getChipId());
 	}
 	mdns_id.trim();

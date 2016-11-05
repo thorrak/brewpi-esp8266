@@ -462,7 +462,10 @@ void DeviceManager::parseDeviceDefinition()
 	DeviceConfig target;
 	DeviceConfig original;
 
-	// todo - should ideally check if the eeprom is correctly initialized.
+	if(!eepromManager.hasSettings()) {
+		return;
+	}
+
 	eepromManager.fetchDevice(original, dev.id);
 	memcpy(&target, &original, sizeof(target));
 	assignIfSet(dev.chamber, &target.chamber);

@@ -699,7 +699,7 @@ void PiLink::sendControlVariables(void){
 void PiLink::sendControlVariables(void) {
 	piStream.print('V');
 	piStream.print(':');
-	JSON::serial_producer<Control>::convert(control, piStream);  // TODO - Make sure this doesn't die horribly
+	JSON::serial_producer<Control>::convert(control, piStream);
 	piStream.println();
 }
 

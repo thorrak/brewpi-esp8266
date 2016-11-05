@@ -127,8 +127,8 @@
 //
 #ifndef BREWPI_LCD
 #define BREWPI_LCD 1
-//#define BREWPI_IIC 1  // TODO - Reenable this
-#define BREWPI_NULL_LCD 1
+#define BREWPI_IIC 1
+//#define BREWPI_NULL_LCD 1
 #define BACKLIGHT_AUTO_OFF_PERIOD 0 // Disable backlight auto off
 #endif
 //
@@ -244,8 +244,7 @@
 #define IIC_SCL NODEMCU_PIN_D1
 
 // BREWPI_INVERT_ACTUATORS
-// TODO - FIgure out what the hell this actually does
-#define BREWPI_INVERT_ACTUATORS 0
+#define BREWPI_INVERT_ACTUATORS 0  // TODO - Figure out what the hell this actually does
 
 #define BUFFER_PILINK_PRINTS 1
 

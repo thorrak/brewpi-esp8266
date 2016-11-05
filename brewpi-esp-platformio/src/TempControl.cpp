@@ -229,7 +229,6 @@ void TempControl::setBeerTemp(temp_t newTemp, bool store) {
 	control.beer1Set->write(newTemp);
 	cs.beerSetting = newTemp;
 
-	// TODO - Make this definable
 	if (store && ((cs.mode != MODE_BEER_PROFILE) ||
 		(storedBeerSetting - newTemp) > temp_t(0.25) ||
 		(newTemp - storedBeerSetting) > temp_t(0.25)))

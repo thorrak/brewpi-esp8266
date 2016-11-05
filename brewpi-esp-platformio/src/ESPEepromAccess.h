@@ -23,9 +23,9 @@
 
 #include <FS.h>
 
-#include "EepromStructs.h"
 #include "TempControl.h"
 #include "DeviceManager.h"
+#include "Logger.h"
 
 
 #define SPIFFS_controlConstants_fname "/controlConstants"
@@ -46,11 +46,11 @@ private:
 				out_file.close();
 				return true;
 			} else {
-				// TODO - log this
+                logErrorString(ERROR_SPIFFS_FAILURE, target_name.c_str());
 			}
 		} else {
 			// There's some kind of issue with SPIFFS or something.
-			// TODO - Log this
+            logErrorString(ERROR_SPIFFS_FAILURE, target_name.c_str());
 		}
 		return false;
 	}
@@ -67,7 +67,7 @@ private:
 			}
 		}
 		// There's some kind of issue with SPIFFS or something.
-		// TODO - Log this
+        logErrorString(ERROR_SPIFFS_FAILURE, target_name.c_str());
 		return false;
 	}
 
@@ -76,7 +76,7 @@ private:
 			return SPIFFS.exists(target_name);
 		}
 		// There's some kind of issue with SPIFFS or something.
-		// TODO - Log this
+        logErrorString(ERROR_SPIFFS_FAILURE, target_name.c_str());
 		return false;
 	}
 

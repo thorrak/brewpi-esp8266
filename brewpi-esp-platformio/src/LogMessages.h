@@ -54,7 +54,10 @@ enum errorMessages{
 
 	MSG(ERROR_ONEWIRE_INIT_FAILED, "OneWire initialization failed"),
 	MSG(ERROR_DEVICE_ALREADY_INSTALLED, "This hardware device is already installed at slot %d. Uninstall it first.", slot),
-	MSG(ERROR_FUNCTION_ALREADY_INSTALLED, "This device function is already installed at slot %d. Uninstall it first.", slot)
+	MSG(ERROR_FUNCTION_ALREADY_INSTALLED, "This device function is already installed at slot %d. Uninstall it first.", slot),
+
+	// ESPEepromAccess.cpp
+	MSG(ERROR_SPIFFS_FAILURE, "SPIFFS read/write failed for file %s", fileName)  // This is the only change to LogMessages for ESP
 
 }; // END enum errorMessages
 

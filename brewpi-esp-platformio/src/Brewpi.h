@@ -84,4 +84,4 @@
 #define VERSION_STRING "0.4.3"
 
 
-#define DISABLE_UI 1
+#define DISABLE_UI 1  // We don't have UI support in the ESP8266 branch, unfortunately.

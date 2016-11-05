@@ -26,9 +26,6 @@
 #else
 
 #include <avr/eeprom.h>
-#include "EepromStructs.h"
-
-//TODO - Update to match ESPEepromAccess.h
 
 class ArduinoEepromAccess
 {
