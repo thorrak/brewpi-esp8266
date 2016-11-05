@@ -29,16 +29,6 @@ void flashFirmware()
 }
 
 
-#define EEPROM_MAGIC1 (0xD0)
-#define EEPROM_MAGIC2 (0x9E)
-
-void eraseExternalFlash()
-{
-	// NOOP
-}
-
-
-
 /////////////// WIFI SPECIFIC STUFF /////////////////
 
 #ifdef ESP8266_WiFi
@@ -86,9 +76,6 @@ void connectClients() {
 
 bool platform_init()
 {
-
-	EEPROM.begin(MAX_EEPROM_SIZE_LIMIT);
-	eepromAccess.set_manual_commit(false); // TODO - Move this where it should actually belong (a class constructor)
 
 #ifdef ESP8266_WiFi
 	String mdns_id;
@@ -164,17 +151,11 @@ bool platform_init()
 
 #endif
 
+    bool initialize = !eepromManager.hasSettings();
+    if(initialize) {
+        eepromManager.zapEeprom();  // Writes all the empty files to SPIFFS
+    }
 
-	// TODO - Determine if this method of initialization works. If it does, then fantastic!
-	bool initialize = (EEPROM.read(0) != EEPROM_MAGIC1 || EEPROM.read(1) != EEPROM_MAGIC2);
-	if (initialize) {
-
-		eraseExternalFlash();
-
-		EEPROM.write(0, EEPROM_MAGIC1);
-		EEPROM.write(1, EEPROM_MAGIC2);
-	}
-	eepromAccess.init();
 	return initialize;
 }
 

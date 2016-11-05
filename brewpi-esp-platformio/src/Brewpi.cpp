@@ -81,12 +81,6 @@ void setup()
     bool resetEeprom = platform_init();
 
     eepromManager.init();
-    if (resetEeprom)
-    {
-        // TODO - Fix this
-//        eepromManager.initializeEeprom();
-
-    }
 #ifndef DISABLE_UI
     ui.init();
 #endif
@@ -123,7 +117,7 @@ void setup()
 	//tempControl.beerSensor->init();
 	//tempControl.fridgeSensor->init();
 #endif
-//    settingsManager.loadSettings();  // TODO - Fix this
+    settingsManager.loadSettings();
 
     control.update(); // TODO - Determine if I need this here if we have no menu/rotary encoder
 

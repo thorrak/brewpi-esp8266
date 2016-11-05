@@ -85,5 +85,3 @@
 
 
 #define DISABLE_UI 1
-
-#define DISABLE_TEMP_CONTROL 1

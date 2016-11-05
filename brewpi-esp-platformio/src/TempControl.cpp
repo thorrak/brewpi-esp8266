@@ -119,7 +119,6 @@ TempControl::TempControl()
 	lastIdleTime = 0;
 };
 
-//#ifndef DISABLE_TEMP_CONTROL
 
 
 tcduration_t TempControl::timeSinceCooling(void)
@@ -189,10 +188,8 @@ void TempControl::loadSettings(eptr_t offset)
 
 void TempControl::loadDefaultConstants(void)
 {
-    // TODO - Fix ccDefaults below
     ControlConstants ccDef;
     ccDef = ccDefaults();
-
 
 	memcpy((void *) &tempControl.cc, (void *) &ccDef, sizeof(ControlConstants));
 	updateConstants();
@@ -312,95 +309,3 @@ void TempControl::updateConstants()
 	control.mutex->setDeadTime(cc.mutexDeadTime * 1000);
 }
 
-
-
-
-//
-//#else
-//
-//
-////#include "temperatureFormats.h"
-////#include "TempControl.h"
-//
-////#define DISABLED_TEMP temp_t::disabled()
-//
-////TempControl tempControl;
-//
-////ControlConstants const ccDefaults PROGMEM =
-////		{
-////
-////		};
-//
-////TempControl::TempControl()
-////{
-////};
-//
-//tcduration_t TempControl::timeSinceCooling(void)
-//{
-//}
-//
-//tcduration_t TempControl::timeSinceHeating(void)
-//{
-//}
-//
-//tcduration_t TempControl::timeSinceIdle(void)
-//{
-//}
-//
-//void TempControl::loadDefaultSettings()
-//{
-//}
-//
-//void TempControl::storeConstants(eptr_t offset)
-//{
-//}
-//
-//void TempControl::loadConstants(eptr_t offset)
-//{
-//}
-//
-//// write new settings to EEPROM to be able to reload them after a reset
-//// The update functions only write to EEPROM if the value has changed
-//void TempControl::storeSettings(eptr_t offset)
-//{
-//}
-//
-//void TempControl::loadSettings(eptr_t offset)
-//{
-//}
-//
-//
-//void TempControl::loadDefaultConstants(void)
-//{
-//}
-//
-//
-//void TempControl::setMode(char newMode, bool store)
-//{
-//}
-//
-//void TempControl::setBeerTemp(temp_t newTemp, bool store) {
-//}
-//
-//void TempControl::setFridgeTemp(temp_t newTemp, bool store) {
-//}
-//
-//control_mode_t ModeControl_GetMode()
-//{
-//}
-//
-//control_mode_t ModeControl_SetMode(control_mode_t mode)
-//{
-//}
-//
-//// loads settings in tempControl to control, overwriting all existing settings
-//// This is temporary fix, until settings are stored elsewhere
-//// Overwriting with the same value should not have any side effects
-//// updating all settings when only one has changed is a temporary fix. TODO
-//void TempControl::updateConstants()
-//{
-//}
-//
-//
-//
-//#endif

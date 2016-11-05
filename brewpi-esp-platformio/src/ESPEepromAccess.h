@@ -21,71 +21,125 @@
 #error Incorrect processor type!
 #endif
 
-#include <EEPROM.h>
-#include "Logger.h" // TODO - Remove this once done
+#include <FS.h>
+
 #include "EepromStructs.h"
 #include "TempControl.h"
 #include "DeviceManager.h"
 
 
+#define SPIFFS_controlConstants_fname "/controlConstants"
+#define SPIFFS_controlSettings_fname "/controlSettings"
+#define SPIFFS_device_fname_prepend "/dev"
+
+#define MAX_SPIFFS_DEVICES MAX_DEVICE_SLOT
+
 //TODO - Clean this up
 class ESPEepromAccess
 {
-public:
-	// TODO - Add a constructor to set the value of manual commit somewhere other than 
-//	static bool manual_commit;
+private:
+	template <class T> static bool writeBlockToFile(String target_name, T& data) {
+		if (SPIFFS.begin()) {
+			File out_file = SPIFFS.open(target_name, "w");
+			if (out_file) {
+				out_file.write((const uint8_t*)&data, sizeof(data));
+				out_file.close();
+				return true;
+			} else {
+				// TODO - log this
+			}
+		} else {
+			// There's some kind of issue with SPIFFS or something.
+			// TODO - Log this
+		}
+		return false;
+	}
 
-	static uint8_t readByte(eptr_t offset) {
+	template <class T> static bool readBlockFromFile(String target_name, T& data) {
+		if (SPIFFS.begin()) {
+			File in_file = SPIFFS.open(target_name, "r");
+			if (in_file) {
+				uint8_t holding[sizeof(data)];
+				in_file.read(holding, sizeof(data));
+				memcpy(&data, holding, sizeof(data));
+				in_file.close();
+				return true;
+			}
+		}
+		// There's some kind of issue with SPIFFS or something.
+		// TODO - Log this
+		return false;
+	}
+
+	static bool doesFileExist(String target_name) {
+		if (SPIFFS.begin()) {
+			return SPIFFS.exists(target_name);
+		}
+		// There's some kind of issue with SPIFFS or something.
+		// TODO - Log this
+		return false;
+	}
+
+
+public:
+	// Since we're basically switching to using SPIFFS for everything, I don't want these to compile
+/*	static uint8_t readByte(eptr_t offset) {
 		return EEPROM.read(offset);
 	}
 	static void writeByte(eptr_t offset, uint8_t value) {
 		EEPROM.write(offset, value);
-	}
+	}*/
 
 	static void readControlSettings(ControlSettings& target, eptr_t offset, uint16_t size) {
-		EEPROM.get(offset, target);
+		readBlockFromFile(SPIFFS_controlSettings_fname, target);
 	}
 
 	static void readControlConstants(ControlConstants& target, eptr_t offset, uint16_t size) {
-		EEPROM.get(offset, target);
+		readBlockFromFile(SPIFFS_controlConstants_fname, target);
 	}
 
-	static void readDeviceDefinition(DeviceConfig& target, eptr_t offset, uint16_t size) {
-		EEPROM.get(offset, target);
+	// TODO - Move this
+	static void clear(uint8_t* p, uint8_t size) {
+		while (size-->0) *p++ = 0;
+	}
+
+	static void readDeviceDefinition(DeviceConfig& target, int8_t deviceID, uint16_t size) {
+		char buf[20];
+		sprintf(buf, "%s%d", SPIFFS_device_fname_prepend, deviceID);
+		if(!readBlockFromFile(buf, target)) // deviceID was previously an offset in memory - now it's a sequential #
+			clear((uint8_t*)&target, sizeof(target));  // This mimics the behavior where previously the EEPROM would have been 0ed out.
 	}
 
 	static void writeControlSettings(eptr_t target, ControlSettings& source, uint16_t size) {
-		EEPROM.put(target, source);
-//		if (!manual_commit)
-			EEPROM.commit();
-//		logWarningIntString(0, size, "writeControlSettings called");
+		writeBlockToFile(SPIFFS_controlSettings_fname, source);
 	}
 
 	static void writeControlConstants(eptr_t target, ControlConstants& source, uint16_t size) {
-		EEPROM.put(target, source);
-//		if(!manual_commit)
-			EEPROM.commit();
-//		logWarningIntString(0, size, "writeControlConstants called");
+		writeBlockToFile(SPIFFS_controlConstants_fname, source);
 	}
 
-	static void writeDeviceDefinition(eptr_t target, const DeviceConfig& source, uint16_t size) {
-		EEPROM.put(target, source);
-//		if (!manual_commit)
-			EEPROM.commit();
-		logWarningIntString(0, sizeof(source), "writeDeviceDefinition called");
+	static void writeDeviceDefinition(int8_t deviceID, const DeviceConfig& source, uint16_t size) {
+		char buf[20];
+		sprintf(buf, "%s%d", SPIFFS_device_fname_prepend, deviceID);
+		writeBlockToFile(buf, source);  // deviceID was previously an offset in memory - now it's a sequential #
+//		logWarningIntString(0, sizeof(source), "writeDeviceDefinition called");
 	}
 
-	static void commit(void) {
-		EEPROM.commit();
+	static bool hasSettings() {
+		return doesFileExist(SPIFFS_controlSettings_fname);
 	}
 
-	static void set_manual_commit(const bool status) {
-//		manual_commit = status;
+	static void zapData() {
+		// This gets a bit tricky -- we can't just do SPIFFS.format because that would wipe out the mDNS name
+		int i;
+
+		if(doesFileExist(SPIFFS_controlConstants_fname)) SPIFFS.remove(SPIFFS_controlConstants_fname);
+		if(doesFileExist(SPIFFS_controlSettings_fname)) SPIFFS.remove(SPIFFS_controlSettings_fname);
+
+		char buf[20];
+		for(i=0;i<MAX_SPIFFS_DEVICES;i++) {
+			sprintf(buf, "%s%d", SPIFFS_device_fname_prepend, i);
+			if(doesFileExist(buf)) SPIFFS.remove(buf);
+		}
 	}
-
-	static void init(void) {
-		//Noop
-	}
-
-
 };

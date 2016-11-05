@@ -30,9 +30,9 @@
 
 // These two structs are stored in and loaded from EEPROM
 struct ControlSettings {
-	control_mode_t mode;
 	temp_t beerSetting;
 	temp_t fridgeSetting;
+	control_mode_t mode;  // Reordering this to enforce the memory order of the structure
 };
 
 struct ControlConstants {
