@@ -1,0 +1,8 @@
+//
+// Created by John Beeler on 11/6/16.
+//
+
+#ifndef WIFI_SETTINGS_RESET_WIFI_RESET_H
+#define WIFI_SETTINGS_RESET_WIFI_RESET_H
+
+#endif //WIFI_SETTINGS_RESET_WIFI_RESET_H
