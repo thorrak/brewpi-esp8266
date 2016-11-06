@@ -29,6 +29,9 @@
 #include "TemperatureFormats.h"
 #include "Pins.h"
 
+#ifdef ESP8266_WiFi
+#include <ESP8266WiFi.h>  // For printing the IP address
+#endif
 
 
 uint8_t LcdDisplay::stateOnDisplay;
@@ -292,3 +295,34 @@ void LcdDisplay::printState(void){
 #endif		
 	}
 }
+
+
+#ifdef ESP8266_WiFi
+void LcdDisplay::printWiFi(void){
+	toggleBacklight = false;  // Assuming we need this
+
+	lcd.setCursor(0,0);
+	// Factoring prints out of switch has negative effect on code size in this function
+	lcd.print("WiFi Name: ");
+	lcd.printSpacesToRestOfLine();
+
+	lcd.setCursor(0,1);
+	lcd.print(eepromManager.fetchmDNSName());
+	lcd.print(".local");
+	lcd.printSpacesToRestOfLine();
+
+	lcd.setCursor(0,2);
+	lcd.print("IP Address: ");
+	lcd.printSpacesToRestOfLine();
+
+	lcd.setCursor(0,3);
+	lcd.print(WiFi.localIP());
+	lcd.printSpacesToRestOfLine();
+
+	lcd.updateBacklight();
+}
+
+void LcdDisplay::clear(void) {
+	lcd.clear();
+}
+#endif

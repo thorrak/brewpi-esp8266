@@ -75,6 +75,12 @@ public:
 	static bool storeDevice(const DeviceConfig& config, int8_t deviceIndex);
 	
 	static uint8_t saveDefaultDevices();
+
+#ifdef ESP8266_WiFi
+	static String fetchmDNSName();
+	static void savemDNSName(String mdns_id);
+#endif
+
 };
 
 class EepromStream 

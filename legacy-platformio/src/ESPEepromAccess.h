@@ -22,11 +22,10 @@
 #endif
 
 #include <FS.h>
-//#include <Arduino.h>
-#include <EEPROM.h>
-#include "Logger.h" // Remove this once done
 #include "EepromStructs.h"
 #include "EepromFormat.h"
+
+
 
 #define SPIFFS_controlConstants_fname "/controlConstants"
 #define SPIFFS_controlSettings_fname "/controlSettings"
@@ -39,7 +38,7 @@ class ESPEepromAccess
 {
 private:
 	template <class T> static bool writeBlockToFile(String target_name, T& data) {
-		if (SPIFFS.begin()) {  // This may be an issue if called multiple times - going to assume it's not
+		if (SPIFFS.begin()) {
 			File out_file = SPIFFS.open(target_name, "w");
 			if (out_file) {
                 out_file.write((const uint8_t*)&data, sizeof(data));
@@ -56,7 +55,7 @@ private:
 	}
 
 	template <class T> static bool readBlockFromFile(String target_name, T& data) {
-		if (SPIFFS.begin()) {  // This may be an issue if called multiple times - going to assume it's not
+		if (SPIFFS.begin()) {
 			File in_file = SPIFFS.open(target_name, "r");
 			if (in_file) {
                 uint8_t holding[sizeof(data)];
@@ -72,7 +71,7 @@ private:
 	}
 
     static bool doesFileExist(String target_name) {
-        if (SPIFFS.begin()) {  // This may be an issue if called multiple times - going to assume it's not
+        if (SPIFFS.begin()) {
             return SPIFFS.exists(target_name);
         }
         // There's some kind of issue with SPIFFS or something.

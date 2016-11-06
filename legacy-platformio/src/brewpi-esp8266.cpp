@@ -8,7 +8,6 @@
 
 #ifdef ESP8266_WiFi_Control
 #include "ESP8266mDNS.h"
-#include <EEPROM.h>				//For storing the configuration constants 
 #include <ESP8266WiFi.h>		//ESP8266 Core WiFi Library (you most likely already have this in your sketch)
 #include <DNSServer.h>			//Local DNS Server used for redirecting all requests to the configuration portal
 #include <ESP8266WebServer.h>	//Local WebServer used to serve the configuration portal
@@ -99,28 +98,9 @@ void setup()
 #ifdef ESP8266_WiFi
 	String mdns_id;
 
-	// The below loads the mDNS name from the file we saved it to (if the file exists)
-	if (SPIFFS.begin()) {
-		if (SPIFFS.exists("/mdns.txt")) {
-			// The file exists - load it up
-			File dns_name_file = SPIFFS.open("/mdns.txt", "r");
-			if (dns_name_file) {
-				// Assuming everything goes well, read in the mdns name
-				mdns_id = dns_name_file.readStringUntil('\n');
-			} else {
-				// The file exists, but we weren't able to read from it
-				mdns_id = "ESP" + String(ESP.getChipId());
-			}
-		} else {
-			// The file doesn't exist	
-			mdns_id = "ESP" + String(ESP.getChipId());
-		}
-	} else {
-		// There's some kind of issue with SPIFFS.
-		// TODO - Log this one or something
+	mdns_id = eepromManager.fetchmDNSName();
+	if(mdns_id.length()<=0)
 		mdns_id = "ESP" + String(ESP.getChipId());
-	}
-	mdns_id.trim();
 
 
 	// If we're going to set up WiFi, let's get to it
@@ -144,13 +124,7 @@ void setup()
 	if (shouldSaveConfig) {
 		// If the mDNS name is valid, save it.
 		if (isValidmDNSName(custom_mdns_name.getValue())) {
-			File dns_name_file = SPIFFS.open("/mdns.txt", "w");
-			if (dns_name_file) {
-				// If the above fails, we weren't able to open the file for writing
-				mdns_id = custom_mdns_name.getValue();
-				dns_name_file.println(mdns_id);
-			}
-			dns_name_file.close();
+			eepromManager.savemDNSName(custom_mdns_name.getValue());
 		} else {
 			// If the mDNS name is invalid, reset the WiFi configuration and restart the ESP8266
 			WiFi.disconnect(true);
@@ -177,14 +151,13 @@ void setup()
 	// If we're using WiFi, initialize the bridge
 	server.begin();
 	server.setNoDelay(true);
-
-	// On the ESP8266, we need to initialize the eeprom or we have strange issues with setting up devices.
-	// We're going to assume here that if we just saved the WiFi credentials, we should reset the EEPROM.
-	if (shouldSaveConfig) {
-		eepromManager.initializeEeprom();
-		logInfo(INFO_EEPROM_INITIALIZED);
-	}
 #endif
+
+    bool initialize = !eepromManager.hasSettings();
+    if(initialize) {
+        eepromManager.zapEeprom();  // Writes all the empty files to SPIFFS
+        logInfo(INFO_EEPROM_INITIALIZED);
+    }
 
 	logDebug("started");
 	tempControl.init();
@@ -198,6 +171,11 @@ void setup()
 #endif	
 
 	display.init();
+#ifdef ESP8266_WiFi
+	display.printWiFi();  // Print the WiFi info (mDNS name & IP address)
+	delay(8000);
+	display.clear();
+#endif
 	display.printStationaryText();
 	display.printState();
 
