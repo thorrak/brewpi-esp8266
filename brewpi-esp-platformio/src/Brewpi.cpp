@@ -40,12 +40,7 @@
 #include "Sensor.h"
 #include "SettingsManager.h"
 
-#ifndef DISABLE_UI
 #include "UI.h"
-#endif
-
-//#include "EepromFormat.h"
-
 
 
 #if BREWPI_SIMULATE
@@ -65,15 +60,7 @@ void loop(void);
 TicksImpl ticks = TicksImpl(TICKS_IMPL_CONFIG);
 DelayImpl wait = DelayImpl(DELAY_IMPL_CONFIG);
 
-#ifndef DISABLE_UI
 UI ui;
-#endif
-
-//Moving to Platform.cpp
-/*#ifdef ESP8266_WiFi
-WiFiServer server(23);
-WiFiClient serverClient;
-#endif*/
 
 
 void setup()
@@ -125,19 +112,11 @@ void brewpiLoop(void)
 {
     // TODO - Determine if this makes sense...
     static unsigned long lastUpdate = 0; // init at -1000 to update immediately
-#ifndef DISABLE_UI
     ui.ticks();
-#endif
-    if(
-#ifndef DISABLE_UI
-            !ui.inStartup() &&
-#endif
-                    (ticks.millis() - lastUpdate >= (1000))) { //update settings every second
+    if(!ui.inStartup() && (ticks.millis() - lastUpdate >= (1000))) { //update settings every second
         lastUpdate = ticks.millis();
         control.update();
-#ifndef DISABLE_UI
         ui.update();
-#endif
     }
 
     control.fastUpdate(); // update actuators as often as possible for PWM
