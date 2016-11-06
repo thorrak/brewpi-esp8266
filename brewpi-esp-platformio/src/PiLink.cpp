@@ -21,6 +21,7 @@
 #include <stdlib.h>
 
 #include "Brewpi.h"
+#include "Config.h"
 #include <stdarg.h>
 
 #include "stddef.h"
@@ -37,9 +38,7 @@
 #include "SettingsManager.h"
 #include "Display.h" // Not sure why this is listed twice
 #include "PiLinkHandlers.h"
-#ifndef DISABLE_UI
 #include "UI.h"
-#endif
 #include "Buzzer.h"
 #include "ActuatorInterfaces.h"
 #include "ActuatorMocks.h"
@@ -64,33 +63,15 @@
 //#include <VM_DBG/VM_DBG.h>
  // Rename Serial to piStream, to abstract it for later platform independence
 
-#if BREWPI_EMULATE
-	class MockSerial : public Stream
-	{
-		public:
-		void print(char c) {}
-		void print(const char* c) {}
-		void printNewLine() {}
-                void println() {}
-		int read() { return -1; }
-		int available() { return -1; }
-		void begin(unsigned long) {}
-		size_t write(uint8_t w) { return 1; }
-		int peek() { return -1; }
-		void flush() { };			
-		operator bool() { return true; }
-	};
-
-	static MockSerial mockSerial;
-	#define piStream mockSerial
-#elif !defined(WIRING)
-        StdIO stdIO;
-        #define piStream stdIO
-#elifdef ESP8266_WiFi
+#ifdef ESP8266_WiFi
 // Just use the serverClient object as it supports all the same functions as Serial
 extern WiFiServer server;
 extern WiFiClient serverClient;
 #define piStream serverClient
+
+#elif !defined(WIRING)
+        StdIO stdIO;
+        #define piStream stdIO
 #else
 // Not using ESP8266 WiFi
 #define piStream Serial
@@ -368,12 +349,11 @@ void PiLink::receive(void){
 			break;
 #endif
 
-		// TODO - Readd toggleBacklight
-//#ifdef ESP8266
-//		case 'b': // Toggle Backlight
-//			toggleBacklight = !toggleBacklight;
-//			break;
-//#endif
+#ifdef ESP8266
+		case 'b': // Toggle Backlight
+			toggleBacklight = !toggleBacklight;
+			break;
+#endif
 
 #if (BREWPI_DEBUG > 0)			
 		case 'Z': // zap eeprom

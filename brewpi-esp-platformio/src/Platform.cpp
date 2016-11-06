@@ -80,29 +80,10 @@ bool platform_init()
 #ifdef ESP8266_WiFi
 	String mdns_id;
 
-	// The below loads the mDNS name from the file we saved it to (if the file exists)
-	if (SPIFFS.begin()) {
-		if (SPIFFS.exists("/mdns.txt")) {
-			// The file exists - load it up
-			File dns_name_file = SPIFFS.open("/mdns.txt", "r");
-			if (dns_name_file) {
-				// Assuming everything goes well, read in the mdns name
-				mdns_id = dns_name_file.readStringUntil('\n');
-			} else {
-				// The file exists, but we weren't able to read from it
-				mdns_id = "ESP" + String(ESP.getChipId());
-			}
-		} else {
-			// The file doesn't exist	
-			mdns_id = "ESP" + String(ESP.getChipId());
-		}
-	} else {
-		// There's some kind of issue with SPIFFS.
-        logErrorString(ERROR_SPIFFS_FAILURE, "/mdns.txt".c_str());
-		mdns_id = "ESP" + String(ESP.getChipId());
-	}
+    mdns_id = eepromManager.fetchmDNSName();
+    if(mdns_id.length()<=0)
+        mdns_id = "ESP" + String(ESP.getChipId());
 	mdns_id.trim();
-
 
 	// If we're going to set up WiFi, let's get to it
 	WiFiManager wifiManager;
@@ -120,20 +101,13 @@ bool platform_init()
 
 	wifiManager.autoConnect(); // Launch captive portal with auto generated name ESP + ChipID
 
-							   // Alright. We're theoretically connected here (or we timed out).
-							   // If we connected, then let's save the mDNS name
+   // Alright. We're theoretically connected here (or we timed out).
+   // If we connected, then let's save the mDNS name
 	if (shouldSaveConfig) {
 		// If the mDNS name is valid, save it.
 		if (isValidmDNSName(custom_mdns_name.getValue())) {
-			File dns_name_file = SPIFFS.open("/mdns.txt", "w");
-			if (dns_name_file) {
-				// If the above fails, we weren't able to open the file for writing
-				mdns_id = custom_mdns_name.getValue();
-				dns_name_file.println(mdns_id);
-			}
-			dns_name_file.close();
-		}
-		else {
+            eepromManager.savemDNSName(custom_mdns_name.getValue());
+		} else {
 			// If the mDNS name is invalid, reset the WiFi configuration and restart the ESP8266
 			WiFi.disconnect(true);
 			delay(2000);

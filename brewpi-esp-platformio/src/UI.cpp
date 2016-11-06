@@ -24,7 +24,14 @@ uint8_t UI::init() {
 
 uint32_t UI::showStartupPage()
 {
+#ifdef ESP8266_WiFi
+    display.printWiFi();
+    delay(8000);  // 8 second delay for startup
+    display.clear();  // Clear after printing WiFi (because apparently this doesn't happen otherwise)
+    return 1;
+#else
     return 0;
+#endif
 }
 
 /**

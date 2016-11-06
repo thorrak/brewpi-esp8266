@@ -81,11 +81,8 @@ void setup()
     bool resetEeprom = platform_init();
 
     eepromManager.init();
-#ifndef DISABLE_UI
     ui.init();
-#endif
     piLink.init();
-
 
 #ifdef ESP8266_WiFi
     // If we're using WiFi, initialize the bridge
@@ -93,16 +90,13 @@ void setup()
 	server.setNoDelay(true);
 #endif
 
-
     logDebug("started");
 
     uint32_t start = ticks.millis();
-#ifndef DISABLE_UI
     uint32_t delay = ui.showStartupPage();
     while (ticks.millis() - start <= delay) {
         ui.ticks();
     }
-#endif
 
     // initialize OneWire
 #ifndef ARDUINO // This is noop on esp8266/arduino
@@ -121,10 +115,7 @@ void setup()
 
     control.update(); // TODO - Determine if I need this here if we have no menu/rotary encoder
 
-#ifndef DISABLE_UI
     ui.showControllerPage();
-#endif
-
     logDebug("init complete");
 }
 

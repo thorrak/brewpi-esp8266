@@ -25,6 +25,7 @@
 #include "TempControl.h"
 #include "Board.h"
 #include "fixstl.h"
+#include "EepromManager.h"
 #include <algorithm>
 
 using std::min;
@@ -250,3 +251,38 @@ void LcdDisplay::printState(void){
 #endif
 	}
 }
+
+#ifdef ESP8266_WiFi
+
+// print mode on the right location on the first line, after "Mode   "
+void LcdDisplay::printWiFi(void){
+	toggleBacklight = false;  // Assuming we need this
+
+	lcd.setCursor(0,0);
+	// Factoring prints out of switch has negative effect on code size in this function
+	lcd.print("WiFi Name: ");
+	lcd.printSpacesToRestOfLine();
+
+	lcd.setCursor(0,1);
+	lcd.print(eepromManager.fetchmDNSName());
+	lcd.print(".local");
+	lcd.printSpacesToRestOfLine();
+
+	lcd.setCursor(0,2);
+	lcd.print("IP Address: ");
+	lcd.printSpacesToRestOfLine();
+
+	lcd.setCursor(0,3);
+	lcd.print(WiFi.localIP());
+	lcd.printSpacesToRestOfLine();
+
+	lcd.updateBacklight();
+}
+
+void LcdDisplay::clear(void) {
+	lcd.clear();
+}
+
+
+#endif
+
