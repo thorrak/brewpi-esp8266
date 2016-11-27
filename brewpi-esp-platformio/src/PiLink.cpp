@@ -96,6 +96,14 @@ printBuf = "";
 
 }
 
+void PiLink::flushInput(void){
+#ifndef ESP8266_WiFi  // Disabling if we have WiFi support, as it won't fill with garbage (as the Spark does apparently)
+    while (piStream.available() > 0) {
+        char inByte = piStream.read();
+    }
+#endif
+}
+
 #ifdef ESP8266
 void formatStandardAnnotation(String &annotation, const char* str_1, const char* str_2, const char* str_3);
 #endif
@@ -191,6 +199,34 @@ void PiLink::printNibble(uint8_t n)
 }
 #endif
 
+// TODO - Determine if I need to override readCrLf to always return true on ESP8266
+bool readCrLf(){  // New in 0.4.4
+    bool found = false;
+    uint8_t retries = 0;
+    while(retries < 10){
+        int inByte = piStream.peek();
+        switch(inByte){
+            case -1:
+                // wait for data
+                wait.millis(1);
+                retries++;
+                break;
+            case '\r':
+            case '\n':
+                found = true;
+                inByte = piStream.read(); // consume
+                break;
+            default:
+                // found other character
+                // stop looking
+                retries = 255;
+                break;
+        }
+    }
+    return found;
+}
+
+
 // Trying to enforce that the only thing to talk to piStream is piLink
 int PiLink::read() {
 	return piStream.read();
@@ -226,25 +262,33 @@ void PiLink::receive(void){
 #endif					
 #if BREWPI_BUZZER
 		case 'A': // alarm on
-			soundAlarm(true);
+		    if(readCrLf()) {
+    			soundAlarm(true);
+			}
 			break;
 		case 'a': // alarm off
-			soundAlarm(false);
+		    if(readCrLf()) {
+    			soundAlarm(false);
+            }
 			break;
 #endif
 		case 't': // temperatures requested
 			printTemperatures();      
 			break;		
 		case 'C': // Set default constants
-			tempControl.loadDefaultConstants();
-			display.printStationaryText(); // reprint stationary text to update to right degree unit
-			sendControlConstants(); // update script with new settings
-			logInfo(INFO_DEFAULT_CONSTANTS_LOADED);
+            if(readCrLf()) {
+                tempControl.loadDefaultConstants();
+                display.printStationaryText(); // reprint stationary text to update to right degree unit
+                sendControlConstants(); // update script with new settings
+                logInfo(INFO_DEFAULT_CONSTANTS_LOADED);
+            }
 			break;
 		case 'S': // Set default settings
-			tempControl.loadDefaultSettings();
-			sendControlSettings(); // update script with new settings
-			logInfo(INFO_DEFAULT_SETTINGS_LOADED);
+            if(readCrLf()) {
+                tempControl.loadDefaultSettings();
+                sendControlSettings(); // update script with new settings
+                logInfo(INFO_DEFAULT_SETTINGS_LOADED);
+            }
 			break;
 		case 's': // Control settings requested
 			sendControlSettings();
@@ -972,7 +1016,7 @@ const PiLink::JsonParserConvert PiLink::jsonParserConverters[] PROGMEM = {
 	JSON_CONVERT(JSONKEY_beer2fridge_td, &tempControl.cc.beer2fridge_td, setUint16),
 	JSON_CONVERT(JSONKEY_beer2fridge_infilt, &tempControl.cc.beer2fridge_infilt, setFilter),
 	JSON_CONVERT(JSONKEY_beer2fridge_dfilt, &tempControl.cc.beer2fridge_dfilt, setFilter),
-	JSON_CONVERT(JSONKEY_beer2fridge_pidMax, &tempControl.cc.beer2fridge_pidMax, setStringToFixedLong),
+	JSON_CONVERT(JSONKEY_beer2fridge_pidMax, &tempControl.cc.beer2fridge_pidMax, setStringToTempDiff),
 
 	JSON_CONVERT(JSONKEY_minCoolTime, &tempControl.cc.minCoolTime, setUint16),
 	JSON_CONVERT(JSONKEY_minCoolIdleTime, &tempControl.cc.minCoolIdleTime, setUint16),

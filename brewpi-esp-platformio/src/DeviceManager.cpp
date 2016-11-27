@@ -307,6 +307,8 @@ void DeviceManager::installDevice(DeviceConfig & config)
 	switch (dt){
 		case DEVICETYPE_NONE :
 			break;
+		case DEVICETYPE_SWITCH_SENSOR:
+			break;
 
 		case DEVICETYPE_TEMP_SENSOR :
 		{
@@ -390,8 +392,8 @@ const char DEVICE_ATTRIB_PIO             = 'n';
 #endif
 
 const char DEVICE_ATTRIB_CALIBRATEADJUST = 'j';    // value to add to temp sensors to bring to correct temperature
-const char DEVICE_ATTRIB_VALUE           = 'v';    // print current values
-const char DEVICE_ATTRIB_WRITE           = 'w';    // write value to device
+//const char DEVICE_ATTRIB_VALUE           = 'v';    // print current values
+//const char DEVICE_ATTRIB_WRITE           = 'w';    // write value to device
 const char DEVICE_ATTRIB_TYPE            = 't';
 
 void handleDeviceDefinition(const char * key,
@@ -902,6 +904,7 @@ inline void DeviceManager::writeValve(DeviceConfig::Hardware hw, uint8_t value)
 inline void DeviceManager::writePin(DeviceConfig::Hardware hw, uint8_t value)
 {
 	bool active = value != 0;
+	pinMode(hw.pinNr, OUTPUT);  // TODO - Test this on ESP8266 to make sure this doesn't create issues
 	digitalWrite(hw.pinNr, (active ^ hw.invert) ? HIGH : LOW);
 }
 

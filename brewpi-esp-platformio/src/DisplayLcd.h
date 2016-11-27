@@ -87,7 +87,6 @@ public:
 #ifdef ESP8266_WiFi
 	DISPLAY_METHOD void printWiFi(void);
 	DISPLAY_METHOD void clear(void);
-
 #endif
 
 private:

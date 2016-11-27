@@ -29,7 +29,7 @@
 void fill(int8_t* p, uint8_t size);
 void clear(uint8_t* p, uint8_t size);
 
-class DeviceConfig;
+struct DeviceConfig;
 
 
 // todo - the Eeprom manager should avoid too frequent saves to the eeprom since it supports 100,000 writes. 
@@ -87,33 +87,5 @@ public:
 #endif
 
 };
-
-
-//class EepromStream
-//{
-//	eptr_t pv;
-//
-//	void writeByte(uint8_t value) {
-//		eepromAccess.writeByte(pv++, value);
-//	}
-//	// TODO - Clean this up
-///*	void writeBlock(void* source, uint16_t size)
-//	{
-//		eepromAccess.writeBlock(pv, source, size);
-//		pv += size;
-//	}*/
-//	// Breaking this out into three functions so that we can have better control
-//	void writeControlSettings(ControlSettings& source, uint16_t size) {
-//		eepromAccess.writeControlSettings(pv, source, size);
-//	}
-//
-//	void writeControlConstants(ControlConstants& source, uint16_t size) {
-//		eepromAccess.writeControlConstants(pv, source, size);
-//	}
-//
-//	void writeDeviceDefinition(const DeviceConfig& source, uint16_t size) {
-//		eepromAccess.writeDeviceDefinition(pv, source, size);
-//	}
-//};
 
 extern EepromManager eepromManager;

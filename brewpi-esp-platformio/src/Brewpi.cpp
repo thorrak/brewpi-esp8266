@@ -103,6 +103,12 @@ void setup()
     control.update(); // TODO - Determine if I need this here if we have no menu/rotary encoder
 
     ui.showControllerPage();
+
+
+    // flush any waiting input.
+    // Linux can put garbage in the serial input buffer during connect
+    piLink.flushInput();
+
     logDebug("init complete");
 }
 

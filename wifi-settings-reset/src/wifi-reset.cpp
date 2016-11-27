@@ -24,7 +24,7 @@ void setup()
 
     SPIFFS.begin();
     // Next lines have to be done ONLY ONCE!!!!!When SPIFFS is formatted ONCE you can comment these lines out!!
-    Serial.println("Please wait 30 secs for SPIFFS to be formatted");
+    Serial.println("Please wait up to 30 secs for SPIFFS to be formatted");
     SPIFFS.format();
     Serial.println("Spiffs formatted!\r\n");
 
