@@ -81,4 +81,4 @@
 #endif
 #include "AppConfigDefault.h"
 
-#define VERSION_STRING "0.4.3"
+#define VERSION_STRING "0.4.4"
