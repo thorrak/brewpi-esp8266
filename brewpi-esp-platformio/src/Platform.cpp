@@ -119,6 +119,11 @@ bool platform_init()
 	if (!MDNS.begin(mdns_id.c_str())) {
 		// TODO - Do something about it or log it or something
 	}
+	MDNS.addService("brewpi", "tcp", 23);
+	MDNS.addServiceTxt("brewpi", "tcp", "board", "ESP8266");
+	MDNS.addServiceTxt("brewpi", "tcp", "branch", "0.4");  // Yeah, I have no idea what to call this branch.
+	MDNS.addServiceTxt("brewpi", "tcp", "version", VERSION_STRING);
+	MDNS.addServiceTxt("brewpi", "tcp", "revision", FIRMWARE_REVISION);
 
 #endif
 

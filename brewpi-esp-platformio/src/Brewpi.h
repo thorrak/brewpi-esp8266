@@ -82,3 +82,4 @@
 #include "AppConfigDefault.h"
 
 #define VERSION_STRING "0.4.4"
+#define FIRMWARE_REVISION "0.1"
