@@ -43,7 +43,7 @@ the board you are using, etc.) these instructions are located in a
 [different file](Installing the Firmware.md). Go read them, and come back.
 
 
-### 4. Set up the firmware - [[Video]](http://www.youtube.com/watch?v=vUaPao_wBGI)
+### 4. Set up the firmware - [[Video]](http://www.youtube.com/watch?v=xtkuAVaX8JQ)
 Once you have flashed the firmware to the ESP8266 board, you will need to
 configure it for use. If you are using the "serial" version of the firmware
 then congratulations - you're done! For the WiFi version, you will need to
