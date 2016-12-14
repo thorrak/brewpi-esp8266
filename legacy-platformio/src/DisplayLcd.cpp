@@ -303,7 +303,7 @@ void LcdDisplay::printWiFi(void){
 
 	lcd.setCursor(0,0);
 	// Factoring prints out of switch has negative effect on code size in this function
-	lcd.print("WiFi Name: ");
+	lcd.print("WiFi (mDNS) Name: ");
 	lcd.printSpacesToRestOfLine();
 
 	lcd.setCursor(0,1);
