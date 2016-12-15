@@ -798,13 +798,21 @@ void PiLink::receiveJson(void){
 	return;
 }
 
+// Everything dies when these are PROGMEM. Reverting...
+//static const char STR_WEB_INTERFACE[] PROGMEM = "in web interface";
+//static const char STR_TEMPERATURE_PROFILE[] PROGMEM = "by temperature profile";
+//static const char STR_MODE[] PROGMEM = "Mode";
+//static const char STR_BEER_TEMP[] PROGMEM = "Beer temp";
+//static const char STR_FRIDGE_TEMP[] PROGMEM = "Fridge temp";
+//static const char STR_FMT_SET_TO[] PROGMEM = "%S set to %s %S";
 
-static const char STR_WEB_INTERFACE[] PROGMEM = "in web interface";
-static const char STR_TEMPERATURE_PROFILE[] PROGMEM = "by temperature profile";
-static const char STR_MODE[] PROGMEM = "Mode";
-static const char STR_BEER_TEMP[] PROGMEM = "Beer temp";
-static const char STR_FRIDGE_TEMP[] PROGMEM = "Fridge temp";
-static const char STR_FMT_SET_TO[] PROGMEM = "%S set to %s %S";
+static const char STR_WEB_INTERFACE[]  = "in web interface";
+static const char STR_TEMPERATURE_PROFILE[]  = "by temperature profile";
+static const char STR_MODE[]  = "Mode";
+static const char STR_BEER_TEMP[]  = "Beer temp";
+static const char STR_FRIDGE_TEMP[]  = "Fridge temp";
+static const char STR_FMT_SET_TO[]  = "%S set to %s %S";
+
 
 void PiLink::setMode(const char* val) {
 	char mode = val[0];
