@@ -6,13 +6,16 @@
 
 #include "Brewpi.h"
 
-#ifdef ESP8266_WiFi_Control
+#ifdef ESP8266
+#include <ESP8266WiFi.h>		//ESP8266 Core WiFi Library (always included so we can disable the radio for serial)
+
+#ifdef ESP8266_WiFi
 #include <ESP8266mDNS.h>
-#include <ESP8266WiFi.h>		//ESP8266 Core WiFi Library (you most likely already have this in your sketch)
 #include <DNSServer.h>			//Local DNS Server used for redirecting all requests to the configuration portal
 #include <ESP8266WebServer.h>	//Local WebServer used to serve the configuration portal
 #include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 #include "Version.h" 			// Used in mDNS announce string
+#endif
 #endif
 
 #include <OneWire.h>
@@ -137,6 +140,11 @@ void setup()
 	if (!MDNS.begin(mdns_id.c_str())) {
 		// TODO - Do something about it or log it or something
 	}
+#else
+    // Apparently, the WiFi radio is managed by the bootloader, so not including the libraries isn't the same as
+    // disabling WiFi. We'll explicitly disable it if we're running in "serial" mode
+	WiFi.disconnect();
+	WiFi.mode(WIFI_OFF);
 #endif
 
 
@@ -192,15 +200,25 @@ void setup()
 
 #ifdef ESP8266_WiFi
 void connectClients() {
+
+    if(WiFi.status() != WL_CONNECTED){
+        WiFi.begin();
+    }
+
 	if (server.hasClient()) {
-		if (!serverClient || !serverClient.connected()) {
-			if (serverClient) serverClient.stop();
-			serverClient = server.available();
-		} else {
-			//no free/disconnected spot so reject
-			WiFiClient rejectClient = server.available();
-			rejectClient.stop();
-		}
+        // If we show a client as already being disconnected, force a disconnect
+        if (serverClient) serverClient.stop();
+		serverClient = server.available();
+		serverClient.flush();
+
+//        if (!serverClient || !serverClient.connected()) {
+//			if (serverClient) serverClient.stop();  // serverClient isn't connected
+//			serverClient = server.available();
+//            serverClient.flush(); // Clean things up
+//		} else {
+//			// no free/disconnected spot so reject
+//			server.available().stop();
+//		}
 	}
 }
 

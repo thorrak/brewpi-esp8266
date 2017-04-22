@@ -36,7 +36,7 @@
 #include "Buzzer.h"
 #include "Display.h"
 
-#ifdef ESP8266_WiFi_Control
+#ifdef ESP8266
 #include <ESP8266WiFi.h>          //ESP8266 Core WiFi Library
 #endif
 
@@ -354,14 +354,12 @@ void PiLink::receive(void){
 			closeListResponse();
 			break;
 
-#ifdef ESP8266_WiFi_Control
+#ifdef ESP8266
 		case 'w': // Reset WiFi settings
 			WiFi.disconnect(true);
 			break;
-#endif
 
-#ifdef ESP8266
-		case 'b': // Toggle Backlight
+		case 'b': // Toggle Backlight (since we don't have a rotary encoder)
 			toggleBacklight = !toggleBacklight;
 			break;
 #endif

@@ -224,9 +224,8 @@
 
 
 #ifdef ESP8266
-#define ESP8266_WiFi 1			// This disables Serial and enables WiFi support
-#define ESP8266_WiFi_Control 1	// This adds the headers for WiFi support (so you can disconnect from WiFi via serial)
-#define FIRMWARE_REVISION "0.8"
+#define ESP8266_WiFi 1			// This disables Serial and enables WiFi support. Comment out for "serial" mode.
+#define FIRMWARE_REVISION "0.9"
 #endif
 
 
