@@ -102,12 +102,22 @@ void setup()
 
 void brewpiLoop(void)
 {
-	static unsigned long lastUpdate = 0;
-	uint8_t oldState;
-			
-	if(ticks.millis() - lastUpdate >= (1000)) { //update settings every second
-		lastUpdate = ticks.millis();
-
+    static unsigned long lastLcdUpdate = 0;
+    if(ticks.millis() - lastLcdUpdate >= (60000)) { //reset lcd every 60 seconds as a workaround for screen scramble
+        lastLcdUpdate = ticks.millis();
+    
+        display.init();
+        display.printStationaryText();
+        display.printState();
+    
+        rotaryEncoder.init();
+    }
+    
+    static unsigned long lastUpdate = 0;
+    uint8_t oldState;
+    
+    if(ticks.millis() - lastUpdate >= (1000)) { //update settings every second
+        lastUpdate = ticks.millis();
 #if BREWPI_BUZZER
 		buzzer.setActive(alarm.isActive() && !buzzer.isActive());
 #endif			
