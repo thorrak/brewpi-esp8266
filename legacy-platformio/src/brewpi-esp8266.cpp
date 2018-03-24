@@ -78,6 +78,14 @@ bool isValidmDNSName(String mdns_name) {
 
 WiFiServer server(23);
 WiFiClient serverClient;
+
+WiFiEventHandler stationConnectedHandler;
+void onStationConnected(const WiFiEventSoftAPModeStationConnected& evt) {
+    server.begin();
+    server.setNoDelay(true);
+}
+
+
 #endif
 
 void handleReset()
@@ -120,7 +128,8 @@ void setup()
 	WiFiManagerParameter custom_mdns_name("mdns", "Device (mDNS) Name", mdns_id.c_str(), 20);
 	wifiManager.addParameter(&custom_mdns_name);
 
-	wifiManager.autoConnect(); // Launch captive portal with auto generated name ESP + ChipID
+//	wifiManager.autoConnect("ESP-BrewPi-Setup"); // Launch captive portal with static name
+    wifiManager.autoConnect(); // Launch captive portal with auto generated name ESP + ChipID
 
 	// Alright. We're theoretically connected here (or we timed out).
 	// If we connected, then let's save the mDNS name
@@ -187,6 +196,8 @@ void setup()
 	display.init();
 #ifdef ESP8266_WiFi
 	display.printWiFi();  // Print the WiFi info (mDNS name & IP address)
+    WiFi.setAutoReconnect(false); // It isn't working, so why leave it on
+    stationConnectedHandler = WiFi.onSoftAPModeStationConnected(&onStationConnected);
 	delay(8000);
 	display.clear();
 #endif
@@ -199,27 +210,52 @@ void setup()
 }
 
 #ifdef ESP8266_WiFi
+
+
+int reconnectPoll = 0;
 void connectClients() {
 
-    if(WiFi.status() != WL_CONNECTED){
-        WiFi.begin();
+    // Pretty sure this code was doing the opposite of what we wanted it to (spamming the AP rather than reconnecting)
+//    if(WiFi.status() != WL_CONNECTED){
+//        WiFi.begin();
+//    }
+
+    if (!WiFi.isConnected() || WiFi.status() != WL_CONNECTED || WiFi.localIP() == IPAddress(0,0,0,0)) {
+        if(reconnectPoll == 0) {
+            WiFi.mode(WIFI_AP_STA);
+            if(!WiFi.reconnect())
+                WiFi.begin();  // WiFi.reconnect only reconnects if we think we're still connected to something
+            reconnectPoll = 1;
+        } else if(reconnectPoll >= 20) {
+            // Every 20 seconds, restart the reconnection attempt
+            reconnectPoll = 0;
+        } else {
+            // Normally, this would be a while loop, where we would loop until we get reconnected, but I specifically
+            // want to break every second to allow BrewPi to do its thing
+            reconnectPoll += 1;
+            delay(1000);
+        }
+    } else if (reconnectPoll != 0) {
+        reconnectPoll = 0;
     }
 
-	if (server.hasClient()) {
-        // If we show a client as already being disconnected, force a disconnect
-        if (serverClient) serverClient.stop();
-		serverClient = server.available();
-		serverClient.flush();
-
-//        if (!serverClient || !serverClient.connected()) {
-//			if (serverClient) serverClient.stop();  // serverClient isn't connected
-//			serverClient = server.available();
-//            serverClient.flush(); // Clean things up
-//		} else {
-//			// no free/disconnected spot so reject
-//			server.available().stop();
-//		}
-	}
+    if(WiFi.isConnected()) {
+        if (server.hasClient()) {
+            // If we show a client as already being disconnected, force a disconnect
+            if (serverClient) serverClient.stop();
+            serverClient = server.available();
+            serverClient.flush();
+        }
+    } else {
+        // This might be unnecessary, but let's go ahead and disconnect any "clients" we show as connected given that
+        // WiFi isn't connected
+		// If we show a client as already being disconnected, force a disconnect
+		if (serverClient) {
+			serverClient.stop();
+			serverClient = server.available();
+			serverClient.flush();
+		}
+    }
 }
 
 #endif
