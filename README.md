@@ -2,14 +2,14 @@
 An implementation of the BrewPi device code on an ESP8266 (No arduino needed!) /w bonus WiFi support
 
 ## Introduction
-This project seeks to implement the BrewPi firmware onto an ESP8266 controller.
+This project seeks to implement the BrewPi firmware onto an ESP8266 controller. It is compatible with both [Fermentrack](http://www.fermentrack.com/) as well as the legacy BrewPi-www software.
 
 ### Documentation:
-* [Selecting an ESP8266 Board](docs/Selecting an ESP Board.md)
+* [Selecting an ESP8266 Board](docs/Selecting%20an%20ESP%20Board.md)  
 * [Full Installation Instructions](docs/INSTALL.md) (including custom brewpi-script)
-* [Installing the Firmware](docs/Installing the Firmware.md)
+* [Installing the Firmware](docs/Installing%20the%20Firmware.md)
 * [Developing/Contributing](docs/DEVELOP.md)
-* [PCB Information](docs/PCB Information.md) - PCB files, ordering and BOMs
+* [PCB Information](docs/PCB%20Information.md) - PCB files, ordering and BOMs
 
 ## Expected Pinout *(NOTE - CHANGED IN v0.3!)*
 * D0 - Heat
@@ -41,5 +41,9 @@ The primary goal in creating this was to mirror the spirit of the Arduino implem
 When possible, I've broken out ESP8266 specific code using preprocessor logic. Although this should in theory allow this code to be compiled against an Arduino target, backwards compatibility is not guaranteed. The primary goal of using preprocessor logic is to document changes from the Arduino codebase - not to maintain it.
 
 Due to the fact that this is an unsupported board, I have had to rewrite a small portion of brewpi-script to support it. I've also merged in (some of the) changes that were proposed to the official repo late last year to support network sockets (and therefore, WiFi). As a result, to use brewpi-esp8266 you will need to also use this modified brewpi-script. 
+
+## Fermentrack Integration
+
+Although this firmware works with brewpi-www, it is highly recommended that users use [Fermentrack](http://www.fermentrack.com/) instead as Fermentrack substantially reduces the work required to get an ESP8266-based controller working. Due to recent changes in Raspbian, ongoing testing & support for this firmware is exclusively performed on Fermentrack and future changes may introduce incompatibility with brewpi-www.
 
 
