@@ -38,45 +38,36 @@ class ESPEepromAccess
 {
 private:
 	template <class T> static bool writeBlockToFile(String target_name, T& data) {
-		if (SPIFFS.begin()) {
-			File out_file = SPIFFS.open(target_name, "w");
-			if (out_file) {
-                out_file.write((const uint8_t*)&data, sizeof(data));
-				out_file.close();
-                return true;
-			} else {
-                // TODO - log this
-            }
+		File out_file = SPIFFS.open(target_name, "w");
+		if (out_file) {
+			out_file.write((const uint8_t*)&data, sizeof(data));
+			out_file.close();
+			return true;
 		} else {
-            // There's some kind of issue with SPIFFS or something.
-            // TODO - Log this
-        }
-		return false;
+			// TODO - log this
+			return false;
+		}
 	}
 
 	template <class T> static bool readBlockFromFile(String target_name, T& data) {
-		if (SPIFFS.begin()) {
-			File in_file = SPIFFS.open(target_name, "r");
-			if (in_file) {
-                uint8_t holding[sizeof(data)];
-				in_file.read(holding, sizeof(data));
-                memcpy(&data, holding, sizeof(data));
-				in_file.close();
-				return true;
-            }
-        }
-		// There's some kind of issue with SPIFFS or something.
-		// TODO - Log this
-		return false;
+		// This creates some issues, as there is an assumption in most places readBlockFromFile is used that it will
+		// always overwrite &data. Need to go back & re-read where it gets used to make sure we are still OK
+		if(!doesFileExist(target_name))
+			return false;
+
+		File in_file = SPIFFS.open(target_name, "r");
+		if (in_file) {
+			uint8_t holding[sizeof(data)];
+			in_file.read(holding, sizeof(data));
+			memcpy(&data, holding, sizeof(data));
+			in_file.close();
+			return true;
+		}
+        return false;
 	}
 
     static bool doesFileExist(String target_name) {
-        if (SPIFFS.begin()) {
-            return SPIFFS.exists(target_name);
-        }
-        // There's some kind of issue with SPIFFS or something.
-        // TODO - Log this
-        return false;
+		return SPIFFS.exists(target_name);
     }
 
 
@@ -89,18 +80,25 @@ public:
 		EEPROM.write(offset, value);
 	}*/
 
+    // TODO - Move this
+    static void clear(uint8_t* p, uint8_t size) {
+        while (size-->0) *p++ = 0;
+    }
+
 	static void readControlSettings(ControlSettings& target, eptr_t offset, uint16_t size) {
-        readBlockFromFile(SPIFFS_controlSettings_fname, target);
+		/* Unlike readDeviceDefinition, controlSettings & controlConstants are both properly initialized elsewhere.
+		 * Regardless, due to the tweak we made to readBlockFromFile, I'm going to explicitly add a call here to clear
+		 * the memory just in case. */
+
+		if(!readBlockFromFile(SPIFFS_controlSettings_fname, target))
+			clear((uint8_t*)&target, sizeof(target));  // This mimics the behavior where previously the EEPROM would have been 0ed out.
 	}
 
 	static void readControlConstants(ControlConstants& target, eptr_t offset, uint16_t size) {
-        readBlockFromFile(SPIFFS_controlConstants_fname, target);
+        if(!readBlockFromFile(SPIFFS_controlConstants_fname, target))
+            clear((uint8_t*)&target, sizeof(target));
 	}
 
-	// TODO - Move this
-	static void clear(uint8_t* p, uint8_t size) {
-		while (size-->0) *p++ = 0;
-	}
 
 	static void readDeviceDefinition(DeviceConfig& target, int8_t deviceID, uint16_t size) {
         char buf[20];
