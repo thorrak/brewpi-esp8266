@@ -90,14 +90,8 @@ void onStationConnected(const WiFiEventSoftAPModeStationConnected& evt) {
 
 void handleReset()
 {
-#if defined(ESP8266)
 	// The asm volatile method doesn't work on ESP8266. Instead, use ESP.restart
 	ESP.restart();
-#else
-	// resetting using the watchdog timer (which is a full reset of all registers) 
-	// might not be compatible with old Arduino bootloaders. jumping to 0 is safer.
-	asm volatile ("  jmp 0");
-#endif
 }
 
 
@@ -109,7 +103,7 @@ void setup()
     display.printEEPROMStartup();
 
     // Before anything else, let's get SPIFFS working. We need to start it up, and then test if the file system was
-    // formatted. 
+    // formatted.
 	SPIFFS.begin();
     if (!SPIFFS.exists("/formatComplete.txt")) {
         SPIFFS.format();
