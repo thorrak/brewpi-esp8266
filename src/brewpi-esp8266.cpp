@@ -90,28 +90,34 @@ void onStationConnected(const WiFiEventSoftAPModeStationConnected& evt) {
 
 void handleReset()
 {
-#if defined(ESP8266)
 	// The asm volatile method doesn't work on ESP8266. Instead, use ESP.restart
 	ESP.restart();
-#else
-	// resetting using the watchdog timer (which is a full reset of all registers) 
-	// might not be compatible with old Arduino bootloaders. jumping to 0 is safer.
-	asm volatile ("  jmp 0");
-#endif
 }
 
 
 
 void setup()
 {
+    // Let's get the display going so that we can provide the user a bit of feedback on what's happening
+    display.init();
+    display.printEEPROMStartup();
 
+    // Before anything else, let's get SPIFFS working. We need to start it up, and then test if the file system was
+    // formatted.
+	SPIFFS.begin();
+    if (!SPIFFS.exists("/formatComplete.txt")) {
+        SPIFFS.format();
+        File f = SPIFFS.open("/formatComplete.txt", "w");
+        f.close();
+    }
 
 #ifdef ESP8266_WiFi
+    display.printWiFiStartup();
 	String mdns_id;
 
 	mdns_id = eepromManager.fetchmDNSName();
-	if(mdns_id.length()<=0)
-		mdns_id = "ESP" + String(ESP.getChipId());
+//	if(mdns_id.length()<=0)
+//		mdns_id = "ESP" + String(ESP.getChipId());
 
 
 	// If we're going to set up WiFi, let's get to it
@@ -184,11 +190,12 @@ void setup()
 	MDNS.addServiceTxt("brewpi", "tcp", "revision", FIRMWARE_REVISION);
 #endif
 
-    bool initialize = !eepromManager.hasSettings();
-    if(initialize) {
-        eepromManager.zapEeprom();  // Writes all the empty files to SPIFFS
-        logInfo(INFO_EEPROM_INITIALIZED);
-    }
+	// This code no longer really does anything.
+//    bool initialize = !eepromManager.hasSettings();
+//    if(initialize) {
+//        eepromManager.zapEeprom();  // Writes all the empty files to SPIFFS
+//        logInfo(INFO_EEPROM_INITIALIZED);
+//    }
 
 	logDebug("started");
 	tempControl.init();
@@ -201,7 +208,6 @@ void setup()
 	tempControl.fridgeSensor->init();
 #endif	
 
-	display.init();
 #ifdef ESP8266_WiFi
 	display.printWiFi();  // Print the WiFi info (mDNS name & IP address)
     WiFi.setAutoReconnect(true);
@@ -218,34 +224,8 @@ void setup()
 }
 
 #ifdef ESP8266_WiFi
-
-
-int reconnectPoll = 0;
-void connectClients() {
-
-    // Pretty sure this code was doing the opposite of what we wanted it to (spamming the AP rather than reconnecting)
-//    if(WiFi.status() != WL_CONNECTED){
-//        WiFi.begin();
-//    }
-//
-//    if (!WiFi.isConnected() || WiFi.status() != WL_CONNECTED || WiFi.localIP() == IPAddress(0,0,0,0)) {
-//        if(reconnectPoll == 0) {
-//            WiFi.mode(WIFI_AP_STA);
-//            if(!WiFi.reconnect())
-//                WiFi.begin();  // WiFi.reconnect only reconnects if we think we're still connected to something
-//            reconnectPoll = 1;
-//        } else if(reconnectPoll >= 20) {
-//            // Every 20 seconds, restart the reconnection attempt
-//            reconnectPoll = 0;
-//        } else {
-//            // Normally, this would be a while loop, where we would loop until we get reconnected, but I specifically
-//            // want to break every second to allow BrewPi to do its thing
-//            reconnectPoll += 1;
-//            delay(1000);
-//        }
-//    } else if (reconnectPoll != 0) {
-//        reconnectPoll = 0;
-//    }
+	int reconnectPoll = 0;
+	void connectClients() {
 
     if(WiFi.isConnected()) {
         if (server.hasClient()) {
@@ -271,9 +251,20 @@ void connectClients() {
 void brewpiLoop(void)
 {
 	static unsigned long lastUpdate = 0;
-	uint8_t oldState;
+    static unsigned long lastLcdUpdate = 0;
 
-	if (ticks.millis() - lastUpdate >= (1000)) { //update settings every second
+	uint8_t oldState;
+    if(ticks.millis() - lastLcdUpdate >= (180000)) { //reset lcd every 180 seconds as a workaround for screen scramble
+        lastLcdUpdate = ticks.millis();
+
+        display.init();
+        display.printStationaryText();
+        display.printState();
+
+        rotaryEncoder.init();
+    }
+
+    if (ticks.millis() - lastUpdate >= (1000)) { //update settings every second
 		lastUpdate = ticks.millis();
 
 #if BREWPI_BUZZER
