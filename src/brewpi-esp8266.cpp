@@ -105,8 +105,13 @@ void setup()
     // Before anything else, let's get SPIFFS working. We need to start it up, and then test if the file system was
     // formatted.
 	SPIFFS.begin();
+
     if (!SPIFFS.exists("/formatComplete.txt")) {
-        SPIFFS.format();
+        if (!SPIFFS.exists("/mdns.txt")) {
+            // This prevents installations that are being upgraded from v0.10 to v0.11 from having their mdns settings
+            // wiped out
+            SPIFFS.format();
+        }
         File f = SPIFFS.open("/formatComplete.txt", "w");
         f.close();
     }
