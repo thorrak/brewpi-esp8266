@@ -218,8 +218,8 @@ void setup()
     WiFi.setAutoReconnect(true);
     stationConnectedHandler = WiFi.onSoftAPModeStationConnected(&onStationConnected);
 	delay(8000);
-	display.clear();
 #endif
+	display.clear();
 	display.printStationaryText();
 	display.printState();
 
