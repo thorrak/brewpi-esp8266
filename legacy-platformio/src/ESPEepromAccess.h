@@ -16,12 +16,16 @@
 */
 
 
-#ifndef ESP8266
+#if !defined(ESP8266) && !defined(ESP32)
 // Generate an error if we have been incorrectly included in an Arduino build
 #error Incorrect processor type!
 #endif
 
 #include <FS.h>
+#if defined(ESP32)
+#include <SPIFFS.h>
+#endif
+
 #include "EepromStructs.h"
 #include "EepromFormat.h"
 
@@ -38,7 +42,14 @@ class ESPEepromAccess
 {
 private:
 	template <class T> static bool writeBlockToFile(String target_name, T& data) {
+	    // SPIFFS.begin doesn't allow for formatOnFail as a first argument yet on ESP8266 (but it should be coming soon)
+	    // https://github.com/esp8266/Arduino/issues/4185
+	    // TODO - Rewrite this when that PR gets merged
+#if defined(ESP8266)
 		if (SPIFFS.begin()) {
+#elif defined(ESP32)
+		if (SPIFFS.begin(true)) {
+#endif
 			File out_file = SPIFFS.open(target_name, "w");
 			if (out_file) {
                 out_file.write((const uint8_t*)&data, sizeof(data));
@@ -55,7 +66,11 @@ private:
 	}
 
 	template <class T> static bool readBlockFromFile(String target_name, T& data) {
+#if defined(ESP8266)
 		if (SPIFFS.begin()) {
+#elif defined(ESP32)
+		if (SPIFFS.begin(true)) {
+#endif
 			File in_file = SPIFFS.open(target_name, "r");
 			if (in_file) {
                 uint8_t holding[sizeof(data)];
@@ -71,7 +86,11 @@ private:
 	}
 
     static bool doesFileExist(String target_name) {
-        if (SPIFFS.begin()) {
+#if defined(ESP8266)
+		if (SPIFFS.begin()) {
+#elif defined(ESP32)
+		if (SPIFFS.begin(true)) {
+#endif
             return SPIFFS.exists(target_name);
         }
         // There's some kind of issue with SPIFFS or something.

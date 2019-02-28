@@ -62,12 +62,12 @@ DelayImpl wait = DelayImpl(DELAY_IMPL_CONFIG);
 DisplayType realDisplay;
 DisplayType DISPLAY_REF display = realDisplay;
 
-ValueActuator alarm;*/
+ValueActuator alarm_actuator;*/
 /*
 void setup()
 {
 
-#if defined(ESP8266)
+#if defined(ESP8266) || defined(ESP32)
 	// We need to initialize the EEPROM on ESP8266
 	EEPROM.begin(MAX_EEPROM_SIZE_LIMIT);
 #endif
@@ -109,7 +109,7 @@ void brewpiLoop(void)
 		lastUpdate = ticks.millis();
 
 #if BREWPI_BUZZER
-		buzzer.setActive(alarm.isActive() && !buzzer.isActive());
+		buzzer.setActive(alarm_actuator.isActive() && !buzzer.isActive());
 #endif			
 			
 		tempControl.updateTemperatures();

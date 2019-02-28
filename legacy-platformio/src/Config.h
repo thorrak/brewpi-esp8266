@@ -223,8 +223,8 @@
 //#define rotarySwitchPin 0 // INT2
 
 
-#ifdef ESP8266
-#define ESP8266_WiFi 1			// This disables Serial and enables WiFi support. Comment out for "serial" mode.
+#if defined(ESP8266) || defined(ESP32)
+//#define ESP8266_WiFi 1			// This disables Serial and enables WiFi support. Comment out for "serial" mode.
 #define FIRMWARE_REVISION "0.9"
 #endif
 

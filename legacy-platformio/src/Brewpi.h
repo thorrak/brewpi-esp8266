@@ -57,8 +57,8 @@
 
 #include "Actuator.h"
 
-extern ValueActuator alarm;
-#ifdef ESP8266
+extern ValueActuator alarm_actuator;
+#if defined(ESP8266) || defined(ESP32)
 extern bool toggleBacklight;  // To allow us to toggle the backlight
 #endif
 

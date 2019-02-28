@@ -136,14 +136,14 @@ void selectMode() {
 		menu.pickFridgeSetting();
 	}
 	else if(mode == MODE_BEER_PROFILE){
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
 		piLink.printTemperaturesJSON("Changed to profile mode in menu.", 0);
 #else
 		piLink.printBeerAnnotation(PSTR("Changed to profile mode in menu."));
 #endif
 	}
 	else if(mode == MODE_OFF){
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
 		piLink.printTemperaturesJSON("Temp control turned off in menu.", 0);
 #else
 		piLink.printBeerAnnotation(PSTR("Temp control turned off in menu."));

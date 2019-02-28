@@ -1,18 +1,30 @@
 // Libraries have to be loaded in the main .ino file per Visual Micro. Load them here.
 
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
 #include <FS.h>  // Apparently this needs to be first
 #endif
 
 #include "Brewpi.h"
 
-#ifdef ESP8266
-#include <ESP8266WiFi.h>		//ESP8266 Core WiFi Library (always included so we can disable the radio for serial)
+#if defined(ESP8266) || defined(ESP32)
+
+#if defined(ESP8266)
+#include <ESP8266WiFi.h>  // For printing the IP address
+#elif defined(ESP32)
+#include <WiFi.h> // For printing the IP address
+#endif
 
 #ifdef ESP8266_WiFi
+
+#if defined(ESP8266)
 #include <ESP8266mDNS.h>
+#elif defined(ESP32)
+#include <ESPmDNS.h>
+#endif
+
+
 #include <DNSServer.h>			//Local DNS Server used for redirecting all requests to the configuration portal
-#include <ESP8266WebServer.h>	//Local WebServer used to serve the configuration portal
+//#include <ESP8266WebServer.h>	//Local WebServer used to serve the configuration portal
 #include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 #include "Version.h" 			// Used in mDNS announce string
 #endif
@@ -55,7 +67,7 @@ DelayImpl wait = DelayImpl(DELAY_IMPL_CONFIG);
 DisplayType realDisplay;
 DisplayType DISPLAY_REF display = realDisplay;
 
-ValueActuator alarm;
+ValueActuator alarm_actuator;
 
 #ifdef ESP8266_WiFi
 bool shouldSaveConfig = false;
@@ -82,7 +94,7 @@ WiFiClient serverClient;
 
 void handleReset()
 {
-#if defined(ESP8266)
+#if defined(ESP8266) || defined(ESP32)
 	// The asm volatile method doesn't work on ESP8266. Instead, use ESP.restart
 	ESP.restart();
 #else
@@ -102,10 +114,19 @@ void setup()
 	String mdns_id;
 
 	mdns_id = eepromManager.fetchmDNSName();
-	if(mdns_id.length()<=0)
+	if(mdns_id.length()<=0) {
+#if defined(ESP8266)
 		mdns_id = "ESP" + String(ESP.getChipId());
+#else
+		// There isn't a straightforward "getChipId" function on an ESP32, so we'll have to make do
+		char ssid[15]; //Create a Unique AP from MAC address
+		uint64_t chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
+		uint16_t chip = (uint16_t)(chipid>>32);
+		snprintf(ssid,15,"ESP%04X",chip);
 
-
+		mdns_id = "ESP" + (String) ssid;
+#endif
+	}
 	// If we're going to set up WiFi, let's get to it
 	WiFiManager wifiManager;
 	wifiManager.setConfigPortalTimeout(5*60); // Time out after 5 minutes so that we can keep managing temps 
@@ -233,7 +254,7 @@ void brewpiLoop(void)
 		lastUpdate = ticks.millis();
 
 #if BREWPI_BUZZER
-		buzzer.setActive(alarm.isActive() && !buzzer.isActive());
+		buzzer.setActive(alarm_actuator.isActive() && !buzzer.isActive());
 #endif			
 
 		tempControl.updateTemperatures();

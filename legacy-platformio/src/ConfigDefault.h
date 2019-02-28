@@ -172,7 +172,8 @@
         #define BREWPI_BOARD BREWPI_BOARD_STANDARD
 #elif defined(__AVR_ATmega2560__)
         #define BREWPI_BOARD BREWPI_BOARD_MEGA
-#elif defined(ESP8266)
+#elif defined(ESP8266) || defined(ESP32)
+//TODO - rename this to include ESP32
 		#define BREWPI_BOARD BREWPI_BOARD_ESP8266
 #else
         #error Unknown processor type!
