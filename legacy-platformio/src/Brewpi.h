@@ -36,6 +36,7 @@
 #define BREWPI_BOARD_MEGA 'm'
 #define BREWPI_BOARD_UNKNOWN '?'
 #define BREWPI_BOARD_ESP8266 'e'
+#define BREWPI_BOARD_ESP32 '3'
 
 
 /*
