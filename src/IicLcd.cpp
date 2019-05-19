@@ -76,7 +76,7 @@ void IIClcd::init() {
 
 void IIClcd::init_priv()
 {
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
 	Wire.begin(IIC_SDA, IIC_SCL);
 	scan_address();
 #else
@@ -318,7 +318,7 @@ void IIClcd::updateBacklight(void) {
 	// True = OFF, False = ON
 #if BACKLIGHT_AUTO_OFF_PERIOD > 0 || BREWPI_SIMULATE
 	bool backLightOutput = BREWPI_SIMULATE || ticks.timeSince(_backlightTime) > BACKLIGHT_AUTO_OFF_PERIOD;
-#elif defined(ESP8266)
+#elif defined(ESP8266) || defined(ESP32)
 	bool backLightOutput = toggleBacklight;
 #endif
 	if (backLightOutput) {

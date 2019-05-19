@@ -39,7 +39,7 @@ class PiLink{
 	static void init(void);
 	static void receive(void);
 	
-#ifndef ESP8266 // There is a bug in the ESP8266 implementation that causes these not to work. 
+#if !defined(ESP8266) && !defined(ESP32) // There is a bug in the ESP8266 implementation that causes these not to work.
 	static void printFridgeAnnotation(const char * annotation, ...);	
 	static void printBeerAnnotation(const char * annotation, ...);
 #endif
@@ -66,7 +66,7 @@ class PiLink{
 	static void print(char *fmt, ...); // use when format string is stored in RAM
 #ifdef ARDUINO
 	static void print(char c)       // inline for arduino
-#ifndef ESP8266
+#if !defined(ESP8266) && !defined(ESP32)
 	{ Serial.print(c); }
 #else
 		;

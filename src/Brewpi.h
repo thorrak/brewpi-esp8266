@@ -36,6 +36,7 @@
 #define BREWPI_BOARD_MEGA 'm'
 #define BREWPI_BOARD_UNKNOWN '?'
 #define BREWPI_BOARD_ESP8266 'e'
+#define BREWPI_BOARD_ESP32 '3'
 
 
 /*
@@ -57,8 +58,8 @@
 
 #include "Actuator.h"
 
-extern ValueActuator alarm;
-#ifdef ESP8266
+extern ValueActuator alarm_actuator;
+#if defined(ESP8266) || defined(ESP32)
 extern bool toggleBacklight;  // To allow us to toggle the backlight
 #endif
 

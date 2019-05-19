@@ -36,12 +36,14 @@
 #include "Buzzer.h"
 #include "Display.h"
 
-#ifdef ESP8266
-#include <ESP8266WiFi.h>          //ESP8266 Core WiFi Library
+#if defined(ESP8266)
+#include <ESP8266WiFi.h>  // For printing the IP address
+#elif defined(ESP32)
+#include <WiFi.h> // For printing the IP address
 #endif
 
 #ifdef ARDUINO
-#ifndef ESP8266
+#if !defined(ESP8266) && !defined(ESP32)
 #include "util/delay.h"
 #endif
 #endif
@@ -102,7 +104,7 @@ printBuf = "";
 
 }
 
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
 void formatStandardAnnotation(String &annotation, const char* str_1, const char* str_2, const char* str_3);
 #endif
 
@@ -151,7 +153,7 @@ void PiLink::print(char *fmt, ... ){
 #endif
 }
 
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
 void PiLink::print(char out) {
 #ifdef ESP8266_WiFi
 	if (piStream && piStream.connected()) { // if WiFi client connected
@@ -272,7 +274,7 @@ void PiLink::receive(void){
 			// s shield type
 			// y: simulator			
 			// b: board
-#ifndef ESP8266
+#if !defined(ESP8266) && !defined(ESP32)
 			print_P(PSTR("N:{\"v\":\"%S\",\"n\":%d,\"c\":\"%S\",\"s\":%d,\"y\":%d,\"b\":\"%c\",\"l\":\"%d\"}"), 
 					PSTR(VERSION_STRING), 
 					BUILD_NUMBER,
@@ -354,7 +356,7 @@ void PiLink::receive(void){
 			closeListResponse();
 			break;
 
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
 		case 'w': // Reset WiFi settings
 			WiFi.disconnect(true);
 			break;
@@ -478,7 +480,7 @@ void PiLink::printTemperatures(void){
 	printTemperaturesJSON(0, 0);
 }
 
-#ifndef ESP8266 // There is a bug with the ESP8266 which prevents this from working. Removing it so we aren't tempted to use it.
+#if !defined(ESP8266) && !defined(ESP32)  // There is a bug with the ESP8266 which prevents this from working. Removing it so we aren't tempted to use it.
 void PiLink::printBeerAnnotation(const char * annotation, ...){
 	char tempString[128]; // resulting string limited to 128 chars
 	va_list args;	
@@ -696,7 +698,7 @@ inline void PiLink::printJsonSeparator() {
 void PiLink::sendJsonPair(const char * name, const char * val){
 	printJsonName(name);
 	// TODO - Fix this to use PiLink.print in all cases
-#ifndef ESP8266
+#if !defined(ESP8266) && !defined(ESP32)
 	piStream.print(val);
 #else
 	print_P(val);
@@ -723,7 +725,7 @@ int readNext()
 {
 	uint8_t retries = 0;
 	while (piStream.available()==0) {
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
 		// changing to delay as delayMicroseconds doesn't yield like delay does
 		delay(1);
 		yield();
@@ -815,7 +817,7 @@ static const char STR_FMT_SET_TO[]  = "%S set to %s %S";
 void PiLink::setMode(const char* val) {
 	char mode = val[0];
 	tempControl.setMode(mode);
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
 	String annotation = "";
 	formatStandardAnnotation(annotation, STR_MODE, val, "in web interface");
 	printTemperaturesJSON(0, annotation.c_str());
@@ -825,27 +827,27 @@ void PiLink::setMode(const char* val) {
 }
 
 void PiLink::setBeerSetting(const char* val) {
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
 	String annotation = "";
 #endif
 	const char* source = NULL;
 	temperature newTemp = stringToTemp(val);
 	if (tempControl.cs.mode == 'p') {
 		if (abs(newTemp - tempControl.cs.beerSetting) > 100) { // this excludes gradual updates under 0.2 degrees
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
 			formatStandardAnnotation(annotation, STR_BEER_TEMP, val, "by temperature profile");
 #else
 			source = STR_TEMPERATURE_PROFILE;
 #endif
 		}
 	} else {
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
 		formatStandardAnnotation(annotation, STR_BEER_TEMP, val, "in web interface");
 #else
 		source = STR_WEB_INTERFACE;
 #endif
 	}
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
 	if (annotation.length() > 0)
 		printTemperaturesJSON(annotation.c_str(), 0);
 #else
@@ -857,7 +859,7 @@ void PiLink::setBeerSetting(const char* val) {
 
 //There's some kind of strange bug with the ESP8266 (probably a memory issue) where if I pass STR_WEB_INTERFACE
 //as str_3, everything dies. Same with using "printFridgeAnnotation" - Everything dies. 
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
 void formatStandardAnnotation(String &annotation, const char* str_1, const char* str_2, const char* str_3) {
 	annotation += str_1;
 	annotation += " set to ";
@@ -871,7 +873,7 @@ void formatStandardAnnotation(String &annotation, const char* str_1, const char*
 void PiLink::setFridgeSetting(const char* val) {
 	temperature newTemp = stringToTemp(val);
 	if(tempControl.cs.mode == 'f'){
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
 		String annotation = "";
 		formatStandardAnnotation(annotation, STR_FRIDGE_TEMP, val, "in web interface");
 		printTemperaturesJSON(0, annotation.c_str());
@@ -1010,7 +1012,7 @@ void PiLink::processJsonPair(const char * key, const char * val, void* pv){
 
 void PiLink::soundAlarm(bool active)
 {
-	alarm.setActive(active);
+	alarm_actuator.setActive(active);
 }
 
 

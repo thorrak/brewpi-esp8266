@@ -30,7 +30,15 @@
 #include "Pins.h"
 
 #ifdef ESP8266_WiFi
+
+#if defined(ESP8266)
 #include <ESP8266WiFi.h>  // For printing the IP address
+#elif defined(ESP32)
+#include <WiFi.h> // For printing the IP address
+#else
+#error "Invalid chipset!"
+#endif
+
 #endif
 
 
@@ -53,7 +61,7 @@ static const char STR_Wait_to_[] PROGMEM = "Wait to ";
 static const char STR__time_left[] PROGMEM = " time left";
 static const char STR_empty_string[] PROGMEM = "";
 
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
 bool toggleBacklight;
 #endif
 
@@ -67,7 +75,7 @@ bool toggleBacklight;
 #endif
 
 void LcdDisplay::init(void){
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
 	toggleBacklight = false;
 #endif
 	stateOnDisplay = 0xFF; // set to unknown state to force update
@@ -373,7 +381,6 @@ void LcdDisplay::printEEPROMStartup(void){
 
 	lcd.updateBacklight();
 }
-
 
 void LcdDisplay::clear(void) {
 	lcd.clear();

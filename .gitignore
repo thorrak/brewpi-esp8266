@@ -2,6 +2,7 @@
 CMakeListsPrivate.txt
 .piolibdeps
 .idea/
+.vscode
 cmake-build-debug/
 
 CMakeCache.txt

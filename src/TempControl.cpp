@@ -224,7 +224,7 @@ void TempControl::updateState(void){
 		
 	if(newDoorOpen!=doorOpen) {
 		doorOpen = newDoorOpen;
-#ifdef ESP8266  // ESP8266 Doesn't support %S
+#if defined(ESP8266) || defined(ESP32)  // ESP8266 Doesn't support %S
 		String annotation = "";
 		annotation += "Fridge door ";
 		annotation += doorOpen ? "opened" : "closed";

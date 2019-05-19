@@ -184,6 +184,7 @@
 //
 // pins
 
+#if defined(ESP8266)
 #define NODEMCU_PIN_A0 17	// Analog 
 
 #define NODEMCU_PIN_D0 16	// No interrupt, do not use for rotary encoder
@@ -199,11 +200,11 @@
 #define NODEMCU_PIN_D9 3	// Do not use - USB
 #define NODEMCU_PIN_D10 1	// Do not use - USB
 
-
-
-/*#define coolingPin NODEMCU_PIN_D3
+/*
+ * This was the old pin configuration (waaaay back in 2016) for ESP8266 boards
+ *
+#define coolingPin NODEMCU_PIN_D3
 #define heatingPin NODEMCU_PIN_D4
-
 #define doorPin    NODEMCU_PIN_D5
 #define oneWirePin NODEMCU_PIN_D6  // If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
 */
@@ -213,22 +214,6 @@
 
 #define oneWirePin NODEMCU_PIN_D6  // If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
 #define doorPin    NODEMCU_PIN_D7
-
-
-
-// Pay attention when changing the pins for the rotary encoder.
-// They should be connected to external interrupt INT0, INT1 and INT3
-//#define rotaryAPin 2 // INT1
-//#define rotaryBPin 1 // INT3
-//#define rotarySwitchPin 0 // INT2
-
-
-#ifdef ESP8266
-// This is now handled in platformio.ini
-//#define ESP8266_WiFi 1			// This disables Serial and enables WiFi support. Comment out for "serial" mode.
-#define FIRMWARE_REVISION "0.11"
-#endif
-
 
 /*
 // Note - LCD module pins aren't used yet.
@@ -243,6 +228,41 @@
 
 #define IIC_SDA NODEMCU_PIN_D2
 #define IIC_SCL NODEMCU_PIN_D1
+
+
+// Pay attention when changing the pins for the rotary encoder.
+// They should be connected to external interrupt INT0, INT1 and INT3
+//#define rotaryAPin 2 // INT1
+//#define rotaryBPin 1 // INT3
+//#define rotarySwitchPin 0 // INT2
+
+
+#elif defined(ESP32)
+
+#define heatingPin 25
+#define coolingPin 26
+
+// If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
+#define oneWirePin 13
+#define doorPin    34 // Note - 34 is "input only" and shouldn't be repurposed
+
+#define IIC_SDA 21
+#define IIC_SCL 22
+
+// Pay attention when changing the pins for the rotary encoder.
+// They should be connected to external interrupt INT0, INT1 and INT3
+//#define rotaryAPin 19 // INT1?
+//#define rotaryBPin 18 // INT3?
+//#define rotarySwitchPin 23 // INT2?
+#endif
+
+#if defined(ESP8266) || defined(ESP32)
+// This is now handled in platformio.ini
+//#define ESP8266_WiFi 1			// This disables Serial and enables WiFi support. Comment out for "serial" mode.
+#define FIRMWARE_REVISION "0.11"
+#endif
+
+
 
 // BREWPI_INVERT_ACTUATORS
 // TODO - Figure out what the hell this actually does
