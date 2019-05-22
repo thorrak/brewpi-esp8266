@@ -1,0 +1,14 @@
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+charset = utf-8
+trim_trailing_whitespace = false
+insert_final_newline = false
+
+[*.{cpp,h}]
+indent_style = tab
+indent_size = tab
+trim_trailing_whitespace = true
+curly_bracket_next_line = false

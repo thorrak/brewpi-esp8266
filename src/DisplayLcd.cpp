@@ -2,17 +2,17 @@
  * Copyright 2012-2013 BrewPi/Elco Jacobs.
  *
  * This file is part of BrewPi.
- * 
+ *
  * BrewPi is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later v7ersion.
- * 
+ *
  * BrewPi is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -99,7 +99,7 @@ void LcdDisplay::printAllTemperatures(void){
 			printStationaryText();
 		}
 	}
-	
+
 	printBeerTemp();
 	printBeerSet();
 	printFridgeTemp();
@@ -119,21 +119,21 @@ void LcdDisplay::printBeerTemp(void){
 }
 
 void LcdDisplay::printBeerSet(void){
-	temperature beerSet = tempControl.getBeerSetting();	
-	printTemperatureAt(12, 1, beerSet);	
+	temperature beerSet = tempControl.getBeerSetting();
+	printTemperatureAt(12, 1, beerSet);
 }
 
-void LcdDisplay::printFridgeTemp(void){	
+void LcdDisplay::printFridgeTemp(void){
 	printTemperatureAt(6,2, flags & LCD_FLAG_DISPLAY_ROOM ?
 		tempControl.ambientSensor->read() :
 		tempControl.getFridgeTemp());
 }
 
-void LcdDisplay::printFridgeSet(void){	
-	temperature fridgeSet = tempControl.getFridgeSetting();	
+void LcdDisplay::printFridgeSet(void){
+	temperature fridgeSet = tempControl.getFridgeSetting();
 	if(flags & LCD_FLAG_DISPLAY_ROOM) // beer setting is not active
 		fridgeSet = INVALID_TEMP;
-	printTemperatureAt(12, 2, fridgeSet);	
+	printTemperatureAt(12, 2, fridgeSet);
 }
 
 void LcdDisplay::printTemperatureAt(uint8_t x, uint8_t y, temperature temp){
@@ -149,7 +149,7 @@ void LcdDisplay::printTemperature(temperature temp){
 	}
 	char tempString[9];
 	tempToString(tempString, temp, 1 , 9);
-	int8_t spacesToWrite = 5 - (int8_t) strlen(tempString); 
+	int8_t spacesToWrite = 5 - (int8_t) strlen(tempString);
 	for(int8_t i = 0; i < spacesToWrite ;i++){
 		lcd.write(' ');
 	}
@@ -160,7 +160,7 @@ void LcdDisplay::printTemperature(temperature temp){
 void LcdDisplay::printStationaryText(void){
 	printAt_P(0, 0, PSTR("Mode"));
 	printAt_P(0, 1, STR_Beer_);
-	printAt_P(0, 2, (flags & LCD_FLAG_DISPLAY_ROOM) ?  PSTR("Room  ") : STR_Fridge_); 
+	printAt_P(0, 2, (flags & LCD_FLAG_DISPLAY_ROOM) ?  PSTR("Room  ") : STR_Fridge_);
 	printDegreeUnit(18, 1);
 	printDegreeUnit(18, 2);
 }
@@ -169,7 +169,7 @@ void LcdDisplay::printStationaryText(void){
 void LcdDisplay::printDegreeUnit(uint8_t x, uint8_t y){
 	lcd.setCursor(x,y);
 	lcd.write(0b11011111);
-	lcd.write(tempControl.cc.tempFormat);	
+	lcd.write(tempControl.cc.tempFormat);
 }
 
 void LcdDisplay::printAt_P(uint8_t x, uint8_t y, const char* text){
@@ -265,7 +265,7 @@ void LcdDisplay::printState(void){
 				break;
 		}
 		printAt_P(0, 3, part1);
-		lcd.print_P(part2);		
+		lcd.print_P(part2);
 		lcd.printSpacesToRestOfLine();
 	}
 	uint16_t sinceIdleTime = tempControl.timeSinceIdle();
@@ -278,7 +278,7 @@ void LcdDisplay::printState(void){
 	else if(state==COOLING_MIN_TIME){
 		time = MIN_COOL_ON_TIME-sinceIdleTime;
 	}
-	
+
 	else if(state==HEATING_MIN_TIME){
 		time = MIN_HEAT_ON_TIME-sinceIdleTime;
 	}
@@ -287,8 +287,8 @@ void LcdDisplay::printState(void){
 	}
 	if(time != UINT_MAX){
 		char timeString[10];
-#if DISPLAY_TIME_HMS  // 96 bytes more space required. 
-		unsigned int minutes = time/60;		
+#if DISPLAY_TIME_HMS  // 96 bytes more space required.
+		unsigned int minutes = time/60;
 		unsigned int hours = minutes/60;
 		int stringLength = sprintf_P(timeString, PSTR("%dh%02dm%02d"), hours, minutes%60, time%60);
 		char * printString = timeString;
@@ -300,7 +300,7 @@ void LcdDisplay::printState(void){
 #else
 		int stringLength = sprintf_P(timeString, STR_FMT_U, (unsigned int)time);
 		printAt(20-stringLength, 3, timeString);
-#endif		
+#endif
 	}
 }
 
@@ -320,8 +320,17 @@ void LcdDisplay::printWiFiStartup(void){
 	lcd.print("Connect to this AP:");
 	lcd.printSpacesToRestOfLine();
 
+#if defined(ESP8266)
+		ap_station_name = "ESP" + String(ESP.getChipId());
+#else
+		// There isn't a straightforward "getChipId" function on an ESP32, so we'll have to make do
+		char ssid[15]; //Create a Unique AP from MAC address
+		uint64_t chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
+		uint16_t chip = (uint16_t)(chipid>>32);
+		snprintf(ssid,15,"ESP%04X",chip);
 
-	ap_station_name = "ESP_" + String(ESP.getChipId());
+		ap_station_name = (String) ssid;
+#endif
 
 	lcd.setCursor(0,2);
 	lcd.print(ap_station_name);

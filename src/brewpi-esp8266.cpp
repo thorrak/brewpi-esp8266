@@ -91,12 +91,14 @@ bool isValidmDNSName(String mdns_name) {
 WiFiServer server(23);
 WiFiClient serverClient;
 
+// ESP8266 Only has onStationConnected
+#if defined(ESP8266)
 WiFiEventHandler stationConnectedHandler;
 void onStationConnected(const WiFiEventSoftAPModeStationConnected& evt) {
     server.begin();
     server.setNoDelay(true);
 }
-
+#endif
 
 #endif
 
@@ -106,7 +108,7 @@ void handleReset()
 	// The asm volatile method doesn't work on ESP8266. Instead, use ESP.restart
 	ESP.restart();
 #else
-	// resetting using the watchdog timer (which is a full reset of all registers) 
+	// resetting using the watchdog timer (which is a full reset of all registers)
 	// might not be compatible with old Arduino bootloaders. jumping to 0 is safer.
 	asm volatile ("  jmp 0");
 #endif
@@ -149,20 +151,20 @@ void setup()
 		uint16_t chip = (uint16_t)(chipid>>32);
 		snprintf(ssid,15,"ESP%04X",chip);
 
-		mdns_id = "ESP" + (String) ssid;
+		mdns_id = (String) ssid;
 #endif
 	}
 	// If we're going to set up WiFi, let's get to it
 	WiFiManager wifiManager;
-	wifiManager.setConfigPortalTimeout(5*60); // Time out after 5 minutes so that we can keep managing temps 
+	wifiManager.setConfigPortalTimeout(5*60); // Time out after 5 minutes so that we can keep managing temps
 	wifiManager.setDebugOutput(false); // In case we have a serial connection to BrewPi
-									   
+
 	// The main purpose of this is to set a boolean value which will allow us to know we
 	// just saved a new configuration (as opposed to rebooting normally)
 	wifiManager.setSaveConfigCallback(saveConfigCallback);
 
 	// The third parameter we're passing here (mdns_id.c_str()) is the default name that will appear on the form.
-	// It's nice, but it means the user gets no actual prompt for what they're entering. 
+	// It's nice, but it means the user gets no actual prompt for what they're entering.
 	WiFiManagerParameter custom_mdns_name("mdns", "Device (mDNS) Name", mdns_id.c_str(), 20);
 	wifiManager.addParameter(&custom_mdns_name);
 
@@ -203,10 +205,10 @@ void setup()
 #endif
 
 
-#if BREWPI_BUZZER	
+#if BREWPI_BUZZER
 	buzzer.init();
 	buzzer.beep(2, 500);
-#endif	
+#endif
 
 	piLink.init();
 
@@ -238,13 +240,15 @@ void setup()
 	// initialize the filters with the assigned initial temp value
 	tempControl.beerSensor->init();
 	tempControl.fridgeSensor->init();
-#endif	
+#endif
 
 	display.init();
 #ifdef ESP8266_WiFi
 	display.printWiFi();  // Print the WiFi info (mDNS name & IP address)
     WiFi.setAutoReconnect(true);
+#if defined(ESP8266)
     stationConnectedHandler = WiFi.onSoftAPModeStationConnected(&onStationConnected);
+#endif
 	delay(8000);
 #endif
 	display.clear();
@@ -299,10 +303,11 @@ void brewpiLoop(void)
 
     if (ticks.millis() - lastUpdate >= (1000)) { //update settings every second
 		lastUpdate = ticks.millis();
+		Serial.println("hey");
 
 #if BREWPI_BUZZER
 		buzzer.setActive(alarm_actuator.isActive() && !buzzer.isActive());
-#endif			
+#endif
 
 		tempControl.updateTemperatures();
 		tempControl.detectPeaks();

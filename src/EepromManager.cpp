@@ -1,19 +1,19 @@
 /*
  * Copyright 2013 BrewPi/Elco Jacobs.
- * Copyright 2013 Matthew McGowan 
+ * Copyright 2013 Matthew McGowan
  *
  * This file is part of BrewPi.
- * 
+ *
  * BrewPi is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * BrewPi is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -56,23 +56,23 @@ void EepromManager::initializeEeprom()
 {
 	// clear all eeprom
 //	for (uint16_t offset=0; offset<EepromFormat::MAX_EEPROM_SIZE; offset++)
-//		eepromAccess.writeByte(offset, 0);	
+//		eepromAccess.writeByte(offset, 0);
 	zapEeprom();
 
 	deviceManager.setupUnconfiguredDevices();
 
 	// fetch the default values
 	tempControl.loadDefaultConstants();
-	tempControl.loadDefaultSettings();	
-	
-	// write the default constants 
+	tempControl.loadDefaultSettings();
+
+	// write the default constants
 /*	for (uint8_t c=0; c<EepromFormat::MAX_CHAMBERS; c++) {
 		eptr_t pv = pointerOffset(chambers)+(c*sizeof(ChamberBlock)) ;
 		tempControl.storeConstants(pv+offsetof(ChamberBlock, chamberSettings.cc));
 		pv += offsetof(ChamberBlock, beer)+offsetof(BeerBlock, cs);
 		for (uint8_t b=0; b<ChamberBlock::MAX_BEERS; b++) {
 //			logDeveloper(PSTR("EepromManager - saving settings for beer %d at %d"), b, (uint16_t)pv);
-			tempControl.storeSettings(pv);	
+			tempControl.storeSettings(pv);
 			pv += sizeof(BeerBlock);		// advance to next beer
 		}
 	}*/
@@ -82,14 +82,14 @@ void EepromManager::initializeEeprom()
 
 	// set the version flag - so that storeDevice will work
 //	eepromAccess.writeByte(0, EEPROM_FORMAT_VERSION);  // We don't save the EEPROM version anywhere now
-		
+
 	saveDefaultDevices();  // noop
 	// set state to startup
 	tempControl.init();
 
 }
 
-uint8_t EepromManager::saveDefaultDevices() 
+uint8_t EepromManager::saveDefaultDevices()
 {
 	return 0;
 }
@@ -103,28 +103,28 @@ bool EepromManager::applySettings()
         return false;  // TODO - This is where the EEPROM reset code should be called.
     }
 
-	// start from a clean state		
+	// start from a clean state
 	deviceManager.setupUnconfiguredDevices();
-		
+
 	logDebug("Applying settings");
 
 	// load the one chamber and one beer for now
 	eptr_t pv = pointerOffset(chambers);
-	tempControl.loadConstants(pv+offsetof(ChamberBlock, chamberSettings.cc));	
+	tempControl.loadConstants(pv+offsetof(ChamberBlock, chamberSettings.cc));
 	tempControl.loadSettings(pv+offsetof(ChamberBlock, beer[0].cs));
-	
+
 	logDebug("Applied settings");
-	
-	
+
+
 	DeviceConfig deviceConfig;
 	for (uint8_t index = 0; fetchDevice(deviceConfig, index); index++)
-	{	
+	{
 		if (deviceManager.isDeviceValid(deviceConfig, deviceConfig, index))
 			deviceManager.installDevice(deviceConfig);
 		else {
 			clear((uint8_t*)&deviceConfig, sizeof(deviceConfig));
 			eepromManager.storeDevice(deviceConfig, index);
-		}			
+		}
 	}
 	return true;
 }
@@ -135,7 +135,7 @@ void EepromManager::storeTempConstantsAndSettings()
 	eptr_t pv = pointerOffset(chambers);
 	pv += sizeof(ChamberBlock)*chamber;
 	tempControl.storeConstants(pv+offsetof(ChamberBlock, chamberSettings.cc));
-		
+
 	storeTempSettings();
 }
 
@@ -144,8 +144,8 @@ void EepromManager::storeTempSettings()
 	uint8_t chamber = 0;
 	eptr_t pv = pointerOffset(chambers);
 	pv += sizeof(ChamberBlock)*chamber;
-	// for now assume just one beer. 
-	tempControl.storeSettings(pv+offsetof(ChamberBlock, beer[0].cs));	
+	// for now assume just one beer.
+	tempControl.storeSettings(pv+offsetof(ChamberBlock, beer[0].cs));
 }
 
 bool EepromManager::fetchDevice(DeviceConfig& config, int8_t deviceIndex)
@@ -155,7 +155,7 @@ bool EepromManager::fetchDevice(DeviceConfig& config, int8_t deviceIndex)
 		eepromAccess.readDeviceDefinition(config, deviceIndex, sizeof(DeviceConfig));
 //        eepromAccess.readDeviceDefinition(config, pointerOffset(devices)+sizeof(DeviceConfig)*deviceIndex, sizeof(DeviceConfig));
 	return ok;
-}	
+}
 
 bool EepromManager::storeDevice(const DeviceConfig& config, int8_t deviceIndex)
 {
@@ -190,7 +190,17 @@ String EepromManager::fetchmDNSName()
 //		logErrorString(ERROR_SPIFFS_FAILURE, "/mdns.txt");
 	}
 	// Moving the trigger for the default name here.
-	mdns_id = "ESP" + String(ESP.getChipId());
+#if defined(ESP8266)
+		mdns_id = "ESP" + String(ESP.getChipId());
+#else
+		// There isn't a straightforward "getChipId" function on an ESP32, so we'll have to make do
+		char ssid[15]; //Create a Unique AP from MAC address
+		uint64_t chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
+		uint16_t chip = (uint16_t)(chipid>>32);
+		snprintf(ssid,15,"ESP%04X",chip);
+
+		mdns_id = (String) ssid;
+#endif
 	return mdns_id;
 }
 
