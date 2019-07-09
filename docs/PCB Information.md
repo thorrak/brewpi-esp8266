@@ -132,11 +132,32 @@ Eagle Files:
 
 ##### Bill of Materials:
 
-1x [2-Pin 5mm Pitch Screw Terminal](https://www.aliexpress.com/item/100PCS-2-Pin-Screw-Terminal-Block-Connector-5mm-Pitch-Free-Shipping/32700056337.html)  
-2x [4-Pin 5mm Pitch Screw Terminal](https://www.aliexpress.com/item/100-pcs-4-Pin-Screw-blue-PCB-Terminal-Block-Connector-5mm-Pitch/32658656423.html) (Alternatively, 4x 2-pin terminals)  
-1x [2-Pin Pin Header](https://www.aliexpress.com/item/Free-Shipping-40-Pins-Header-Strip-Socket-2-54mm-Straight-Single-Row-Pin-Male-For-Arduino/2046893919.html)  
-1x [10k 1/4 Watt Axial Resistor](https://www.aliexpress.com/item/100pcs-10k-ohm-1-4W-10k-Metal-Film-Resistor-10kohm-0-25W-1-ROHS/32577051768.html)  
-1x [Sparkfun (or compatible) Level Shifter](https://www.aliexpress.com/item/1pcs-Logic-Level-Shifter-Bi-Directional-For-Arduino-Four-Way-Ttwo-Way-Logic-Level-Transformation-Module/32624272876.html)  
-1x [RJ-11 Jack](https://www.aliexpress.com/item/RJ11-socket-outlet-90-degree-6-core-crystal-head-95001-6P6C-black-base-HXDD2/32685158354.html)  
-1x [WeMos D1 Mini ESP8266 board](https://wiki.wemos.cc/products:d1:d1_mini)  
-1x [LCD 20x4 I2C LCD Screen](https://www.aliexpress.com/item/Free-shipping-LCD-module-Blue-screen-IIC-I2C-2004-5V-20X4-LCD-board-provides-library-files/1873368596.html)
+1 x [2-Pin 5mm Pitch Screw Terminal](https://www.aliexpress.com/item/100PCS-2-Pin-Screw-Terminal-Block-Connector-5mm-Pitch-Free-Shipping/32700056337.html)  
+2 x [4-Pin 5mm Pitch Screw Terminal](https://www.aliexpress.com/item/100-pcs-4-Pin-Screw-blue-PCB-Terminal-Block-Connector-5mm-Pitch/32658656423.html) (Alternatively, 4x 2-pin terminals)  
+1 x [2-Pin Pin Header](https://www.aliexpress.com/item/Free-Shipping-40-Pins-Header-Strip-Socket-2-54mm-Straight-Single-Row-Pin-Male-For-Arduino/2046893919.html)  
+1 x [10k 1/4 Watt Axial Resistor](https://www.aliexpress.com/item/100pcs-10k-ohm-1-4W-10k-Metal-Film-Resistor-10kohm-0-25W-1-ROHS/32577051768.html)  
+1 x [Sparkfun (or compatible) Level Shifter](https://www.aliexpress.com/item/1pcs-Logic-Level-Shifter-Bi-Directional-For-Arduino-Four-Way-Ttwo-Way-Logic-Level-Transformation-Module/32624272876.html)  
+1 x [RJ-11 Jack](https://www.aliexpress.com/item/RJ11-socket-outlet-90-degree-6-core-crystal-head-95001-6P6C-black-base-HXDD2/32685158354.html)  
+1 x [WeMos D1 Mini ESP8266 board](https://wiki.wemos.cc/products:d1:d1_mini)  
+1 x [LCD 20x4 I2C LCD Screen](https://www.aliexpress.com/item/Free-shipping-LCD-module-Blue-screen-IIC-I2C-2004-5V-20X4-LCD-board-provides-library-files/1873368596.html)
+
+### LCD Support with DuPont connectors and through-hole components (no SparkFun level converter sub-board needed)
+
+Purchase Boards (coming soon)  
+
+Eagle Files:
+
+*   D1 Breakout - LCD TH Dupont RJ45 Logo.brd (coming soon)
+*   D1 Breakout - LCD TH Dupont RJ45 Logo.brd (coming soon)
+
+##### Bill of Materials:
+
+- 1x [2-Pin 5mm Pitch Screw Terminal](https://www.aliexpress.com/item/100PCS-2-Pin-Screw-Terminal-Block-Connector-5mm-Pitch-Free-Shipping/32700056337.html)  
+- 1x [2-Pin Pin Header](https://www.aliexpress.com/item/Free-Shipping-40-Pins-Header-Strip-Socket-2-54mm-Straight-Single-Row-Pin-Male-For-Arduino/2046893919.html)  
+- 2x [4-Pin Pin Header](https://www.aliexpress.com/item/Free-Shipping-40-Pins-Header-Strip-Socket-2-54mm-Straight-Single-Row-Pin-Male-For-Arduino/2046893919.html)  
+- 5x [10k 1/4 Watt Axial Resistor](https://www.aliexpress.com/item/100pcs-10k-ohm-1-4W-10k-Metal-Film-Resistor-10kohm-0-25W-1-ROHS/32577051768.html)  
+- 1x [RJ-45 Jack](https://www.aliexpress.com/item/High-Quality-20pcs-RJ45-8P8C-Computer-Internet-Network-PCB-Jack-Socket-Black/32736146888.html)
+- 2x [2N7000 MOSFET](https://www.aliexpress.com/item/32993994244.html)
+1x [100uF ceramic Capacitor](https://www.mouser.com/ProductDetail/United-Chemi-Con/KTD250B107M80A0B00?qs=YQnJFR48xcDR2vQIc5p%2FHg%3D%3D) (optional)
+- 1x [WeMos D1 Mini ESP8266 board](https://wiki.wemos.cc/products:d1:d1_mini)  
+- 1x [LCD 20x4 I2C LCD Screen](https://www.aliexpress.com/item/Free-shipping-LCD-module-Blue-screen-IIC-I2C-2004-5V-20X4-LCD-board-provides-library-files/1873368596.html)
