@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="7.3.0">
+<eagle version="7.7.0">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -52,6 +52,8 @@
 <layer number="57" name="tCAD" color="7" fill="1" visible="no" active="no"/>
 <layer number="59" name="tCarbon" color="7" fill="1" visible="no" active="no"/>
 <layer number="60" name="bCarbon" color="7" fill="1" visible="no" active="no"/>
+<layer number="88" name="SimResults" color="9" fill="1" visible="no" active="no"/>
+<layer number="89" name="SimProbes" color="9" fill="1" visible="no" active="no"/>
 <layer number="90" name="Modules" color="5" fill="1" visible="no" active="no"/>
 <layer number="91" name="Nets" color="2" fill="1" visible="no" active="no"/>
 <layer number="92" name="Busses" color="1" fill="1" visible="no" active="no"/>
@@ -1376,47 +1378,6 @@ type 0207, grid 5 mm</description>
 </package>
 </packages>
 </library>
-<library name="SparkFun-Boards">
-<description>&lt;h3&gt;SparkFun Electronics' preferred foot prints&lt;/h3&gt;
-In this library you'll find boards and modules: Arduino footprints, breadboards, non-RF modules, etc.&lt;br&gt;&lt;br&gt;
-We've spent an enormous amount of time creating and checking these footprints and parts, but it is the end user's responsibility to ensure correctness and suitablity for a given componet or application. If you enjoy using this library, please buy one of our products at www.sparkfun.com.
-&lt;br&gt;&lt;br&gt;
-&lt;b&gt;Licensing:&lt;/b&gt; Creative Commons ShareAlike 4.0 International - https://creativecommons.org/licenses/by-sa/4.0/ 
-&lt;br&gt;&lt;br&gt;
-You are welcome to use this library for commercial purposes. For attribution, we ask that when you begin to sell your device using our footprint, you email us with a link to the product being sold. We want bragging rights that we helped (in a very small part) to create your 8th world wonder. We would like the opportunity to feature your device on our homepage.</description>
-<packages>
-<package name="LOGIC_LEVEL_CONVERTER">
-<pad name="P$1" x="1.27" y="13.97" drill="0.8"/>
-<pad name="P$2" x="1.27" y="11.43" drill="0.8"/>
-<pad name="P$3" x="1.27" y="8.89" drill="0.8"/>
-<pad name="P$4" x="1.27" y="6.35" drill="0.8"/>
-<pad name="P$5" x="1.27" y="3.81" drill="0.8"/>
-<pad name="P$6" x="1.27" y="1.27" drill="0.8"/>
-<pad name="P$7" x="11.43" y="1.27" drill="0.8"/>
-<pad name="P$8" x="11.43" y="3.81" drill="0.8"/>
-<pad name="P$9" x="11.43" y="6.35" drill="0.8"/>
-<pad name="P$10" x="11.43" y="8.89" drill="0.8"/>
-<pad name="P$11" x="11.43" y="11.43" drill="0.8"/>
-<pad name="P$12" x="11.43" y="13.97" drill="0.8"/>
-<wire x1="0" y1="0" x2="0" y2="5.08" width="0.127" layer="21"/>
-<wire x1="0" y1="5.08" x2="0" y2="10.16" width="0.127" layer="21"/>
-<wire x1="0" y1="10.16" x2="0" y2="15.24" width="0.127" layer="21"/>
-<wire x1="0" y1="15.24" x2="12.7" y2="15.24" width="0.127" layer="21"/>
-<wire x1="12.7" y1="15.24" x2="12.7" y2="10.16" width="0.127" layer="21"/>
-<wire x1="12.7" y1="10.16" x2="12.7" y2="5.08" width="0.127" layer="21"/>
-<wire x1="12.7" y1="5.08" x2="12.7" y2="0" width="0.127" layer="21"/>
-<wire x1="12.7" y1="0" x2="0" y2="0" width="0.127" layer="21"/>
-<text x="3.81" y="10.16" size="1.27" layer="21">Chan1</text>
-<text x="3.81" y="3.81" size="1.27" layer="21">Chan2</text>
-<wire x1="0" y1="10.16" x2="12.7" y2="10.16" width="0.127" layer="21"/>
-<wire x1="0" y1="5.08" x2="12.7" y2="5.08" width="0.127" layer="21"/>
-<text x="2.54" y="13.97" size="1.27" layer="21">LV</text>
-<text x="2.54" y="0" size="1.27" layer="21">LV</text>
-<text x="7.62" y="13.97" size="1.27" layer="21">HV</text>
-<text x="7.62" y="0" size="1.27" layer="21">HV</text>
-</package>
-</packages>
-</library>
 <library name="pinhead">
 <description>&lt;b&gt;Pin Header Connectors&lt;/b&gt;&lt;p&gt;
 &lt;author&gt;Created by librarian@cadsoft.de&lt;/author&gt;</description>
@@ -1495,6 +1456,43 @@ W = angled&lt;p&gt;
 <rectangle x1="-4.064" y1="-0.254" x2="-3.556" y2="0.254" layer="51"/>
 <rectangle x1="1.016" y1="-0.254" x2="1.524" y2="0.254" layer="51"/>
 <rectangle x1="3.556" y1="-0.254" x2="4.064" y2="0.254" layer="51"/>
+</package>
+</packages>
+</library>
+<library name="D1 Breakout - LCD TH Dupont">
+<description>Generated from &lt;b&gt;D1 Breakout - LCD TH Dupont.sch&lt;/b&gt;&lt;p&gt;
+by exp-lbrs.ulp</description>
+<packages>
+<package name="SPARKFUN-BOARDS_LOGIC_LEVEL_CONVERTER">
+<wire x1="0" y1="0" x2="0" y2="15.24" width="0.127" layer="21"/>
+<wire x1="0" y1="15.24" x2="12.7" y2="15.24" width="0.127" layer="21"/>
+<wire x1="12.7" y1="15.24" x2="12.7" y2="0" width="0.127" layer="21"/>
+<wire x1="12.7" y1="0" x2="0" y2="0" width="0.127" layer="21"/>
+<pad name="P$1" x="1.27" y="13.97" drill="0.8"/>
+<pad name="P$2" x="1.27" y="11.43" drill="0.8"/>
+<pad name="P$3" x="1.27" y="8.89" drill="0.8"/>
+<pad name="P$4" x="1.27" y="6.35" drill="0.8"/>
+<pad name="P$5" x="1.27" y="3.81" drill="0.8"/>
+<pad name="P$6" x="1.27" y="1.27" drill="0.8"/>
+<pad name="P$7" x="11.43" y="1.27" drill="0.8"/>
+<pad name="P$8" x="11.43" y="3.81" drill="0.8"/>
+<pad name="P$9" x="11.43" y="6.35" drill="0.8"/>
+<pad name="P$10" x="11.43" y="8.89" drill="0.8"/>
+<pad name="P$11" x="11.43" y="11.43" drill="0.8"/>
+<pad name="P$12" x="11.43" y="13.97" drill="0.8"/>
+<text x="2.54" y="13.97" size="1.016" layer="21">LV1</text>
+<text x="2.54" y="1.27" size="1.016" layer="21">LV4</text>
+<text x="7.62" y="13.97" size="1.016" layer="21">HV1</text>
+<text x="7.62" y="1.27" size="1.016" layer="21">HV4</text>
+<text x="2.54" y="11.43" size="1.016" layer="21">LV2</text>
+<text x="2.54" y="8.89" size="1.016" layer="21">LV</text>
+<text x="6.35" y="6.35" size="1.016" layer="21" align="center">GND</text>
+<text x="2.54" y="3.81" size="1.016" layer="21">LV3</text>
+<text x="7.62" y="11.43" size="1.016" layer="21">HV2</text>
+<text x="7.62" y="8.89" size="1.016" layer="21">HV</text>
+<text x="7.62" y="3.81" size="1.016" layer="21">HV3</text>
+<wire x1="2.54" y1="6.35" x2="3.81" y2="6.35" width="0.127" layer="21"/>
+<wire x1="8.89" y1="6.35" x2="10.16" y2="6.35" width="0.127" layer="21"/>
 </package>
 </packages>
 </library>
@@ -1589,10 +1587,14 @@ Please ensure your boards meet these minimum design rule requirements.</descript
 <param name="slThermalsForVias" value="0"/>
 <param name="dpMaxLengthDifference" value="10mm"/>
 <param name="dpGapFactor" value="2.5"/>
-<param name="checkGrid" value="0"/>
 <param name="checkAngle" value="0"/>
 <param name="checkFont" value="1"/>
 <param name="checkRestrict" value="1"/>
+<param name="checkStop" value="0"/>
+<param name="checkValues" value="0"/>
+<param name="checkNames" value="1"/>
+<param name="checkWireStubs" value="1"/>
+<param name="checkPolygonWidth" value="0"/>
 <param name="useDiameter" value="13"/>
 <param name="maxErrors" value="50"/>
 </designrules>
@@ -1693,37 +1695,49 @@ Please ensure your boards meet these minimum design rule requirements.</descript
 </pass>
 </autorouter>
 <elements>
-<element name="U$1" library="1455413453956-wemos" package="WEMOS" value="WEMOS" x="58.42" y="38.1"/>
+<element name="U$1" library="1455413453956-wemos" package="WEMOS" value="WEMOS" x="58.42" y="38.1" smashed="yes"/>
 <element name="X" library="con-wago-500" package="W237-102" value="PWR" x="76.2" y="70.485" smashed="yes" rot="R180">
 <attribute name="MF" value="" x="76.2" y="70.485" size="0.8128" layer="27" rot="R180" display="off"/>
 <attribute name="MPN" value="237-102" x="76.2" y="70.485" size="0.8128" layer="27" rot="R180" display="off"/>
-<attribute name="OC_NEWARK" value="70K9898" x="76.2" y="70.485" size="0.8128" layer="27" rot="R180" display="off"/>
-<attribute name="OC_FARNELL" value="unknown" x="76.2" y="70.485" size="0.8128" layer="27" rot="R180" display="off"/>
-<attribute name="VALUE" x="73.7" y="64.77" size="1.27" layer="27" ratio="10"/>
 <attribute name="NAME" x="80.0462" y="75.4888" size="1.27" layer="25" ratio="10" rot="R180"/>
+<attribute name="OC_FARNELL" value="unknown" x="76.2" y="70.485" size="0.8128" layer="27" rot="R180" display="off"/>
+<attribute name="OC_NEWARK" value="70K9898" x="76.2" y="70.485" size="0.8128" layer="27" rot="R180" display="off"/>
+<attribute name="VALUE" x="73.7" y="64.77" size="1.27" layer="27" ratio="10"/>
 </element>
-<element name="J1" library="con-tycoelectronics" package="RJ11-NO_SHIELD" value="RJ11-4L-B" x="48.26" y="34.925">
+<element name="J1" library="con-tycoelectronics" package="RJ11-NO_SHIELD" value="RJ11-4L-B" x="48.26" y="34.925" smashed="yes">
 <attribute name="MF" value="TYCO ELECTRONICS" x="48.26" y="34.925" size="1.778" layer="27" display="off"/>
-<attribute name="OC_NEWARK" value="52K3315" x="48.26" y="34.925" size="1.778" layer="27" display="off"/>
 <attribute name="MPN" value="RJ11-4L-B" x="48.26" y="34.925" size="1.778" layer="27" display="off"/>
+<attribute name="NAME" x="40.64" y="34.29" size="1.778" layer="25" rot="R90"/>
 <attribute name="OC_FARNELL" value="unknown" x="48.26" y="34.925" size="1.778" layer="27" display="off"/>
+<attribute name="OC_NEWARK" value="52K3315" x="48.26" y="34.925" size="1.778" layer="27" display="off"/>
+<attribute name="VALUE" x="42.545" y="37.465" size="1.778" layer="27"/>
 </element>
-<element name="R1" library="rcl" package="0207/5V" value="10k" x="57.785" y="70.485"/>
-<element name="U$2" library="holes" package="3,0" value="" x="45.72" y="69.85"/>
-<element name="U$4" library="holes" package="3,0" value="" x="71.12" y="34.29"/>
-<element name="U$3" library="SparkFun-Boards" package="LOGIC_LEVEL_CONVERTER" value="LOGIC_LEVEL_CONVERTER" x="53.975" y="64.77" rot="R180"/>
-<element name="BZR" library="pinhead" package="1X02" value="" x="66.04" y="68.58" rot="R90"/>
-<element name="RELAY" library="con-lstb" package="MA04-1" value="" x="33.655" y="43.18" rot="R270">
+<element name="R1" library="rcl" package="0207/5V" value="10k" x="57.785" y="70.485" smashed="yes">
+<attribute name="NAME" x="56.642" y="71.374" size="1.27" layer="25" ratio="10"/>
+<attribute name="VALUE" x="56.642" y="68.326" size="1.27" layer="27" ratio="10"/>
+</element>
+<element name="U$2" library="holes" package="3,0" value="" x="45.72" y="69.85" smashed="yes"/>
+<element name="U$4" library="holes" package="3,0" value="" x="71.12" y="34.29" smashed="yes"/>
+<element name="U$3" library="D1 Breakout - LCD TH Dupont" package="SPARKFUN-BOARDS_LOGIC_LEVEL_CONVERTER" value="SPARKFUN-BOARDS_LOGIC_LEVEL_CONVERTER" x="53.975" y="64.77" smashed="yes" rot="R180"/>
+<element name="BZR" library="pinhead" package="1X02" value="" x="66.04" y="68.58" smashed="yes" rot="R90">
+<attribute name="NAME" x="64.2112" y="65.9638" size="1.27" layer="25" ratio="10" rot="R90"/>
+<attribute name="VALUE" x="69.215" y="66.04" size="1.27" layer="27" rot="R90"/>
+</element>
+<element name="RELAY" library="con-lstb" package="MA04-1" value="" x="33.655" y="43.18" smashed="yes" rot="R270">
 <attribute name="MF" value="" x="33.655" y="43.18" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="OC_NEWARK" value="unknown" x="33.655" y="43.18" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="OC_FARNELL" value="unknown" x="33.655" y="43.18" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="MPN" value="" x="33.655" y="43.18" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="NAME" x="35.306" y="48.26" size="1.27" layer="25" ratio="10" rot="R270"/>
+<attribute name="OC_FARNELL" value="unknown" x="33.655" y="43.18" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="OC_NEWARK" value="unknown" x="33.655" y="43.18" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="VALUE" x="35.306" y="42.545" size="1.27" layer="27" ratio="10" rot="R270"/>
 </element>
-<element name="LCD" library="con-lstb" package="MA04-1" value="" x="33.655" y="59.055" rot="R270">
+<element name="LCD" library="con-lstb" package="MA04-1" value="" x="33.655" y="59.055" smashed="yes" rot="R270">
 <attribute name="MF" value="" x="33.655" y="59.055" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="OC_NEWARK" value="unknown" x="33.655" y="59.055" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="OC_FARNELL" value="unknown" x="33.655" y="59.055" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="MPN" value="" x="33.655" y="59.055" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="NAME" x="35.306" y="64.135" size="1.27" layer="25" ratio="10" rot="R270"/>
+<attribute name="OC_FARNELL" value="unknown" x="33.655" y="59.055" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="OC_NEWARK" value="unknown" x="33.655" y="59.055" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="VALUE" x="35.306" y="58.42" size="1.27" layer="27" ratio="10" rot="R270"/>
 </element>
 </elements>
 <signals>
@@ -1871,6 +1885,13 @@ Please ensure your boards meet these minimum design rule requirements.</descript
 <wire x1="33.655" y1="41.91" x2="38.1" y2="46.355" width="0.3048" layer="1"/>
 </signal>
 </signals>
+<mfgpreviewcolors>
+<mfgpreviewcolor name="soldermaskcolor" color="0xC8008000"/>
+<mfgpreviewcolor name="silkscreencolor" color="0xFFFEFEFE"/>
+<mfgpreviewcolor name="backgroundcolor" color="0xFF282828"/>
+<mfgpreviewcolor name="coppercolor" color="0xFFFFBF00"/>
+<mfgpreviewcolor name="substratecolor" color="0xFF786E46"/>
+</mfgpreviewcolors>
 </board>
 </drawing>
 <compatibility>
