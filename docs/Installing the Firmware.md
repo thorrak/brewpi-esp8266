@@ -12,11 +12,19 @@ The easiest way is to use the custom script in my brewpi-tools fork, though the 
 
 *Note:*  If you receive an error stating `command not found` when flashing the firmware, it may be that the esptool is not in your path.  Use the following command with explicit paths:
 
-`python /usr/local/lib/python2.7/dist-packages/esptool.py --port /dev/ttyUSB0 write_flash -fm=dio -fs=32m 0x00000 /home/brewpi/esp8266/bin/brewpi-esp8266.v0.6.wifi.bin`
+`python /usr/local/lib/python2.7/dist-packages/esptool.py --port /dev/ttyUSB0 write_flash -fm=dio -fs=32m 0x00000 /home/brewpi/esp8266/bin/brewpi-esp8266.v0.11.wifi.bin`
 
 
-## Mac OS X
-*To be updated*
+## macOS
+1. If you are using macOS 10.13 or lower, then you will likely have to install a driver for the USB serial chip that is on most ESP8266 D1 minis. You can download it from here: https://kig.re/downloads/CH341SER_MAC.ZIP . macOS 10.14 Mojave and higher do not require this driver, and installing it may cause issues on your system.
+2. Install a version of Python 3.x from https://www.python.org/downloads/
+3. Install esptool using PIP (`pip3 install esptool`)
+4. Hook up the ESP8266 to your Mac with a USB cable
+5. Locate the USB serial bridge device. Generally this will be `/dev/tty.wchusbserial1410` or something similar.
+6. Download the repo to your Mac using `git clone`
+7. Change to the `bin` directory (`cd ~/Downloads/brewpi-esp8266/bin`, or the appropriate directory)
+8. Flash the firmware (`python3  /Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages/esptool.py --port /dev/tty.wchusbserial1410 write_flash -fm=dio 0x00000 brewpi-esp8266.v0.11.wifi.bin`)
+
 
 You can probably install this using esptool similar to the instructions above.
 
