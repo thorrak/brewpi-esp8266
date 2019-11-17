@@ -105,15 +105,17 @@ void handleReset()
 }
 
 
-
-void setup()
-{
-
-
 #ifdef ESP8266_WiFi
+
+#define WIFI_SETUP_AP_NAME "BrewPiAP"
+#define WIFI_SETUP_AP_PASS "brewpiesp"  // Must be 8-63 chars
+
+
+void configure_wifi () {
 	String mdns_id;
 
 	mdns_id = eepromManager.fetchmDNSName();
+
 	if(mdns_id.length()<=0) {
 #if defined(ESP8266)
 		mdns_id = "ESP" + String(ESP.getChipId());
@@ -127,21 +129,31 @@ void setup()
 		mdns_id = "ESP" + (String) ssid;
 #endif
 	}
-	// If we're going to set up WiFi, let's get to it
-	WiFiManager wifiManager;
-	wifiManager.setConfigPortalTimeout(5*60); // Time out after 5 minutes so that we can keep managing temps 
-	wifiManager.setDebugOutput(false); // In case we have a serial connection to BrewPi
-									   
+
+	WiFiManager wifiManager;  //Local initialization. Once its business is done, there is no need to keep it around
+	wifiManager.setDebugOutput(false); // In case we have a serial connection
+	wifiManager.setConfigPortalTimeout(5 * 60);  // Setting to 5 mins
+
 	// The main purpose of this is to set a boolean value which will allow us to know we
 	// just saved a new configuration (as opposed to rebooting normally)
 	wifiManager.setSaveConfigCallback(saveConfigCallback);
 
 	// The third parameter we're passing here (mdns_id.c_str()) is the default name that will appear on the form.
-	// It's nice, but it means the user gets no actual prompt for what they're entering. 
+	// It's nice, but it means the user gets no actual prompt for what they're entering.
 	WiFiManagerParameter custom_mdns_name("mdns", "Device (mDNS) Name", mdns_id.c_str(), 20);
 	wifiManager.addParameter(&custom_mdns_name);
 
-	wifiManager.autoConnect(); // Launch captive portal with auto generated name ESP + ChipID
+
+	if(wifiManager.autoConnect(WIFI_SETUP_AP_NAME, WIFI_SETUP_AP_PASS)) {
+		// If we succeeded at connecting, switch to station mode.
+		// TODO - Determine if we can merge shouldSaveConfig in here
+		WiFi.softAPdisconnect(true);
+		WiFi.mode(WIFI_AP_STA);
+	} else {
+		// If we failed to connect, we still want to control temps. Disable the AP/WiFi
+		WiFi.softAPdisconnect(true);
+		WiFi.mode(WIFI_OFF);
+	}
 
 	// Alright. We're theoretically connected here (or we timed out).
 	// If we connected, then let's save the mDNS name
@@ -161,6 +173,16 @@ void setup()
 	if (!MDNS.begin(mdns_id.c_str())) {
 		// TODO - Do something about it or log it or something
 	}
+}
+
+#endif
+
+void setup()
+{
+
+
+#ifdef ESP8266_WiFi
+	configure_wifi();
 #else
     // Apparently, the WiFi radio is managed by the bootloader, so not including the libraries isn't the same as
     // disabling WiFi. We'll explicitly disable it if we're running in "serial" mode
