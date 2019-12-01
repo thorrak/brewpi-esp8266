@@ -10,29 +10,34 @@ recommend).
 Generally, I recommend that you use boards which contain a 4MB flash chip,
 USB to UART bridge, and voltage regulation (allowing them to be powered off
 +5v). Although we won't be using the NodeMCU firmware, NodeMCU boards hit this
-sweet spot. I've linked example prices below - these may have changed since
-writing.
+sweet spot. 
+
+**Note** - While I've linked example prices below - these may have changed since
+writing, and the specific boards linked are not guaranteed to work with this
+project. Be careful who you buy from - there are unscrupulous manufacturers
+out there who get cheap and don't test their boards (or even include all the
+hardware they claim to!)
 
 ### Wemos D1 Mini
 This is the board which I targeted my installation for. Dirt cheap, tiny, a
-great form factor, and with just enough GPIO pins - I love this thing.
+great form factor, and with just enough GPIO pins - I love this thing. If I
+was recommending a board, this would be it. 
 
 Retailers:
-* [Amazon](https://www.amazon.com/Winson-eseller-D1-mini-V2-development/dp/B01GFAO6VW) - $18.99 (Prime)
-* [AliExpress](http://www.aliexpress.com/w/wholesale-wemos-d1-mini.html?site=glo&SearchText=wemos+d1+mini&g=y&SortType=price_asc&groupsort=1&shipCountry=us) - $2.60 (Shipped from China)
-* [eBay](http://www.ebay.com/sch/i.html?_from=R40&_sacat=0&_nkw=wemos%20d1%20mini&rt=nc&LH_PrefLoc=1) - $9.69 (US Seller)
+* [WeMos (AliExpress)](https://wiki.wemos.cc/products:d1:d1_mini) - $4.96 (Shipped from China)
+* [Amazon](https://www.amazon.com/Makerfocus-NodeMcu-Development-ESP8266-Compatible/dp/B01N3P763C/) - $8.99 (Prime)
+* [AliExpress](https://www.aliexpress.com/item/Smart-Electronics-D1-mini-Mini-NodeMcu-4M-bytes-Lua-WIFI-Internet-of-Things-development-board-based/32651255381.html) - $2.60 (Shipped from China)
+* [eBay](https://www.ebay.com/itm/D1-Mini-NodeMCU-and-Arduino-compatible-wifi-lua-ESP8266-ESP-12-Arduino-WeMos/201714015357) - $6.49 (US Seller)
 
 
 ### NodeMCU v2
 This is the board I initially developed this firmware with. It's larger than
-the Wemos board, but has extra pins broken out. As of the time of writing, I've
-also tested flashing this board with a Raspberry Pi. It works perfectly, and
-doesn't require drivers.
+the Wemos board but has extra pins broken out.
 
 Retailers:
-* [Amazon](https://www.amazon.com/HiLetgo-Version-NodeMCU-Internet-Development/dp/B010O1G1ES) - $8.79 (Prime)
-* [AliExpress](http://www.aliexpress.com/w/wholesale-nodemcu-v2.html?site=glo&SearchText=nodemcu+v2&g=y&SortType=price_asc&groupsort=1&shipCountry=us) - $2.92 (Shipped from China)
-* [eBay](http://www.ebay.com/sch/i.html?_from=R40&_sacat=0&_sop=15&_nkw=nodemcu%20v2&rt=nc&LH_PrefLoc=1) - $9.90 (US Seller)
+* [Amazon](https://www.amazon.com/HiLetgo-Internet-Development-Wireless-Micropython/dp/B010O1G1ES/) - $8.39 (Prime)
+* [AliExpress](https://www.aliexpress.com/item/Update-Industry-4-0-New-esp8266-NodeMCU-v2-Lua-WIFI-networking-development-kit-board-based-on/32358722888.html) - $2.98 (Shipped from China)
+* [eBay](https://www.ebay.com/itm/ESP8266-microcontroller-NodeMCU-Lua-WIFI-with-CP2102-USB/322730954299) - $8.57 (US Seller)
 
 
 ## Not Recommended

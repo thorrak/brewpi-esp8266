@@ -47,15 +47,13 @@
 #endif
 
 
-
 class LcdDisplay DISPLAY_SUPERCLASS
 {
   public:
 	// initializes the lcd display
 	DISPLAY_METHOD void init(void);
-
-	DISPLAY_METHOD void printAll()
-	{
+	
+	DISPLAY_METHOD void printAll() {
 		printStationaryText();
 		printState();
 		printAllTemperatures();
@@ -111,10 +109,12 @@ class LcdDisplay DISPLAY_SUPERCLASS
 	DISPLAY_METHOD void printAt(uint8_t x, uint8_t y, char *text);
 
 #ifdef ESP8266_WiFi
+	DISPLAY_METHOD void printWiFiStartup(void);
 	DISPLAY_METHOD void printWiFi(void);
 	DISPLAY_METHOD void printWiFi_setup(void);
 #endif
 
+	DISPLAY_METHOD void printEEPROMStartup(void);
 	DISPLAY_METHOD void clear(void);
 
 

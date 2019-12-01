@@ -18,15 +18,19 @@
 
 #if defined(ESP8266)
 #include <ESP8266mDNS.h>
+#include <DNSServer.h>			//Local DNS Server used for redirecting all requests to the configuration portal
+#include <ESP8266WebServer.h>	//Local WebServer used to serve the configuration portal
+#include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
+#include "Version.h" 			// Used in mDNS announce string
 #elif defined(ESP32)
 #include <ESPmDNS.h>
-#endif
-
-
 #include <DNSServer.h>			//Local DNS Server used for redirecting all requests to the configuration portal
 //#include <ESP8266WebServer.h>	//Local WebServer used to serve the configuration portal
 #include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 #include "Version.h" 			// Used in mDNS announce string
+#endif
+
+
 #endif
 #endif
 
@@ -90,54 +94,64 @@ bool isValidmDNSName(String mdns_name) {
 
 WiFiServer server(23);
 WiFiClient serverClient;
+
+WiFiEventHandler stationConnectedHandler;
+void onStationConnected(const WiFiEventSoftAPModeStationConnected& evt) {
+    server.begin();
+    server.setNoDelay(true);
+}
+
+
 #endif
 
 void handleReset()
 {
-#if defined(ESP8266) || defined(ESP32)
 	// The asm volatile method doesn't work on ESP8266. Instead, use ESP.restart
 	ESP.restart();
-#else
-	// resetting using the watchdog timer (which is a full reset of all registers) 
-	// might not be compatible with old Arduino bootloaders. jumping to 0 is safer.
-	asm volatile ("  jmp 0");
-#endif
 }
 
 
-#ifdef ESP8266_WiFi
 
-void configure_wifi () {
+void setup()
+{
+    // Let's get the display going so that we can provide the user a bit of feedback on what's happening
+    display.init();
+    display.printEEPROMStartup();
+
+    // Before anything else, let's get SPIFFS working. We need to start it up, and then test if the file system was
+    // formatted.
+	SPIFFS.begin();
+
+    if (!SPIFFS.exists("/formatComplete.txt")) {
+        if (!SPIFFS.exists("/mdns.txt")) {
+            // This prevents installations that are being upgraded from v0.10 to v0.11 from having their mdns settings
+            // wiped out
+            SPIFFS.format();
+        }
+        File f = SPIFFS.open("/formatComplete.txt", "w");
+        f.close();
+    }
+
+#ifdef ESP8266_WiFi
+    display.printWiFiStartup();
 	String mdns_id;
 
 	mdns_id = eepromManager.fetchmDNSName();
+//	if(mdns_id.length()<=0)
+//		mdns_id = "ESP" + String(ESP.getChipId());
 
-	if(mdns_id.length()<=0) {
-#if defined(ESP8266)
-		mdns_id = "ESP" + String(ESP.getChipId());
-#elif defined(ESP32)
-		// There isn't a straightforward "getChipId" function on an ESP32, so we'll have to make do
-		char ssid[15]; //Create a Unique AP from MAC address
-		uint64_t chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
-		uint16_t chip = (uint16_t)(chipid>>32);
-		snprintf(ssid,15,"ESP%04X",chip);
 
-		mdns_id = "ESP" + (String) ssid;
-#else
-#error "Invalid device selected!"
-#endif
-	}
-
-	WiFiManager wifiManager;  //Local initialization. Once its business is done, there is no need to keep it around
-	wifiManager.setDebugOutput(false); // In case we have a serial connection
-	wifiManager.setConfigPortalTimeout(5 * 60);  // Setting to 5 mins
-
+	// If we're going to set up WiFi, let's get to it
+	WiFiManager wifiManager;
+	wifiManager.setConfigPortalTimeout(5*60); // Time out after 5 minutes so that we can keep managing temps 
+	wifiManager.setDebugOutput(FALSE); // In case we have a serial connection to BrewPi
+									   
 	// The main purpose of this is to set a boolean value which will allow us to know we
 	// just saved a new configuration (as opposed to rebooting normally)
 	wifiManager.setSaveConfigCallback(saveConfigCallback);
 
 	// The third parameter we're passing here (mdns_id.c_str()) is the default name that will appear on the form.
-	// It's nice, but it means the user gets no actual prompt for what they're entering.
+	// It's nice, but it means the user gets no actual prompt for what they're entering. 
 	WiFiManagerParameter custom_mdns_name("mdns", "Device (mDNS) Name", mdns_id.c_str(), 20);
 	wifiManager.addParameter(&custom_mdns_name);
 
@@ -155,35 +169,24 @@ void configure_wifi () {
 		WiFi.mode(WIFI_OFF);
 	}
 
-	// Alright. We're theoretically connected here (or we timed out).
-	// If we connected, then let's save the mDNS name
-	if (shouldSaveConfig) {
-		// If the mDNS name is valid, save it.
-		if (isValidmDNSName(custom_mdns_name.getValue())) {
-			eepromManager.savemDNSName(custom_mdns_name.getValue());
-		} else {
-			// If the mDNS name is invalid, reset the WiFi configuration and restart the ESP8266
-			WiFi.disconnect(true);
-			delay(2000);
-			handleReset();
-		}
-	}
+    // Alright. We're theoretically connected here (or we timed out).
+    // If we connected, then let's save the mDNS name
+    if (shouldSaveConfig) {
+        // If the mDNS name is valid, save it.
+        if (isValidmDNSName(custom_mdns_name.getValue())) {
+            eepromManager.savemDNSName(custom_mdns_name.getValue());
+        } else {
+            // If the mDNS name is invalid, reset the WiFi configuration and restart the ESP8266
+            WiFi.disconnect(true);
+            delay(2000);
+            handleReset();
+        }
+    }
 
-	// Regardless of the above, we need to set the mDNS name and announce it
+    // Regardless of the above, we need to set the mDNS name and announce it
 	if (!MDNS.begin(mdns_id.c_str())) {
 		// TODO - Do something about it or log it or something
 	}
-}
-
-#endif
-
-void setup()
-{
-
-    display.init();
-
-#ifdef ESP8266_WiFi
-	configure_wifi();
 #else
     // Apparently, the WiFi radio is managed by the bootloader, so not including the libraries isn't the same as
     // disabling WiFi. We'll explicitly disable it if we're running in "serial" mode
@@ -211,11 +214,12 @@ void setup()
 	MDNS.addServiceTxt("brewpi", "tcp", "revision", FIRMWARE_REVISION);
 #endif
 
-    bool initialize = !eepromManager.hasSettings();
-    if(initialize) {
-        eepromManager.zapEeprom();  // Writes all the empty files to SPIFFS
-        logInfo(INFO_EEPROM_INITIALIZED);
-    }
+	// This code no longer really does anything.
+//    bool initialize = !eepromManager.hasSettings();
+//    if(initialize) {
+//        eepromManager.zapEeprom();  // Writes all the empty files to SPIFFS
+//        logInfo(INFO_EEPROM_INITIALIZED);
+//    }
 
 	logDebug("started");
 	tempControl.init();
@@ -228,13 +232,13 @@ void setup()
 	tempControl.fridgeSensor->init();
 #endif	
 
-	// TODO - Determine if display.init needs to be here for IIC displays on a brand new device
-//	display.init();
 #ifdef ESP8266_WiFi
 	display.printWiFi();  // Print the WiFi info (mDNS name & IP address)
+    WiFi.setAutoReconnect(true);
+    stationConnectedHandler = WiFi.onSoftAPModeStationConnected(&onStationConnected);
 	delay(8000);
-	display.clear();
 #endif
+	display.clear();
 	display.printStationaryText();
 	display.printState();
 
@@ -244,27 +248,26 @@ void setup()
 }
 
 #ifdef ESP8266_WiFi
+int reconnectPoll = 0;
 void connectClients() {
 
-    if(WiFi.status() != WL_CONNECTED){
-        WiFi.begin();
+    if(WiFi.isConnected()) {
+        if (server.hasClient()) {
+            // If we show a client as already being disconnected, force a disconnect
+            if (serverClient) serverClient.stop();
+            serverClient = server.available();
+            serverClient.flush();
+        }
+    } else {
+        // This might be unnecessary, but let's go ahead and disconnect any "clients" we show as connected given that
+        // WiFi isn't connected
+		// If we show a client as already being disconnected, force a disconnect
+		if (serverClient) {
+			serverClient.stop();
+			serverClient = server.available();
+			serverClient.flush();
+		}
     }
-
-	if (server.hasClient()) {
-        // If we show a client as already being disconnected, force a disconnect
-        if (serverClient) serverClient.stop();
-		serverClient = server.available();
-		serverClient.flush();
-
-//        if (!serverClient || !serverClient.connected()) {
-//			if (serverClient) serverClient.stop();  // serverClient isn't connected
-//			serverClient = server.available();
-//            serverClient.flush(); // Clean things up
-//		} else {
-//			// no free/disconnected spot so reject
-//			server.available().stop();
-//		}
-	}
 }
 
 #endif
@@ -272,9 +275,21 @@ void connectClients() {
 void brewpiLoop(void)
 {
 	static unsigned long lastUpdate = 0;
-	uint8_t oldState;
+    static unsigned long lastLcdUpdate = 0;
 
-	if (ticks.millis() - lastUpdate >= (1000)) { //update settings every second
+	uint8_t oldState;
+	// TODO  - Break this out for IIC only
+    if(ticks.millis() - lastLcdUpdate >= (180000)) { //reset lcd every 180 seconds as a workaround for screen scramble
+        lastLcdUpdate = ticks.millis();
+
+        display.init();
+        display.printStationaryText();
+        display.printState();
+
+        rotaryEncoder.init();
+    }
+
+    if (ticks.millis() - lastUpdate >= (1000)) { //update settings every second
 		lastUpdate = ticks.millis();
 
 #if BREWPI_BUZZER

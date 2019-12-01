@@ -207,7 +207,7 @@
 // pins
 
 #if defined(ESP8266)
-#define NODEMCU_PIN_A0 17	// Analog 
+#define NODEMCU_PIN_A0 17	// Analog
 
 #define NODEMCU_PIN_D0 16	// No interrupt, do not use for rotary encoder
 #define NODEMCU_PIN_D1 5	// Generally used for I2C
@@ -275,7 +275,7 @@
 
 #if defined(ESP8266) || defined(ESP32)
 #define ESP8266_WiFi 1			// This disables Serial and enables WiFi support. Comment out for "serial" mode.
-#define FIRMWARE_REVISION "0.10"
+#define FIRMWARE_REVISION "0.11"
 #endif
 
 #ifdef ESP8266_WiFi
