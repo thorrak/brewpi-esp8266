@@ -6,8 +6,8 @@ Although the "heart" of a BrewPi controller is the microprocessor running the Br
 Five different versions of the main PCB are listed here.  Each provide
 different functionality and/or form factors:
 
-*   No LCD Support, no buzzer, with screw connectors, and through-hole components
-*   LCD Support with DuPont connectors, and surface-mount level converter components
+*   No LCD Support with DuPont connectors and through-hole components
+*   LCD Support with DuPont connectors and surface-mount level converter components
 *   LCD Support with DuPont connectors, through-hole components, and a SparkFun-based level converter sub-board
 *   LCD Support with screw connectors, through-hole components, and a SparkFun-based level converter sub-board
 *   LCD Support with DuPont connectors, through-hole components, and an integrated level converter
