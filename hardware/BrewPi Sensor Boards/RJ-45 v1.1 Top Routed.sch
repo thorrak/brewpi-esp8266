@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="7.3.0">
+<eagle version="9.5.2">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
+<setting keepoldvectorfont="yes"/>
 <setting verticaltext="up"/>
 </settings>
 <grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="no" altdistance="0.01" altunitdist="inch" altunit="inch"/>
@@ -62,11 +63,12 @@
 http://catalog.tycoelectronics.com&lt;br&gt;
 &lt;author&gt;Created by librarian@cadsoft.de&lt;/author&gt;</description>
 <packages>
-<package name="RJ45-NO-SHIELD-NOLINE">
+<package name="RJ45-NO-SHIELD">
 <description>&lt;b&gt;RJ45 Low Profile&lt;/b&gt; No Shield&lt;p&gt;
 For all RJ45 N and Z Series Models&lt;br&gt;
 Source: www.tycoelectronics.com .. ENG_DS_1654001_1099_RJ_L_0507.pdf</description>
 <wire x1="-7.527" y1="10.819" x2="7.527" y2="10.819" width="0.2032" layer="21"/>
+<wire x1="8.4455" y1="-5.5118" x2="-8.4455" y2="-5.5118" width="0.01" layer="20"/>
 <wire x1="7.527" y1="-7.782" x2="-7.527" y2="-7.782" width="0.2032" layer="21"/>
 <wire x1="-7.527" y1="-7.782" x2="-7.527" y2="10.819" width="0.2032" layer="21"/>
 <wire x1="7.527" y1="10.819" x2="7.527" y2="-7.782" width="0.2032" layer="21"/>
@@ -156,7 +158,7 @@ Source: www.tycoelectronics.com .. ENG_DS_1654001_1099_RJ_L_0507.pdf</descriptio
 <gate name="G$1" symbol="JACK8" x="0" y="0"/>
 </gates>
 <devices>
-<device name="" package="RJ45-NO-SHIELD-NOLINE">
+<device name="" package="RJ45-NO-SHIELD">
 <connects>
 <connect gate="G$1" pin="1" pad="1"/>
 <connect gate="G$1" pin="2" pad="2"/>
@@ -493,19 +495,39 @@ Grid 5.00 mm&lt;p&gt;
 <sheets>
 <sheet>
 <plain>
-<text x="71.12" y="38.1" size="1.778" layer="95">6 - Door (D7)
+<text x="71.12" y="38.1" size="1.778" layer="95">6 - Door
 5 - GND
-4 - OneWire (D6) 
-3 - 3v3</text>
+4 - OneWire
+3 - 5v</text>
 </plain>
 <instances>
-<instance part="J1" gate="G$1" x="63.5" y="40.64"/>
-<instance part="JP1" gate="A" x="25.4" y="73.66" rot="R180"/>
-<instance part="JP2" gate="A" x="25.4" y="53.34" rot="R180"/>
-<instance part="JP3" gate="A" x="25.4" y="33.02" rot="R180"/>
-<instance part="JP4" gate="G$1" x="66.04" y="63.5"/>
-<instance part="X1" gate="-1" x="76.2" y="53.34" rot="R180"/>
-<instance part="X1" gate="-2" x="76.2" y="58.42" rot="R180"/>
+<instance part="J1" gate="G$1" x="63.5" y="40.64" smashed="yes">
+<attribute name="NAME" x="60.96" y="50.8" size="1.778" layer="95"/>
+<attribute name="VALUE" x="60.96" y="27.432" size="1.778" layer="96"/>
+</instance>
+<instance part="JP1" gate="A" x="25.4" y="73.66" smashed="yes" rot="R180">
+<attribute name="NAME" x="31.75" y="67.945" size="1.778" layer="95" rot="R180"/>
+<attribute name="VALUE" x="31.75" y="81.28" size="1.778" layer="96" rot="R180"/>
+</instance>
+<instance part="JP2" gate="A" x="25.4" y="53.34" smashed="yes" rot="R180">
+<attribute name="NAME" x="31.75" y="47.625" size="1.778" layer="95" rot="R180"/>
+<attribute name="VALUE" x="31.75" y="60.96" size="1.778" layer="96" rot="R180"/>
+</instance>
+<instance part="JP3" gate="A" x="25.4" y="33.02" smashed="yes" rot="R180">
+<attribute name="NAME" x="31.75" y="27.305" size="1.778" layer="95" rot="R180"/>
+<attribute name="VALUE" x="31.75" y="40.64" size="1.778" layer="96" rot="R180"/>
+</instance>
+<instance part="JP4" gate="G$1" x="66.04" y="63.5" smashed="yes">
+<attribute name="NAME" x="59.69" y="69.215" size="1.778" layer="95"/>
+<attribute name="VALUE" x="59.69" y="58.42" size="1.778" layer="96"/>
+</instance>
+<instance part="X1" gate="-1" x="76.2" y="53.34" smashed="yes" rot="R180">
+<attribute name="NAME" x="76.2" y="52.451" size="1.778" layer="95"/>
+</instance>
+<instance part="X1" gate="-2" x="76.2" y="58.42" smashed="yes" rot="R180">
+<attribute name="VALUE" x="78.74" y="62.103" size="1.778" layer="96" rot="R180"/>
+<attribute name="NAME" x="76.2" y="57.531" size="1.778" layer="95"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -514,7 +536,7 @@ Grid 5.00 mm&lt;p&gt;
 <segment>
 <wire x1="43.18" y1="76.2" x2="43.18" y2="55.88" width="0.1524" layer="91"/>
 <wire x1="43.18" y1="55.88" x2="43.18" y2="40.64" width="0.1524" layer="91"/>
-<label x="35.56" y="78.74" size="1.778" layer="95"/>
+<label x="35.56" y="76.2" size="1.778" layer="95"/>
 <pinref part="JP2" gate="A" pin="3"/>
 <wire x1="43.18" y1="40.64" x2="43.18" y2="35.56" width="0.1524" layer="91"/>
 <wire x1="27.94" y1="55.88" x2="43.18" y2="55.88" width="0.1524" layer="91"/>
@@ -529,7 +551,7 @@ Grid 5.00 mm&lt;p&gt;
 <label x="50.8" y="40.64" size="1.778" layer="95"/>
 </segment>
 </net>
-<net name="3V3" class="0">
+<net name="5V" class="0">
 <segment>
 <wire x1="45.72" y1="53.34" x2="45.72" y2="73.66" width="0.1524" layer="91"/>
 <wire x1="27.94" y1="33.02" x2="45.72" y2="33.02" width="0.1524" layer="91"/>
@@ -556,7 +578,7 @@ Grid 5.00 mm&lt;p&gt;
 <wire x1="48.26" y1="53.34" x2="48.26" y2="63.5" width="0.1524" layer="91"/>
 <wire x1="48.26" y1="63.5" x2="48.26" y2="71.12" width="0.1524" layer="91"/>
 <label x="35.56" y="71.12" size="1.778" layer="95"/>
-<label x="53.34" y="60.96" size="1.778" layer="95"/>
+<label x="53.34" y="63.5" size="1.778" layer="95"/>
 <pinref part="JP2" gate="A" pin="1"/>
 <wire x1="27.94" y1="50.8" x2="48.26" y2="50.8" width="0.1524" layer="91"/>
 <junction x="48.26" y="50.8"/>
@@ -590,7 +612,7 @@ Grid 5.00 mm&lt;p&gt;
 <wire x1="50.8" y1="58.42" x2="50.8" y2="66.04" width="0.1524" layer="91"/>
 <wire x1="71.12" y1="58.42" x2="50.8" y2="58.42" width="0.1524" layer="91"/>
 <junction x="50.8" y="58.42"/>
-<label x="66.04" y="55.88" size="1.778" layer="95"/>
+<label x="66.04" y="58.42" size="1.778" layer="95"/>
 </segment>
 </net>
 </nets>
