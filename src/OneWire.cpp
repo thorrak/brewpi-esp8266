@@ -114,6 +114,10 @@ sample code bearing this copyright.
 //--------------------------------------------------------------------------
 */
 
+
+#include "Brewpi.h"
+
+#if BREWPI_DS2413
 #include "OneWire.h"
 
 
@@ -558,6 +562,8 @@ uint16_t OneWire::crc16(const uint8_t* input, uint16_t len, uint16_t crc)
 	}
 	return crc;
 }
+#endif
+
 #endif
 
 #endif

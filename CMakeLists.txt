@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.2)
-project(legacy-platformio)
+project(brewpi-esp8266)
 
 include(CMakeListsPrivate.txt)
 

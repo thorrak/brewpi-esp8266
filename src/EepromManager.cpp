@@ -184,8 +184,21 @@ String EepromManager::fetchmDNSName()
 			return mdns_id;
 		}
 	}
-	// Moving the trigger for the default name here.
-	mdns_id = "ESP" + String(ESP.getChipId());
+
+#if defined(ESP8266)
+    mdns_id = "ESP" + String(ESP.getChipId());
+#elif defined(ESP32)
+    // There isn't a straightforward "getChipId" function on an ESP32, so we'll have to make do
+    char ssid[15]; //Create a Unique AP from MAC address
+    uint64_t chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
+    uint16_t chip = (uint16_t)(chipid>>32);
+    snprintf(ssid,15,"ESP%04X",chip);
+
+    mdns_id = "ESP" + (String) ssid;
+#else
+#error "Invalid device selected!"
+#endif
+	
 	return mdns_id;
 }
 

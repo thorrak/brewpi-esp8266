@@ -149,9 +149,10 @@ class LcdDisplay DISPLAY_SUPERCLASS
 
 #ifdef ESP8266_WiFi
         DISPLAY_METHOD void printWiFi(void);
-        DISPLAY_METHOD void printWiFi_setup(void);
+        DISPLAY_METHOD void printWiFiStartup(void);
 #endif
 
+        DISPLAY_METHOD void printEEPROMStartup(void);
         DISPLAY_METHOD void clear(void);
         DISPLAY_METHOD void clearForText(uint8_t start_x, uint8_t start_y, uint16_t color, uint8_t font_size, uint8_t characters);
 

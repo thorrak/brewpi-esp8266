@@ -311,23 +311,21 @@ void LcdDisplay::printState(void){
 #ifdef ESP8266_WiFi
 
 void LcdDisplay::printWiFiStartup(void){
-	String ap_station_name;
 	toggleBacklight = false;  // Assuming we need this
 
 	lcd.setCursor(0,0);
-	// Factoring prints out of switch has negative effect on code size in this function
-	lcd.print("Creating WiFi AP...");
-	lcd.printSpacesToRestOfLine();
 
-	lcd.setCursor(0,1);
 	lcd.print("Connect to this AP:");
 	lcd.printSpacesToRestOfLine();
 
-
-	ap_station_name = "ESP_" + String(ESP.getChipId());
+	lcd.setCursor(0,1);
+	lcd.print("AP Name: ");
+	lcd.print(WIFI_SETUP_AP_NAME);
+	lcd.printSpacesToRestOfLine();
 
 	lcd.setCursor(0,2);
-	lcd.print(ap_station_name);
+	lcd.print("AP Pass: ");
+	lcd.print(WIFI_SETUP_AP_PASS);
 	lcd.printSpacesToRestOfLine();
 
 	lcd.setCursor(0,3);
@@ -336,6 +334,7 @@ void LcdDisplay::printWiFiStartup(void){
 
 	lcd.updateBacklight();
 }
+
 
 void LcdDisplay::printWiFi(void){
 	toggleBacklight = false;  // Assuming we need this
@@ -386,33 +385,8 @@ void LcdDisplay::printEEPROMStartup(void){
 }
 
 
-void LcdDisplay::printWiFi_setup(void){
-	toggleBacklight = false;  // Assuming we need this
-
-	lcd.setCursor(0,0);
-
-	lcd.print("Connect to WiFi Ntwrk");
-	lcd.printSpacesToRestOfLine();
-
-	lcd.setCursor(0,1);
-	lcd.print("AP Name: ");
-	lcd.print(WIFI_SETUP_AP_NAME);
-	lcd.printSpacesToRestOfLine();
-
-	lcd.setCursor(0,2);
-	lcd.print("AP Pass: ");
-	lcd.print(WIFI_SETUP_AP_PASS);
-	lcd.printSpacesToRestOfLine();
-
-	lcd.setCursor(0,3);
-	lcd.print("to config this device");
-	lcd.printSpacesToRestOfLine();
-
-	lcd.updateBacklight();
-}
 
 
-#endif
 
 void LcdDisplay::clear(void) {
 	lcd.clear();

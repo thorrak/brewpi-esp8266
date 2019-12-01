@@ -1,6 +1,10 @@
 #ifndef OneWire_h
 #define OneWire_h
 
+#include "Brewpi.h"
+
+#if BREWPI_DS2413
+
 #include <inttypes.h>
 
 #if ARDUINO >= 100
@@ -239,5 +243,7 @@ public:
 #endif
 #endif
 };
+
+#endif
 
 #endif

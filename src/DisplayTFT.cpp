@@ -405,7 +405,7 @@ void LcdDisplay::printWiFi(void){
 //    lcd.updateBacklight();
 }
 
-void LcdDisplay::printWiFi_setup(void){
+void LcdDisplay::printWiFiStartup(void){
     toggleBacklight = false;  // Assuming we need this
 
     clear();
@@ -434,6 +434,32 @@ void LcdDisplay::printWiFi_setup(void){
 
 
 #endif
+
+
+void LcdDisplay::printEEPROMStartup(void){
+
+    toggleBacklight = false;  // Assuming we need this
+
+    clear();
+
+    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft.setTextSize(WIFI_FONT_SIZE);
+
+    tft.setCursor(0, 0);
+
+    tft.println("Setting up EEPROM...");
+    tft.println("Please wait. This");
+    tft.println("can take 5+ minutes");
+    tft.println("for new installs.");
+    tft.println("");
+
+    tft.print("AP Name: ");
+    tft.println(WIFI_SETUP_AP_NAME);
+
+    tft.print("AP Pass: ");
+    tft.println(WIFI_SETUP_AP_PASS);
+
+}
 
 void LcdDisplay::clear(void) {
     tft.fillScreen(ILI9341_BLACK);

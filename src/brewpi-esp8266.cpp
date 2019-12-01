@@ -95,11 +95,14 @@ bool isValidmDNSName(String mdns_name) {
 WiFiServer server(23);
 WiFiClient serverClient;
 
+#if defined(ESP8266)
+// This doesn't work for ESP32, unfortunately
 WiFiEventHandler stationConnectedHandler;
 void onStationConnected(const WiFiEventSoftAPModeStationConnected& evt) {
     server.begin();
     server.setNoDelay(true);
 }
+#endif
 
 
 #endif
@@ -120,7 +123,17 @@ void setup()
 
     // Before anything else, let's get SPIFFS working. We need to start it up, and then test if the file system was
     // formatted.
-	SPIFFS.begin();
+#ifdef ESP8266
+    // SPIFFS.begin doesn't allow for formatOnFail as a first argument yet on ESP8266 (but it should be coming soon)
+    // https://github.com/esp8266/Arduino/issues/4185
+    // TODO - Rewrite this when that PR gets merged	SPIFFS.begin();
+    SPIFFS.begin(true);
+#elif defined(ESP32)
+    SPIFFS.begin(true);
+#else
+#error "Invalid platform!"
+#endif
+
 
     if (!SPIFFS.exists("/formatComplete.txt")) {
         if (!SPIFFS.exists("/mdns.txt")) {
@@ -133,6 +146,8 @@ void setup()
     }
 
 #ifdef ESP8266_WiFi
+    // TODO - Figure out how to make the below only appear when the AP is created
+    // (it currently always appears at startup for a few seconds)
     display.printWiFiStartup();
 	String mdns_id;
 
@@ -144,7 +159,7 @@ void setup()
 	// If we're going to set up WiFi, let's get to it
 	WiFiManager wifiManager;
 	wifiManager.setConfigPortalTimeout(5*60); // Time out after 5 minutes so that we can keep managing temps 
-	wifiManager.setDebugOutput(FALSE); // In case we have a serial connection to BrewPi
+	wifiManager.setDebugOutput(false); // In case we have a serial connection to BrewPi
 									   
 	// The main purpose of this is to set a boolean value which will allow us to know we
 	// just saved a new configuration (as opposed to rebooting normally)
@@ -155,9 +170,7 @@ void setup()
 	WiFiManagerParameter custom_mdns_name("mdns", "Device (mDNS) Name", mdns_id.c_str(), 20);
 	wifiManager.addParameter(&custom_mdns_name);
 
-	// TODO - Figure out how to make the below only appear when the AP is created
-	// (it currently always appears at startup for a few seconds)
-    display.printWiFi_setup();  // Display a prompt for the user to set the device up
+
 	if(wifiManager.autoConnect(WIFI_SETUP_AP_NAME, WIFI_SETUP_AP_PASS)) {
 		// If we succeeded at connecting, switch to station mode.
 		// TODO - Determine if we can merge shouldSaveConfig in here
@@ -235,8 +248,12 @@ void setup()
 #ifdef ESP8266_WiFi
 	display.printWiFi();  // Print the WiFi info (mDNS name & IP address)
     WiFi.setAutoReconnect(true);
+#if defined(ESP8266)
+    // This doesn't work for ESP32, unfortunately.
     stationConnectedHandler = WiFi.onSoftAPModeStationConnected(&onStationConnected);
 	delay(8000);
+#endif
+
 #endif
 	display.clear();
 	display.printStationaryText();
