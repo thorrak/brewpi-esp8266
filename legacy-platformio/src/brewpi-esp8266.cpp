@@ -107,10 +107,6 @@ void handleReset()
 
 #ifdef ESP8266_WiFi
 
-#define WIFI_SETUP_AP_NAME "BrewPiAP"
-#define WIFI_SETUP_AP_PASS "brewpiesp"  // Must be 8-63 chars
-
-
 void configure_wifi () {
 	String mdns_id;
 
@@ -119,7 +115,7 @@ void configure_wifi () {
 	if(mdns_id.length()<=0) {
 #if defined(ESP8266)
 		mdns_id = "ESP" + String(ESP.getChipId());
-#else
+#elif defined(ESP32)
 		// There isn't a straightforward "getChipId" function on an ESP32, so we'll have to make do
 		char ssid[15]; //Create a Unique AP from MAC address
 		uint64_t chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
@@ -127,6 +123,8 @@ void configure_wifi () {
 		snprintf(ssid,15,"ESP%04X",chip);
 
 		mdns_id = "ESP" + (String) ssid;
+#else
+#error "Invalid device selected!"
 #endif
 	}
 
@@ -143,7 +141,9 @@ void configure_wifi () {
 	WiFiManagerParameter custom_mdns_name("mdns", "Device (mDNS) Name", mdns_id.c_str(), 20);
 	wifiManager.addParameter(&custom_mdns_name);
 
-
+	// TODO - Figure out how to make the below only appear when the AP is created
+	// (it currently always appears at startup for a few seconds)
+    display.printWiFi_setup();  // Display a prompt for the user to set the device up
 	if(wifiManager.autoConnect(WIFI_SETUP_AP_NAME, WIFI_SETUP_AP_PASS)) {
 		// If we succeeded at connecting, switch to station mode.
 		// TODO - Determine if we can merge shouldSaveConfig in here
@@ -180,6 +180,7 @@ void configure_wifi () {
 void setup()
 {
 
+    display.init();
 
 #ifdef ESP8266_WiFi
 	configure_wifi();
@@ -227,7 +228,8 @@ void setup()
 	tempControl.fridgeSensor->init();
 #endif	
 
-	display.init();
+	// TODO - Determine if display.init needs to be here for IIC displays on a brand new device
+//	display.init();
 #ifdef ESP8266_WiFi
 	display.printWiFi();  // Print the WiFi info (mDNS name & IP address)
 	delay(8000);
@@ -300,7 +302,9 @@ void brewpiLoop(void)
 		display.printState();
 		display.printAllTemperatures();
 		display.printMode();
+#ifndef BREWPI_TFT
 		display.updateBacklight();
+#endif
 	}
 
 	//listen for incoming serial connections while waiting to update

@@ -24,6 +24,11 @@
 //#include "SpiLcd.h"
 //#include "NullLcdDriver.h"
 
+// If BREWPI_TFT is set, we're going to use the DisplayTFT headers instead
+#ifdef BREWPI_TFT
+#include "DisplayTFT.h"
+
+#else
 
 #if BREWPI_EMULATE || !BREWPI_LCD || !ARDUINO
 #include "NullLcdDriver.h"
@@ -107,8 +112,10 @@ class LcdDisplay DISPLAY_SUPERCLASS
 
 #ifdef ESP8266_WiFi
 	DISPLAY_METHOD void printWiFi(void);
-	DISPLAY_METHOD void clear(void);
+	DISPLAY_METHOD void printWiFi_setup(void);
 #endif
+
+	DISPLAY_METHOD void clear(void);
 
 
   private:
@@ -116,3 +123,5 @@ class LcdDisplay DISPLAY_SUPERCLASS
 	DISPLAY_FIELD uint8_t stateOnDisplay;
 	DISPLAY_FIELD uint8_t flags;
 };
+
+#endif

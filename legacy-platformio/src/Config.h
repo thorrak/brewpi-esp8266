@@ -128,9 +128,31 @@
 //
 #ifndef BREWPI_LCD
 #define BREWPI_LCD 1
-#define BREWPI_IIC 1
+//#define BREWPI_IIC 1
+#define BREWPI_TFT 1  // This DISABLES the LCD support and enables TFT support
 #define BACKLIGHT_AUTO_OFF_PERIOD 0 // Disable backlight auto off
 #endif
+
+
+
+#ifdef BREWPI_TFT
+
+#ifdef ESP8266
+#error "Unable to use TFT displays with ESP8266 (not enough pins)"
+#endif
+
+#ifndef ESP32
+#error "TFT displays only work with ESP32 devices"
+#endif
+
+// Pin definitions for TFT displays
+#define TFT_CS 14  //for D32 Pro
+#define TFT_DC 27  //for D32 Pro
+#define TFT_RST 33 //for D32 Pro
+#define TS_CS  12 //for D32 Pro
+#define TFT_BACKLIGHT 32
+#endif
+
 //
 //////////////////////////////////////////////////////////////////////////
 
@@ -254,6 +276,11 @@
 #if defined(ESP8266) || defined(ESP32)
 #define ESP8266_WiFi 1			// This disables Serial and enables WiFi support. Comment out for "serial" mode.
 #define FIRMWARE_REVISION "0.10"
+#endif
+
+#ifdef ESP8266_WiFi
+#define WIFI_SETUP_AP_NAME "BrewPiAP"
+#define WIFI_SETUP_AP_PASS "brewpiesp"  // Must be 8-63 chars
 #endif
 
 
