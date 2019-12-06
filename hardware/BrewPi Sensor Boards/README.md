@@ -6,5 +6,4 @@ The BrewPi sensor boards are intended to allow for the DS18b20 temperature senso
 There are two versions of the board, RJ-11 and RJ-45 -- however the RJ-45 version is recommended in nearly 100% of cases. 
 
 
-* [RJ-45 Breakout Board](RJ-11%20Sensor%20Breakout.md)
-* [RJ-11 Breakout Board](RJ-45%20Sensor%20Breakout.md) (**NOT RECOMMENDED**)
+* [RJ-45 Breakout Board](RJ-45%20Sensor%20Breakout.md)
