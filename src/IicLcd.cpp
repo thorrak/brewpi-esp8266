@@ -275,7 +275,7 @@ inline size_t IIClcd::write(uint8_t value) {
 	if (!_bufferOnly) {
 		send(value, Rs);
 	}
-	return 0;
+	return 1;  
 }
 
 /************ low level data pushing commands **********/
