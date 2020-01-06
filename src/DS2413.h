@@ -23,7 +23,7 @@
 #ifdef ARDUINO
 
 #include "Brewpi.h"
-#include "OneWire.h"
+#include <OneWire.h>
 #include "PiLink.h"
 
 typedef uint8_t DeviceAddress[8];

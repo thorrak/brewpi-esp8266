@@ -128,8 +128,9 @@
 //
 #ifndef BREWPI_LCD
 #define BREWPI_LCD 1
-//#define BREWPI_IIC 1
-#define BREWPI_TFT 1  // This DISABLES the LCD support and enables TFT support
+#define BREWPI_IIC 1
+//#define BREWPI_TFT 1  // This DISABLES the LCD support and enables TFT support
+//#define BREWPI_SHIFT_LCD 1
 #define BACKLIGHT_AUTO_OFF_PERIOD 0 // Disable backlight auto off
 #endif
 

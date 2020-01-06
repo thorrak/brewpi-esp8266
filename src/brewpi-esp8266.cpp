@@ -127,7 +127,7 @@ void setup()
     // SPIFFS.begin doesn't allow for formatOnFail as a first argument yet on ESP8266 (but it should be coming soon)
     // https://github.com/esp8266/Arduino/issues/4185
     // TODO - Rewrite this when that PR gets merged	SPIFFS.begin();
-    SPIFFS.begin(true);
+    SPIFFS.begin();
 #elif defined(ESP32)
     SPIFFS.begin(true);
 #else

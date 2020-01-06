@@ -30,6 +30,8 @@
 #include <Print.h>
 #include "Ticks.h"
 
+#ifdef BREWPI_SHIFT_LCD
+
 // commands
 #define LCD_CLEARDISPLAY 0x01
 #define LCD_RETURNHOME 0x02
@@ -170,3 +172,4 @@ class SpiLcd : public Print {
 	
 };
 
+#endif

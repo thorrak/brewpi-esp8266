@@ -21,7 +21,7 @@
 #include "Brewpi.h"
 
 #if BREWPI_DS2413
-#include "OneWire.h"
+#include <OneWire.h>
 
 #include "DS2413.h"
 

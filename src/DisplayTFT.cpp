@@ -22,6 +22,9 @@
 #include "TemperatureFormats.h"
 #include "Pins.h"
 
+#ifdef BREWPI_TFT
+
+
 #ifdef ESP8266_WiFi
 
 #if defined(ESP8266)
@@ -590,3 +593,5 @@ void LcdDisplay::getLine(uint8_t lineNumber, char * buffer) {
 
 
 }
+
+#endif
