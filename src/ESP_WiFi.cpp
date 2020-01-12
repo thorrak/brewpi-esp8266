@@ -30,6 +30,8 @@ bool shouldSaveConfig = false;
 WiFiServer server(23);
 WiFiClient serverClient;
 
+extern void handleReset();  // Terrible practice. In brewpi-esp8266.cpp.
+
 
 //callback notifying us of the need to save config
 void saveConfigCallback() {
@@ -48,12 +50,6 @@ bool isValidmDNSName(const String& mdns_name) {
     return true;
 }
 
-void handleReset()
-{
-    // The asm volatile method doesn't work on ESP8266. Instead, use ESP.restart
-    ESP.restart();
-}
-
 
 void mdns_reset() {
     String mdns_id;
@@ -67,11 +63,7 @@ void mdns_reset() {
         //Log.notice(F("mDNS responder restarted, hostname: %s.local." CR), WiFi.getHostname());
         // mDNS will stop responding after awhile unless we query the specific service we want
         MDNS.addService("brewpi", "tcp", 23);
-#if defined(ESP8266)
-        MDNS.addServiceTxt("brewpi", "tcp", "board", "ESP8266");
-#elif defined(ESP32)
-        MDNS.addServiceTxt("brewpi", "tcp", "board", "ESP32");
-#endif
+        MDNS.addServiceTxt("brewpi", "tcp", "board", CONTROLLER_TYPE);
         MDNS.addServiceTxt("brewpi", "tcp", "branch", "legacy");
         MDNS.addServiceTxt("brewpi", "tcp", "version", VERSION_STRING);
         MDNS.addServiceTxt("brewpi", "tcp", "revision", FIRMWARE_REVISION);
@@ -159,8 +151,9 @@ void display_connect_info_and_create_callback() {
 }
 
 
-//unsigned long reconnectPoll = 0;
 void wifi_connect_clients() {
+    static unsigned long last_connection_check = 0;
+
     yield();
     if(WiFi.isConnected()) {
         if (server.hasClient()) {
@@ -177,6 +170,17 @@ void wifi_connect_clients() {
             serverClient.stop();
             serverClient = server.available();
             serverClient.flush();
+        }
+    }
+    yield();
+
+    // Additionally, every 3 minutes either attempt to reconnect WiFi, or rebroadcast mdns info
+    if(ticks.millis() - last_connection_check >= (180000)) {
+        last_connection_check = ticks.millis();
+        if(WiFi.isConnected()) {
+            WiFi.reconnect();
+        } else {
+            mdns_reset();
         }
     }
     yield();

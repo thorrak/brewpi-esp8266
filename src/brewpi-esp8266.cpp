@@ -46,7 +46,11 @@ DisplayType DISPLAY_REF display = realDisplay;
 
 ValueActuator alarm_actuator;
 
-
+void handleReset()
+{
+    // The asm volatile method doesn't work on ESP8266. Instead, use ESP.restart
+    ESP.restart();
+}
 
 void setup()
 {
@@ -113,7 +117,7 @@ void setup()
 
 
 
-void brewpiLoop(void)
+void brewpiLoop()
 {
 	static unsigned long lastUpdate = 0;
     static unsigned long lastLcdUpdate = 0;
@@ -123,9 +127,9 @@ void brewpiLoop(void)
     if(ticks.millis() - lastLcdUpdate >= (180000)) { //reset lcd every 180 seconds as a workaround for screen scramble
         lastLcdUpdate = ticks.millis();
 
-        display.init();
-        display.printStationaryText();
-        display.printState();
+        DisplayType::init();
+        DisplayType::printStationaryText();
+        DisplayType::printState();
 
         rotaryEncoder.init();
     }
@@ -156,11 +160,11 @@ void brewpiLoop(void)
 #endif
 
 		// update the lcd for the chamber being displayed
-		display.printState();
-		display.printAllTemperatures();
-		display.printMode();
+        DisplayType::printState();
+        DisplayType::printAllTemperatures();
+        DisplayType::printMode();
 #ifndef BREWPI_TFT
-		display.updateBacklight();
+        DisplayType::updateBacklight();
 #endif
 	}
 

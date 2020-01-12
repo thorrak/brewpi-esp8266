@@ -215,6 +215,9 @@
 // pins
 
 #if defined(ESP8266)
+
+#define CONTROLLER_TYPE "ESP8266"  // Used in the announce strings
+
 #define NODEMCU_PIN_A0 17	// Analog
 
 #define NODEMCU_PIN_D0 16	// No interrupt, do not use for rotary encoder
@@ -259,6 +262,8 @@
 
 #elif defined(ESP32)
 
+#define CONTROLLER_TYPE "ESP32"  // Used in the announce strings
+
 #define heatingPin 25
 #define coolingPin 26
 
@@ -281,10 +286,7 @@
 
 
 
-#if defined(ESP8266) || defined(ESP32)
-#define ESP8266_WiFi 1			// This disables Serial and enables WiFi support. Comment out for "serial" mode.
-#define FIRMWARE_REVISION "0.11"
-#endif
+#define FIRMWARE_REVISION "0.12"
 
 #ifdef ESP8266_WiFi
 #define WIFI_SETUP_AP_NAME "BrewPiAP"
