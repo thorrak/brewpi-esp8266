@@ -22,3 +22,5 @@ CTestTestfile.cmake
 
 /.vscode
 /.pio
+
+.DS_Store
