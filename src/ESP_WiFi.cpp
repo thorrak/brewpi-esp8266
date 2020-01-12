@@ -113,9 +113,9 @@ void initialize_wifi() {
         WiFi.softAPdisconnect(true);
         WiFi.mode(WIFI_AP_STA);
     } else {
-        // If we failed to connect, we still want to control temps. Disable the AP/WiFi
+        // If we failed to connect, we still want to control temps. Disable the AP, and flip to STA mode
         WiFi.softAPdisconnect(true);
-        WiFi.mode(WIFI_OFF);
+        WiFi.mode(WIFI_AP_STA);
     }
 
     // Alright. We're theoretically connected here (or we timed out).
@@ -177,7 +177,9 @@ void wifi_connect_clients() {
     // Additionally, every 3 minutes either attempt to reconnect WiFi, or rebroadcast mdns info
     if(ticks.millis() - last_connection_check >= (180000)) {
         last_connection_check = ticks.millis();
-        if(WiFi.isConnected()) {
+        if(!WiFi.isConnected()) {
+            // If we are disconnected, reconnect. On an ESP8266 this will ALSO trigger mdns_reset due to the callback
+            // but on the ESP32, this means that we'll have to wait an additional 3 minutes for mdns to come back up
             WiFi.reconnect();
         } else {
             mdns_reset();
