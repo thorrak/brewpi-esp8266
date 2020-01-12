@@ -3,6 +3,11 @@ CMakeListsPrivate.txt
 .piolibdeps
 .idea/
 cmake-build-debug/
+cmake-build-all/
+cmake-build-esp32_wifi_tft/
+cmake-build-esp8266_wifi/
+cmake-build-esp8266_serial/
+
 
 CMakeCache.txt
 CMakeFiles

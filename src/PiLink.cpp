@@ -95,6 +95,10 @@ String PiLink::printBuf;
 void PiLink::init(void){
 #ifndef ESP8266_WiFi
 piStream.begin(57600);
+#else
+// If we're using WiFi, initialize the bridge
+server.begin();
+server.setNoDelay(true);
 #endif
 
 #ifdef BUFFER_PILINK_PRINTS

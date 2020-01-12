@@ -126,11 +126,18 @@
 //
 // Enable the LCD display. Without this, a NullDisplay is used
 //
-#ifndef BREWPI_LCD
-#define BREWPI_LCD 1
-#define BREWPI_IIC 1
+//#ifndef BREWPI_LCD
+//#define BREWPI_LCD 1
+//#define BREWPI_IIC 1
 //#define BREWPI_TFT 1  // This DISABLES the LCD support and enables TFT support
 //#define BREWPI_SHIFT_LCD 1
+//#define BACKLIGHT_AUTO_OFF_PERIOD 0 // Disable backlight auto off
+//#endif
+
+// UPDATE - With the ESP32 release, we're now going to configure the LCD type using Platformio build flags.
+// BREWPI_LCD and one of BREWPI_IIC or BREWPI_TFT should be set at compile time. In all cases however we want to set
+// BACKLIGHT_AUTO_OFF_PERIOD to 0 (for now)
+#ifdef BREWPI_LCD
 #define BACKLIGHT_AUTO_OFF_PERIOD 0 // Disable backlight auto off
 #endif
 
