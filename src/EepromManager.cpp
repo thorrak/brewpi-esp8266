@@ -68,7 +68,7 @@ void EepromManager::initializeEeprom()
 	// write the default constants 
 /*	for (uint8_t c=0; c<EepromFormat::MAX_CHAMBERS; c++) {
 		eptr_t pv = pointerOffset(chambers)+(c*sizeof(ChamberBlock)) ;
-		tempControl.storeConstants(pv+offsetof(ChamberBlock, chamberSettings.cc));
+		tempControl.storeConstants();
 		pv += offsetof(ChamberBlock, beer)+offsetof(BeerBlock, cs);
 		for (uint8_t b=0; b<ChamberBlock::MAX_BEERS; b++) {
 //			logDeveloper(PSTR("EepromManager - saving settings for beer %d at %d"), b, (uint16_t)pv);
@@ -77,11 +77,9 @@ void EepromManager::initializeEeprom()
 		}
 	}*/
 	// TODO - Eventually, restore ability to have more than one chamber/beer
-	tempControl.storeConstants(0); // Replacing 'pv' with 0 since we're no longer using EEPROM
+	tempControl.storeConstants();
 	tempControl.storeSettings(0); // Replacing 'pv' with 0 since we're no longer using EEPROM
 
-	// set the version flag - so that storeDevice will work
-//	eepromAccess.writeByte(0, EEPROM_FORMAT_VERSION);  // We don't save the EEPROM version anywhere now
 		
 	saveDefaultDevices();  // noop
 	// set state to startup
@@ -110,7 +108,7 @@ bool EepromManager::applySettings()
 
 	// load the one chamber and one beer for now
 	eptr_t pv = pointerOffset(chambers);
-	tempControl.loadConstants(pv+offsetof(ChamberBlock, chamberSettings.cc));	
+	tempControl.loadConstants();
 	tempControl.loadSettings(pv+offsetof(ChamberBlock, beer[0].cs));
 	
 	logDebug("Applied settings");
@@ -134,7 +132,7 @@ void EepromManager::storeTempConstantsAndSettings()
 	uint8_t chamber = 0;
 	eptr_t pv = pointerOffset(chambers);
 	pv += sizeof(ChamberBlock)*chamber;
-	tempControl.storeConstants(pv+offsetof(ChamberBlock, chamberSettings.cc));
+	tempControl.storeConstants();
 		
 	storeTempSettings();
 }

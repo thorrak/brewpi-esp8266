@@ -183,6 +183,16 @@ void PiLink::print(char out) {
 }
 #endif
 
+//size_t PiLink::write(char c) {
+//    print(c);
+//    return 1;  // We're just assuming we wrot ethe char
+//}
+//
+//size_t PiLink::write(const uint8_t *buffer, size_t length) {
+//    print_P(PSTR("\"%s\""), buffer);
+//    return length;  // We're just assuming we wrote everything
+//}
+
 
 /**
  * Emit a newline
@@ -715,11 +725,26 @@ void PiLink::sendJsonValues(char responseType, const JsonOutput* /*PROGMEM*/ jso
 	sendJsonClose();
 }
 
+//struct CustomWriter {
+//    // We have to cleanse everything through a CustomWriter class to get it to work as expected
+//    static size_t write(uint8_t c) {piLink.write(c);}
+//    static size_t write(const uint8_t *buffer, size_t length) {piLink.write(buffer, length);}
+//};
+//
+//void PiLink::sendJsonValuesAJ(char responseType, const DynamicJsonDocument& json_doc) {
+//    CustomWriter writer;
+//    // Leverage the ArduinoJson support to format/print our JSON values
+//    printResponse(responseType);
+//    serializeJson(json_doc, writer);
+//}
+
 /**
- * Send control constants as JSON string.
+ * \brief Send control constants as JSON string.
  * Might contain spaces between minus sign and number. Python will have to strip these
  */
-void PiLink::sendControlConstants(void){
+void PiLink::sendControlConstants(){
+//    sendJsonValuesAJ('C', tempControl.cc.toJson());
+    // TODO - Convert this to use ArduinoJSON functions rather than sendJsonValues
 	jsonOutputBase = (uint8_t*)&tempControl.cc;
 	sendJsonValues('C', jsonOutputCCMap, sizeof(jsonOutputCCMap)/sizeof(jsonOutputCCMap[0]));
 }

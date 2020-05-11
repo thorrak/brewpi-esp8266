@@ -152,7 +152,7 @@ enum states {
  * - Fridge: Heat & Cool are applied to keep a probe in the chamber surrounding the beer at a target.
  */
 class TempControl{
-	public:
+public:
 	
 	TempControl(){};
 	~TempControl(){};
@@ -170,8 +170,8 @@ class TempControl{
 	TEMP_CONTROL_METHOD void storeSettings(eptr_t offset);
 	TEMP_CONTROL_METHOD void loadDefaultSettings(void);
 	
-	TEMP_CONTROL_METHOD void loadConstants(eptr_t offset);
-	TEMP_CONTROL_METHOD void storeConstants(eptr_t offset);
+	TEMP_CONTROL_METHOD void loadConstants();
+	TEMP_CONTROL_METHOD void storeConstants();
 	TEMP_CONTROL_METHOD void loadDefaultConstants(void);
 
 	TEMP_CONTROL_METHOD uint16_t timeSinceCooling(void);
@@ -260,12 +260,12 @@ class TempControl{
 		return isDoorOpen() ? DOOR_OPEN : getState();
 	}
 
-	private:
+private:
 	TEMP_CONTROL_METHOD void increaseEstimator(temperature * estimator, temperature error);
 	TEMP_CONTROL_METHOD void decreaseEstimator(temperature * estimator, temperature error);
 	
 	TEMP_CONTROL_METHOD void updateEstimatedPeak(uint16_t estimate, temperature estimator, uint16_t sinceIdle);
-	public:
+public:
 	TEMP_CONTROL_FIELD TempSensor* beerSensor; //!< Temp sensor monitoring beer
 	TEMP_CONTROL_FIELD TempSensor* fridgeSensor; //!< Temp sensor monitoring fridge
 	TEMP_CONTROL_FIELD BasicTempSensor* ambientSensor; //!< Ambient room temp sensor
@@ -275,19 +275,19 @@ class TempControl{
 	TEMP_CONTROL_FIELD Actuator* fan; //!< Actuator to control chamber fan
 	TEMP_CONTROL_FIELD AutoOffActuator cameraLight;
 	TEMP_CONTROL_FIELD Sensor<bool>* door; //!< Chamber door sensor
-	
+
 	// Control parameters
 	TEMP_CONTROL_FIELD ControlConstants cc;
 	TEMP_CONTROL_FIELD ControlSettings cs;
 	TEMP_CONTROL_FIELD ControlVariables cv;
-	
+
 	/**
    * Defaults for control constants.
    * Defined in cpp file, copied with memcpy_p
    */
 	static const ControlConstants ccDefaults;
-			
-	private:
+
+private:
 	/**
    * Keep track of beer setting stored in EEPROM
    */

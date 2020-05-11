@@ -31,7 +31,6 @@
 
 
 
-#define SPIFFS_controlConstants_fname "/controlConstants"
 #define SPIFFS_controlSettings_fname "/controlSettings"
 #define SPIFFS_device_fname_prepend "/dev"
 
@@ -98,11 +97,6 @@ public:
 			clear((uint8_t*)&target, sizeof(target));  // This mimics the behavior where previously the EEPROM would have been 0ed out.
 	}
 
-	static void readControlConstants(ControlConstants& target, eptr_t offset, uint16_t size) {
-        if(!readBlockFromFile(SPIFFS_controlConstants_fname, target))
-            clear((uint8_t*)&target, sizeof(target));
-	}
-
 
 	static void readDeviceDefinition(DeviceConfig& target, int8_t deviceID, uint16_t size) {
         char buf[20];
@@ -113,10 +107,6 @@ public:
 
 	static void writeControlSettings(eptr_t target, ControlSettings& source, uint16_t size) {
 		writeBlockToFile(SPIFFS_controlSettings_fname, source);
-	}
-
-	static void writeControlConstants(eptr_t target, ControlConstants& source, uint16_t size) {
-        writeBlockToFile(SPIFFS_controlConstants_fname, source);
 	}
 
 	static void writeDeviceDefinition(int8_t deviceID, const DeviceConfig& source, uint16_t size) {
