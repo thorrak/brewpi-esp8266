@@ -31,7 +31,7 @@
 
 
 
-#define SPIFFS_controlSettings_fname "/controlSettings"
+
 #define SPIFFS_device_fname_prepend "/dev"
 
 #define MAX_SPIFFS_DEVICES EepromFormat::MAX_DEVICES
@@ -88,15 +88,6 @@ public:
         while (size-->0) *p++ = 0;
     }
 
-	static void readControlSettings(ControlSettings& target, eptr_t offset, uint16_t size) {
-		/* Unlike readDeviceDefinition, controlSettings & controlConstants are both properly initialized elsewhere.
-		 * Regardless, due to the tweak we made to readBlockFromFile, I'm going to explicitly add a call here to clear
-		 * the memory just in case. */
-
-		if(!readBlockFromFile(SPIFFS_controlSettings_fname, target))
-			clear((uint8_t*)&target, sizeof(target));  // This mimics the behavior where previously the EEPROM would have been 0ed out.
-	}
-
 
 	static void readDeviceDefinition(DeviceConfig& target, int8_t deviceID, uint16_t size) {
         char buf[20];
@@ -105,9 +96,6 @@ public:
 			clear((uint8_t*)&target, sizeof(target));  // This mimics the behavior where previously the EEPROM would have been 0ed out.
 	}
 
-	static void writeControlSettings(eptr_t target, ControlSettings& source, uint16_t size) {
-		writeBlockToFile(SPIFFS_controlSettings_fname, source);
-	}
 
 	static void writeDeviceDefinition(int8_t deviceID, const DeviceConfig& source, uint16_t size) {
         char buf[20];

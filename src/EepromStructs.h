@@ -8,26 +8,12 @@
 
 
 #define SPIFFS_controlConstants_fname "/controlConstants.json"
+#define SPIFFS_controlSettings_fname "/controlSettings.json"
 
 /*
  * \addtogroup tempcontrol
  * @{
  */
-
-/**
- * PID control settings
- */
-struct ControlSettings {
-	temperature beerSetting; //!< Target temperature when in Beer Mode
-	temperature fridgeSetting; //!< Target temperature when in Fridge Mode
-	temperature heatEstimator; //!< Estimator of heating response. Updated automatically by self learning algorithm
-	temperature coolEstimator; //!< Estimator of cooling response. Updated automatically by self learning algorithm
-
-  /**
-   * Selected mode of operation
-   */
-  char mode;
-};
 
 
 /**
@@ -35,8 +21,8 @@ struct ControlSettings {
  */
 class JSONSaveable {
 protected:
-    void writeJsonToFile(const char *filename, const JsonDocument& json_doc);
-    DynamicJsonDocument readJsonFromFile(const char*filename);
+    static void writeJsonToFile(const char *filename, const JsonDocument& json_doc);
+    static DynamicJsonDocument readJsonFromFile(const char*filename);
 
 };
 
@@ -75,8 +61,8 @@ public:
     char tempFormat; //!< Temperature format (F/C)
 
     DynamicJsonDocument toJson();
-    void storeConstants();
-    void loadConstants();
+    void storeToSpiffs();
+    void loadFromSpiffs();
     void setDefaults();
 
 
@@ -86,6 +72,22 @@ private:
 
 /** @} */
 
+struct ControlSettings : public JSONSaveable {
+public:
+    ControlSettings();
+
+    temperature beerSetting;
+    temperature fridgeSetting;
+    temperature heatEstimator; // updated automatically by self learning algorithm
+    temperature coolEstimator; // updated automatically by self learning algorithm
+    char mode;
+
+    DynamicJsonDocument toJson();
+    void storeToSpiffs();
+    void loadFromSpiffs();
+    void setDefaults();
+
+};
 
 /*
  * \addtogroup hardware

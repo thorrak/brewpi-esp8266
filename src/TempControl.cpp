@@ -552,23 +552,20 @@ uint16_t TempControl::timeSinceIdle(void){
  * Load default settings
  */
 void TempControl::loadDefaultSettings(){
+    cs.setDefaults();
 #if BREWPI_EMULATE
 	setMode(MODE_BEER_CONSTANT);
 #else	
 	setMode(MODE_OFF);
 #endif	
-	cs.beerSetting = intToTemp(20);
-	cs.fridgeSetting = intToTemp(20);
-	cs.heatEstimator = intToTempDiff(2)/10; // 0.2
-	cs.coolEstimator=intToTempDiff(5);
 }
 
 /**
  * Store control constants to EEPROM.
  */
 void TempControl::storeConstants() {
-  // Now that control constants are an object, use that for loading/saving
-	cc.storeConstants();
+    // Now that control constants are an object, use that for loading/saving
+    cc.storeToSpiffs();
 }
 
 /**
@@ -576,25 +573,25 @@ void TempControl::storeConstants() {
  */
 void TempControl::loadConstants(){
   // Now that control constants are an object, use that for loading/saving
-  cc.loadConstants();
+  cc.loadFromSpiffs();
   initFilters();
 }
+
 
 /**
  * Write new settings to EEPROM to be able to reload them after a reset
  * The update functions only write to EEPROM if the value has changed
  */
-void TempControl::storeSettings(eptr_t offset){
-	eepromAccess.writeControlSettings(offset, cs, sizeof(ControlSettings));
-	storedBeerSetting = cs.beerSetting;		
+void TempControl::storeSettings(){
+	cs.storeToSpiffs();
+	storedBeerSetting = cs.beerSetting;
 }
-
 
 /**
  * Read settings from EEPROM
  */
-void TempControl::loadSettings(eptr_t offset){
-	eepromAccess.readControlSettings(cs, offset, sizeof(ControlSettings));	
+void TempControl::loadSettings(){
+  cs.loadFromSpiffs();
 	logDebug("loaded settings");
 	storedBeerSetting = cs.beerSetting;
 	setMode(cs.mode, true);		// force the mode update

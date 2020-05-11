@@ -8,6 +8,7 @@
 
 #include "EepromStructs.h"
 #include "TemperatureFormats.h"
+#include "TempControl.h" // For definition of MODE_OFF
 
 
 
@@ -42,6 +43,9 @@ ArduinoJson::DynamicJsonDocument JSONSaveable::readJsonFromFile(const char *file
     file_in.close();
     return json_doc;
 }
+
+
+
 
 ControlConstants::ControlConstants() {
     setDefaults();
@@ -124,11 +128,11 @@ DynamicJsonDocument ControlConstants::toJson() {
     doc["tempFormat"] = tempFormat;
     doc["tempFormat"].is<char>();
 
-    // Write the json to the file
+    // Return the JSON document
     return doc;
 }
 
-void ControlConstants::storeConstants() {
+void ControlConstants::storeToSpiffs() {
     DynamicJsonDocument doc(1024);  // Should be a max of 642, per the ArduinoJson Size Assistant
 
     doc = toJson();
@@ -136,7 +140,7 @@ void ControlConstants::storeConstants() {
     writeJsonToFile(SPIFFS_controlConstants_fname, doc);  // Write the json to the file
 }
 
-void ControlConstants::loadConstants() {
+void ControlConstants::loadFromSpiffs() {
     // We start by setting the defaults, as we use them as the alternative to loaded values if the keys don't exist
     setDefaults();
 
@@ -147,7 +151,7 @@ void ControlConstants::loadConstants() {
     if(json_doc.containsKey("tempSettingMin"))
         tempSettingMin = intToTemp(json_doc["tempSettingMin"]);
     if(json_doc.containsKey("tempSettingMax"))
-        tempSettingMax = intToTemp(json_doc["tempSettingMax"]) | tempSettingMax;
+        tempSettingMax = intToTemp(json_doc["tempSettingMax"]);
 
     if(json_doc.containsKey("Kp"))
         Kp = intToTempDiff(json_doc["Kp"]);
@@ -189,3 +193,68 @@ void ControlConstants::loadConstants() {
     tempFormat = json_doc["tempFormat"] | tempFormat;
 
 }
+
+
+
+
+ControlSettings::ControlSettings() {
+    // When creating an instance of the class, set defaults. Loading is done explicitly.
+    setDefaults();
+}
+
+
+void ControlSettings::setDefaults() {
+    // TODO - Check if I need to do setMode here
+    beerSetting = intToTemp(20);
+    fridgeSetting = intToTemp(20);
+    heatEstimator = intToTempDiff(2)/10; // 0.2
+    coolEstimator=intToTempDiff(5);
+    mode = MODE_OFF;  // We do NOT do call set_mode here - that is handled in TempControl::loadDefaultSettings()
+}
+
+
+DynamicJsonDocument ControlSettings::toJson() {
+    DynamicJsonDocument doc(512);
+
+    // Load the settings into the JSON Doc
+    doc["beerSetting"] = tempToInt(beerSetting);
+    doc["fridgeSetting"] = tempToInt(fridgeSetting);
+    doc["heatEstimator"] = tempDiffToInt(heatEstimator);
+    doc["coolEstimator"] = tempDiffToInt(coolEstimator);
+    doc["mode"] = mode;
+    doc["mode"].is<char>();
+
+    // Return the JSON document
+    return doc;
+}
+
+
+void ControlSettings::storeToSpiffs() {
+    DynamicJsonDocument doc(512);
+
+    doc = toJson();
+
+    writeJsonToFile(SPIFFS_controlSettings_fname, doc);  // Write the json to the file
+}
+
+
+void ControlSettings::loadFromSpiffs() {
+    // We start by setting the defaults, as we use them as the alternative to loaded values if the keys don't exist
+    setDefaults();
+
+    DynamicJsonDocument json_doc(1024);
+    json_doc = readJsonFromFile(SPIFFS_controlSettings_fname);
+
+    // Load the settings from the JSON Doc
+    if(json_doc.containsKey("beerSetting"))
+        beerSetting = intToTemp(json_doc["beerSetting"]);
+    if(json_doc.containsKey("fridgeSetting"))
+        fridgeSetting = intToTemp(json_doc["fridgeSetting"]);
+    if(json_doc.containsKey("heatEstimator"))
+        heatEstimator = intToTempDiff(json_doc["heatEstimator"]);
+    if(json_doc.containsKey("coolEstimator"))
+        coolEstimator = intToTempDiff(json_doc["coolEstimator"]);
+
+    mode = json_doc["mode"] | mode;
+}
+
