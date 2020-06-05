@@ -9,9 +9,9 @@ This project seeks to implement the BrewPi firmware onto an ESP8266 controller. 
 * [Full Installation Instructions](docs/INSTALL.md) (including custom brewpi-script)
 * [Installing the Firmware](docs/Installing%20the%20Firmware.md)
 * [Developing/Contributing](docs/DEVELOP.md)
-* [PCB Information](hardware/README.md) - PCB files, ordering and BOMs
+* [Hardware Information](https://github.com/thorrak/thorrak_hardware/blob/master/BrewPi-ESP8266.md) - PCB files, ordering and BOMs
 
-## Expected Pinout *(NOTE - CHANGED IN v0.3!)*
+## Expected Pinout
 * D0 - Heat
 * D1 - I2C SCL
 * D2 - I2C SDA
