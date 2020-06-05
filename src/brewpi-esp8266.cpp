@@ -1,8 +1,6 @@
-// Libraries have to be loaded in the main .ino file per Visual Micro. Load them here.
 
-#if defined(ESP8266) || defined(ESP32)
 #include <FS.h>  // Apparently this needs to be first
-#endif
+
 
 #include "Brewpi.h"
 
@@ -61,9 +59,13 @@ void setup()
     // Before anything else, let's get SPIFFS working. We need to start it up, and then test if the file system was
     // formatted.
 #ifdef ESP8266
-    // SPIFFS.begin doesn't allow for formatOnFail as a first argument yet on ESP8266 (but it should be coming soon)
-    // https://github.com/esp8266/Arduino/issues/4185
-    // TODO - Rewrite this when that PR gets merged	SPIFFS.begin();
+    // SPIFFS.begin doesn't allow for formatOnFail as a first argument on ESP8266. The way they ended up implementing
+    // this was with the configuation options below. We'll go that route.
+    // For more info, see: https://github.com/esp8266/Arduino/issues/4185
+
+    SPIFFSConfig cfg;
+    cfg.setAutoFormat(true);
+    SPIFFS.setConfig(cfg);
     SPIFFS.begin();
 #elif defined(ESP32)
     SPIFFS.begin(true);
