@@ -93,7 +93,7 @@ private:
 	static void soundAlarm(bool enabled);
 	static void printResponse(char responseChar);
 	static void printChamberInfo();
-	
+
 public:
 	static void printTemperaturesJSON(const char * beerAnnotation, const char * fridgeAnnotation);
 private:
@@ -109,7 +109,7 @@ private:
 	static void printJsonName(const char * name);
 	static void printJsonSeparator();
 	static void sendJsonClose();
-	
+
 	static void openListResponse(char type);
 	static void closeListResponse();
 

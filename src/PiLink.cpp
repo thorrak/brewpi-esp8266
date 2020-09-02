@@ -460,17 +460,17 @@ void PiLink::receive(void){
  * Print the response to the request for temperature ('t') command.
  */
 void PiLink::printTemperaturesJSON(const char * beerAnnotation, const char * fridgeAnnotation){
-	printResponse('T');	
+	printResponse('T');
 
 	temperature t;
 	t = tempControl.getBeerTemp();
 	if (changed(beerTemp, t))
 		sendJsonTemp(PSTR(JSON_BEER_TEMP), t);
-	
+
 	t = tempControl.getBeerSetting();
 	if (changed(beerSet,t))
 		sendJsonTemp(PSTR(JSON_BEER_SET), t);
-		
+
 	if (changed(beerAnn, beerAnnotation))
 		sendJsonAnnotation(PSTR(JSON_BEER_ANN), beerAnnotation);
 
@@ -481,22 +481,25 @@ void PiLink::printTemperaturesJSON(const char * beerAnnotation, const char * fri
 	t = tempControl.getFridgeSetting();
 	if (changed(fridgeSet, t))
 		sendJsonTemp(PSTR(JSON_FRIDGE_SET), t);
-	
+
 	if (changed(fridgeAnn, fridgeAnnotation))
 		sendJsonAnnotation(PSTR(JSON_FRIDGE_ANN), fridgeAnnotation);
-		
+
 	t = tempControl.getRoomTemp();
 	if (tempControl.ambientSensor->isConnected() && changed(roomTemp, t))
 		sendJsonTemp(PSTR(JSON_ROOM_TEMP), tempControl.getRoomTemp());
-		
-	if (changed(state, tempControl.getState()))
-		sendJsonPair(PSTR(JSON_STATE), tempControl.getState());		
 
-#if BREWPI_SIMULATE	
+	if (changed(state, tempControl.getState()))
+		sendJsonPair(PSTR(JSON_STATE), tempControl.getState());
+
+  // Send raw device data as well
+  deviceManager.printRawDeviceValues();
+
+#if BREWPI_SIMULATE
 	printJsonName(PSTR(JSON_TIME));
 	print_P(PSTR("%lu"), ticks.millis()/1000);
-#endif		
-	sendJsonClose();	
+#endif
+	sendJsonClose();
 }
 
 /**
