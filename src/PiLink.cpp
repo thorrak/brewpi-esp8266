@@ -284,6 +284,9 @@ void PiLink::receive(void){
 		case 't': // temperatures requested
 			printTemperatures();      
 			break;		
+    case 'T': // All temps
+      deviceManager.printRawDeviceValues();
+      break;
 		case 'C': // Set default constants
 			tempControl.loadDefaultConstants();
 			display.printStationaryText(); // reprint stationary text to update to right degree unit
@@ -491,9 +494,6 @@ void PiLink::printTemperaturesJSON(const char * beerAnnotation, const char * fri
 
 	if (changed(state, tempControl.getState()))
 		sendJsonPair(PSTR(JSON_STATE), tempControl.getState());
-
-  // Send raw device data as well
-  deviceManager.printRawDeviceValues();
 
 #if BREWPI_SIMULATE
 	printJsonName(PSTR(JSON_TIME));

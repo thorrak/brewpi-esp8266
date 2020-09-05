@@ -1017,12 +1017,13 @@ void DeviceManager::printRawDeviceValues() {
 
 	DeviceOutput out;
 
-	piLink.print_P(PSTR(", \"rawDevices\": ["));
+  piLink.openListResponse('R');
+
 	firstDeviceOutput = true;
 
   enumerateOneWireDevices(spec, outputRawDeviceValue, out);
 
-  piLink.print_P(PSTR("]"));
+  piLink.closeListResponse();
 }
 
 
