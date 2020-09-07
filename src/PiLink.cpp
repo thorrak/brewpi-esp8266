@@ -272,20 +272,23 @@ void PiLink::receive(void){
 			break;
 		case 'Y':
 			printSimulatorSettings();
-			break;		
-#endif						
+			break;
+#endif
 		case 'A': // alarm on
 			soundAlarm(true);
 			break;
 		case 'a': // alarm off
 			soundAlarm(false);
 			break;
-			
+
 		case 't': // temperatures requested
-			printTemperatures();      
-			break;		
+			printTemperatures();
+			break;
     case 'T': // All temps
       deviceManager.printRawDeviceValues();
+      break;
+    case 'o':
+			parseJson(handleDeviceName);
       break;
 		case 'C': // Set default constants
 			tempControl.loadDefaultConstants();
@@ -501,6 +504,18 @@ void PiLink::printTemperaturesJSON(const char * beerAnnotation, const char * fri
 #endif
 	sendJsonClose();
 }
+
+
+/**
+ * Handle a request to set a device name
+ */
+void PiLink::handleDeviceName(const char * key, const char * val, void* pv)
+{
+  print_P(PSTR("Setting name of %s to %s"), key, val);
+  printNewLine();
+  deviceManager.setDeviceName(key, val);
+}
+
 
 /**
  * Send JSON key/value pair.

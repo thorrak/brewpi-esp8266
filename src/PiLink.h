@@ -105,6 +105,7 @@ private:
 	static void sendJsonTemp(const char* name, temperature temp);
 
 	static void processJsonPair(const char * key, const char * val, void* pv);
+  static void handleDeviceName(const char * key, const char * val, void* pv);
 
 	static void printJsonName(const char * name);
 	static void printJsonSeparator();
