@@ -27,8 +27,12 @@
 // If BREWPI_TFT is set, we're going to use the DisplayTFT headers instead
 #ifdef BREWPI_TFT
 #include "DisplayTFT.h"
-
 #else
+
+/*
+ * \addtogroup display
+ * @{
+ */
 
 #if BREWPI_EMULATE || !BREWPI_LCD || !ARDUINO
 #include "NullLcdDriver.h"
@@ -47,12 +51,21 @@
 #endif
 
 
+/**
+ * \brief LCD Display Content
+ *
+ * This class handles the content of the LCD.  It dispatches to the various
+ * hardware driver implementations to actually display the content
+ */
 class LcdDisplay DISPLAY_SUPERCLASS
 {
   public:
 	// initializes the lcd display
 	DISPLAY_METHOD void init(void);
-	
+
+  /**
+   * Print all display content
+   */
 	DISPLAY_METHOD void printAll() {
 		printStationaryText();
 		printState();
@@ -60,7 +73,6 @@ class LcdDisplay DISPLAY_SUPERCLASS
 		printMode();
 	}
 
-	// print all temperatures on the LCD
 	DISPLAY_METHOD void printAllTemperatures(void);
 
 	// print the stationary text on the lcd.
@@ -125,3 +137,4 @@ class LcdDisplay DISPLAY_SUPERCLASS
 };
 
 #endif
+/** @} */

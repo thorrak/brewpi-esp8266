@@ -24,7 +24,11 @@
 #include "TempControl.h"
 
 #if defined(ESP8266) || defined(ESP32)
-// Appears this isn't defined in the ESP8266 implementation
+/**
+ * Provide missing strchrnul on ESP8266
+ *
+ * @see https://linux.die.net/man/3/strchrnul
+ */
 char *
 strchrnul(const char *s, int c_in)
 {
@@ -147,8 +151,16 @@ long_temperature stringToFixedPoint(const char * numberString){
 	return negative ? -absVal:absVal;
 }
 
-// convertToInternalTemp receives the external temp format in fixed point and converts it to the internal format
-// It scales the value for Fahrenheit and adds the offset needed for absolute temperatures. For temperature differences, use no offset.
+/**
+ * Receives the external temp format in fixed point and converts it to the internal format
+ * It scales the value for Fahrenheit and adds the offset needed for absolute
+ * temperatures. For temperature differences, use no offset.
+ *
+ * @param rawTemp - Temperature to convert
+ * @param addOffset - Flag to control if temp offsets are added.  Should be
+ * `true` when working with absolute temps, `false` when working with
+ * differences.
+ */
 long_temperature convertToInternalTempImpl(long_temperature rawTemp, bool addOffset){
 	if(tempControl.cc.tempFormat == 'F'){ // value received is in F, convert to C
 		rawTemp = (rawTemp) * 5 / 9;
@@ -159,7 +171,7 @@ long_temperature convertToInternalTempImpl(long_temperature rawTemp, bool addOff
 	else{
 		if(addOffset){
 			rawTemp += C_OFFSET;
-		}		
+		}
 	}
 	return rawTemp;
 }
@@ -180,23 +192,36 @@ long_temperature convertFromInternalTempImpl(long_temperature rawTemp, bool addO
 	return rawTemp;
 }
 
+/**
+ * \brief Convert a fixed point temperature to decimal value rounded to nearest tenth
+ *
+ * @param temp - Temperature to convert
+ */
 int fixedToTenths(long_temperature temp){
 	temp = convertFromInternalTemp(temp);
 	return (int) ((10 * temp + intToTempDiff(5)/10) / intToTempDiff(1)); // return rounded result in tenth of degrees
 }
 
 temperature tenthsToFixed(int temp){
-	long_temperature fixedPointTemp = convertToInternalTemp(((long_temperature) temp * intToTempDiff(1) + 5) / 10);	
+	long_temperature fixedPointTemp = convertToInternalTemp(((long_temperature) temp * intToTempDiff(1) + 5) / 10);
 	return constrainTemp16(fixedPointTemp);
 }
 
+/**
+ * \brief Constrain a temp within bounds
+ *
+ * @param valLong - Temperature to constrain
+ * @param lower - Lower bound
+ * @param upper - Upper bound
+ * @return The value of `valLong` if it is within the bounds.  `lower` if `valLong` is below, `upper` if `valLong` is above.
+ */
 temperature constrainTemp(long_temperature valLong, temperature lower, temperature upper){
 	temperature val = constrainTemp16(valLong);
-	
+
 	if(val < lower){
 		return lower;
 	}
-	
+
 	if(val > upper){
 		return upper;
 	}
@@ -204,6 +229,14 @@ temperature constrainTemp(long_temperature valLong, temperature lower, temperatu
 }
 
 
+/**
+ * \brief Constrain a temp within bounds of MIN_TEMP and MAX_TEMP
+ *
+ * @param val - Temperature to constrain
+ * @return The value of `val` if it is within the bounds.  `MIN_TEMP` if `val` is below, `MAX_TEMP` if `val` is above.
+ * @see MIN_TEMP
+ * @see MAX_TEMP
+ */
 temperature constrainTemp16(long_temperature val)
 {
 	if(val<MIN_TEMP){
@@ -212,7 +245,7 @@ temperature constrainTemp16(long_temperature val)
 	if(val>MAX_TEMP){
 		return MAX_TEMP;
 	}
-	return val;	
+	return val;
 }
 
 temperature multiplyFactorTemperatureLong(temperature factor, long_temperature b)

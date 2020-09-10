@@ -92,7 +92,9 @@ void LcdDisplay::init(void){
 #define UINT16_MAX 65535
 #endif
 
-//print all temperatures on the LCD
+/**
+ * \brief Print all temperatures on the LCD
+ */
 void LcdDisplay::printAllTemperatures(void){
 	// alternate between beer and room temp
 	if (flags & LCD_FLAG_ALTERNATE_ROOM) {
@@ -102,13 +104,19 @@ void LcdDisplay::printAllTemperatures(void){
 			printStationaryText();
 		}
 	}
-	
+
 	printBeerTemp();
 	printBeerSet();
 	printFridgeTemp();
 	printFridgeSet();
 }
 
+/**
+ * \brief Set the display configuration flags
+ *
+ * Updates the display configuration and then forces a redraw.
+ * @param newFlags - New flag values
+ */
 void LcdDisplay::setDisplayFlags(uint8_t newFlags) {
 	flags = newFlags;
 	printStationaryText();
@@ -116,17 +124,27 @@ void LcdDisplay::setDisplayFlags(uint8_t newFlags) {
 }
 
 
-
+/**
+ * Print beer temperature
+ *
+ * @see printTemperatureAt
+ */
 void LcdDisplay::printBeerTemp(void){
 	printTemperatureAt(6, 1, tempControl.getBeerTemp());
 }
 
+
+/**
+ * Print beer target temperature
+ *
+ * @see printTemperatureAt
+ */
 void LcdDisplay::printBeerSet(void){
-	temperature beerSet = tempControl.getBeerSetting();	
-	printTemperatureAt(12, 1, beerSet);	
+	temperature beerSet = tempControl.getBeerSetting();
+	printTemperatureAt(12, 1, beerSet);
 }
 
-void LcdDisplay::printFridgeTemp(void){	
+void LcdDisplay::printFridgeTemp(void){
 	printTemperatureAt(6,2, flags & LCD_FLAG_DISPLAY_ROOM ?
 		tempControl.ambientSensor->read() :
 		tempControl.getFridgeTemp());
@@ -139,12 +157,30 @@ void LcdDisplay::printFridgeSet(void){
 	printTemperatureAt(12, 2, fridgeSet);	
 }
 
+
+/**
+ * \brief Print a temperature at a given coordinate
+ *
+ * @param x - LCD column
+ * @param y - LCD row
+ * @param temp - Temperature
+ *
+ * @see printTemperature
+ */
 void LcdDisplay::printTemperatureAt(uint8_t x, uint8_t y, temperature temp){
 	lcd.setCursor(x,y);
 	printTemperature(temp);
 }
 
 
+/**
+ * \brief Print a temperature
+ *
+ * Invalid temps are drawn as `--.-` as a placeholder.  Valid temps are padded
+ * to 5 chars wide.
+ *
+ * @param temp - Temperature to print
+ */
 void LcdDisplay::printTemperature(temperature temp){
 	if (temp==INVALID_TEMP) {
 		lcd.print_P(PSTR(" --.-"));
@@ -152,27 +188,34 @@ void LcdDisplay::printTemperature(temperature temp){
 	}
 	char tempString[9];
 	tempToString(tempString, temp, 1 , 9);
-	int8_t spacesToWrite = 5 - (int8_t) strlen(tempString); 
+	int8_t spacesToWrite = 5 - (int8_t) strlen(tempString);
 	for(int8_t i = 0; i < spacesToWrite ;i++){
 		lcd.write(' ');
 	}
 	lcd.print(tempString);
 }
 
-//print the stationary text on the lcd.
+/**
+ * \brief Print the stationary text on the lcd.
+ */
 void LcdDisplay::printStationaryText(void){
 	printAt_P(0, 0, PSTR("Mode"));
 	printAt_P(0, 1, STR_Beer_);
-	printAt_P(0, 2, (flags & LCD_FLAG_DISPLAY_ROOM) ?  PSTR("Room  ") : STR_Fridge_); 
+	printAt_P(0, 2, (flags & LCD_FLAG_DISPLAY_ROOM) ?  PSTR("Room  ") : STR_Fridge_);
 	printDegreeUnit(18, 1);
 	printDegreeUnit(18, 2);
 }
 
-//print degree sign + temp unit
+/**
+ * \brief Print degree sign and temp unit
+ *
+ * @param x - LCD column
+ * @param y - LCD row
+ */
 void LcdDisplay::printDegreeUnit(uint8_t x, uint8_t y){
 	lcd.setCursor(x,y);
 	lcd.write(0b11011111);
-	lcd.write(tempControl.cc.tempFormat);	
+	lcd.write(tempControl.cc.tempFormat);
 }
 
 void LcdDisplay::printAt_P(uint8_t x, uint8_t y, const char* text){

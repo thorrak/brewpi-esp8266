@@ -17,10 +17,6 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* This is an adaptation of the Arduino LiquidCrystal library for the 
- * NHD-0420DZW-AY5-ND lcd display, made by NewHaven. The display should be HD44780 compatible but isn't.
- * Differences are some of the control commands (cursor on/off), language setting and especially initialization sequence.
- */ 
 
 #pragma once
 
@@ -80,12 +76,20 @@
 // Backlight is switched with a P-channel MOSFET, so signal is inverted.
 #define BACKLIGHT_AUTO_OFF_PERIOD 600
 
+/**
+ * \brief SPI Attached LCD
+ *
+ * This is an adaptation of the Arduino LiquidCrystal library for the
+ * NHD-0420DZW-AY5-ND lcd display, made by NewHaven. The display should be
+ * HD44780 compatible but isn't.  Differences are some of the control commands
+ * (cursor on/off), language setting and especially initialization sequence.
+ */
 class SpiLcd : public Print {
 	public:
 	// Constants are set in initializer list of constructor
 	SpiLcd(){};
 	~SpiLcd(){};
-	
+
 	void init();
 
 	void begin(uint8_t cols, uint8_t rows);
@@ -121,9 +125,11 @@ class SpiLcd : public Print {
 #else
 	void print_P(const char * str);
 #endif
-	// copy a line from the shadow copy to a string buffer and correct the degree sign
-	void getLine(uint8_t lineNumber, char * buffer); 
-	
+	/**
+   * Copy a line from the shadow copy to a string buffer and correct the degree sign
+   */
+	void getLine(uint8_t lineNumber, char * buffer);
+
 	void readContent(void); // read the content from the display to the shadow copy buffer
 
 	void command(uint8_t);
@@ -134,17 +140,26 @@ class SpiLcd : public Print {
 	void resetBacklightTimer(void);
 
 	void updateBacklight(void);
-	
+
+  /**
+   * \brief Get current cursor position
+   */
 	uint8_t getCurrPos(void){
 		return _currpos;
 	}
+
+  /**
+   * \brief Get current cursor line
+   */
 	uint8_t getCurrLine(void){
 		return _currline;
 	}
-	
-	// Write spaces from current position to line end.
+
+	/**
+   * \brief Write spaces from current position to line end.
+   */
 	void printSpacesToRestOfLine(void);
-		
+
 	using Print::write;
 
 	private:
@@ -168,8 +183,12 @@ class SpiLcd : public Print {
 	bool	_bufferOnly;
 	uint16_t _backlightTime;
 
-	char content[4][21]; // always keep a copy of the display content in this variable
-	
+  /**
+   * \brief LCD Content buffer
+   * Always keep a copy of the display content in this variable.  Allows for
+   * display refresh and for retrieveing the display content.
+   */
+	char content[4][21];
 };
 
 #endif

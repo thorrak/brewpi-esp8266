@@ -20,6 +20,12 @@
 
 #pragma once
 
+/**
+ * \file Config.h
+ * \brief Compile time configuration flags
+ *
+ * The values here are used to create local customizations of the values defined in ConfigDefault.h
+ */
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -49,16 +55,18 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////////////////////////////////////
-//
-// Enable the simulator. Real sensors/actuators are replaced with simulated versions. In particular, the values reported by
-// temp sensors are based on a model of the fridge/beer.
-//
-// #ifndef BREWPI_SIMULATE
-// #define BREWPI_SIMULATE 0
-// #endif
-//
-//////////////////////////////////////////////////////////////////////////
+/**
+ * \def BREWPI_SIMULATE
+ * \brief Enable the simulator.
+ * \ingroup simulator
+ *
+ * Real sensors/actuators are replaced with simulated versions. In particular, the values reported by
+ * temp sensors are based on a model of the fridge/beer.
+ */
+#ifndef BREWPI_SIMULATE
+#define BREWPI_SIMULATE 0
+#endif
+
 
 //////////////////////////////////////////////////////////////////////////
 //

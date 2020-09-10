@@ -63,14 +63,18 @@ void updateSimulationTicks()
 #endif
 }
 
+
+/**
+ * \brief Main execution loop when in simulation mode
+ */
 void simulateLoop(void)
 {
 	static unsigned long lastUpdate = 0;
-	
+
 	// only needed if we want the arduino to be self running. Useful for manual testing, but not so much with an
 	// external driver.
 	updateSimulationTicks();
-	
+
 	if(ticks.millis() - lastUpdate >= (1000)) { //update settings every second
 		lastUpdate = ticks.millis();
 		

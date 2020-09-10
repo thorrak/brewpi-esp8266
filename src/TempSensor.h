@@ -27,7 +27,7 @@
 
 #define TEMP_SENSOR_DISCONNECTED INVALID_TEMP
 
-#ifndef TEMP_SENSOR_CASCADED_FILTER 
+#ifndef TEMP_SENSOR_CASCADED_FILTER
 #define TEMP_SENSOR_CASCADED_FILTER 1
 #endif
 
@@ -38,66 +38,100 @@ typedef FixedFilter TempSensorFilter;
 #endif
 
 
+/**
+ * \brief Types of temp sensors, defined by their use.
+ */
 enum TempSensorType {
 	TEMP_SENSOR_TYPE_FRIDGE=1,
 	TEMP_SENSOR_TYPE_BEER
 };
 
 
+/**
+ * \brief General interface for all temperature sensor devices.
+ *
+ * Wraps up a BasicTempSensor and processes the values through several filters.
+ * The filters are either CascadedFilter or FixedFilter implementations,
+ * depending on the compile time value of the TEMP_SENSOR_CASCADED_FILTER
+ * macro.
+ */
 class TempSensor {
-	public:	
+	public:
 	TempSensor(TempSensorType sensorType, BasicTempSensor* sensor =NULL)  {
 		updateCounter = 255; // first update for slope filter after (255-4s)
 		setSensor(sensor);
-	 }	 	 
-	 
-	 void setSensor(BasicTempSensor* sensor) {
-		 _sensor = sensor;
-		 failedReadCount = -1;
 	 }
 
+  /**
+   * \brief Set the underlying BasicTempSensor
+   *
+   * @param sensor - Temp sensor to wrap
+   */
+  void setSensor(BasicTempSensor* sensor) {
+   _sensor = sensor;
+   failedReadCount = -1;
+  }
+
+  /**
+   * \brief Check if the sensor has a slow filter.
+   */
 	bool hasSlowFilter() { return true; }
+
+  /**
+   * \brief Check if the sensor has a fast filter.
+   */
 	bool hasFastFilter() { return true; }
+
+  /**
+   * \brief Check if the sensor has a slope filter.
+   */
 	bool hasSlopeFilter() { return true; }
-	
+
 	void init();
-	
+
+  /**
+   * \brief Check if the sensor is connected.
+   */
 	bool isConnected() { return _sensor->isConnected(); }
-	
+
 	void update();
-	
+
 	temperature readFastFiltered(void);
 
-	temperature readSlowFiltered(void){
-		return slowFilter.readOutput(); //return most recent unfiltered value
-	}
-	
+	temperature readSlowFiltered(void);
+
 	temperature readSlope(void);
-	
+
 	temperature detectPosPeak(void);
-	
+
 	temperature detectNegPeak(void);
-	
+
 	void setFastFilterCoefficients(uint8_t b);
-	
+
 	void setSlowFilterCoefficients(uint8_t b);
 
 	void setSlopeFilterCoefficients(uint8_t b);
-	
+
 	BasicTempSensor& sensor();
-	 
-	private:	
-	BasicTempSensor* _sensor;
+
+	private:
+	BasicTempSensor* _sensor; //!< Wrapped basic sensor
 	TempSensorFilter fastFilter;
 	TempSensorFilter slowFilter;
 	TempSensorFilter slopeFilter;
 	unsigned char updateCounter;
 	temperature_precise prevOutputForSlope;
-	
-	// An indication of how stale the data is in the filters. Each time a read fails, this value is incremented.
-	// It's used to reset the filters after a large enough disconnect delay, and on the first init.
-	int8_t failedReadCount;		// -1 for uninitialized, >=0 afterwards. 
-			
+
+  /**
+   * \brief An indication of how stale the data is in the filters.
+   *
+   * Each time a read fails, this value is incremented.  It's used to reset the
+   * filters after a large enough disconnect delay, and on the first init.
+   *
+   *  `-1` for uninitialized, `>=0` afterwards.
+   */
+	int8_t failedReadCount;
+
 	friend class ChamberManager;
 	friend class Chamber;
 	friend class DeviceManager;

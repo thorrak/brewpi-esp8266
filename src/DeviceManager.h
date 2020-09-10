@@ -35,64 +35,94 @@
 #endif
 
 /**
+ * \defgroup hardware Hardware
+ * \brief Interfacing with hardware devices
+ *
  * A user has freedom to connect various devices to the arduino, either via extending the oneWire bus, or by assigning to specific pins, e.g. actuators, switch sensors.
  * Rather than make this compile-time, the configuration is stored at runtime. 
  * Also, the availability of various sensors will change. E.g. it's possible to have a fridge constant mode without a beer sensor.
  *
  * Since the data has to be persisted to EEPROM, references to the actual uses of the devices have to be encoded.  This is the function of the deviceID.
+ *
+ * \addtogroup hardware
+ * @{
  */
 
 class DeviceConfig;
 
+/**
+ * \brief Device slot identifier
+ */
 typedef int8_t device_slot_t;
 inline bool isDefinedSlot(device_slot_t s) { return s>=0; }
-const device_slot_t MAX_DEVICE_SLOT = 16;		// exclusive
-const device_slot_t INVALID_SLOT = -1;
 
-/*
- * Describes the logical function of each device. 
+/**
+ * \brief Maximum number of device slots
  */
-// DeviceFunction moved to EepromStructs.h
+const device_slot_t MAX_DEVICE_SLOT = 16;		// exclusive
+
+/**
+ * \brief An invalid device slot
+ */
+const device_slot_t INVALID_SLOT = -1;
 
 
 /**
- * Describes where the device is most closely associated.
+ * \brief Describes where the device is most closely associated.
  */
 enum DeviceOwner {
-	DEVICE_OWNER_NONE=0,	
-	DEVICE_OWNER_CHAMBER=1,
-	DEVICE_OWNER_BEER=2
+	DEVICE_OWNER_NONE=0, //!< No owner
+	DEVICE_OWNER_CHAMBER=1, //!< Chamber/Fridge
+	DEVICE_OWNER_BEER=2 //!< Beer
 };
 
+/**
+ * \brief Hardware device type
+ */
 enum DeviceType {
-	DEVICETYPE_NONE = 0,
-	DEVICETYPE_TEMP_SENSOR = 1,		/* BasicTempSensor - OneWire */
-	DEVICETYPE_SWITCH_SENSOR = 2,		/* SwitchSensor - direct pin and onewire are supported */
-	DEVICETYPE_SWITCH_ACTUATOR = 3	/* Actuator - both direct pin and onewire are supported */
+	DEVICETYPE_NONE = 0, //!< Unconfigured/unknown
+	DEVICETYPE_TEMP_SENSOR = 1,		//!< BasicTempSensor - OneWire
+	DEVICETYPE_SWITCH_SENSOR = 2,		//!< SwitchSensor - direct pin and onewire are supported
+	DEVICETYPE_SWITCH_ACTUATOR = 3	//!< Actuator - both direct pin and onewire are supported
 };
 
 
-// enum DeviceHardware was moved to EepromStructs.h
-
-
+/**
+ * \brief Check if device is assignable.
+ *
+ * @param hardware - Hardware device to check
+ */
 inline bool isAssignable(DeviceType type, DeviceHardware hardware)
 {
 	return (hardware==DEVICE_HARDWARE_PIN && (type==DEVICETYPE_SWITCH_ACTUATOR || type==DEVICETYPE_SWITCH_SENSOR))
 #if BREWPI_DS2413
 	|| (hardware==DEVICE_HARDWARE_ONEWIRE_2413 && (type==DEVICETYPE_SWITCH_ACTUATOR || (DS2413_SUPPORT_SENSE && type==DEVICETYPE_SWITCH_SENSOR)))
-#endif	
+#endif
 	|| (hardware==DEVICE_HARDWARE_ONEWIRE_TEMP && type==DEVICETYPE_TEMP_SENSOR)
 	|| (hardware==DEVICE_HARDWARE_NONE && type==DEVICETYPE_NONE);
 }
 
-inline bool isOneWire(DeviceHardware hardware) {	
-	return 
+
+/**
+ * \brief Check if device is a OneWire device.
+ *
+ * @param hardware - Hardware device to check
+ * @returns `true` if device is OneWire, `false` otherwise
+ */
+inline bool isOneWire(DeviceHardware hardware) {
+	return
 #if BREWPI_DS2413
-	hardware==DEVICE_HARDWARE_ONEWIRE_2413 || 
-#endif	
+	hardware==DEVICE_HARDWARE_ONEWIRE_2413 ||
+#endif
 	hardware==DEVICE_HARDWARE_ONEWIRE_TEMP;
 }
 
+/**
+ * \brief Check if device is a Digital Pin device.
+ *
+ * @param hardware - Hardware device to check
+ * @returns `true` if device is a digital pin, `false` otherwise
+ */
 inline bool isDigitalPin(DeviceHardware hardware) {
 	return hardware==DEVICE_HARDWARE_PIN;
 }
@@ -101,25 +131,25 @@ extern DeviceType deviceType(DeviceFunction id);
 
 
 /**
- * Determines where this devices belongs.
+ * \brief Determines where devices belongs, based on its function.
+ *
+ * @param id - Device Function
  */
 inline DeviceOwner deviceOwner(DeviceFunction id) {
 	return id==0 ? DEVICE_OWNER_NONE : id>=DEVICE_BEER_FIRST ? DEVICE_OWNER_BEER : DEVICE_OWNER_CHAMBER;
-}	
+}
 
-		
-/*
- * A union of all device types.
- */	
-
-// struct DeviceConfig was moved to EepromStructs.h
 
 /**
- * Provides a single alternative value for a given definition point in a device.
+ * \brief Provides a single alternative value for a given definition point in a device.
  */
 struct DeviceAlternatives {
-	enum AlternativeType { 		
-		DA_PIN, DA_ADDRESS, DA_PIO, DA_INVERT, DA_BOOLVALUE 
+	enum AlternativeType {
+		DA_PIN,
+    DA_ADDRESS,
+    DA_PIO,
+    DA_INVERT,
+    DA_BOOLVALUE
 	};
 	AlternativeType type;
 	union {
@@ -129,10 +159,16 @@ struct DeviceAlternatives {
 		bool invert;					// type == DA_INVERT
 		bool boolValue;					// type == DA_BOOLVALUE
 	};
-	
+
 };
 
 
+/**
+ * \brief Function pointer for enumerate device callback
+ *
+ * @see DeviceManager::enumerateOneWireDevices
+ * @see DeviceManager::enumeratePinDevices
+ */
 typedef void (*EnumDevicesCallback)(DeviceConfig*, void* pv);
 class EnumerateHardware;
 
@@ -142,11 +178,18 @@ struct DeviceOutput
 	char value[10];
 };
 
+/**
+ * \brief Control structure used by methods to limit/filter processed devices.
+ *
+ * Various enumerate methods use the DeviceDisplay structure to control which devices are processed.
+ * @see DeviceManager::enumDevice
+ * @see DeviceManager::UpdateDeviceState
+ */
 struct DeviceDisplay {
-	int8_t id;		// -1 for all devices, >=0 for specific device	
-	int8_t value;	// set value
-	int8_t write;	// write value		
-	int8_t empty;	// show unused devices when id==-1, default is 0
+	int8_t id;		//!< -1 for all devices, >=0 for specific device
+	int8_t value;	//!< set value
+	int8_t write;	//!< write value
+	int8_t empty;	//!< show unused devices when id==-1, default is 0
 };
 
 void HandleDeviceDisplay(const char* key, const char* value, void* pv);
@@ -158,12 +201,18 @@ void UpdateDeviceState(DeviceDisplay& dd, DeviceConfig& dc, char* val);
 
 class OneWire;
 
+
+/**
+ * \brief Manage the different hardware devices that can be attached.
+ *
+ * Gives a common interface for interacting with different hardware types.
+ */
 class DeviceManager
 {
 public:
-	
+
 	bool isDefaultTempSensor(BasicTempSensor* sensor);
-	
+
 	int8_t enumerateActuatorPins(uint8_t offset)
 	{
 #if BREWPI_ACTUATOR_PINS && defined(ARDUINO)
@@ -191,16 +240,15 @@ public:
 #if BREWPI_SENSOR_PINS && defined(ARDUINO)
 		if (offset==0)
 			return doorPin;
-#endif			
+#endif
 		return -1;
 	}
-	
-	/* Enumerates the 1-wire pins.
-	 * 
+
+	/**
+   * Enumerates the OneWire bus pins.
 	 */
-	int8_t enumOneWirePins(uint8_t offset)
-	{		
-#ifdef ARDUINO            
+	int8_t enumOneWirePins(uint8_t offset) {
+#ifdef ARDUINO
 #ifdef oneWirePin
 		if (offset == 0)
 			return oneWirePin;
@@ -211,21 +259,17 @@ public:
 			return fridgeSensorPin;
 #endif
 #endif
-		return -1;								
+		return -1;
 	}
 
 	static void setupUnconfiguredDevices();
 	
-	/*
-	 * Determines if the given device config is complete. 
+	/**
+	 * Determines if the given device config is complete.
 	 */
 	static bool firstUndefinedAlternative(DeviceConfig& config, DeviceAlternatives& alternatives);
 	
 	
-	/**
-	 * Creates and Installs a device from the given device config.
-	 * /return true if a device was installed. false if the config is not complete.
-	 */
 	static void installDevice(DeviceConfig& config);
 	
 	static void uninstallDevice(DeviceConfig& config);
@@ -233,17 +277,12 @@ public:
 	static void parseDeviceDefinition();
 	static void printDevice(device_slot_t slot, DeviceConfig& config, const char* value);
 		
-	/**
-	 * Iterate over the defined devices.
-	 * Caller first calls with deviceIndex 0. If the return value is true, config is filled out with the 
-	 * config for the device. The caller can then increment deviceIndex and try again.
-	 */
 	static bool allDevices(DeviceConfig& config, uint8_t deviceIndex);
 
 	static bool isDeviceValid(DeviceConfig& config, DeviceConfig& original, int8_t deviceIndex);
 
 	/**
-	 * read hardware spec from stream and output matching devices
+	 * Read hardware spec from stream and output matching devices
 	 */
 	static void enumerateHardware();
 	
@@ -262,7 +301,7 @@ private:
 
 	static void* createDevice(DeviceConfig& config, DeviceType dc);
 	static void* createOneWireGPIO(DeviceConfig& config, DeviceType dt);
-	
+
 	static void beginDeviceOutput() { firstDeviceOutput = true; }
 
 	static OneWire* oneWireBus(uint8_t pin);
@@ -282,4 +321,8 @@ private:
 };
 
 
+/**
+ * A global instance of DeviceManager
+ */
 extern DeviceManager deviceManager;
+/** @} */

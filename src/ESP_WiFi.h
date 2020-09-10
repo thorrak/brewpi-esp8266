@@ -1,9 +1,13 @@
 //
 // Created by John Beeler on 1/12/20.
 //
+#pragma once
 
-#ifndef BREWPI_ESP8266_ESP_WIFI_H
-#define BREWPI_ESP8266_ESP_WIFI_H
+/**
+ * \file ESP_WiFi.h
+ *
+ * \brief WiFi configuration
+ */
 
 // This library always needs to get loaded, as we're going to need to interact with the radio regardless of whether
 // we're using WiFi or not. If neither ESP8266 or ESP32 is defined, (properly) do nothing (though this shouldn't
@@ -22,5 +26,3 @@ void wifi_connect_clients();
 
 extern WiFiServer server;
 extern WiFiClient serverClient;
-
-#endif //BREWPI_ESP8266_ESP_WIFI_H

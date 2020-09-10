@@ -23,9 +23,34 @@
 #include "Brewpi.h"
 #include "TemperatureFormats.h"
 
-/* Set to 1 to enable virtual functions and polymorphic display. */
+/**
+ * \addtogroup display
+ * @{
+ */
+
+
+/**
+ * \def DISPLAY_POLYMORPHIC
+ * \brief Control inheritance type of Display
+ *
+ * When true, Display is made virtual and the various hardware specific drivers derive from it.
+ *
+ * \def DISPLAY_METHOD
+ * \brief Compile time switch between `virtual` and `static` methods in Display
+ *
+ * If DISPLAY_POLYMORPHIC is true, the methods in Display are defined as virtual.
+ * \see DISPLAY_POLYMORPHIC
+ *
+ * \def DISPLAY_SUPERCLASS
+ * \brief Compile time value for the superclass for Display drivers
+ *
+ * If DISPLAY_POLYMORPHIC is true, the super class is defined as Display.
+ * Otherwise the superclass is empty.
+ * \see DISPLAY_POLYMORPHIC
+ */
+
 #define DISPLAY_POLYMORPHIC 0
-#if DISPLAY_POLYMORPHIC 
+#if DISPLAY_POLYMORPHIC
 	#define DISPLAY_METHOD virtual
 	#define DISPLAY_METHOD_PURE_VIRTUAL =0
 	#define DISPLAY_FIELD
@@ -36,27 +61,27 @@
 	#define DISPLAY_FIELD	static
 	#define DISPLAY_METHOD_PURE_VIRTUAL {}
 	#define DISPLAY_REF
-	#define DISPLAY_SUPERCLASS 
+	#define DISPLAY_SUPERCLASS
 #endif
 
 #if DISPLAY_POLYMORPHIC
 class Display{
 	public:
-	Display(){};	
+	Display(){};
 	DISPLAY_METHOD ~Display();
-		
+
 	// initializes the lcd display
 	DISPLAY_METHOD void init(void) DISPLAY_METHOD_PURE_VIRTUAL;
-	
+
 	DISPLAY_METHOD void printAll() DISPLAY_METHOD_PURE_VIRTUAL;
-			
+
 	// print all temperatures on the LCD
 	DISPLAY_METHOD void printAllTemperatures(void) DISPLAY_METHOD_PURE_VIRTUAL;
-		
+
 
 	// print the stationary text on the lcd.
 	DISPLAY_METHOD void printStationaryText(void) DISPLAY_METHOD_PURE_VIRTUAL;
-	
+
 	DISPLAY_METHOD void setDisplayFlags(uint8_t newFlags) DISPLAY_METHOD_PURE_VIRTUAL;
 	DISPLAY_METHOD uint8_t getDisplayFlags() DISPLAY_METHOD_PURE_VIRTUAL;
 
@@ -83,7 +108,7 @@ class Display{
 	DISPLAY_METHOD void getLine(uint8_t lineNumber, char * buffer) DISPLAY_METHOD_PURE_VIRTUAL;
 	
 	/*
-	 * When true, print content is not sent to the lcd panel, but only buffered.                                                                      
+	 * When true, print content is not sent to the lcd panel, but only buffered.
 	 */
 	DISPLAY_METHOD void setBufferOnly(bool bufferOnly) DISPLAY_METHOD_PURE_VIRTUAL;
 	
@@ -95,6 +120,11 @@ class Display{
 #endif
 
 
+/**
+ * \brief A dummy display driver
+ *
+ * Used as a default when no other hardware type is defined.
+ */
 class NullDisplay DISPLAY_SUPERCLASS
 {
 public:	
@@ -146,17 +176,16 @@ public:
 	DISPLAY_METHOD void updateBacklight() { }
 
 };
-		
+
 /**
-	* When set in flags, the current display will show the room temp, rather than beer temp.
-	*/
+ * When set in flags, the current display will show the room temp, rather than beer temp.
+ */
 static const uint8_t LCD_FLAG_DISPLAY_ROOM = 0x01;
 
 /**
-	* When set, the room temp will automatically alternate between beer and room temp.
-	*/
+ * When set, the room temp will automatically alternate between beer and room temp.
+ */
 static const uint8_t LCD_FLAG_ALTERNATE_ROOM = 0x02;
 
 
-	
-	
+/** @} */

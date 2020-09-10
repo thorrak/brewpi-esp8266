@@ -77,13 +77,19 @@ OneWire* DeviceManager::oneWireBus(uint8_t pin) {
 
 bool DeviceManager::firstDeviceOutput;
 
+/**
+ * Check if a given BasicTempSensor is the default temp sensor
+ *
+ * @param sensor - Pointer to the sensor to check
+ * @returns true if the provided sensor is the default, otherwise false.
+ */
 bool DeviceManager::isDefaultTempSensor(BasicTempSensor* sensor) {
 	return sensor==&defaultTempSensor;
 }
 
 /**
  * Sets devices to their unconfigured states. Each device is initialized to a static no-op instance.
- * This method is idempotent, and is called each time the eeprom is reset. 
+ * This method is idempotent, and is called each time the eeprom is reset.
  */
 void DeviceManager::setupUnconfiguredDevices()
 {	
@@ -143,14 +149,18 @@ void* DeviceManager::createDevice(DeviceConfig& config, DeviceType dt)
 }
 
 /**
- * Returns the pointer to where the device pointer resides. This can be used to delete the current device and install a new one. 
- * For Temperature sensors, the returned pointer points to a TempSensor*. The basic device can be fetched by calling
- * TempSensor::getSensor().
+ * Returns the pointer to where the device pointer resides.
+ *
+ * This can be used to delete the current device and install a new one.  For
+ * Temperature sensors, the returned pointer points to a TempSensor*. The basic
+ * device can be fetched by calling TempSensor::getSensor().
+ *
+ * @param config
  */
 inline void** deviceTarget(DeviceConfig& config)
 {
 	// for multichamber, will write directly to the multi-chamber managed storage.
-	// later...	
+	// later...
 	if (config.chamber>1 || config.beer>1)
 		return NULL;
 	
@@ -205,12 +215,13 @@ inline void setSensor(DeviceFunction f, void** ppv, BasicTempSensor* sensor) {
 		((TempSensor*)*ppv)->setSensor(sensor);
 }
 
+
 /**
  * Removes an installed device.
- * /param config The device to remove. The fields that are used are
+ *
+ * @param config - The device to remove. The fields that are used are
  *		chamber, beer, hardware and function.
  */
-
 void DeviceManager::uninstallDevice(DeviceConfig& config)
 {
 	DeviceType dt = deviceType(config.deviceFunction);
@@ -248,11 +259,15 @@ void DeviceManager::uninstallDevice(DeviceConfig& config)
 	}		
 }
 
+
 /**
- * Creates and installs a device in the current chamber. 
+ * Creates and installs a device in the current chamber.
+ *
+ * @param config
+ * @return true if a device was installed. false if the config is not complete.
  */
 void DeviceManager::installDevice(DeviceConfig& config)
-{	
+{
 	DeviceType dt = deviceType(config.deviceFunction);
 	void** ppv = deviceTarget(config);
 	if (ppv==NULL || config.hw.deactivate)
@@ -295,6 +310,10 @@ void DeviceManager::installDevice(DeviceConfig& config)
 	}	
 }	
 
+
+/**
+ * Hardware device definition.
+ */
 struct DeviceDefinition {
 	int8_t id;
 	int8_t chamber;
@@ -367,11 +386,13 @@ void assignIfSet(int8_t value, uint8_t* target) {
 }
 
 /**
- * Updates the device definition. Only changes that result in a valid device, with no conflicts with other devices
- * are allowed. 
+ * Safely updates the device definition.
+ *
+ * Only changes that result in a valid device, with no conflicts with other
+ * devices are allowed.
  */
 void DeviceManager::parseDeviceDefinition()
-{	
+{
 	static DeviceDefinition dev;
 	fill((int8_t*)&dev, sizeof(dev));
 	
@@ -451,20 +472,21 @@ void DeviceManager::parseDeviceDefinition()
 
 /**
  * Determines if a given device definition is valid.
- * chamber/beer must be within bounds
- * device function must match the chamber/beer spec, and must not already be defined for the same chamber/beer combination
- * device hardware type must be applicable with the device function
- * pinNr must be unique for digital pin devices?
- * pinNr must be a valid OneWire bus for one wire devices.
- * for onewire temp devices, address must be unique.
- * for onewire ds2413 devices, address+pio must be unique.
+ *
+ * Validity is defiend by:
+ * - Chamber & beer must be within bounds
+ * - Device function must match the chamber/beer spec, and must not already be defined for the same chamber/beer combination - Not Implemented
+ * - Device hardware type must be applicable with the device function
+ * - pinNr must be unique for digital pin devices - Not Implemented
+ * - pinNr must be a valid OneWire bus for one wire devices.
+ * - For OneWire temp devices, address must be unique. - Not Implemented
+ * - For OneWire DS2413 devices, address+pio must be unique. - Not Implemented
  */
 bool DeviceManager::isDeviceValid(DeviceConfig& config, DeviceConfig& original, int8_t deviceIndex)
 {
-#if 1
 	/* Implemented checks to ensure the system will not crash when supplied with invalid data.
 	   More refined checks that may cause confusing results are not yet implemented. See todo below. */
-	
+
 	/* chamber and beer within range.*/
 	if (!inRangeUInt8(config.chamber, 0, EepromFormat::MAX_CHAMBERS))
 	{
@@ -515,7 +537,6 @@ bool DeviceManager::isDeviceValid(DeviceConfig& config, DeviceConfig& original, 
 		// todo - could verify that the pin nr corresponds to enumActuatorPins/enumSensorPins		
 	}
 	
-#endif
 	// todo - for onewire temp, ensure address is unique	
 	// todo - for onewire 2413 check address+pio nr is unique
 	return true;
@@ -542,21 +563,33 @@ void appendAttrib(String& str, char c, int8_t val, bool first = false)
 	str += tempString;
 }
 
+
+/**
+ * Check if DeviceHardware definition is for a device which is "invertable"
+ *
+ * @param hw - DeviceHardware definition
+ */
 inline bool hasInvert(DeviceHardware hw)
 {
 	return hw==DEVICE_HARDWARE_PIN
-#if BREWPI_DS2413	
-	|| hw==DEVICE_HARDWARE_ONEWIRE_2413 
-#endif	
+#if BREWPI_DS2413
+	|| hw==DEVICE_HARDWARE_ONEWIRE_2413
+#endif
 	;
 }
 
+
+/**
+ * Check if DeviceHardware definition is for a OneWire device
+ *
+ * @param hw - DeviceHardware definition
+ */
 inline bool hasOnewire(DeviceHardware hw)
 {
-	return 
+	return
 #if BREWPI_DS2413
-	hw==DEVICE_HARDWARE_ONEWIRE_2413 || 
-#endif	
+	hw==DEVICE_HARDWARE_ONEWIRE_2413 ||
+#endif
 	hw==DEVICE_HARDWARE_ONEWIRE_TEMP;
 }
 
@@ -612,12 +645,32 @@ void DeviceManager::printDevice(device_slot_t slot, DeviceConfig& config, const 
 	deviceString += '}';
 
 	piLink.print_P(deviceString.c_str());
-}	
-	
+}
+
+
+/**
+ * Iterate over the defined devices.
+ *
+ * Caller first calls with deviceIndex 0. If the return value is true, config
+ * is filled out with the config for the device. The caller can then increment
+ * deviceIndex and try again.
+ *
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+ * for (device_slot_t idx=0; deviceManager.allDevices(dc, idx); idx++) {
+ *  // The "current" device info is in dc, use it somehow
+ * }
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *
+ * @param config - A reference to a DeviceConfig.  This is populated with the
+ * current device info.
+ * @param deviceIndex - The index of the current device.
+ *
+ * @returns - true if the deviceIndex is valid, otherwise false.
+ */
 bool DeviceManager::allDevices(DeviceConfig& config, uint8_t deviceIndex)
-{	
-	return eepromManager.fetchDevice(config, deviceIndex);
-}	
+{
+  return eepromManager.fetchDevice(config, deviceIndex);
+}
 
 void parseBytes(uint8_t* data, const char* s, uint8_t len) {
 	char c;
@@ -718,6 +771,12 @@ device_slot_t findHardwareDevice(DeviceConfig& find)
 	return INVALID_SLOT;
 }
 
+
+/**
+ * Read a temp sensor device and convert the value into a string.
+ *
+ * **Warning:** the read value does not include any calibration offset.
+ */
 inline void DeviceManager::readTempSensorValue(DeviceConfig::Hardware hw, char* out)
 {
 #if !BREWPI_SIMULATE
@@ -729,7 +788,7 @@ inline void DeviceManager::readTempSensorValue(DeviceConfig::Hardware hw, char* 
 	tempToString(out, temp, 3, 9);
 #else
 	strcpy_P(out, PSTR("0.00"));
-#endif	
+#endif
 }
 
 void DeviceManager::handleEnumeratedDevice(DeviceConfig& config, EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& out)

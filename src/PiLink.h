@@ -26,28 +26,35 @@
 #include "Logger.h"
 
 
-
 #define PRINTF_BUFFER_SIZE 128
 
 class DeviceConfig;
 
 
+/**
+ * Interface between brewpi controller and the outside world (Commonly a RaspberryPi, hence the name).
+ *
+ * PiLink is a singleton, so all methods are static.
+ */
 class PiLink{
 	public:
-	
-	// There can only be one PiLink object, so functions are static
+
 	static void init(void);
+
 	static void receive(void);
-	
+
 #if !defined(ESP8266) && !defined(ESP32) // There is a bug in the ESP8266 implementation that causes these not to work.
-	static void printFridgeAnnotation(const char * annotation, ...);	
+	static void printFridgeAnnotation(const char * annotation, ...);
 	static void printBeerAnnotation(const char * annotation, ...);
 #endif
 
 	static void debugMessage(const char * message, ...);
 
 	static void printTemperatures(void);
-	
+
+  /**
+   * Pointer to callback function for use with ParseJson()
+   */
 	typedef void (*ParseJsonCallback)(const char* key, const char* val, void* data);
 
 	static void parseJson(ParseJsonCallback fn, void* data=NULL);
@@ -55,12 +62,12 @@ class PiLink{
 	static int read(void);  // Adding so we can completely abstract away piStream outside of piLink
 
 	private:
-	
+
 	static void sendControlSettings(void);
 	static void receiveControlConstants(void);
 	static void sendControlConstants(void);
 	static void sendControlVariables(void);
-	
+
 	static void receiveJson(void); // receive settings as JSON key:value pairs
 	
 	static void print(char *fmt, ...); // use when format string is stored in RAM
@@ -93,10 +100,9 @@ private:
 	static void sendJsonPair(const char * name, uint8_t val); // send one JSON pair with a uint8_t value as name:val,
 	static void sendJsonAnnotation(const char* name, const char* annotation);
 	static void sendJsonTemp(const char* name, temperature temp);
-	
-	static void processJsonPair(const char * key, const char * val, void* pv); // process one pair
-	
-	/* Prints the name part of a json name/value pair. The name must exist in PROGMEM */
+
+	static void processJsonPair(const char * key, const char * val, void* pv);
+
 	static void printJsonName(const char * name);
 	static void printJsonSeparator();
 	static void sendJsonClose();
@@ -109,6 +115,10 @@ private:
 		uint8_t offset;			// offset into TempControl class
 		uint8_t handlerOffset;		// handler index
 	};
+
+  /**
+   * Function pointer to a handler used for JSON output.
+   */
 	typedef void (*JsonOutputHandler)(const char* key, uint8_t offset);
 	static void sendJsonValues(char responseType, const JsonOutput* /*PROGMEM*/ jsonOutputMap, uint8_t mapCount);
 
@@ -120,7 +130,8 @@ private:
 	static void jsonOutputTempDiffToString(const char* key, uint8_t offset);
 	static void jsonOutputChar(const char* key, uint8_t offset);
 	static void jsonOutputUint16(const char* key, uint8_t offset);
-	static const JsonOutputHandler JsonOutputHandlers[];		
+
+	static const JsonOutputHandler JsonOutputHandlers[];
 	static const JsonOutput jsonOutputCCMap[];
 	static const JsonOutput jsonOutputCVMap[];
 
@@ -131,7 +142,7 @@ private:
 	static void setFridgeSetting(const char* val);
 	static void setTempFormat(const char* val);
 
-	typedef void (*JsonParserHandlerFn)(const char* val, void* target);	
+	typedef void (*JsonParserHandlerFn)(const char* val, void* target);
 
 	struct JsonParserConvert {
 		const char* /*PROGMEM*/ key;
@@ -151,7 +162,7 @@ private:
 #endif	
 
 	private:
-	static bool firstPair;
+	static bool firstPair; //!< Flag used to track when separating `,` chars should be emitted.
 	friend class DeviceManager;
 	friend class PiLinkTest;
 	friend class Logger;
