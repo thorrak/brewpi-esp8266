@@ -23,6 +23,19 @@
 #include "Brewpi.h"
 
 /**
+ * Tuple of device name and ID
+ */
+struct DeviceName
+{
+  String name;
+  String device;
+
+  DeviceName(String device, String name): name(name), device(device){}
+};
+
+
+
+/**
  * Class to manage human readable names for devices
  */
 class DeviceNameManager
@@ -30,8 +43,21 @@ class DeviceNameManager
   public:
     static void setDeviceName(const char* device, const char* name);
     static String getDeviceName(const char* device);
+    static void deleteDeviceName(const char* device);
+
+    /**
+     * Function pointer for a DeviceName enumeration handler
+     */
+    typedef void (*deviceNameHandler)(DeviceName);
+
+    static void enumerateDeviceNames(deviceNameHandler callback);
+
 
   private:
-    static const char* deviceNameFilename(const char* device);
+    static void deviceNameFilename(char* filename, const char* device);
+    static DeviceName filenameToDeviceName(String filename);
+
     static const char filenamePrefix[];
+    static constexpr int prefixLength();
 };
+

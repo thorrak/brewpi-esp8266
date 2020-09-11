@@ -25,6 +25,7 @@
 #include "Brewpi.h"
 #include "TemperatureFormats.h"
 #include "DeviceManager.h"
+#include "DeviceNameManager.h"
 #include "Logger.h"
 
 
@@ -93,6 +94,8 @@ private:
 	static void soundAlarm(bool enabled);
 	static void printResponse(char responseChar);
 	static void printChamberInfo();
+  static void printDeviceNames();
+  static void printDeviceName(DeviceName devName);
 
 public:
 	static void printTemperaturesJSON(const char * beerAnnotation, const char * fridgeAnnotation);

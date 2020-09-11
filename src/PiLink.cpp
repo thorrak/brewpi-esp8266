@@ -35,7 +35,6 @@
 #include "SettingsManager.h"
 #include "Buzzer.h"
 #include "Display.h"
-#include "DeviceNameManager.h"
 
 #if defined(ESP8266)
 #include <ESP8266WiFi.h>  // For printing the IP address
@@ -292,6 +291,7 @@ void PiLink::receive(void){
 			parseJson(handleDeviceName);
       break;
     case 'p': // Get configured probe names
+      printDeviceNames();
       break;
 		case 'C': // Set default constants
 			tempControl.loadDefaultConstants();
@@ -1185,3 +1185,19 @@ void PiLink::print(char c) { piStream.print(c); }
 #endif
 
 
+/**
+ * Print out the configured device names
+ */
+void PiLink::printDeviceNames() {
+	printResponse('N');
+  DeviceNameManager::enumerateDeviceNames(PiLink::printDeviceName);
+	sendJsonClose();
+}
+
+/**
+ * Callback handler for DeviceNameManager::enumerateDeviceNames.
+ * Used by PiLink::printDeviceNames()
+ */
+void PiLink::printDeviceName(DeviceName devName) {
+  sendJsonAnnotation(devName.device.c_str(), devName.name.c_str());
+}

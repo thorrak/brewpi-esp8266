@@ -27,21 +27,15 @@
 #include "DeviceNameManager.h"
 
 /**
- * Prefix used when building device name filenames
- *
- * This helps disambiguate the name files from other data, and makes it easier
- * to produce a list of named probes.
- */
-static const char DeviceNameManager::filenamePrefix[] PROGMEM = "/dn/";
-
-/**
  * Set a human readable name for a device.
  * @param device - The identifier for the device, most commonly the OneWire device address (in hex)
  * @param name - The name to set
  */
 void DeviceNameManager::setDeviceName(const char* device, const char* name)
 {
-  const char* filename = DeviceNameManager::deviceNameFilename(device);
+  char filename[32];
+  DeviceNameManager::deviceNameFilename(filename, device);
+
   File f = SPIFFS.open(filename, "w");
   if (f) {
     f.print(name);
@@ -55,7 +49,8 @@ void DeviceNameManager::setDeviceName(const char* device, const char* name)
  * @param device - The identifier for the device, most commonly the OneWire device address (in hex)
  */
 String DeviceNameManager::getDeviceName(const char* device) {
-  const char* filename = DeviceNameManager::deviceNameFilename(device);
+  char filename[32];
+  DeviceNameManager::deviceNameFilename(filename, device);
 
   if (SPIFFS.exists(filename)) {
     File f = SPIFFS.open(filename, "r");
@@ -74,10 +69,81 @@ String DeviceNameManager::getDeviceName(const char* device) {
  * Get the Filename that contains the device human name metadata for a given device.
  * @param device - The identifier for the device, most commonly the OneWire device address (in hex)
  */
-inline const char* DeviceNameManager::deviceNameFilename(const char* device) {
-  // TODO: prefix the string
-  char buf[32];
-  sprintf_P()
-  return device;
+inline void DeviceNameManager::deviceNameFilename(char* filename, const char* device) {
+  strcpy(filename, DeviceNameManager::filenamePrefix);
+  strncat(filename, device, 32 - DeviceNameManager::prefixLength());
 }
 
+
+/**
+ * Prefix used when building device name filenames
+ *
+ * This helps disambiguate the name files from other data, and makes it easier
+ * to produce a list of named probes.
+ */
+const char DeviceNameManager::filenamePrefix[] = "/dn/";
+
+/**
+ * Calculate length of filename prefix.
+ * This is done as a constexpr so it can be calculated at compile time
+ */
+constexpr int DeviceNameManager::prefixLength() {
+  return strlen(DeviceNameManager::filenamePrefix);
+}
+
+
+/**
+ * Delete a configured device name
+ * @param device - The identifier for the device, most commonly the OneWire device address (in hex)
+ */
+void DeviceNameManager::deleteDeviceName(const char* device) {
+  char filename[32];
+  DeviceNameManager::deviceNameFilename(filename, device);
+
+  SPIFFS.remove(filename);
+}
+
+
+#if defined(ESP32)
+/**
+ * Get list of configured device names
+ */
+void DeviceNameManager::enumerateDeviceNames(deviceNameHandler callback) {
+  File root = SPIFFS.open(filenamePrefix);
+
+  File file = root.openNextFile();
+
+  while(file){
+    callback(filenameToDeviceName(file.name()));
+
+    // Move to the next file
+    file = root.openNextFile();
+  }
+}
+
+#else
+
+/**
+ * Get list of configured device names
+ */
+void DeviceNameManager::enumerateDeviceNames(deviceNameHandler callback) {
+  Dir dir = SPIFFS.openDir(filenamePrefix);
+
+  while (dir.next()) {
+    callback(filenameToDeviceName(dir.fileName()));
+  }
+}
+#endif
+
+
+/**
+ * Given a filename, get a DeviceName
+ *
+ * @param filename
+ */
+DeviceName DeviceNameManager::filenameToDeviceName(String filename) {
+  // strip the prefix off
+  filename = filename.substring(prefixLength());
+
+  return DeviceName(filename, getDeviceName(filename.c_str()));
+}
