@@ -290,7 +290,6 @@ public:
 
 	static void listDevices();
   static void printRawDeviceValues();
-  static void setDeviceName(const char* device, const char* name);
 
 private:
 	static void enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output);
@@ -299,8 +298,6 @@ private:
 	static void handleEnumeratedDevice(DeviceConfig& config, EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& out);
 	static void readTempSensorValue(DeviceConfig::Hardware hw, char* out);
 	static void outputRawDeviceValue(DeviceConfig* config, void* pv);
-  static String readDeviceName(const char* device);
-  static const char* deviceNameFilename(const char* device);
 
 	static void* createDevice(DeviceConfig& config, DeviceType dc);
 	static void* createOneWireGPIO(DeviceConfig& config, DeviceType dt);

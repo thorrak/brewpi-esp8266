@@ -28,6 +28,7 @@
 #include "TempSensorExternal.h"
 #include "PiLink.h"
 #include "EepromFormat.h"
+#include "DeviceNameManager.h"
 
 #define CALIBRATION_OFFSET_PRECISION (4)
 
@@ -1042,7 +1043,7 @@ void DeviceManager::outputRawDeviceValue(DeviceConfig* config, void* pv)
     char devName[17];
     printBytes(config->hw.address, 8, devName);
 
-    String humanName = DeviceManager::readDeviceName(devName);
+    String humanName = DeviceNameManager::getDeviceName(devName);
 
     if(!firstDeviceOutput)
       piLink.print_P(PSTR(","));
@@ -1053,51 +1054,6 @@ void DeviceManager::outputRawDeviceValue(DeviceConfig* config, void* pv)
   firstDeviceOutput = false;
 }
 
-
-/**
- * Set a human readable name for a device.
- * @param device - The identifier for the device, most commonly the OneWire device address (in hex)
- * @param name - The name to set
- */
-void DeviceManager::setDeviceName(const char* device, const char* name)
-{
-  const char* filename = DeviceManager::deviceNameFilename(device);
-  File f = SPIFFS.open(filename, "w");
-  if (f) {
-    f.print(name);
-    f.close();
-  }
-}
-
-
-/**
- * Get the human readable name for a device.
- * @param device - The identifier for the device, most commonly the OneWire device address (in hex)
- */
-String DeviceManager::readDeviceName(const char* device) {
-  const char* filename = DeviceManager::deviceNameFilename(device);
-
-  if (SPIFFS.exists(filename)) {
-    File f = SPIFFS.open(filename, "r");
-    if (f) {
-      String res = f.readString();
-      f.close();
-      return res;
-    }
-  }
-
-  return "";
-}
-
-
-/**
- * Get the Filename that contains the device human name metadata for a given device.
- * @param device - The identifier for the device, most commonly the OneWire device address (in hex)
- */
-inline const char* DeviceManager::deviceNameFilename(const char* device) {
-  // TODO: prefix the string
-  return device;
-}
 
 /**
  * Determines the class of device for the given DeviceID.
