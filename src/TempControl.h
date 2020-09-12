@@ -250,6 +250,12 @@ class TempControl{
    */
 	TEMP_CONTROL_METHOD bool isDoorOpen() { return doorOpen; }
 	
+  /**
+   * \brief Get the state to display on the LCD.
+   *
+   * If the chamber door is closed, this returns the value of getState().
+   * If the door is open, the `DOOR_OPEN` state is returned instead.
+   */
 	TEMP_CONTROL_METHOD unsigned char getDisplayState() {
 		return isDoorOpen() ? DOOR_OPEN : getState();
 	}
@@ -265,10 +271,10 @@ class TempControl{
 	TEMP_CONTROL_FIELD BasicTempSensor* ambientSensor; //!< Ambient room temp sensor
 	TEMP_CONTROL_FIELD Actuator* heater; //!< Actuator used to call for heat
 	TEMP_CONTROL_FIELD Actuator* cooler; //!< Actuator used to call for cool
-	TEMP_CONTROL_FIELD Actuator* light;
-	TEMP_CONTROL_FIELD Actuator* fan;
+	TEMP_CONTROL_FIELD Actuator* light; //!< Actuator to control chamber light
+	TEMP_CONTROL_FIELD Actuator* fan; //!< Actuator to control chamber fan
 	TEMP_CONTROL_FIELD AutoOffActuator cameraLight;
-	TEMP_CONTROL_FIELD Sensor<bool>* door;
+	TEMP_CONTROL_FIELD Sensor<bool>* door; //!< Chamber door sensor
 	
 	// Control parameters
 	TEMP_CONTROL_FIELD ControlConstants cc;
@@ -288,21 +294,21 @@ class TempControl{
 	TEMP_CONTROL_FIELD temperature storedBeerSetting;
 
 	// Timers
-	TEMP_CONTROL_FIELD uint16_t lastIdleTime;
-	TEMP_CONTROL_FIELD uint16_t lastHeatTime;
-	TEMP_CONTROL_FIELD uint16_t lastCoolTime;
+	TEMP_CONTROL_FIELD uint16_t lastIdleTime; //!< Last time the controller was idle
+	TEMP_CONTROL_FIELD uint16_t lastHeatTime; //!< Last time that the controller was heating
+	TEMP_CONTROL_FIELD uint16_t lastCoolTime; //!< Last time that the controller was cooling
 	TEMP_CONTROL_FIELD uint16_t waitTime;
-	
-	
+
+
 	// State variables
-	TEMP_CONTROL_FIELD uint8_t state;
-	TEMP_CONTROL_FIELD bool doPosPeakDetect;
-	TEMP_CONTROL_FIELD bool doNegPeakDetect;
-	TEMP_CONTROL_FIELD bool doorOpen;
-	
+	TEMP_CONTROL_FIELD uint8_t state; //!< Current controller state
+	TEMP_CONTROL_FIELD bool doPosPeakDetect; //!< True if the controller is doing positive peak detection
+	TEMP_CONTROL_FIELD bool doNegPeakDetect; //!< True if the controller is doing negative peak detection
+	TEMP_CONTROL_FIELD bool doorOpen; //!< True if the chamber door is open
+
 	friend class TempControlState;
 };
-	
+
 extern TempControl tempControl;
 
 /** @} */

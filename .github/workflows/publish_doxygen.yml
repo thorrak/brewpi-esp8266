@@ -1,0 +1,25 @@
+---
+name: "Publish Doxygen Docs"
+
+on:
+  push:
+    branches:
+      - "*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build Doxygen
+        uses: mattnotmitt/doxygen-action@v1.1.0
+        with:
+          doxyfile-path: 'Doxyfile'
+
+      - name: Publish Doxygen to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3.6.4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./apidocs/html
