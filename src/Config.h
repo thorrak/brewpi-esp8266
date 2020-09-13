@@ -63,9 +63,9 @@
  * Real sensors/actuators are replaced with simulated versions. In particular, the values reported by
  * temp sensors are based on a model of the fridge/beer.
  */
-#ifndef BREWPI_SIMULATE
-#define BREWPI_SIMULATE 0
-#endif
+//#ifndef BREWPI_SIMULATE
+//#define BREWPI_SIMULATE 0
+//#endif
 
 
 //////////////////////////////////////////////////////////////////////////
