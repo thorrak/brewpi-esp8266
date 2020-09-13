@@ -28,3 +28,6 @@ CTestTestfile.cmake
 bin/esp8266_wifi.bin
 bin/esp8266_serial.bin
 bin/esp32_wifi_tft.bin
+
+apidocs/
+*.sw?

@@ -21,6 +21,11 @@
 #pragma once
 
 /**
+ * \file ConfigDefault.h
+ * \brief Compile time configuration flags
+ */
+
+/**
  * Do not change this file directly - rather edit Config.h
  */
 
@@ -32,7 +37,7 @@
  * LCD Display using a shift register.
  * For diy-shields prior to the revA shield, this should be set to 0.
  */
-#ifndef BREWPI_SHIFT_LCD	
+#ifndef BREWPI_SHIFT_LCD
 #if BREWPI_STATIC_CONFIG != BREWPI_SHIELD_DIY
 	#define BREWPI_SHIFT_LCD 1
 #else
@@ -58,8 +63,8 @@
 #endif
 
 #ifndef BREWPI_LOG_WARNINGS
-#define BREWPI_LOG_WARNINGS 1 
-#endif 
+#define BREWPI_LOG_WARNINGS 1
+#endif
 
 #ifndef BREWPI_LOG_INFO
 #define BREWPI_LOG_INFO 1
@@ -70,6 +75,8 @@
 #endif
 
 /**
+ * \def BREWPI_EMULATE
+ * \brief Enable virtual hardware
  * This flag virtualizes as much of the hardware as possible, so the code can be run in the AvrStudio simulator, which
  * only emulates the microcontroller, not any attached peripherals.
  */
@@ -98,7 +105,9 @@
 #endif
 
 /**
- * Enable DS2413 Actuators. 
+ * \def BREWPI_DS2413
+ * \brief Enable DS2413 Actuators.
+ * \ingroup hardware
  */
 #ifndef BREWPI_DS2413
 #define BREWPI_DS2413 0
@@ -111,21 +120,36 @@
 #define BREWPI_MENU 1
 #endif
 
- /**
- * Enable the LCD display and select its type. Without this, a NullDisplay is used.
+/**
+ * \def BREWPI_LCD
+ * \brief Enable the LCD display and select its type.
+ *
+ * Without this, a NullDisplay is used.
+ * \ingroup display
  */
 #ifndef BREWPI_LCD
 #define BREWPI_LCD 1
 
  // #define BREWPI_IIC       1      // LCD display connected to I2C.
  // #define BREWPI_OLED      1
+
+/**
+ * \def BREWPI_SHIFT_LCD
+ * \brief LCD is attached to SPI bus (using level shifters)
+ *
+ * \ingroup display
+ */
 #define BREWPI_SHIFT_LCD 1
 
 #endif // endif BREWPI_LCD
 
 
 /**
- * Turn off LCD backlight after this time. Seconds.
+ * \def BACKLIGHT_AUTO_OFF_PERIOD
+ * \brief Turn off LCD backlight after this time. Seconds.
+ *
+ * Set to 0 to disable and leave backlight on.
+ * \ingroup display
  */
 #ifndef BACKLIGHT_AUTO_OFF_PERIOD
 #define BACKLIGHT_AUTO_OFF_PERIOD 60
@@ -151,12 +175,22 @@
 #define BREWPI_EEPROM_HELPER_COMMANDS BREWPI_DEBUG || BREWPI_SIMULATE
 #endif
 
-// BREWPI_SENSOR_PINS - can be disabled if only using onewire devices
+/**
+ * \def BREWPI_SENSOR_PINS
+ * \brief Enable sensor pins.
+ * This can be disable only if all sensors are OneWire devices.
+ * \ingroup hardware
+ */
 #ifndef BREWPI_SENSOR_PINS
 #define BREWPI_SENSOR_PINS 1
 #endif
 
-// BREWPI_ACTUATOR_PINS - can be disabled if only using onewire devices
+/**
+ * \def BREWPI_ACTUATOR_PINS
+ * \brief Enable actuator pins.
+ * This can be disable only if all actuators are OneWire devices.
+ * \ingroup hardware
+ */
 #ifndef BREWPI_ACTUATOR_PINS
 #define BREWPI_ACTUATOR_PINS 1
 #endif
@@ -187,8 +221,11 @@
 #define OPTIMIZE_GLOBAL 1
 #endif
 
-/*
- * Disable onewire crc table - it takes up 256 bytes of progmem.
+/**
+ * \def ONEWIRE_CRC8_TABLE
+ * \brief Disable OneWire CRC table
+ * The table takes up 256 bytes of progmem.
+ * \ingroup hardware
  */
 #ifndef ONEWIRE_CRC8_TABLE
 #define ONEWIRE_CRC8_TABLE 0
@@ -207,6 +244,13 @@
 #define DISPLAY_TIME_HMS 1
 #endif
 
+/**
+ * \def ONEWIRE_PARASITE_SUPPORT
+ * \brief Enable OneWire parasite power
+ * If the OneWire bus is using parasite power, the internal pull up resistors
+ * need to be enabled.  This flag controls that.
+ * \ingroup hardware
+ */
 #ifndef ONEWIRE_PARASITE_SUPPORT
 #define ONEWIRE_PARASITE_SUPPORT 0
 #endif

@@ -1,11 +1,8 @@
 
 #include <FS.h>  // Apparently this needs to be first
 
-
 #include "Brewpi.h"
-
 #include <OneWire.h>
-
 #include <Wire.h>
 
 #include "Ticks.h"
@@ -29,6 +26,12 @@
 #include "Simulator.h"
 #endif
 
+/**
+ * \file brewpi-esp8266.cpp
+ *
+ * \brief Main project entrypoint
+ */
+
 // global class objects static and defined in class cpp and h files
 
 // instantiate and configure the sensors, actuators and controllers we want to use
@@ -44,12 +47,23 @@ DisplayType DISPLAY_REF display = realDisplay;
 
 ValueActuator alarm_actuator;
 
+/**
+ * \brief Restart the board
+ */
 void handleReset()
 {
     // The asm volatile method doesn't work on ESP8266. Instead, use ESP.restart
     ESP.restart();
 }
 
+/**
+ * \brief Startup configuration
+ *
+ * - Start up the SPIFFS filesystem
+ * - Initialize the display
+ * - If in simulation mode, bootstrap the simulator
+ * - Start the PiLink connection (either tcp socket or serial, depending on compile time configuration)
+ */
 void setup()
 {
     // Let's get the display going so that we can provide the user a bit of feedback on what's happening
@@ -87,10 +101,10 @@ void setup()
 
     initialize_wifi();
 
-#if BREWPI_BUZZER	
+#if BREWPI_BUZZER
 	buzzer.init();
 	buzzer.beep(2, 500);
-#endif	
+#endif
 
 	piLink.init();  // Initializes either the serial or telnet connection
 
@@ -119,10 +133,13 @@ void setup()
 
 
 
+/**
+ * \brief Main execution loop
+ */
 void brewpiLoop()
 {
 	static unsigned long lastUpdate = 0;
-    static unsigned long lastLcdUpdate = 0;
+  static unsigned long lastLcdUpdate = 0;
 
 	uint8_t oldState;
 #ifndef BREWPI_TFT  // We don't want to do this for the TFT display
@@ -142,7 +159,7 @@ void brewpiLoop()
 
 #if BREWPI_BUZZER
 		buzzer.setActive(alarm_actuator.isActive() && !buzzer.isActive());
-#endif			
+#endif
 
 		tempControl.updateTemperatures();
 		tempControl.detectPeaks();
@@ -176,6 +193,12 @@ void brewpiLoop()
 
 }
 
+
+/**
+ * \brief Main execution loop
+ *
+ * This dispatches to brewpiLoop(), or if we're in simulation mode simulateLoop()
+ */
 void loop() {
 #if BREWPI_SIMULATE
 	simulateLoop();

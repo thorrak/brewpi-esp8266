@@ -114,12 +114,15 @@ void formatStandardAnnotation(String &annotation, const char* str_1, const char*
 
 extern void handleReset();
 
-// create a printf like interface to the Arduino Serial function. Format string stored in PROGMEM
+/**
+ * A printf like interface to the Arduino Serial function. Format string stored in PROGMEM
+ *
+ * @param fmt - PROGMEM stored sprintf format string
+ */
 void PiLink::print_P(const char *fmt, ... ){
 	va_list args;
 	va_start (args, fmt );
 	vsnprintf_P(printfBuff, PRINTF_BUFFER_SIZE, fmt, args);
-//	vsnprintf(printfBuff, PRINTF_BUFFER_SIZE, fmt, args);
 	va_end (args);
 #ifdef ESP8266_WiFi
 	if (piStream && piStream.connected()) { // if WiFi client connected
@@ -136,7 +139,11 @@ void PiLink::print_P(const char *fmt, ... ){
 #endif
 }
 
-// create a printf like interface to the Arduino Serial function. Format string stored in RAM
+/**
+ * A printf like interface to the Arduino Serial function. Format string stored in RAM
+ *
+ * @param fmt - sprintf format string
+ */
 void PiLink::print(char *fmt, ... ){
 	va_list args;
 	va_start (args, fmt );
@@ -176,6 +183,10 @@ void PiLink::print(char out) {
 }
 #endif
 
+
+/**
+ * Emit a newline
+ */
 void PiLink::printNewLine(){
 #ifdef ESP8266_WiFi
 	if (piStream && piStream.connected()) { // if WiFi client connected
@@ -211,14 +222,24 @@ void PiLink::printNibble(uint8_t n)
 }
 #endif
 
-// Trying to enforce that the only thing to talk to piStream is piLink
+/**
+ * Proxy to PiStream::read()
+ *
+ * Trying to enforce that the only thing to talk to piStream is piLink
+ * @see PiStream
+ */
 int PiLink::read() {
 	return piStream.read();
 }
 
+/**
+ * Recieve incoming commands
+ *
+ * Continuously reads data from PiStream and processes the command strings.
+ */
 void PiLink::receive(void){
 	while (piStream.available() > 0) {
-		char inByte = read();              
+		char inByte = read();
 		switch(inByte){
 		case ' ':
 		case '\n':
@@ -424,6 +445,10 @@ void PiLink::receive(void){
 	#define changed(a,b)  1
 #endif
 
+
+/**
+ * Print the response to the request for temperature ('t') command.
+ */
 void PiLink::printTemperaturesJSON(const char * beerAnnotation, const char * fridgeAnnotation){
 	printResponse('T');	
 
@@ -464,12 +489,17 @@ void PiLink::printTemperaturesJSON(const char * beerAnnotation, const char * fri
 	sendJsonClose();	
 }
 
+/**
+ * Send JSON key/value pair.
+ * The value will be wrapped in double quotes.
+ */
 void PiLink::sendJsonAnnotation(const char* name, const char* annotation)
 {
 	printJsonName(name);
 	const char* fmtAnn = annotation ? PSTR("\"%s\"") : PSTR("null");
 	print_P(fmtAnn, annotation);
 }
+
 
 void PiLink::sendJsonTemp(const char* name, temperature temp)
 {
@@ -506,31 +536,57 @@ void PiLink::printFridgeAnnotation(const char * annotation, ...){
 }
 #endif
 
-void PiLink::printResponse(char type) {
 
+/**
+ * Print the identifier header before a response
+ * The header is used by the client end to identify the type of data it is
+ * about to receive.
+ */
+void PiLink::printResponse(char type) {
 	print("%c:", type);
-//	print(type);
-//	print(':');
 	firstPair = true;
 }
 
+
+/**
+ * Begin a response that is made up of a list
+ *
+ * @see printResponse
+ */
 void PiLink::openListResponse(char type) {
 	printResponse(type);
 	print('[');
 }
 
+/**
+ * End a JSON list response
+ *
+ * @see openListResponse
+ */
 void PiLink::closeListResponse() {
 	print(']');
 	printNewLine();
 }
 
 
+/**
+ * End a JSON dictionary response
+ */
+void PiLink::sendJsonClose() {
+	print("}");
+	printNewLine();
+}
+
+
+/**
+ * Send a debug message
+ */
 void PiLink::debugMessage(const char * message, ...){
 	va_list args;
-		
+
 	//print 'D:' as prefix
 	printResponse('D');
-	
+
 	// Using print_P for the Annotation fails. Arguments are not passed correctly. Use Serial directly as a work around.
 	va_start (args, message );
 	vsnprintf_P(printfBuff, PRINTF_BUFFER_SIZE, message, args);
@@ -539,13 +595,9 @@ void PiLink::debugMessage(const char * message, ...){
 	printNewLine();
 }
 
-
-void PiLink::sendJsonClose() {
-	print("}");
-	printNewLine();
-}
-
-// Send settings as JSON string
+/**
+ * Send configured settings as JSON string.
+ */
 void PiLink::sendControlSettings(void){
 	char tempString[12];
 	printResponse('S');
@@ -554,7 +606,7 @@ void PiLink::sendControlSettings(void){
 	sendJsonPair(JSONKEY_beerSetting, tempToString(tempString, cs.beerSetting, 2, 12));
 	sendJsonPair(JSONKEY_fridgeSetting, tempToString(tempString, cs.fridgeSetting, 2, 12));
 	sendJsonPair(JSONKEY_heatEstimator, fixedPointToString(tempString, cs.heatEstimator, 3, 12));
-	sendJsonPair(JSONKEY_coolEstimator, fixedPointToString(tempString, cs.coolEstimator, 3, 12));	
+	sendJsonPair(JSONKEY_coolEstimator, fixedPointToString(tempString, cs.coolEstimator, 3, 12));
 	sendJsonClose();
 }
 
@@ -572,7 +624,7 @@ void PiLink::jsonOutputUint16(const char* key, uint8_t offset) {
 }
 
 /**
- * outputs the temperature at the given offset from tempControl.cc.
+ * Outputs the temperature at the given offset from TempControl.
  * The temperature is assumed to be an internal fixed point value.
  */
 void PiLink::jsonOutputTempToString(const char* key,  uint8_t offset) {
@@ -590,7 +642,7 @@ void PiLink::jsonOutputTempDiffToString(const char* key, uint8_t offset) {
 	piLink.sendJsonPair(key, tempDiffToString(buf, *((temperature*)(jsonOutputBase+offset)), 3, 12));
 }
 
-void PiLink::jsonOutputChar(const char* key, uint8_t offset) {	
+void PiLink::jsonOutputChar(const char* key, uint8_t offset) {
 	piLink.sendJsonPair(key, *((char*)(jsonOutputBase+offset)));
 }
 
@@ -605,6 +657,9 @@ enum JsonOutputIndex {
 	JOCC_UINT16=5,
 };
 
+/**
+ * List of configured JsonOutputHandler functions
+ */
 const PiLink::JsonOutputHandler PiLink::JsonOutputHandlers[] = {
 	PiLink::jsonOutputUint8,
 	PiLink::jsonOutputTempToString,
@@ -660,10 +715,13 @@ void PiLink::sendJsonValues(char responseType, const JsonOutput* /*PROGMEM*/ jso
 	sendJsonClose();
 }
 
-// Send control constants as JSON string. Might contain spaces between minus sign and number. Python will have to strip these
+/**
+ * Send control constants as JSON string.
+ * Might contain spaces between minus sign and number. Python will have to strip these
+ */
 void PiLink::sendControlConstants(void){
 	jsonOutputBase = (uint8_t*)&tempControl.cc;
-	sendJsonValues('C', jsonOutputCCMap, sizeof(jsonOutputCCMap)/sizeof(jsonOutputCCMap[0]));	
+	sendJsonValues('C', jsonOutputCCMap, sizeof(jsonOutputCCMap)/sizeof(jsonOutputCCMap[0]));
 }
 
 const PiLink::JsonOutput PiLink::jsonOutputCVMap[] PROGMEM = {
@@ -677,15 +735,22 @@ const PiLink::JsonOutput PiLink::jsonOutputCVMap[] PROGMEM = {
 	JSON_OUTPUT_CV_MAP(negPeakEstimate, JOCC_TEMP_FORMAT),
 	JSON_OUTPUT_CV_MAP(posPeakEstimate, JOCC_TEMP_FORMAT),
 	JSON_OUTPUT_CV_MAP(negPeak, JOCC_TEMP_FORMAT),
-	JSON_OUTPUT_CV_MAP(posPeak, JOCC_TEMP_FORMAT)	
+	JSON_OUTPUT_CV_MAP(posPeak, JOCC_TEMP_FORMAT)
 };
 
-// Send all control variables. Useful for debugging and choosing parameters
+/**
+ * Send all control variables. Useful for debugging and choosing parameters
+ */
 void PiLink::sendControlVariables(void){
 	jsonOutputBase = (uint8_t*)&tempControl.cv;
 	sendJsonValues('V', jsonOutputCVMap, sizeof(jsonOutputCVMap)/sizeof(jsonOutputCVMap[0]));
 }
 
+/**
+ * \brief Prints the name part of a JSON name/value pair
+ * The name must exist in PROGMEM
+ * @param name - Key name
+ */
 void PiLink::printJsonName(const char * name)
 {
 	printJsonSeparator();
@@ -694,11 +759,18 @@ void PiLink::printJsonName(const char * name)
 	print("\":");
 }
 
+/**
+ * Send a JSON seperator.
+ * The first call will emit a `{`, subsequent calls will emit `,`.
+ */
 inline void PiLink::printJsonSeparator() {
-	print(firstPair ? '{' : ',');	
+	print(firstPair ? '{' : ',');
 	firstPair = false;
 }
 
+/**
+ * Send a JSON key/value pair
+ */
 void PiLink::sendJsonPair(const char * name, const char * val){
 	printJsonName(name);
 	// TODO - Fix this to use PiLink.print in all cases
@@ -709,6 +781,9 @@ void PiLink::sendJsonPair(const char * name, const char * val){
 #endif
 }
 
+/**
+ * Send a JSON key/value pair
+ */
 void PiLink::sendJsonPair(const char * name, char val){
 	printJsonName(name);
 	print('"');
@@ -716,15 +791,27 @@ void PiLink::sendJsonPair(const char * name, char val){
 	print('"');
 }
 
+/**
+ * Send a JSON key/value pair
+ */
 void PiLink::sendJsonPair(const char * name, uint16_t val){
-	printJsonName(name);	
+	printJsonName(name);
 	print_P(PSTR("%u"), val);
 }
 
+
+/**
+ * Send a JSON key/value pair
+ */
 void PiLink::sendJsonPair(const char * name, uint8_t val) {
 	sendJsonPair(name, (uint16_t)val);
 }
 
+
+/**
+ * Read data from the PiLink connection.
+ * Uses PiLink::read(), but offers some delay & retry logic.
+ */
 int readNext()
 {
 	uint8_t retries = 0;
@@ -741,11 +828,19 @@ int readNext()
 			return -1;
 		}
 	}
-	return piLink.read();		
+	return piLink.read();
 }
+
+
 /**
  * Parses a token from the piStream.
- * \return true if a token was parsed
+ *
+ * Because this is used for both key & values, JSON values are subject to the same limitations as keys.
+ * - All whitespace is stripped
+ * - Double quotes are stripped
+ * - Parsing is stopped at either a `,` or `:`
+ *
+ * @return true if a token was parsed
  */
 bool parseJsonToken(char* val) {
 	uint8_t index = 0;
@@ -770,6 +865,11 @@ bool parseJsonToken(char* val) {
 	return result;	
 }
 
+/**
+ * Basic JSON parsing.
+ *
+ * @param fn - ParseJsonCallback function pointer which is called for each key/value pair.
+ */
 void PiLink::parseJson(ParseJsonCallback fn, void* data) 
 {
 	char key[30];
@@ -791,10 +891,15 @@ void PiLink::parseJson(ParseJsonCallback fn, void* data)
 	} while (next);
 }
 
-void PiLink::receiveJson(void){
 
-	parseJson(&processJsonPair, NULL);	
-				
+/**
+ * Process incoming settings JSON
+ *
+ * @see processJsonPair
+ */
+void PiLink::receiveJson(void){
+	parseJson(&processJsonPair, NULL);
+
 #if !BREWPI_SIMULATE	// this is quite an overhead and not needed for the simulator
 	sendControlSettings();	// update script with new settings
 	sendControlConstants();
@@ -830,6 +935,10 @@ void PiLink::setMode(const char* val) {
 #endif
 }
 
+/**
+ * Set the target beer temperature
+ * @param val - New temp value
+ */
 void PiLink::setBeerSetting(const char* val) {
 #if defined(ESP8266) || defined(ESP32)
 	String annotation = "";
@@ -998,6 +1107,11 @@ const PiLink::JsonParserConvert PiLink::jsonParserConverters[] PROGMEM = {
 	
 };
 
+/**
+ * \brief Process one JSON key/value pair
+ * @param key - JSON key
+ * @param val - JSON value
+ */
 void PiLink::processJsonPair(const char * key, const char * val, void* pv){
 	logInfoStringString(INFO_RECEIVED_SETTING, key, val);
 	

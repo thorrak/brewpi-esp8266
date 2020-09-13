@@ -23,6 +23,11 @@
 #include "Brewpi.h"
 #include "TempSensor.h"
 
+/**
+ * A mock implementation of BasicTempSensor
+ *
+ * This is a fake temp sensor that shifts it's value on each read.
+ */
 class MockTempSensor : public BasicTempSensor
 {
 public:	
@@ -39,11 +44,16 @@ public:
 		return read()!=TEMP_SENSOR_DISCONNECTED;
 	}
 	
+  /**
+   * Return the current temperature value.
+   *
+   * Shifts the temp value up/down (depending on tempcontrol mode) by `_delta` on each read.
+   */
 	temperature read()
 	{
 		if (!isConnected())
 			return TEMP_SENSOR_DISCONNECTED;
-		
+
 		switch (tempControl.getMode()) {
 			case COOLING:
 				_temperature -= _delta;
@@ -57,7 +67,14 @@ public:
 	}
 	
 	private:
+  /**
+   * Current temperature value
+   */
 	temperature _temperature;	
+
+  /**
+   * Delta to shift per read
+   */
 	temperature _delta;	
 	bool _connected;
 };

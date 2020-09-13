@@ -29,54 +29,65 @@
 class DallasTemperature;
 class OneWire;
 
-#define ONEWIRE_TEMP_SENSOR_PRECISION (4)
-
+/**
+ * \brief A OneWire attached temperature sensor
+ *
+ * \ingroup hardware
+ */
 class OneWireTempSensor : public BasicTempSensor {
-public:	
+public:
 	/**
-	 * Constructs a new onewire temp sensor.
+	 * \brief Constructs a new onewire temp sensor.
+   *
 	 * /param bus	The onewire bus this sensor is on.
 	 * /param address	The onewire address for this sensor. If all bytes are 0 in the address, the first temp sensor
 	 *    on the bus is used.
-	 * /param calibration	A temperature value that is added to all readings. This can be used to calibrate the sensor.	 
+	 * /param calibration	A temperature value that is added to all readings. This can be used to calibrate the sensor.
 	 */
 	OneWireTempSensor(OneWire* bus, DeviceAddress address, fixed4_4 calibrationOffset)
-	: oneWire(bus), sensor(NULL) {		
+	: oneWire(bus), sensor(NULL) {
 		connected = true;  // assume connected. Transition from connected to disconnected prints a message.
 		memcpy(sensorAddress, address, sizeof(DeviceAddress));
 		this->calibrationOffset = calibrationOffset;
 	};
-	
+
 	~OneWireTempSensor();
-	
+
+  /**
+   * \brief Check if sensor device is connected
+   */
 	bool isConnected(void){
 		return connected;
-	}		
-	
+	}
+
 	bool init();
 	temperature read();
-	
+
 	private:
+  /**
+   * \brief The sensor precision, in bits.
+   */
+  constexpr static uint8_t sensorPrecision = 4;
 
 	void setConnected(bool connected);
 	bool requestConversion();
+
+
+  /**
+   * \brief Wait for sensor to sample the environment
+   */
 	void waitForConversion()
 	{
 		wait.millis(750);
 	}
 
-	
-	/**
-	 * Reads the temperature. If successful, constrains the temp to the range of the temperature type and
-	 * updates lastRequestTime. On successful, leaves lastRequestTime alone and returns DEVICE_DISCONNECTED.
-	 */
 	temperature readAndConstrainTemp();
-	
+
 	OneWire * oneWire;
 	DallasTemperature * sensor;
-	DeviceAddress sensorAddress;
+	DeviceAddress sensorAddress; //!< Sensor address
 
-	fixed4_4 calibrationOffset;		
-	bool connected;
-	
+	fixed4_4 calibrationOffset; //!< Temperature offset needed for calibration
+	bool connected; //!< Probe connection state
+
 };

@@ -30,20 +30,33 @@
 #include "EepromStructs.h"
 
 
-// Set minimum off time to prevent short cycling the compressor in seconds
+/**
+ * \defgroup tempcontrol Temperature PID Control
+ * \brief Software implementation of a PID controller.
+ *
+ * \addtogroup tempcontrol
+ * @{
+ */
+
+//! Minimum cooler off time, in seconds. To prevent short cycling the compressor
 const uint16_t MIN_COOL_OFF_TIME = 300;
-// Use a minimum off time for the heater as well, so it heats in cycles, not lots of short bursts
+//! Minimum heater off time, in seconds. To heat in cycles, not lots of short bursts
 const uint16_t MIN_HEAT_OFF_TIME = 300;
-// Minimum on time for the cooler.
+//! Minimum on time for the cooler.
 const uint16_t MIN_COOL_ON_TIME = 180;
-// Minimum on time for the heater.
+//! Minimum on time for the heater.
 const uint16_t MIN_HEAT_ON_TIME = 180;
-// Use a large minimum off time in fridge constant mode. No need for very fast cycling.
+
+/**
+ * Minimum cooler off time, in seconds.  Used when the controller is in Fridge Constant mode.
+ * Larger than MIN_COOL_OFF_TIME. No need for very fast cycling.
+ */
 const uint16_t MIN_COOL_OFF_TIME_FRIDGE_CONSTANT = 600;
-// Set a minimum off time between switching between heating and cooling
+//! Minimum off time between switching between heating and cooling
 const uint16_t MIN_SWITCH_TIME = 600;
-// Time allowed for peak detection
+//! Time allowed for cooling peak detection
 const uint16_t COOL_PEAK_DETECT_TIME = 1800;
+//! Time allowed for heating peak detection
 const uint16_t HEAT_PEAK_DETECT_TIME = 900;
 
 // These two structs are stored in and loaded from EEPROM
@@ -75,15 +88,18 @@ struct ControlVariables{
 #define MODE_TEST 't'
 
 
-enum states{
-	IDLE,						// 0
-	STATE_OFF,					// 1
-	DOOR_OPEN,					// 2 used by the Display only
-	HEATING,					// 3
-	COOLING,					// 4
-	WAITING_TO_COOL,			// 5
-	WAITING_TO_HEAT,			// 6
-	WAITING_FOR_PEAK_DETECT,	// 7
+/**
+ * Temperature control states
+ */
+enum states {
+	IDLE,           //!< Neither heating, nor cooling
+	STATE_OFF,      //!< Disabled
+	DOOR_OPEN,			//!< Fridge door open. Used by the Display only
+	HEATING,				//!< Calling for heat
+	COOLING,				//!< Calling for cool
+	WAITING_TO_COOL,	//!< Waiting to cool. (Compressor delay)
+	WAITING_TO_HEAT,			//!< Waiting to heat. (Compressor delay)
+	WAITING_FOR_PEAK_DETECT,	//!< Waiting for peak detection
 	COOLING_MIN_TIME,			// 8
 	HEATING_MIN_TIME,			// 9
 	NUM_STATES
@@ -95,20 +111,46 @@ enum states{
 #define TEMP_CONTROL_METHOD static
 #define TEMP_CONTROL_FIELD static
 #else
-#define TEMP_CONTROL_METHOD 
+#define TEMP_CONTROL_METHOD
 #define TEMP_CONTROL_FIELD
 #endif
-
-// Making all functions and variables static reduces code size.
-// There will only be one TempControl object, so it makes sense that they are static.
-
-/*
- * MDM: To support multi-chamber, I could have made TempControl non-static, and had a reference to
- * the current instance. But this means each lookup of a field must be done indirectly, which adds to the code size.
- * Instead, we swap in/out the sensors and control data so that the bulk of the code can work against compile-time resolvable
- * memory references. While the design goes against the grain of typical OO practices, the reduction in code size make it worth it.
+/**
+ * \def TEMP_CONTROL_METHOD
+ * \brief Compile-time control of making TempControl methods static
+ * \see TEMP_CONTROL_STATIC
  */
 
+/**
+ * \def TEMP_CONTROL_FIELD
+ * \brief Compile-time control of making TempControl fields static
+ * \see TEMP_CONTROL_STATIC
+ */
+
+/**
+ * \def TEMP_CONTROL_STATIC
+ * \brief Compile-time control of making TempControl static
+ *
+ * To support multi-chamber, I could have made TempControl non-static, and had
+ * a reference to the current instance. But this means each lookup of a field
+ * must be done indirectly, which adds to the code size.  Instead, we swap
+ * in/out the sensors and control data so that the bulk of the code can work
+ * against compile-time resolvable memory references. While the design goes
+ * against the grain of typical OO practices, the reduction in code size make
+ * it worth it.
+ */
+
+
+/**
+ * Temperature control PID implmentation
+ *
+ * This is the heart of the brewpi system.  It handles turning on and off heat
+ * & cool to track a target temperature.
+ *
+ * Temp Control tracking can be done using several different modes
+ *
+ * - Beer: Heat & Cool are applied to keep a probe in the fermenting beer at a target.
+ * - Fridge: Heat & Cool are applied to keep a probe in the chamber surrounding the beer at a target.
+ */
 class TempControl{
 	public:
 	
@@ -131,9 +173,7 @@ class TempControl{
 	TEMP_CONTROL_METHOD void loadConstants(eptr_t offset);
 	TEMP_CONTROL_METHOD void storeConstants(eptr_t offset);
 	TEMP_CONTROL_METHOD void loadDefaultConstants(void);
-	
-	//TEMP_CONTROL_METHOD void loadSettingsAndConstants(void);
-		
+
 	TEMP_CONTROL_METHOD uint16_t timeSinceCooling(void);
  	TEMP_CONTROL_METHOD uint16_t timeSinceHeating(void);
   	TEMP_CONTROL_METHOD uint16_t timeSinceIdle(void);
@@ -145,28 +185,44 @@ class TempControl{
 	TEMP_CONTROL_METHOD temperature getFridgeTemp(void);
 	TEMP_CONTROL_METHOD temperature getFridgeSetting(void);
 	TEMP_CONTROL_METHOD void setFridgeTemp(temperature newTemp);
-	
+
+  /**
+   * Get the current temperature of the room probe.
+   */
 	TEMP_CONTROL_METHOD temperature getRoomTemp(void) {
 		return ambientSensor->read();
 	}
 		
 	TEMP_CONTROL_METHOD void setMode(char newMode, bool force=false);
+  
+  /**
+   * Get current temp control mode
+   */
 	TEMP_CONTROL_METHOD char getMode(void) {
 		return cs.mode;
 	}
 
+  /**
+   * Get the current state of the control system.
+   */
 	TEMP_CONTROL_METHOD unsigned char getState(void){
 		return state;
 	}
 	
+  /**
+   * Get the current value of the elapsed wait time couter.
+   */
 	TEMP_CONTROL_METHOD uint16_t getWaitTime(void){
 		return waitTime;
 	}
-	
+
+  /**
+   * Reset the elapsed wait time counter back to 0.
+   */
 	TEMP_CONTROL_METHOD void resetWaitTime(void){
 		waitTime = 0;
 	}
-	
+
 	// TEMP_CONTROL_METHOD void updateWaitTime(uint16_t newTimeLimit, uint16_t newTimeSince);
 	TEMP_CONTROL_METHOD void updateWaitTime(uint16_t newTimeLimit, uint16_t newTimeSince){
 		if(newTimeSince < newTimeLimit){
@@ -179,14 +235,27 @@ class TempControl{
 	
 	TEMP_CONTROL_METHOD bool stateIsCooling(void);
 	TEMP_CONTROL_METHOD bool stateIsHeating(void);
+
+  /**
+   * Check if the current configured mode is Beer
+   */
 	TEMP_CONTROL_METHOD bool modeIsBeer(void){
 		return (cs.mode == MODE_BEER_CONSTANT || cs.mode == MODE_BEER_PROFILE);
 	}
 		
 	TEMP_CONTROL_METHOD void initFilters();
 	
+  /**
+   * Check if the door is currently open
+   */
 	TEMP_CONTROL_METHOD bool isDoorOpen() { return doorOpen; }
 	
+  /**
+   * \brief Get the state to display on the LCD.
+   *
+   * If the chamber door is closed, this returns the value of getState().
+   * If the door is open, the `DOOR_OPEN` state is returned instead.
+   */
 	TEMP_CONTROL_METHOD unsigned char getDisplayState() {
 		return isDoorOpen() ? DOOR_OPEN : getState();
 	}
@@ -197,42 +266,49 @@ class TempControl{
 	
 	TEMP_CONTROL_METHOD void updateEstimatedPeak(uint16_t estimate, temperature estimator, uint16_t sinceIdle);
 	public:
-	TEMP_CONTROL_FIELD TempSensor* beerSensor;
-	TEMP_CONTROL_FIELD TempSensor* fridgeSensor;
-	TEMP_CONTROL_FIELD BasicTempSensor* ambientSensor;
-	TEMP_CONTROL_FIELD Actuator* heater;
-	TEMP_CONTROL_FIELD Actuator* cooler; 
-	TEMP_CONTROL_FIELD Actuator* light;
-	TEMP_CONTROL_FIELD Actuator* fan;
+	TEMP_CONTROL_FIELD TempSensor* beerSensor; //!< Temp sensor monitoring beer
+	TEMP_CONTROL_FIELD TempSensor* fridgeSensor; //!< Temp sensor monitoring fridge
+	TEMP_CONTROL_FIELD BasicTempSensor* ambientSensor; //!< Ambient room temp sensor
+	TEMP_CONTROL_FIELD Actuator* heater; //!< Actuator used to call for heat
+	TEMP_CONTROL_FIELD Actuator* cooler; //!< Actuator used to call for cool
+	TEMP_CONTROL_FIELD Actuator* light; //!< Actuator to control chamber light
+	TEMP_CONTROL_FIELD Actuator* fan; //!< Actuator to control chamber fan
 	TEMP_CONTROL_FIELD AutoOffActuator cameraLight;
-	TEMP_CONTROL_FIELD Sensor<bool>* door;
+	TEMP_CONTROL_FIELD Sensor<bool>* door; //!< Chamber door sensor
 	
 	// Control parameters
 	TEMP_CONTROL_FIELD ControlConstants cc;
 	TEMP_CONTROL_FIELD ControlSettings cs;
 	TEMP_CONTROL_FIELD ControlVariables cv;
 	
-	// Defaults for control constants. Defined in cpp file, copied with memcpy_p
+	/**
+   * Defaults for control constants.
+   * Defined in cpp file, copied with memcpy_p
+   */
 	static const ControlConstants ccDefaults;
 			
 	private:
-	// keep track of beer setting stored in EEPROM
+	/**
+   * Keep track of beer setting stored in EEPROM
+   */
 	TEMP_CONTROL_FIELD temperature storedBeerSetting;
 
 	// Timers
-	TEMP_CONTROL_FIELD uint16_t lastIdleTime;
-	TEMP_CONTROL_FIELD uint16_t lastHeatTime;
-	TEMP_CONTROL_FIELD uint16_t lastCoolTime;
+	TEMP_CONTROL_FIELD uint16_t lastIdleTime; //!< Last time the controller was idle
+	TEMP_CONTROL_FIELD uint16_t lastHeatTime; //!< Last time that the controller was heating
+	TEMP_CONTROL_FIELD uint16_t lastCoolTime; //!< Last time that the controller was cooling
 	TEMP_CONTROL_FIELD uint16_t waitTime;
-	
-	
+
+
 	// State variables
-	TEMP_CONTROL_FIELD uint8_t state;
-	TEMP_CONTROL_FIELD bool doPosPeakDetect;
-	TEMP_CONTROL_FIELD bool doNegPeakDetect;
-	TEMP_CONTROL_FIELD bool doorOpen;
-	
+	TEMP_CONTROL_FIELD uint8_t state; //!< Current controller state
+	TEMP_CONTROL_FIELD bool doPosPeakDetect; //!< True if the controller is doing positive peak detection
+	TEMP_CONTROL_FIELD bool doNegPeakDetect; //!< True if the controller is doing negative peak detection
+	TEMP_CONTROL_FIELD bool doorOpen; //!< True if the chamber door is open
+
 	friend class TempControlState;
 };
-	
+
 extern TempControl tempControl;
+
+/** @} */

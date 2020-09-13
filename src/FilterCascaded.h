@@ -24,37 +24,55 @@
 #include "TemperatureFormats.h"
 #include "FilterFixed.h"
 
-// Use 3 filter sections. This gives excellent filtering, without adding too much delay.
-// For 3 sections the stop band attenuation is 3x the single section attenuation in dB.
-// The delay is also tripled.
-#define NUM_SECTIONS 3
 
-class CascadedFilter{
+/**
+ * \brief Implements a filter that consists of multiple second order sections.
+ */
+class CascadedFilter {
 	public:
-	// CascadedFilter implements a filter that consists of multiple second order secions.
-	FixedFilter sections[NUM_SECTIONS];
-		
+  /**
+   * \brief Number of filter sections to use
+   *
+   * Three filter sections gives excellent filtering, without adding too
+   * much delay.  For 3 sections the stop band attenuation is 3x the single
+   * section attenuation in dB.  The delay is also tripled.
+   */
+  constexpr static int numFilterSections = 3;
+
+  /**
+   * \brief Filter sections
+   */
+	FixedFilter sections[numFilterSections];
+
 	public:
 	CascadedFilter();
 	~CascadedFilter() {}
 	void init(temperature val);
 	void setCoefficients(uint8_t bValue);
-	temperature add(temperature val); // adds a value and returns the most recent filter output
+	temperature add(temperature val);
 	temperature_precise addDoublePrecision(temperature_precise val);
-	temperature readInput(void); // returns the most recent filter input
+	temperature readInput(void);
 
+  /**
+   * \brief Read the output
+   */
 	temperature readOutput(void){
-		return sections[NUM_SECTIONS-1].readOutput(); // return output of last section
+		return sections[numFilterSections - 1].readOutput(); // return output of last section
 	}
 	temperature_precise readOutputDoublePrecision(void);
 	temperature_precise readPrevOutputDoublePrecision(void);
-	
+
+  /**
+   * \brief Do positive peak detection
+   */
 	temperature detectPosPeak(void){
-		return sections[NUM_SECTIONS-1].detectPosPeak(); // detect peaks in last section
+		return sections[numFilterSections - 1].detectPosPeak(); // detect peaks in last section
 	}
+
+  /**
+   * \brief Do negative peak detection
+   */
 	temperature detectNegPeak(void){
-		return sections[NUM_SECTIONS-1].detectNegPeak(); // detect peaks in last section
+		return sections[numFilterSections - 1].detectNegPeak(); // detect peaks in last section
 	}
 };
-
-

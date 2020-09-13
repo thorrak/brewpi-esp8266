@@ -21,8 +21,17 @@
 #pragma once
 
 /**
- * To use the display, include this file. It takes care of setting DisplayType to the appropriate type of display according
- * to the compile-time config.
+ * \defgroup display LCD Display
+ * \brief Support for different LCD display types
+ *
+ * \addtogroup display
+ * @{
+ *
+ * \file Display.h
+ * \brief To use the display, include this file.
+ *
+ * It takes care of setting DisplayType to the appropriate type of display
+ * according to the compile-time config.
  */
 
 #include "DisplayBase.h"
@@ -33,3 +42,4 @@ typedef LcdDisplay DisplayType;
 
 extern DisplayType DISPLAY_REF display;
 
+/** @} */

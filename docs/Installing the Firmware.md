@@ -1,6 +1,16 @@
 # Installing the Firmware
 
-## Linux/Raspberry Pi
+## BrewFlasher & Fermentrack
+
+The easiest way to install the firmware is using either [BrewFlasher](http://www.brewflasher.com/) or the firmware flow in [Fermentrack](http://www.fermentrack.com/). 
+
+BrewFlasher is a standalone application for MacOS and Windows that allows for the firmware to be automatically downloaded & flashed to your controller. It was specifically designed to make flashing *this* project easy. For most users, this is the ideal installation method.
+
+Fermentrack is a web interface that BrewPi controllers can connect to/be managed by. If you were already planning on using Fermentrack to manage your BrewPi controller then this is a perfect alternative to either using BrewFlasher or flashing manually. 
+
+## Manual Installation Methods
+
+### Linux/Raspberry Pi - Manual
 The easiest way is to use the custom script in my brewpi-tools fork, though the script only completes steps 1 & 4 of the below. Alternatively, you can install this manually by doing the following:
 
 1. Install esptool using PIP (`pip install esptool`)

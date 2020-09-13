@@ -22,6 +22,11 @@
 
 #include "TempSensor.h"
 
+/**
+ * A BasicTempSensor that is always disconnected.
+ *
+ * This is used as a default sensor to placehold until real sensors are installed.
+ */
 class DisconnectedTempSensor : public BasicTempSensor {
 	
 public:

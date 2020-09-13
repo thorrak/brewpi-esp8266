@@ -33,7 +33,9 @@ WiFiClient serverClient;
 extern void handleReset();  // Terrible practice. In brewpi-esp8266.cpp.
 
 
-//callback notifying us of the need to save config
+/**
+ * \brief Callback notifying us of the need to save config
+ */
 void saveConfigCallback() {
     Serial.println("Should save config");
     shouldSaveConfig = true;

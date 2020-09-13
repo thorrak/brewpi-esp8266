@@ -25,22 +25,24 @@
 #include "EepromManager.h"
 #include "DeviceManager.h"
 
-/*
- * Manages the settings and devices for multiple carboys and multiple chambers.
+/**
+ * \brief Manages the settings and devices for multiple carboys and multiple chambers.
+ *
  * This is the soul of brewpi.
  *
  * The manager hides the persistence of the settings, and uses the code closest to the settings to provide
- * useful defaults. 
+ * useful defaults.
  */
 class SettingsManager
 {
-public:	
+public:
 	/**
-	 * Initialize settings. This attempts to read from persisted settings and apply settings from there.
+	 * \brief Initialize settings.
+   *
+   * This attempts to read from persisted settings and apply settings from there.
 	 * If that's not possible, defaults are used.
 	 */
 	static void loadSettings();
-	
 };
 
 extern SettingsManager settingsManager;

@@ -5,19 +5,30 @@
 #endif
 
 
-// These structs were moved from TempControl.h
+/*
+ * \addtogroup tempcontrol
+ * @{
+ */
+
+/**
+ * PID control settings
+ */
 struct ControlSettings {
-	temperature beerSetting;
-	temperature fridgeSetting;
-	temperature heatEstimator; // updated automatically by self learning algorithm
-	temperature coolEstimator; // updated automatically by self learning algorithm
-    char mode;
+	temperature beerSetting; //!< Target temperature when in Beer Mode
+	temperature fridgeSetting; //!< Target temperature when in Fridge Mode
+	temperature heatEstimator; //!< Estimator of heating response. Updated automatically by self learning algorithm
+	temperature coolEstimator; //!< Estimator of cooling response. Updated automatically by self learning algorithm
+
+  /**
+   * Selected mode of operation
+   */
+  char mode;
 };
 
 
 struct ControlConstants {
-	temperature tempSettingMin;
-	temperature tempSettingMax;
+	temperature tempSettingMin; //<! Minimum valid control temperature
+	temperature tempSettingMax; //<! Maximum valid control temperature
 	temperature Kp;
 	temperature Ki;
 	temperature Kd;
@@ -28,73 +39,81 @@ struct ControlConstants {
 	temperature heatingTargetLower;
 	temperature coolingTargetUpper;
 	temperature coolingTargetLower;
-	uint16_t maxHeatTimeForEstimate; // max time for heat estimate in seconds
-	uint16_t maxCoolTimeForEstimate; // max time for heat estimate in seconds
-									 // for the filter coefficients the b value is stored. a is calculated from b.
-	uint8_t fridgeFastFilter;	// for display, logging and on-off control
-	uint8_t fridgeSlowFilter;	// for peak detection
-	uint8_t fridgeSlopeFilter;	// not used in current control algorithm
-	uint8_t beerFastFilter;	// for display and logging
-	uint8_t beerSlowFilter;	// for on/off control algorithm
-	uint8_t beerSlopeFilter;	// for PID calculation
-	uint8_t lightAsHeater;		// use the light to heat rather than the configured heater device
-	uint8_t rotaryHalfSteps; // define whether to use full or half steps for the rotary encoder
+	uint16_t maxHeatTimeForEstimate; //!< max time for heat estimate in seconds
+  /**
+   * Max time for heat estimate in seconds for the filter coefficients the b
+   * value is stored. a is calculated from b.
+   */
+	uint16_t maxCoolTimeForEstimate;
+	uint8_t fridgeFastFilter;	//!< for display, logging and on-off control
+	uint8_t fridgeSlowFilter;	//!< for peak detection
+	uint8_t fridgeSlopeFilter;	//!< not used in current control algorithm
+	uint8_t beerFastFilter;	//!< for display and logging
+	uint8_t beerSlowFilter;	//!< for on/off control algorithm
+	uint8_t beerSlopeFilter;	//!< for PID calculation
+	uint8_t lightAsHeater;		//!< Use the light to heat rather than the configured heater device
+	uint8_t rotaryHalfSteps; //!< Define whether to use full or half steps for the rotary encoder
 	temperature pidMax;
-    char tempFormat;
+  char tempFormat; //!< Temperature format (F/C)
 };
 
-
-
+/** @} */
 
 
 /*
-* Describes the logical function of each device.
+ * \addtogroup hardware
+ * @{
+ */
+
+/*
+* Describes the logical function of a device.
 */
 enum DeviceFunction {
-	DEVICE_NONE = 0,			// used as a sentry to mark end of list
+	DEVICE_NONE = 0, //!< Used as a sentry to mark end of list
 	// chamber devices
-	DEVICE_CHAMBER_DOOR = 1,	// switch sensor
-	DEVICE_CHAMBER_HEAT = 2, 
-	DEVICE_CHAMBER_COOL = 3, 
-	DEVICE_CHAMBER_LIGHT = 4,		// actuator	
-	DEVICE_CHAMBER_TEMP = 5, 
-	DEVICE_CHAMBER_ROOM_TEMP = 6,	// temp sensors
-	DEVICE_CHAMBER_FAN = 7,			// a fan in the chamber
-	DEVICE_CHAMBER_RESERVED1 = 8,	// reserved for future use	
+	DEVICE_CHAMBER_DOOR = 1,	//!< Chamber door switch sensor
+	DEVICE_CHAMBER_HEAT = 2,  //!< Chamber heater actuator
+	DEVICE_CHAMBER_COOL = 3,  //!< Chamber cooler actuator
+	DEVICE_CHAMBER_LIGHT = 4,	//!< Chamber light actuator
+	DEVICE_CHAMBER_TEMP = 5,  //!< Chamber temp sensor
+	DEVICE_CHAMBER_ROOM_TEMP = 6,	//!< Ambient room temp sensor
+	DEVICE_CHAMBER_FAN = 7,			//!< A fan in the chamber
+	DEVICE_CHAMBER_RESERVED1 = 8,	//!< Reserved for future use
 	// carboy devices
-	DEVICE_BEER_FIRST = 9,
-	DEVICE_BEER_TEMP = DEVICE_BEER_FIRST,									// primary beer temp sensor
-	DEVICE_BEER_TEMP2 = 10,								// secondary beer temp sensor 
-	DEVICE_BEER_HEAT = 11, DEVICE_BEER_COOL = 12,				// individual actuators
-	DEVICE_BEER_SG = 13,									// SG sensor
-	DEVICE_BEER_RESERVED1 = 14, DEVICE_BEER_RESERVED2 = 15,	// reserved	
+	DEVICE_BEER_FIRST = 9,                //!< First beer temp sensor
+	DEVICE_BEER_TEMP = DEVICE_BEER_FIRST,	//!< Primary beer temp sensor
+	DEVICE_BEER_TEMP2 = 10,								//!< Secondary beer temp sensor
+	DEVICE_BEER_HEAT = 11,                //!< Individual beer heater actuator
+  DEVICE_BEER_COOL = 12,				        //!< Individual beer cooler actuator
+	DEVICE_BEER_SG = 13,									//!< Beer SG sensor
+	DEVICE_BEER_RESERVED1 = 14, //!< Reserved for future use
+  DEVICE_BEER_RESERVED2 = 15,	//!< Reserved for future use
 	DEVICE_MAX = 16
 };
 
 
 
 /*
-* The concrete type of the device.
-*/
+ * The concrete type of the device.
+ */
 enum DeviceHardware {
 	DEVICE_HARDWARE_NONE = 0,
-	DEVICE_HARDWARE_PIN = 1,			// a digital pin, either input or output
-	DEVICE_HARDWARE_ONEWIRE_TEMP = 2,	// a onewire temperature sensor
+	DEVICE_HARDWARE_PIN = 1, //!< A digital pin, either input or output
+	DEVICE_HARDWARE_ONEWIRE_TEMP = 2,	//<! A onewire temperature sensor
 #if BREWPI_DS2413
-	DEVICE_HARDWARE_ONEWIRE_2413 = 3	// a onewire 2-channel PIO input or output.
+	DEVICE_HARDWARE_ONEWIRE_2413 = 3	//<! A onewire 2-channel PIO input or output.
 #endif	
 };
 
 
-/*
-* A union of all device types.
-*/
+/**
+ * A union of all device types.
+ */
 struct DeviceConfig {
+	uint8_t chamber;		//!< Chamber assignment. 0 means no chamber. 1 is the first chamber.
+	uint8_t beer;				//!< Beer assignment.  0 means no beer, 1 is the first beer
 
-	uint8_t chamber;			// 0 means no chamber. 1 is the first chamber.	
-	uint8_t beer;				// 0 means no beer, 1 is the first beer
-
-	DeviceFunction deviceFunction;				// The function of the device to configure												
+	DeviceFunction deviceFunction;				// The function of the device to configure
 	DeviceHardware deviceHardware;				// flag to indicate the runtime type of device
 	struct Hardware {
 		uint8_t pinNr;							// the arduino pin nr this device is connected to
@@ -116,3 +135,4 @@ struct DeviceConfig {
 	} hw;
 	bool reserved2;
 };
+/** @} */

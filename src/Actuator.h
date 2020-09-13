@@ -36,23 +36,32 @@
 #endif
 
 
-/*
- * An actuator simply turns something on or off.                        
+/**
+ * An actuator simply turns something on or off.
  */
-
 class Actuator
 {
-	public:	
-	ACTUATOR_METHOD void setActive(bool active) ACTUATOR_METHOD_IMPL;
-	ACTUATOR_METHOD bool isActive() ACTUATOR_METHOD_IMPL;
+	public:
+    /**
+     * Set the state of the actuator
+     *
+     * @param active - New state
+     */
+    ACTUATOR_METHOD void setActive(bool active) ACTUATOR_METHOD_IMPL;
+
+    /**
+     * Check if current actuator state is active
+     */
+    ACTUATOR_METHOD bool isActive() ACTUATOR_METHOD_IMPL;
 #if ACTUATOR_VIRTUAL
 	virtual ~Actuator() {}
 #endif		
 		
 };
 
-/*
- * An actuator that simply remembers the set value. This is primary used for testing.
+/**
+ * An actuator that simply remembers the set value.
+ * This is primary used for testing.
  */
 class ValueActuator ACTUATOR_BASE_CLASS_DECL
 {
@@ -64,6 +73,6 @@ public:
 	ACTUATOR_METHOD bool isActive() { return state; }
 
 private:
-	bool state;	
+	bool state;
 };
 

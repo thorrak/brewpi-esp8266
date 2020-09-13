@@ -22,10 +22,14 @@
 #include "PiLink.h"
 #include "Ticks.h"
 
+
+/**
+ * \brief Initialize temp sensor
+ */
 void TempSensor::init()
-{				
+{
 	logDebug("tempsensor::init - begin %d", failedReadCount);
-	if (_sensor && _sensor->init() && (failedReadCount<0 || failedReadCount>60)) {		
+	if (_sensor && _sensor->init() && (failedReadCount<0 || failedReadCount>60)) {
 		temperature temp = _sensor->read();
 		if (temp!=TEMP_SENSOR_DISCONNECTED) {
 			logDebug("initializing filters with value %d", temp);
@@ -38,11 +42,14 @@ void TempSensor::init()
 	}
 }
 
+/**
+ * \brief Read the sensor and update the filters
+ */
 void TempSensor::update()
-{	
+{
 	temperature temp;
-	if (!_sensor || (temp=_sensor->read())==TEMP_SENSOR_DISCONNECTED) {		
-		failedReadCount++;		
+	if (!_sensor || (temp=_sensor->read())==TEMP_SENSOR_DISCONNECTED) {
+		failedReadCount++;
 		failedReadCount = min(failedReadCount,int8_t(127));	// limit
 		return;
 	}
@@ -74,8 +81,15 @@ void TempSensor::update()
 	}
 }
 
+/**
+ * \brief Read the sensor value after processing through the fast filter
+ */
 temperature TempSensor::readFastFiltered(void){
 	return fastFilter.readOutput(); //return most recent unfiltered value
+}
+
+temperature TempSensor::readSlowFiltered(void){
+  return slowFilter.readOutput(); //return most recent unfiltered value
 }
 
 temperature TempSensor::readSlope(void){
@@ -91,19 +105,39 @@ temperature TempSensor::detectPosPeak(void){
 temperature TempSensor::detectNegPeak(void){
 	return slowFilter.detectNegPeak();
 }
-	
+
+/**
+ * \brief Set the b coefficients on the fast filter
+ *
+ * @param b - New coefficient value
+ */
 void TempSensor::setFastFilterCoefficients(uint8_t b){
 	fastFilter.setCoefficients(b);
 }
-	
+
+
+/**
+ * \brief Set the b coefficients on the slow filter
+ *
+ * @param b - New coefficient value
+ */
 void TempSensor::setSlowFilterCoefficients(uint8_t b){
 	slowFilter.setCoefficients(b);
 }
 
+
+/**
+ * \brief Set the b coefficients on the slope filter
+ *
+ * @param b - New coefficient value
+ */
 void TempSensor::setSlopeFilterCoefficients(uint8_t b){
 	slopeFilter.setCoefficients(b);
 }
 
+/**
+ * \brief Get wrapped sensor
+ */
 BasicTempSensor& TempSensor::sensor() {
 	return *_sensor;
 }

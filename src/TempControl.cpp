@@ -86,6 +86,9 @@ uint16_t TempControl::waitTime;
 #endif
 
 
+/**
+ * Initialize the temp control system.  Done at startup.
+ */
 void TempControl::init(void){
 	state=IDLE;		
 	cs.mode = MODE_OFF;
@@ -105,7 +108,7 @@ void TempControl::init(void){
 	
 	updateTemperatures();
 	reset();
-	
+
 	// Do not allow heating/cooling directly after reset.
 	// A failing script + CRON + Arduino uno (which resets on serial connect) could damage the compressor
 	// For test purposes, set these to -3600 to eliminate waiting after reset
@@ -113,18 +116,33 @@ void TempControl::init(void){
 	lastCoolTime = 0;
 }
 
+
+/**
+ * Reset the peak detect flags
+ */
 void TempControl::reset(void){
 	doPosPeakDetect=false;
 	doNegPeakDetect=false;
 }
 
+
+/**
+ * Get an update from a sensor.
+ *
+ * @param sensor - Sensor to check
+ */
 void updateSensor(TempSensor* sensor) {
 	sensor->update();
 	if(!sensor->isConnected()) {
 		sensor->init();
-	}		
+	}
 }
 
+/**
+ * Update all installed temp sensors.
+ *
+ * This updates beer, fridge & room sensors.
+ */
 void TempControl::updateTemperatures(void){
 	
 	updateSensor(beerSensor);
@@ -484,7 +502,11 @@ void TempControl::detectPeaks(void){
 	}
 }
 
-// Increase estimator at least 20%, max 50%s
+/**
+ * Increase the estimator value.
+ *
+ * Increase estimator at least 20%, max 50%s
+ */
 void TempControl::increaseEstimator(temperature * estimator, temperature error){
 	temperature factor = 614 + constrainTemp((temperature) abs(error)>>5, 0, 154); // 1.2 + 3.1% of error, limit between 1.2 and 1.5
 	*estimator = multiplyFactorTemperatureDiff(factor, *estimator);
@@ -494,25 +516,41 @@ void TempControl::increaseEstimator(temperature * estimator, temperature error){
 	eepromManager.storeTempSettings();
 }
 
-// Decrease estimator at least 16.7% (1/1.2), max 33.3% (1/1.5)
+/**
+ * Decrease the esimator value.
+ *
+ * Decrease estimator at least 16.7% (1/1.2), max 33.3% (1/1.5)
+ */
 void TempControl::decreaseEstimator(temperature * estimator, temperature error){
 	temperature factor = 426 - constrainTemp((temperature) abs(error)>>5, 0, 85); // 0.833 - 3.1% of error, limit between 0.667 and 0.833
 	*estimator = multiplyFactorTemperatureDiff(factor, *estimator);
 	eepromManager.storeTempSettings();
 }
 
+/**
+ * Get time since the cooler was last ran
+ */
 uint16_t TempControl::timeSinceCooling(void){
 	return ticks.timeSince(lastCoolTime);
 }
 
+/**
+ * Get time since the heater was last ran
+ */
 uint16_t TempControl::timeSinceHeating(void){
 	return ticks.timeSince(lastHeatTime);
 }
 
+/**
+ * Get time that the controller has been neither cooling nor heating
+ */
 uint16_t TempControl::timeSinceIdle(void){
 	return ticks.timeSince(lastIdleTime);
 }
 
+/**
+ * Load default settings
+ */
 void TempControl::loadDefaultSettings(){
 #if BREWPI_EMULATE
 	setMode(MODE_BEER_CONSTANT);
@@ -525,22 +563,34 @@ void TempControl::loadDefaultSettings(){
 	cs.coolEstimator=intToTempDiff(5);
 }
 
+/**
+ * Store control constants to EEPROM.
+ */
 void TempControl::storeConstants(eptr_t offset){	
 	eepromAccess.writeControlConstants(offset,  cc, sizeof(ControlConstants));
 }
 
+/**
+ * Load control constants from EEPROM
+ */
 void TempControl::loadConstants(eptr_t offset){
 	eepromAccess.readControlConstants(cc, offset, sizeof(ControlConstants));
 	initFilters();	
 }
 
-// write new settings to EEPROM to be able to reload them after a reset
-// The update functions only write to EEPROM if the value has changed
+/**
+ * Write new settings to EEPROM to be able to reload them after a reset
+ * The update functions only write to EEPROM if the value has changed
+ */
 void TempControl::storeSettings(eptr_t offset){
 	eepromAccess.writeControlSettings(offset, cs, sizeof(ControlSettings));
 	storedBeerSetting = cs.beerSetting;		
 }
 
+
+/**
+ * Read settings from EEPROM
+ */
 void TempControl::loadSettings(eptr_t offset){
 	eepromAccess.readControlSettings(cs, offset, sizeof(ControlSettings));	
 	logDebug("loaded settings");
@@ -548,11 +598,19 @@ void TempControl::loadSettings(eptr_t offset){
 	setMode(cs.mode, true);		// force the mode update
 }
 
+/**
+ * Load default control constants
+ */
 void TempControl::loadDefaultConstants(void){
 	memcpy_P((void*) &tempControl.cc, (void*) &tempControl.ccDefaults, sizeof(ControlConstants));
 	initFilters();
 }
 
+/**
+ * Initialize the fridge & beer sensor filter coefficients
+ *
+ * @see CascadedFilter
+ */
 void TempControl::initFilters()
 {
 	fridgeSensor->setFastFilterCoefficients(cc.fridgeFastFilter);
@@ -563,6 +621,13 @@ void TempControl::initFilters()
 	beerSensor->setSlopeFilterCoefficients(cc.beerSlopeFilter);		
 }
 
+
+/**
+ * Set control mode
+ *
+ * @param newMode - New control mode
+ * @param force - Set the mode & reset control state, even if controler is already in the requested mode
+ */
 void TempControl::setMode(char newMode, bool force){
 	logDebug("TempControl::setMode from %c to %c", cs.mode, newMode);
 	
@@ -580,32 +645,52 @@ void TempControl::setMode(char newMode, bool force){
 	}
 }
 
+
+/**
+ * Get current beer temperature
+ */
 temperature TempControl::getBeerTemp(void){
 	if(beerSensor->isConnected()){
-		return beerSensor->readFastFiltered();	
+		return beerSensor->readFastFiltered();
 	}
 	else{
 		return INVALID_TEMP;
 	}
 }
 
+/**
+ * Get current beer target temperature
+ */
 temperature TempControl::getBeerSetting(void){
-	return cs.beerSetting;	
+	return cs.beerSetting;
 }
 
+
+/**
+ * Get current fridge temperature
+ */
 temperature TempControl::getFridgeTemp(void){
 	if(fridgeSensor->isConnected()){
-		return fridgeSensor->readFastFiltered();		
+		return fridgeSensor->readFastFiltered();
 	}
 	else{
 		return INVALID_TEMP;
 	}
 }
 
+/**
+ * Get current fridge target temperature
+ */
 temperature TempControl::getFridgeSetting(void){
-	return cs.fridgeSetting;	
+	return cs.fridgeSetting;
 }
 
+
+/**
+ * Set desired beer temperature
+ *
+ * @param newTemp - new target temperature
+ */
 void TempControl::setBeerTemp(temperature newTemp){
 	temperature oldBeerSetting = cs.beerSetting;
 	cs.beerSetting= newTemp;
@@ -620,30 +705,45 @@ void TempControl::setBeerTemp(temperature newTemp){
 		// A temperature ramp would cause a lot of writes
 		// If Raspberry Pi is connected, it will update the settings anyway. This is just a safety feature.
 		eepromManager.storeTempSettings();
-	}		
+	}
 }
 
+/**
+ * Set desired fridge temperature
+ *
+ * @param newTemp - New target temperature
+ */
 void TempControl::setFridgeTemp(temperature newTemp){
 	cs.fridgeSetting = newTemp;
 	reset(); // reset peak detection and PID
 	updatePID();
-	updateState();	
+	updateState();
 	eepromManager.storeTempSettings();
 }
 
+/**
+ * Check if current state is cooling (or waiting to cool)
+ */
 bool TempControl::stateIsCooling(void){
 	return (state==COOLING || state==COOLING_MIN_TIME);
 }
+
+/**
+ * Check if current state is heating (or waiting to heat)
+ */
 bool TempControl::stateIsHeating(void){
 	return (state==HEATING || state==HEATING_MIN_TIME);
 }
 
+/**
+ * Default ControlConstants
+ */
 const ControlConstants TempControl::ccDefaults PROGMEM =
 {
 	// Do Not change the order of these initializations!
 	/* tempSettingMin */ intToTemp(1),	// +1 deg Celsius
 	/* tempSettingMax */ intToTemp(30),	// +30 deg Celsius
-	
+
 	// control defines, also in fixed point format (7 int bits, 9 frac bits), so multiplied by 2^9=512
 	/* Kp	*/ intToTempDiff(5),	// +5
 	/* Ki	*/ intToTempDiff(1)/4, // +0.25
