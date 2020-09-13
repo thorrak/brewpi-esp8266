@@ -4,7 +4,7 @@ name: "Publish Doxygen Docs"
 on:
   push:
     branches:
-      - "*"
+      - "master"
 
 jobs:
   publish:
