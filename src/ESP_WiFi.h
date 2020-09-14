@@ -23,6 +23,7 @@
 void initialize_wifi();  // If WiFi is enabled, this sets it up. Otherwise, it disconnects the radio.
 void display_connect_info_and_create_callback(); // Display the WiFi splash screen & trigger reconnection callback
 void wifi_connect_clients();
+void initWifiServer();
 
 extern WiFiServer server;
 extern WiFiClient serverClient;

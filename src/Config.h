@@ -19,6 +19,7 @@
  */
 
 #pragma once
+#include <stdint.h>
 
 /**
  * \file Config.h
@@ -307,6 +308,89 @@
 // TODO - Figure out what the hell this actually does
 #define BREWPI_INVERT_ACTUATORS 0
 
-#define BUFFER_PILINK_PRINTS 1
+/**
+ * \brief Configuration parameters
+ */
+namespace Config {
+  /**
+   * \brief PiLink interface configuration
+   */
+  namespace PiLink {
+    /**
+     * \brief Buffer data coming out of PiLink
+     */
+    constexpr bool bufferPrints = true;
 
-#define FORCE_DEVICE_DEFAULTS 1	 // Locks Chamber 1/Beer 1
+    /**
+     * \brief Amount of memory used for Stream buffering.
+     * \see https://github.com/bblanchon/ArduinoStreamUtils#buffering-write-operations
+     */
+    constexpr uint_fast16_t printBufferSize() {
+      return bufferPrints ? 1024 : 0;
+    };
+
+    /**
+     * \brief Speed of serial connection
+     */
+    constexpr auto serialSpeed = 57600;
+
+    /**
+     * \brief Size of buffer used for printf
+     */
+    constexpr auto printfBufferSize = 128;
+
+
+#ifdef ESP8266_WiFi
+    constexpr bool useWifi = true;
+#else
+    constexpr bool useWifi = false;
+#endif
+  };
+
+
+  /**
+   * \brief LCD configuration
+   */
+  namespace Lcd {
+    /**
+     * \brief Number of text lines
+     */
+    constexpr auto lines = 4;
+
+    /**
+     * \brief Number of text columns
+     */
+    constexpr auto columns = 20;
+  };
+
+
+  /**
+   * \brief Configuration of temperature output
+   */
+  namespace TempFormat {
+    /**
+     * \brief Decimal places for a temperature measurement
+     */
+    constexpr auto tempDecimals = 1;
+
+    /**
+     * \brief Decimal places for a fixed temperature
+     */
+    constexpr auto fixedPointDecimals = 3;
+
+    /**
+     * \brief Decimal places for a temperature difference
+     */
+    constexpr auto tempDiffDecimals = 3;
+
+    /**
+     * \brief Length to use for conversion buffers
+     */
+    constexpr auto bufferLen = 12;
+  };
+
+  /**
+   * Locks Chamber 1/Beer 1
+   */
+  constexpr bool forceDeviceDefaults = true;
+};

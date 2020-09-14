@@ -30,7 +30,7 @@ class Logger{
 	public:
 	Logger(){};
 	~Logger(){};
-	
+
 	static void logMessageVaArg(const char type, LOG_ID_TYPE errorID, const char * varTypes, ...);
 };
 extern Logger logger;

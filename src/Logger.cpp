@@ -22,41 +22,43 @@
 #include "Logger.h"
 #include "PiLink.h"
 #include "TemperatureFormats.h"
-#include "JsonKeys.h"
 
-static const char PROGMEM LOG_STRING_FORMAT[] = "\"%s\"";
 
+/**
+ * \brief Log a message
+ *
+ * \param type - Type of message
+ * \param errorID
+ */
 void Logger::logMessageVaArg(char type, LOG_ID_TYPE errorID, const char * varTypes, ...){
+  DynamicJsonDocument doc(2048);
+
 	va_list args;
-	piLink.printResponse('D');
-	piLink.sendJsonPair(JSONKEY_logType, type);
-	piLink.sendJsonPair(JSONKEY_logID, errorID);
-	piLink.print_P(PSTR(",\"V\":["));
+  doc[F("logType")] = String(type);
+  doc[F("logID")] = errorID;
+  JsonArray varArray = doc.createNestedArray("V");
+
 	va_start (args, varTypes);
 	uint8_t index = 0;
 	char buf[9];
 	while(varTypes[index]){
-		switch(varTypes[index]){	
+		switch(varTypes[index]){
 			case 'd': // integer, signed or unsigned
-				piLink.print_P(STR_FMT_D, va_arg(args, int));
+        varArray.add(va_arg(args, int));
 				break;
 			case 's': // string
-				piLink.print_P(LOG_STRING_FORMAT, va_arg(args, char*));
+        varArray.add(String(va_arg(args, char*)));
 				break;
 			case 't': // temperature in fixed_7_9 format
-				piLink.print_P(LOG_STRING_FORMAT, tempToString(buf, va_arg(args,int), 1, 12));
+        varArray.add(String(tempToString(buf, va_arg(args,int), 1, 12)));
 			break;
 			case 'f': // fixed point value
-				piLink.print_P(LOG_STRING_FORMAT, fixedPointToString(buf, (temperature) va_arg(args,int), 3, 12));
-			break;			
-		}
-		if(varTypes[++index]){
-			piLink.print(',');
+        varArray.add(String(fixedPointToString(buf, (temperature) va_arg(args,int), 3, 12)));
+			break;
 		}
 	}
 	va_end (args);
-	piLink.print_P(PSTR("]"));
-	piLink.sendJsonClose();
+  piLink.sendJsonMessage('D', doc);
 }
 
 Logger logger;

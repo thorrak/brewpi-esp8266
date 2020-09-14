@@ -28,6 +28,7 @@
 #include "EepromManager.h"
 #include "ActuatorAutoOff.h"
 #include "EepromStructs.h"
+#include <ArduinoJson.h>
 
 
 /**
@@ -153,37 +154,37 @@ enum states {
  */
 class TempControl{
 public:
-	
+
 	TempControl(){};
 	~TempControl(){};
-	
+
 	TEMP_CONTROL_METHOD void init(void);
 	TEMP_CONTROL_METHOD void reset(void);
-	
+
 	TEMP_CONTROL_METHOD void updateTemperatures(void);
 	TEMP_CONTROL_METHOD void updatePID(void);
 	TEMP_CONTROL_METHOD void updateState(void);
 	TEMP_CONTROL_METHOD void updateOutputs(void);
 	TEMP_CONTROL_METHOD void detectPeaks(void);
-	
+
 	TEMP_CONTROL_METHOD void loadSettings();
 	TEMP_CONTROL_METHOD void storeSettings();
 	TEMP_CONTROL_METHOD void loadDefaultSettings();
-	
+
 	TEMP_CONTROL_METHOD void loadConstants();
 	TEMP_CONTROL_METHOD void storeConstants();
 	TEMP_CONTROL_METHOD void loadDefaultConstants();
-	
+
 	//TEMP_CONTROL_METHOD void loadSettingsAndConstants(void);
-		
+
 	TEMP_CONTROL_METHOD uint16_t timeSinceCooling(void);
  	TEMP_CONTROL_METHOD uint16_t timeSinceHeating(void);
-  	TEMP_CONTROL_METHOD uint16_t timeSinceIdle(void);
-	  
+ 	TEMP_CONTROL_METHOD uint16_t timeSinceIdle(void);
+
 	TEMP_CONTROL_METHOD temperature getBeerTemp(void);
 	TEMP_CONTROL_METHOD temperature getBeerSetting(void);
 	TEMP_CONTROL_METHOD void setBeerTemp(temperature newTemp);
-	
+
 	TEMP_CONTROL_METHOD temperature getFridgeTemp(void);
 	TEMP_CONTROL_METHOD temperature getFridgeSetting(void);
 	TEMP_CONTROL_METHOD void setFridgeTemp(temperature newTemp);
@@ -194,9 +195,9 @@ public:
 	TEMP_CONTROL_METHOD temperature getRoomTemp(void) {
 		return ambientSensor->read();
 	}
-		
+
 	TEMP_CONTROL_METHOD void setMode(char newMode, bool force=false);
-  
+
   /**
    * Get current temp control mode
    */
@@ -210,7 +211,7 @@ public:
 	TEMP_CONTROL_METHOD unsigned char getState(void){
 		return state;
 	}
-	
+
   /**
    * Get the current value of the elapsed wait time couter.
    */
@@ -234,7 +235,7 @@ public:
 			}
 		}
 	}
-	
+
 	TEMP_CONTROL_METHOD bool stateIsCooling(void);
 	TEMP_CONTROL_METHOD bool stateIsHeating(void);
 
@@ -244,14 +245,14 @@ public:
 	TEMP_CONTROL_METHOD bool modeIsBeer(void){
 		return (cs.mode == MODE_BEER_CONSTANT || cs.mode == MODE_BEER_PROFILE);
 	}
-		
+
 	TEMP_CONTROL_METHOD void initFilters();
-	
+
   /**
    * Check if the door is currently open
    */
 	TEMP_CONTROL_METHOD bool isDoorOpen() { return doorOpen; }
-	
+
   /**
    * \brief Get the state to display on the LCD.
    *
@@ -261,6 +262,10 @@ public:
 	TEMP_CONTROL_METHOD unsigned char getDisplayState() {
 		return isDoorOpen() ? DOOR_OPEN : getState();
 	}
+
+  TEMP_CONTROL_METHOD void getControlVariablesDoc(JsonDocument& doc);
+  TEMP_CONTROL_METHOD void getControlConstantsDoc(JsonDocument& doc);
+  TEMP_CONTROL_METHOD void getControlSettingsDoc(JsonDocument& doc);
 
 private:
 	TEMP_CONTROL_METHOD void increaseEstimator(temperature * estimator, temperature error);

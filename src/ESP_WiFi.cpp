@@ -41,6 +41,11 @@ void saveConfigCallback() {
     shouldSaveConfig = true;
 }
 
+void initWifiServer() {
+  server.begin();
+  server.setNoDelay(true);
+}
+
 // Not sure if this is sufficient to test for validity
 bool isValidmDNSName(const String& mdns_name) {
 //    for (std::string::size_type i = 0; i < mdns_name.length(); ++i) {

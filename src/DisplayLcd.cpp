@@ -48,7 +48,7 @@
 uint8_t LcdDisplay::stateOnDisplay;
 uint8_t LcdDisplay::flags;
 #if defined(BREWPI_IIC)
-LcdDriver LcdDisplay::lcd(0x27, 20, 4);  // NOTE - The address here doesn't get used. Address is autodetected at startup.
+LcdDriver LcdDisplay::lcd(0x27, Config::Lcd::columns, Config::Lcd::lines);  // NOTE - The address here doesn't get used. Address is autodetected at startup.
 #else
 LcdDriver LcdDisplay::lcd;
 #endif
@@ -89,7 +89,7 @@ void LcdDisplay::init(void){
 	stateOnDisplay = 0xFF; // set to unknown state to force update
 	flags = LCD_FLAG_ALTERNATE_ROOM;
 	lcd.init(); // initialize LCD
-	lcd.begin(20, 4);
+	lcd.begin(Config::Lcd::columns, Config::Lcd::lines);
 	lcd.clear();
 }
 

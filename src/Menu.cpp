@@ -141,14 +141,14 @@ void selectMode() {
 	}
 	else if(mode == MODE_BEER_PROFILE){
 #if defined(ESP8266) || defined(ESP32)
-		piLink.printTemperaturesJSON("Changed to profile mode in menu.", 0);
+		piLink.printTemperatures("Changed to profile mode in menu.", 0);
 #else
 		piLink.printBeerAnnotation(PSTR("Changed to profile mode in menu."));
 #endif
 	}
 	else if(mode == MODE_OFF){
 #if defined(ESP8266) || defined(ESP32)
-		piLink.printTemperaturesJSON("Temp control turned off in menu.", 0);
+		piLink.printTemperatures("Temp control turned off in menu.", 0);
 #else
 		piLink.printBeerAnnotation(PSTR("Temp control turned off in menu."));
 #endif

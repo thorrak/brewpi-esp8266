@@ -36,9 +36,7 @@ ArduinoJson::DynamicJsonDocument JSONSaveable::readJsonFromFile(const char *file
         return json_doc;
     }
 
-    DeserializationError error = deserializeJson(json_doc, file_in);
-//    if (error)
-//        Serial.println("Failed to read json");
+    deserializeJson(json_doc, file_in);
 
     file_in.close();
     return json_doc;
