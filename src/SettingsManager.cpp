@@ -31,8 +31,8 @@ void SettingsManager::loadSettings()
 
 	if (!eepromManager.applySettings())
 	{
-		tempControl.loadDefaultSettings();
-		tempControl.loadDefaultConstants();
+		TempControl::loadDefaultSettings();
+		TempControl::loadDefaultConstants();
 		
 		deviceManager.setupUnconfiguredDevices();
 

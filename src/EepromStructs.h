@@ -4,70 +4,101 @@
 #include "DallasTemperature.h"	// for DeviceAddress
 #endif
 
+#include <ArduinoJson.h>
+
+
+#define SPIFFS_controlConstants_fname "/controlConstants.json"
+#define SPIFFS_controlSettings_fname "/controlSettings.json"
 
 /*
  * \addtogroup tempcontrol
  * @{
  */
 
-/**
- * PID control settings
- */
-struct ControlSettings {
-	temperature beerSetting; //!< Target temperature when in Beer Mode
-	temperature fridgeSetting; //!< Target temperature when in Fridge Mode
-	temperature heatEstimator; //!< Estimator of heating response. Updated automatically by self learning algorithm
-	temperature coolEstimator; //!< Estimator of cooling response. Updated automatically by self learning algorithm
 
-  /**
-   * Selected mode of operation
-   */
-  char mode;
+/**
+ * \brief Data that can be persisted as JSON
+ */
+class JSONSaveable {
+protected:
+    static void writeJsonToFile(const char *filename, const JsonDocument& json_doc);
+    static DynamicJsonDocument readJsonFromFile(const char*filename);
+
 };
 
 
-struct ControlConstants {
-	temperature tempSettingMin; //<! Minimum valid control temperature
-	temperature tempSettingMax; //<! Maximum valid control temperature
-	temperature Kp;
-	temperature Ki;
-	temperature Kd;
-	temperature iMaxError;
-	temperature idleRangeHigh;
-	temperature idleRangeLow;
-	temperature heatingTargetUpper;
-	temperature heatingTargetLower;
-	temperature coolingTargetUpper;
-	temperature coolingTargetLower;
-	uint16_t maxHeatTimeForEstimate; //!< max time for heat estimate in seconds
-  /**
-   * Max time for heat estimate in seconds for the filter coefficients the b
-   * value is stored. a is calculated from b.
-   */
-	uint16_t maxCoolTimeForEstimate;
-	uint8_t fridgeFastFilter;	//!< for display, logging and on-off control
-	uint8_t fridgeSlowFilter;	//!< for peak detection
-	uint8_t fridgeSlopeFilter;	//!< not used in current control algorithm
-	uint8_t beerFastFilter;	//!< for display and logging
-	uint8_t beerSlowFilter;	//!< for on/off control algorithm
-	uint8_t beerSlopeFilter;	//!< for PID calculation
-	uint8_t lightAsHeater;		//!< Use the light to heat rather than the configured heater device
-	uint8_t rotaryHalfSteps; //!< Define whether to use full or half steps for the rotary encoder
-	temperature pidMax;
-  char tempFormat; //!< Temperature format (F/C)
+/**
+ * \brief PID Control constants
+ */
+class ControlConstants : public JSONSaveable {
+public:
+    ControlConstants();
+
+    temperature tempSettingMin; //<! Minimum valid control temperature
+    temperature tempSettingMax; //<! Maximum valid control temperature
+    temperature Kp;
+    temperature Ki;
+    temperature Kd;
+    temperature iMaxError;
+    temperature idleRangeHigh;
+    temperature idleRangeLow;
+    temperature heatingTargetUpper;
+    temperature heatingTargetLower;
+    temperature coolingTargetUpper;
+    temperature coolingTargetLower;
+    uint16_t maxHeatTimeForEstimate; //!< max time for heat estimate in seconds
+    uint16_t maxCoolTimeForEstimate; //!< max time for heat estimate in seconds
+    // for the filter coefficients the b value is stored. a is calculated from b.
+    uint8_t fridgeFastFilter;	//!< for display, logging and on-off control
+    uint8_t fridgeSlowFilter;	//!< for peak detection
+    uint8_t fridgeSlopeFilter;	//!< not used in current control algorithm
+    uint8_t beerFastFilter;	//!< for display and logging
+    uint8_t beerSlowFilter;	//!< for on/off control algorithm
+    uint8_t beerSlopeFilter;	//!< for PID calculation
+    uint8_t lightAsHeater;		//!< Use the light to heat rather than the configured heater device
+    uint8_t rotaryHalfSteps; //!< Define whether to use full or half steps for the rotary encoder
+    temperature pidMax;
+    char tempFormat; //!< Temperature format (F/C)
+
+    DynamicJsonDocument toJson();
+    void storeToSpiffs();
+    void loadFromSpiffs();
+    void setDefaults();
+
+
+
+private:
 };
 
 /** @} */
 
+struct ControlSettings : public JSONSaveable {
+public:
+    ControlSettings();
+
+    temperature beerSetting;
+    temperature fridgeSetting;
+    temperature heatEstimator; // updated automatically by self learning algorithm
+    temperature coolEstimator; // updated automatically by self learning algorithm
+    char mode;
+
+    DynamicJsonDocument toJson();
+    void storeToSpiffs();
+    void loadFromSpiffs();
+    void setDefaults();
+
+};
 
 /*
  * \addtogroup hardware
  * @{
  */
 
-/*
-* Describes the logical function of a device.
-*/
+
+
+/**
+ * \brief Describes the logical function of a device.
+ */
 enum DeviceFunction {
 	DEVICE_NONE = 0, //!< Used as a sentry to mark end of list
 	// chamber devices
@@ -93,8 +124,8 @@ enum DeviceFunction {
 
 
 
-/*
- * The concrete type of the device.
+/**
+ * \brief The concrete type of the device.
  */
 enum DeviceHardware {
 	DEVICE_HARDWARE_NONE = 0,
@@ -102,7 +133,7 @@ enum DeviceHardware {
 	DEVICE_HARDWARE_ONEWIRE_TEMP = 2,	//<! A onewire temperature sensor
 #if BREWPI_DS2413
 	DEVICE_HARDWARE_ONEWIRE_2413 = 3	//<! A onewire 2-channel PIO input or output.
-#endif	
+#endif
 };
 
 

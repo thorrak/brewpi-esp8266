@@ -552,47 +552,46 @@ uint16_t TempControl::timeSinceIdle(void){
  * Load default settings
  */
 void TempControl::loadDefaultSettings(){
+    cs.setDefaults();
 #if BREWPI_EMULATE
 	setMode(MODE_BEER_CONSTANT);
 #else	
 	setMode(MODE_OFF);
 #endif	
-	cs.beerSetting = intToTemp(20);
-	cs.fridgeSetting = intToTemp(20);
-	cs.heatEstimator = intToTempDiff(2)/10; // 0.2
-	cs.coolEstimator=intToTempDiff(5);
 }
 
 /**
  * Store control constants to EEPROM.
  */
-void TempControl::storeConstants(eptr_t offset){	
-	eepromAccess.writeControlConstants(offset,  cc, sizeof(ControlConstants));
+void TempControl::storeConstants() {
+    // Now that control constants are an object, use that for loading/saving
+    cc.storeToSpiffs();
 }
 
 /**
  * Load control constants from EEPROM
  */
-void TempControl::loadConstants(eptr_t offset){
-	eepromAccess.readControlConstants(cc, offset, sizeof(ControlConstants));
-	initFilters();	
+void TempControl::loadConstants(){
+  // Now that control constants are an object, use that for loading/saving
+  cc.loadFromSpiffs();
+  initFilters();
 }
+
 
 /**
  * Write new settings to EEPROM to be able to reload them after a reset
  * The update functions only write to EEPROM if the value has changed
  */
-void TempControl::storeSettings(eptr_t offset){
-	eepromAccess.writeControlSettings(offset, cs, sizeof(ControlSettings));
-	storedBeerSetting = cs.beerSetting;		
+void TempControl::storeSettings(){
+	cs.storeToSpiffs();
+	storedBeerSetting = cs.beerSetting;
 }
-
 
 /**
  * Read settings from EEPROM
  */
-void TempControl::loadSettings(eptr_t offset){
-	eepromAccess.readControlSettings(cs, offset, sizeof(ControlSettings));	
+void TempControl::loadSettings(){
+  cs.loadFromSpiffs();
 	logDebug("loaded settings");
 	storedBeerSetting = cs.beerSetting;
 	setMode(cs.mode, true);		// force the mode update
@@ -601,8 +600,10 @@ void TempControl::loadSettings(eptr_t offset){
 /**
  * Load default control constants
  */
-void TempControl::loadDefaultConstants(void){
-	memcpy_P((void*) &tempControl.cc, (void*) &tempControl.ccDefaults, sizeof(ControlConstants));
+void TempControl::loadDefaultConstants(){
+  // Rather than using memcpy to copy over a default struct of settings, use the class method
+  // (We have the flash space to do this the less flash-conscious way)
+  cc.setDefaults();
 	initFilters();
 }
 
@@ -734,48 +735,3 @@ bool TempControl::stateIsCooling(void){
 bool TempControl::stateIsHeating(void){
 	return (state==HEATING || state==HEATING_MIN_TIME);
 }
-
-/**
- * Default ControlConstants
- */
-const ControlConstants TempControl::ccDefaults PROGMEM =
-{
-	// Do Not change the order of these initializations!
-	/* tempSettingMin */ intToTemp(1),	// +1 deg Celsius
-	/* tempSettingMax */ intToTemp(30),	// +30 deg Celsius
-
-	// control defines, also in fixed point format (7 int bits, 9 frac bits), so multiplied by 2^9=512
-	/* Kp	*/ intToTempDiff(5),	// +5
-	/* Ki	*/ intToTempDiff(1)/4, // +0.25
-	/* Kd	*/ intToTempDiff(-3)/2,	// -1.5
-	/* iMaxError */ intToTempDiff(5)/10,  // 0.5 deg
-
-	// Stay Idle when fridge temperature is in this range
-	/* idleRangeHigh */ intToTempDiff(1),	// +1 deg Celsius
-	/* idleRangeLow */ intToTempDiff(-1),	// -1 deg Celsius
-
-	// when peak falls between these limits, its good.
-	/* heatingTargetUpper */ intToTempDiff(3)/10,	// +0.3 deg Celsius
-	/* heatingTargetLower */ intToTempDiff(-2)/10,	// -0.2 deg Celsius
-	/* coolingTargetUpper */ intToTempDiff(2)/10,	// +0.2 deg Celsius
-	/* coolingTargetLower */ intToTempDiff(-3)/10,	// -0.3 deg Celsius
-
-	// maximum history to take into account, in seconds
-	/* maxHeatTimeForEstimate */ 600,
-	/* maxCoolTimeForEstimate */ 1200,
-
-	// Set filter coefficients. This is the b value. See FilterFixed.h for delay times.
-	// The delay time is 3.33 * 2^b * number of cascades
-	/* fridgeFastFilter */ 1u,
-	/* fridgeSlowFilter */ 4u,
-	/* fridgeSlopeFilter */ 3u,
-	/* beerFastFilter */ 3u,
-	/* beerSlowFilter */ 4u,
-	/* beerSlopeFilter */ 4u,
-	
-	/* lightAsHeater */ 0,
-	/* rotaryHalfSteps */ 0,
-
-	/* pidMax */ intToTempDiff(10),	// +/- 10 deg Celsius
-	/* tempFormat */ 'C',
-};
