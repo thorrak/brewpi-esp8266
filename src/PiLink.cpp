@@ -144,7 +144,7 @@ void PiLink::print_P(const char *fmt, ... ){
  *
  * @param fmt - sprintf format string
  */
-void PiLink::print(char *fmt, ... ){
+void PiLink::print(const char *fmt, ... ){
 	va_list args;
 	va_start (args, fmt );
 	vsnprintf(printfBuff, PRINTF_BUFFER_SIZE, fmt, args);
@@ -440,7 +440,7 @@ void PiLink::receive(void){
 	inline bool changed(uint8_t &a, uint8_t b) { uint8_t c = a; a=b; return b!=c; }
 	inline bool changed(temperature &a, temperature b) { temperature c = a; a=b; return b!=c; }
 	inline bool changed(double &a, double b) { double c = a; a=b; return b!=c; }
-	inline bool changed(PChar &a, PChar b) { PChar c = a; a=b; return b!=c; }
+	inline bool changed(PChar &a, const char* b) { PChar c = a; a=(PChar)b; return b!=c; }
 #else
 	#define JSON_BEER_TEMP  "BeerTemp"
 	#define JSON_BEER_SET	"BeerSet"

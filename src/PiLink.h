@@ -70,8 +70,7 @@ private:
 
 	static void receiveJson(void); // receive settings as JSON key:value pairs
 	
-	static void print(char *fmt, ...); // use when format string is stored in RAM
-
+	static void print(const char *fmt, ...); // use when format string is stored in RAM
 
 #if !defined(ESP8266) && !defined(ESP32)
     static void print(char c) { Serial.print(c); } // inline for arduino
