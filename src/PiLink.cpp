@@ -272,18 +272,27 @@ void PiLink::receive(void){
 			break;
 		case 'Y':
 			printSimulatorSettings();
-			break;		
-#endif						
+			break;
+#endif
 		case 'A': // alarm on
 			soundAlarm(true);
 			break;
 		case 'a': // alarm off
 			soundAlarm(false);
 			break;
-			
+
 		case 't': // temperatures requested
-			printTemperatures();      
-			break;		
+			printTemperatures();
+			break;
+    case 'T': // All temps
+      deviceManager.printRawDeviceValues();
+      break;
+    case 'o': // Configure probe names
+			parseJson(handleDeviceName);
+      break;
+    case 'p': // Get configured probe names
+      printDeviceNames();
+      break;
 		case 'C': // Set default constants
 			tempControl.loadDefaultConstants();
 			display.printStationaryText(); // reprint stationary text to update to right degree unit
@@ -460,17 +469,17 @@ void PiLink::receive(void){
  * Print the response to the request for temperature ('t') command.
  */
 void PiLink::printTemperaturesJSON(const char * beerAnnotation, const char * fridgeAnnotation){
-	printResponse('T');	
+	printResponse('T');
 
 	temperature t;
 	t = tempControl.getBeerTemp();
 	if (changed(beerTemp, t))
 		sendJsonTemp(PSTR(JSON_BEER_TEMP), t);
-	
+
 	t = tempControl.getBeerSetting();
 	if (changed(beerSet,t))
 		sendJsonTemp(PSTR(JSON_BEER_SET), t);
-		
+
 	if (changed(beerAnn, beerAnnotation))
 		sendJsonAnnotation(PSTR(JSON_BEER_ANN), beerAnnotation);
 
@@ -481,23 +490,35 @@ void PiLink::printTemperaturesJSON(const char * beerAnnotation, const char * fri
 	t = tempControl.getFridgeSetting();
 	if (changed(fridgeSet, t))
 		sendJsonTemp(PSTR(JSON_FRIDGE_SET), t);
-	
+
 	if (changed(fridgeAnn, fridgeAnnotation))
 		sendJsonAnnotation(PSTR(JSON_FRIDGE_ANN), fridgeAnnotation);
-		
+
 	t = tempControl.getRoomTemp();
 	if (tempControl.ambientSensor->isConnected() && changed(roomTemp, t))
 		sendJsonTemp(PSTR(JSON_ROOM_TEMP), tempControl.getRoomTemp());
-		
-	if (changed(state, tempControl.getState()))
-		sendJsonPair(PSTR(JSON_STATE), tempControl.getState());		
 
-#if BREWPI_SIMULATE	
+	if (changed(state, tempControl.getState()))
+		sendJsonPair(PSTR(JSON_STATE), tempControl.getState());
+
+#if BREWPI_SIMULATE
 	printJsonName(PSTR(JSON_TIME));
 	print_P(PSTR("%lu"), ticks.millis()/1000);
-#endif		
-	sendJsonClose();	
+#endif
+	sendJsonClose();
 }
+
+
+/**
+ * Handle a request to set a device name
+ */
+void PiLink::handleDeviceName(const char * key, const char * val, void* pv)
+{
+  print_P(PSTR("Setting name of %s to %s"), key, val);
+  printNewLine();
+  DeviceNameManager::setDeviceName(key, val);
+}
+
 
 /**
  * Send JSON key/value pair.
@@ -1164,3 +1185,19 @@ void PiLink::print(char c) { piStream.print(c); }
 #endif
 
 
+/**
+ * Print out the configured device names
+ */
+void PiLink::printDeviceNames() {
+	printResponse('N');
+  DeviceNameManager::enumerateDeviceNames(PiLink::printDeviceName);
+	sendJsonClose();
+}
+
+/**
+ * Callback handler for DeviceNameManager::enumerateDeviceNames.
+ * Used by PiLink::printDeviceNames()
+ */
+void PiLink::printDeviceName(DeviceName devName) {
+  sendJsonAnnotation(devName.device.c_str(), devName.name.c_str());
+}

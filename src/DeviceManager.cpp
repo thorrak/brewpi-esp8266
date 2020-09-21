@@ -28,11 +28,13 @@
 #include "TempSensorExternal.h"
 #include "PiLink.h"
 #include "EepromFormat.h"
+#include "DeviceNameManager.h"
 
 #define CALIBRATION_OFFSET_PRECISION (4)
 
 #ifdef ARDUINO
 #include "OneWireTempSensor.h"
+	
 #include "OneWireActuator.h"
 #include "DS2413.h"
 #include <OneWire.h>
@@ -996,15 +998,66 @@ void DeviceManager::listDevices() {
 			char val[10];
 			val[0] = 0;
 			UpdateDeviceState(dd, dc, val);
-			deviceManager.printDevice(idx, dc, val);			
+			deviceManager.printDevice(idx, dc, val);
 		}
-	}	
+	}
 }
+
+
+/**
+ * Print the raw temp readings from all temp sensors.  Allows logging temps
+ * that aren't part of the control logic.
+ */
+void DeviceManager::printRawDeviceValues() {
+	EnumerateHardware spec;
+	// set up defaults
+	spec.unused = 0;			// list all devices
+	spec.values = 0;			// don't list values
+	spec.pin = -1;				// any pin
+	spec.hardware = -1;			// any hardware
+	spec.function = 0;			// no function restriction
+
+	DeviceOutput out;
+
+  piLink.openListResponse('R');
+
+	firstDeviceOutput = true;
+
+  enumerateOneWireDevices(spec, outputRawDeviceValue, out);
+
+  piLink.closeListResponse();
+}
+
+
+/**
+ * Print the sensor's information & current reading.
+ */
+void DeviceManager::outputRawDeviceValue(DeviceConfig* config, void* pv)
+{
+  if(config->deviceHardware == DeviceHardware::DEVICE_HARDWARE_ONEWIRE_TEMP) {
+    // Read the temp
+    char str_temp[10];
+    DeviceManager::readTempSensorValue(config->hw, str_temp);
+
+    // Pretty-print the address
+    char devName[17];
+    printBytes(config->hw.address, 8, devName);
+
+    String humanName = DeviceNameManager::getDeviceName(devName);
+
+    if(!firstDeviceOutput)
+      piLink.print_P(PSTR(","));
+
+    piLink.print_P(PSTR("{\"device\": \"%s\", \"value\": %s, \"name\": \"%s\"}"), devName, str_temp, humanName.c_str());
+  }
+
+  firstDeviceOutput = false;
+}
+
 
 /**
  * Determines the class of device for the given DeviceID.
  */
-
 DeviceType deviceType(DeviceFunction id) {
 	switch (id) {
 	case DEVICE_CHAMBER_DOOR:

@@ -285,19 +285,19 @@ public:
 	 * Read hardware spec from stream and output matching devices
 	 */
 	static void enumerateHardware();
-	
+
 	static bool enumDevice(DeviceDisplay& dd, DeviceConfig& dc, uint8_t idx);
 
 	static void listDevices();
-	
+  static void printRawDeviceValues();
+
 private:
-	
 	static void enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output);
 	static void enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output);
 	static void OutputEnumeratedDevices(DeviceConfig* config, void* pv);
 	static void handleEnumeratedDevice(DeviceConfig& config, EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& out);
 	static void readTempSensorValue(DeviceConfig::Hardware hw, char* out);
-	
+	static void outputRawDeviceValue(DeviceConfig* config, void* pv);
 
 	static void* createDevice(DeviceConfig& config, DeviceType dc);
 	static void* createOneWireGPIO(DeviceConfig& config, DeviceType dt);
