@@ -41,6 +41,10 @@ void saveConfigCallback() {
     shouldSaveConfig = true;
 }
 
+
+/**
+ * \brief Initialize the telnet server
+ */
 void initWifiServer() {
   server.begin();
   server.setNoDelay(true);
@@ -158,6 +162,11 @@ void display_connect_info_and_create_callback() {
 }
 
 
+/**
+ * \brief Handle incoming WiFi client connections.
+ *
+ * This also handles WiFi network reconnects if the network was disconnected.
+ */
 void wifi_connect_clients() {
     static unsigned long last_connection_check = 0;
 
@@ -170,9 +179,9 @@ void wifi_connect_clients() {
             serverClient.flush();
         }
     } else {
-        // This might be unnecessary, but let's go ahead and disconnect any "clients" we show as connected given that
-        // WiFi isn't connected
-        // If we show a client as already being disconnected, force a disconnect
+        // This might be unnecessary, but let's go ahead and disconnect any
+        // "clients" we show as connected given that WiFi isn't connected. If
+        // we show a client as already being disconnected, force a disconnect
         if (serverClient) {
             serverClient.stop();
             serverClient = server.available();

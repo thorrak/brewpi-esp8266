@@ -402,7 +402,7 @@ void assignIfSet(int8_t value, uint8_t* target) {
 }
 
 /**
- * Safely updates the device definition.
+ * \brief Safely updates the device definition.
  *
  * Only changes that result in a valid device, with no conflicts with other
  * devices are allowed.
@@ -718,11 +718,11 @@ inline bool matchAddress(uint8_t* detected, uint8_t* configured, uint8_t count) 
 }
 
 /**
- * Find a device based on it's location.
+ * \brief Find a device based on it's location.
  * A device's location is:
- *   pinNr  for simple digital pin devices
- *   pinNr+address for one-wire devices
- *   pinNr+address+pio for 2413
+ *   - pinNr  for simple digital pin devices
+ *   - pinNr+address for one-wire devices
+ *   - pinNr+address+pio for 2413
  */
 device_slot_t findHardwareDevice(DeviceConfig& find)
 {
@@ -753,7 +753,7 @@ device_slot_t findHardwareDevice(DeviceConfig& find)
 
 
 /**
- * Read a temp sensor device and convert the value into a string.
+ * \brief Read a temp sensor device and convert the value into a string.
  *
  * **Warning:** the read value does not include any calibration offset.
  */

@@ -24,6 +24,7 @@
 
 /**
  * \file TemperatureFormats.h
+ * \brief Temperature value handling
  *
  * \defgroup temps Temperature Values
  * \brief Internal representation of temperature values

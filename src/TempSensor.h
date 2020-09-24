@@ -116,9 +116,9 @@ class TempSensor {
 
 	private:
 	BasicTempSensor* _sensor; //!< Wrapped basic sensor
-	TempSensorFilter fastFilter;
-	TempSensorFilter slowFilter;
-	TempSensorFilter slopeFilter;
+	TempSensorFilter fastFilter; //!< Fast reacting filter
+	TempSensorFilter slowFilter; //!< Slow reacting filter
+	TempSensorFilter slopeFilter; //!< Slope filter
 	unsigned char updateCounter;
 	temperature_precise prevOutputForSlope;
 

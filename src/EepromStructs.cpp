@@ -44,11 +44,18 @@ ArduinoJson::DynamicJsonDocument JSONSaveable::readJsonFromFile(const char *file
 
 
 
-
+/**
+ * \brief Constructor
+ *
+ * \see setDefaults
+ */
 ControlConstants::ControlConstants() {
     setDefaults();
 }
 
+/**
+ * \brief Set reasonable default values for control constants
+ */
 void ControlConstants::setDefaults() {
     tempSettingMin = intToTemp(1);	// +1 deg Celsius
     tempSettingMax = intToTemp(30);	// +30 deg Celsius
@@ -90,6 +97,9 @@ void ControlConstants::setDefaults() {
 }
 
 
+/**
+ * \brief Serialize control constants to JSON
+ */
 DynamicJsonDocument ControlConstants::toJson() {
     DynamicJsonDocument doc(1024);  // Should be a max of 642, per the ArduinoJson Size Assistant
 
@@ -195,12 +205,19 @@ void ControlConstants::loadFromSpiffs() {
 
 
 
+/**
+ * \brief Constructor
+ * \see setDefaults
+ */
 ControlSettings::ControlSettings() {
     // When creating an instance of the class, set defaults. Loading is done explicitly.
     setDefaults();
 }
 
 
+/**
+ * \brief Set reasonable defaults for the control settings
+ */
 void ControlSettings::setDefaults() {
     // TODO - Check if I need to do setMode here
     beerSetting = intToTemp(20);
