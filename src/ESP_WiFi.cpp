@@ -76,7 +76,7 @@ void mdns_reset() {
         MDNS.addService("brewpi", "tcp", 23);
         MDNS.addServiceTxt("brewpi", "tcp", "board", CONTROLLER_TYPE);
         MDNS.addServiceTxt("brewpi", "tcp", "branch", "legacy");
-        MDNS.addServiceTxt("brewpi", "tcp", "version", VERSION_STRING);
+        MDNS.addServiceTxt("brewpi", "tcp", "version", Config::Version::release);
         MDNS.addServiceTxt("brewpi", "tcp", "revision", FIRMWARE_REVISION);
     }
 }

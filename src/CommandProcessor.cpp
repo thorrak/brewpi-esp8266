@@ -186,9 +186,9 @@ void CommandProcessor::versionInfo() {
   // y: simulator
   // b: board
 
-  doc["v"] = VERSION_STRING;
-  doc["n"] = BUILD_NUMBER;
-  doc["c"] = BUILD_NAME;
+  doc["v"] = Config::Version::release;
+  doc["n"] = Config::Version::git_rev;
+  doc["c"] = Config::Version::git_tag;
   doc["s"] = BREWPI_STATIC_CONFIG;
   doc["y"] = BREWPI_SIMULATE;
   doc["b"] = String(BREWPI_BOARD);

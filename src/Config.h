@@ -390,7 +390,11 @@ namespace Config {
   };
 
   /**
-   * Locks Chamber 1/Beer 1
+   * \brief Locks Chamber 1/Beer 1
+   *
+   * Prevents the user from trying to configure probes with other chamber/beer
+   * values.  All probe configurations will have their beer & chamber values
+   * overwritten with 1.
    */
   constexpr bool forceDeviceDefaults = true;
 };
