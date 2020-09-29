@@ -84,25 +84,25 @@ void NullLcdDriver::blink() {
 }
 
 // These commands scroll the display without changing the RAM
-void NullLcdDriver::scrollDisplayLeft(void) {
+void NullLcdDriver::scrollDisplayLeft() {
 }
-void NullLcdDriver::scrollDisplayRight(void) {
+void NullLcdDriver::scrollDisplayRight() {
 }
 
 // This is for text that flows Left to Right
-void NullLcdDriver::leftToRight(void) {
+void NullLcdDriver::leftToRight() {
 }
 
 // This is for text that flows Right to Left
-void NullLcdDriver::rightToLeft(void) {
+void NullLcdDriver::rightToLeft() {
 }
 
 // This will 'right justify' text from the cursor
-void NullLcdDriver::autoscroll(void) {
+void NullLcdDriver::autoscroll() {
 }
 
 // This will 'left justify' text from the cursor
-void NullLcdDriver::noAutoscroll(void) {
+void NullLcdDriver::noAutoscroll() {
 }
 
 // Allows us to fill the first 8 CGRAM locations
@@ -115,10 +115,10 @@ void NullLcdDriver::createChar(uint8_t location, uint8_t charmap[]) {
 }
 
 // This resets the backlight timer and updates the SPI output
-void NullLcdDriver::resetBacklightTimer(void){
+void NullLcdDriver::resetBacklightTimer(){
 }
 
-void NullLcdDriver::updateBacklight(void){	
+void NullLcdDriver::updateBacklight(){	
 }
 
 // Puts the content of one LCD line into the provided buffer.
@@ -142,7 +142,7 @@ inline size_t NullLcdDriver::write(uint8_t value) {
 	return 1;
 }
 
-void NullLcdDriver::printSpacesToRestOfLine(void){
+void NullLcdDriver::printSpacesToRestOfLine(){
 	while(_currpos < 20){
 		print(' ')                                             ;
 	}

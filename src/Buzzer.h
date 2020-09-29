@@ -29,7 +29,7 @@ class Buzzer : public ValueActuator
 	Buzzer(){};
 	~Buzzer(){};
 	
-	void init(void);
+	void init();
 	
 	/**
 	 * Performs a number of beeps synchronously.

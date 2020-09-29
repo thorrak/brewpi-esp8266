@@ -158,14 +158,14 @@ public:
 	TempControl(){};
 	~TempControl(){};
 
-	TEMP_CONTROL_METHOD void init(void);
-	TEMP_CONTROL_METHOD void reset(void);
+	TEMP_CONTROL_METHOD void init();
+	TEMP_CONTROL_METHOD void reset();
 
-	TEMP_CONTROL_METHOD void updateTemperatures(void);
-	TEMP_CONTROL_METHOD void updatePID(void);
-	TEMP_CONTROL_METHOD void updateState(void);
-	TEMP_CONTROL_METHOD void updateOutputs(void);
-	TEMP_CONTROL_METHOD void detectPeaks(void);
+	TEMP_CONTROL_METHOD void updateTemperatures();
+	TEMP_CONTROL_METHOD void updatePID();
+	TEMP_CONTROL_METHOD void updateState();
+	TEMP_CONTROL_METHOD void updateOutputs();
+	TEMP_CONTROL_METHOD void detectPeaks();
 
 	TEMP_CONTROL_METHOD void loadSettings();
 	TEMP_CONTROL_METHOD void storeSettings();
@@ -177,22 +177,22 @@ public:
 
 	//TEMP_CONTROL_METHOD void loadSettingsAndConstants(void);
 
-	TEMP_CONTROL_METHOD uint16_t timeSinceCooling(void);
- 	TEMP_CONTROL_METHOD uint16_t timeSinceHeating(void);
- 	TEMP_CONTROL_METHOD uint16_t timeSinceIdle(void);
+	TEMP_CONTROL_METHOD uint16_t timeSinceCooling();
+ 	TEMP_CONTROL_METHOD uint16_t timeSinceHeating();
+ 	TEMP_CONTROL_METHOD uint16_t timeSinceIdle();
 
-	TEMP_CONTROL_METHOD temperature getBeerTemp(void);
-	TEMP_CONTROL_METHOD temperature getBeerSetting(void);
+	TEMP_CONTROL_METHOD temperature getBeerTemp();
+	TEMP_CONTROL_METHOD temperature getBeerSetting();
 	TEMP_CONTROL_METHOD void setBeerTemp(temperature newTemp);
 
-	TEMP_CONTROL_METHOD temperature getFridgeTemp(void);
-	TEMP_CONTROL_METHOD temperature getFridgeSetting(void);
+	TEMP_CONTROL_METHOD temperature getFridgeTemp();
+	TEMP_CONTROL_METHOD temperature getFridgeSetting();
 	TEMP_CONTROL_METHOD void setFridgeTemp(temperature newTemp);
 
   /**
    * Get the current temperature of the room probe.
    */
-	TEMP_CONTROL_METHOD temperature getRoomTemp(void) {
+	TEMP_CONTROL_METHOD temperature getRoomTemp() {
 		return ambientSensor->read();
 	}
 
@@ -201,28 +201,28 @@ public:
   /**
    * Get current temp control mode
    */
-	TEMP_CONTROL_METHOD char getMode(void) {
+	TEMP_CONTROL_METHOD char getMode() {
 		return cs.mode;
 	}
 
   /**
    * Get the current state of the control system.
    */
-	TEMP_CONTROL_METHOD unsigned char getState(void){
+	TEMP_CONTROL_METHOD unsigned char getState(){
 		return state;
 	}
 
   /**
    * Get the current value of the elapsed wait time couter.
    */
-	TEMP_CONTROL_METHOD uint16_t getWaitTime(void){
+	TEMP_CONTROL_METHOD uint16_t getWaitTime(){
 		return waitTime;
 	}
 
   /**
    * Reset the elapsed wait time counter back to 0.
    */
-	TEMP_CONTROL_METHOD void resetWaitTime(void){
+	TEMP_CONTROL_METHOD void resetWaitTime(){
 		waitTime = 0;
 	}
 
@@ -236,13 +236,13 @@ public:
 		}
 	}
 
-	TEMP_CONTROL_METHOD bool stateIsCooling(void);
-	TEMP_CONTROL_METHOD bool stateIsHeating(void);
+	TEMP_CONTROL_METHOD bool stateIsCooling();
+	TEMP_CONTROL_METHOD bool stateIsHeating();
 
   /**
    * Check if the current configured mode is Beer
    */
-	TEMP_CONTROL_METHOD bool modeIsBeer(void){
+	TEMP_CONTROL_METHOD bool modeIsBeer(){
 		return (cs.mode == MODE_BEER_CONSTANT || cs.mode == MODE_BEER_PROFILE);
 	}
 

@@ -38,7 +38,7 @@ public:
   /**
    * Check if sensor is connected
    */
-	virtual bool isConnected(void) = 0;
+	virtual bool isConnected() = 0;
 
 	/**
 	 * Attempt to (re-)initialize the sensor.

@@ -96,15 +96,15 @@ class TempSensor {
 
 	void update();
 
-	temperature readFastFiltered(void);
+	temperature readFastFiltered();
 
-	temperature readSlowFiltered(void);
+	temperature readSlowFiltered();
 
-	temperature readSlope(void);
+	temperature readSlope();
 
-	temperature detectPosPeak(void);
+	temperature detectPosPeak();
 
-	temperature detectNegPeak(void);
+	temperature detectNegPeak();
 
 	void setFastFilterCoefficients(uint8_t b);
 

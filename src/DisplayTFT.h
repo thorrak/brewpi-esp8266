@@ -92,7 +92,7 @@ class LcdDisplay DISPLAY_SUPERCLASS
 {
         public:
         // initializes the lcd display
-        DISPLAY_METHOD void init(void);
+        DISPLAY_METHOD void init();
 
         DISPLAY_METHOD void printAll()
         {
@@ -103,32 +103,32 @@ class LcdDisplay DISPLAY_SUPERCLASS
         }
 
         // print all temperatures on the LCD
-        DISPLAY_METHOD void printAllTemperatures(void);
+        DISPLAY_METHOD void printAllTemperatures();
 
         // print the stationary text on the lcd.
-        DISPLAY_METHOD void printStationaryText(void);
-        DISPLAY_METHOD void print_layout(void);  // TFT-only replacement for printStationaryText
+        DISPLAY_METHOD void printStationaryText();
+        DISPLAY_METHOD void print_layout();  // TFT-only replacement for printStationaryText
 
         // print mode on the right location on the first line, after Mode:
-        DISPLAY_METHOD void printMode(void);
+        DISPLAY_METHOD void printMode();
 
         DISPLAY_METHOD void setDisplayFlags(uint8_t newFlags);
         DISPLAY_METHOD uint8_t getDisplayFlags() { return flags; };
 
         // print beer temperature at the right place on the display
-        DISPLAY_METHOD void printBeerTemp(void);
+        DISPLAY_METHOD void printBeerTemp();
 
         // print beer temperature setting at the right place on the display
-        DISPLAY_METHOD void printBeerSet(void);
+        DISPLAY_METHOD void printBeerSet();
 
         // print fridge temperature at the right place on the display
-        DISPLAY_METHOD void printFridgeTemp(void);
+        DISPLAY_METHOD void printFridgeTemp();
 
         // print fridge temperature setting at the right place on the display
-        DISPLAY_METHOD void printFridgeSet(void);
+        DISPLAY_METHOD void printFridgeSet();
 
         // print the current state on the last line of the LCD
-        DISPLAY_METHOD void printState(void);
+        DISPLAY_METHOD void printState();
 
         DISPLAY_METHOD void getLine(uint8_t lineNumber, char * buffer);
 //
@@ -148,12 +148,12 @@ class LcdDisplay DISPLAY_SUPERCLASS
         DISPLAY_METHOD void printDegreeUnit(uint8_t x, uint8_t y);
 
 #ifdef ESP8266_WiFi
-        DISPLAY_METHOD void printWiFi(void);
-        DISPLAY_METHOD void printWiFiStartup(void);
+        DISPLAY_METHOD void printWiFi();
+        DISPLAY_METHOD void printWiFiStartup();
 #endif
 
-        DISPLAY_METHOD void printEEPROMStartup(void);
-        DISPLAY_METHOD void clear(void);
+        DISPLAY_METHOD void printEEPROMStartup();
+        DISPLAY_METHOD void clear();
         DISPLAY_METHOD void clearForText(uint8_t start_x, uint8_t start_y, uint16_t color, uint8_t font_size, uint8_t characters);
 
 

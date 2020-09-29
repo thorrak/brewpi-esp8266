@@ -141,17 +141,17 @@ class DallasTemperature
 
 #if REQUIRESDEVICEENUM
   // initialise bus
-  void begin(void);
+  void begin();
 #endif  
 
 #if REQUIRESDEVICEENUM
   // returns the number of devices found on the bus
-  uint8_t getDeviceCount(void);
+  uint8_t getDeviceCount();
 #endif  
   
 #if REQUIRESWHOLEBUSOPS  
   // Is a conversion complete on the wire?
-  bool isConversionComplete(void);
+  bool isConversionComplete();
 #endif  
   
   // returns true if address is valid
@@ -203,17 +203,17 @@ class DallasTemperature
 	waitForConversion = flag;
   }
 
-  bool getWaitForConversion(void);
+  bool getWaitForConversion();
   
   // sets/gets the checkForConversion flag
   void setCheckForConversion(bool);
-  bool getCheckForConversion(void);
+  bool getCheckForConversion();
   
 #endif
   
 #if REQUIRESWHOLEBUSOPS
   // sends command for all devices on the bus to perform a temperature conversion 
-  void requestTemperatures(void);
+  void requestTemperatures();
 #endif  
    
   // sends command for one device to perform a temperature conversion by address
@@ -248,7 +248,7 @@ class DallasTemperature
 #endif // REQUIRETEMPCONVERSION
   
   // returns true if the bus requires parasite power
-  bool isParasitePowerMode(void) {
+  bool isParasitePowerMode() {
 #if REQUIRESPARASITEPOWERAVAILABLE
 	return parasite;
 #else
@@ -284,7 +284,7 @@ class DallasTemperature
   char getLowAlarmTemp(const uint8_t*);
   
   // resets internal variables used for the alarm search
-  void resetAlarmSearch(void);
+  void resetAlarmSearch();
 
   // search the wire for devices with active alarms
   bool alarmSearch(uint8_t*);
@@ -293,10 +293,10 @@ class DallasTemperature
   bool hasAlarm(const uint8_t*);
 
   // returns true if any device is reporting an alarm on the bus
-  bool hasAlarm(void);
+  bool hasAlarm();
 
   // runs the alarm handler for all devices returned by alarmSearch()
-  void processAlarms(void);
+  void processAlarms();
   
   // sets the alarm handler
   void setAlarmHandler(const AlarmHandler *);

@@ -67,7 +67,7 @@ void updateSimulationTicks()
 /**
  * \brief Main execution loop when in simulation mode
  */
-void simulateLoop(void)
+void simulateLoop()
 {
 	static unsigned long lastUpdate = 0;
 

@@ -116,18 +116,18 @@ class OLEDFourBit : public Print {
 	// copy a line from the shadow copy to a string buffer and correct the degree sign
 	void getLine(uint8_t lineNumber, char * buffer); 
 	
-	void readContent(void); // read the content from the display to the shadow copy buffer
+	void readContent(); // read the content from the display to the shadow copy buffer
 
 	void command(uint8_t);
-	char readChar(void);
+	char readChar();
 
 	void setBufferOnly(bool bufferOnly) {}
 
 	void printSpacesToRestOfLine();
 	
-	void resetBacklightTimer(void){ /* not implemented for OLED, doesn't have a backlight. */ }
+	void resetBacklightTimer(){ /* not implemented for OLED, doesn't have a backlight. */ }
 
-	void updateBacklight(void){ /* not implemented for OLED, doesn't have a backlight. */ }
+	void updateBacklight(){ /* not implemented for OLED, doesn't have a backlight. */ }
 
 	using Print::write;
 

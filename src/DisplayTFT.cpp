@@ -64,7 +64,7 @@ bool toggleBacklight;
 
 
 
-void LcdDisplay::print_layout(void) {
+void LcdDisplay::print_layout() {
 
     // Print the lines for the basic layout
     tft.drawLine(0, BEER_NAME_LINE_Y, 320, BEER_NAME_LINE_Y, ILI9341_WHITE);  // Bar beneath beer name/set points
@@ -112,7 +112,7 @@ void LcdDisplay::print_layout(void) {
 
 }
 
-void LcdDisplay::init(void){
+void LcdDisplay::init(){
 #if defined(ESP8266) || defined(ESP32)
     toggleBacklight = false;
 #endif
@@ -139,7 +139,7 @@ void LcdDisplay::init(void){
 #endif
 
 //print all temperatures on the LCD
-void LcdDisplay::printAllTemperatures(void){
+void LcdDisplay::printAllTemperatures(){
     // alternate between beer and room temp
     if (flags & LCD_FLAG_ALTERNATE_ROOM) {
         bool displayRoom = ((ticks.seconds()&0x08)==0) && !BREWPI_SIMULATE && tempControl.ambientSensor->isConnected();
@@ -163,22 +163,22 @@ void LcdDisplay::setDisplayFlags(uint8_t newFlags) {
 
 
 
-void LcdDisplay::printBeerTemp(void){
+void LcdDisplay::printBeerTemp(){
     printTemperatureAt(BEER_TEMP_START_X, MAIN_TEMP_START_Y, MAIN_TEMP_FONT_SIZE, tempControl.getBeerTemp());
 }
 
-void LcdDisplay::printBeerSet(void){
+void LcdDisplay::printBeerSet(){
 //    temperature beerSet = tempControl.getBeerSetting();
     printTemperatureAt(BEER_SET_START_X, SET_TEMP_START_Y, SET_TEMP_FONT_SIZE, tempControl.getBeerSetting());
 }
 
-void LcdDisplay::printFridgeTemp(void){
+void LcdDisplay::printFridgeTemp(){
     printTemperatureAt(FRIDGE_TEMP_START_X, MAIN_TEMP_START_Y, MAIN_TEMP_FONT_SIZE, flags & LCD_FLAG_DISPLAY_ROOM ?
                             tempControl.ambientSensor->read() :
                             tempControl.getFridgeTemp());
 }
 
-void LcdDisplay::printFridgeSet(void){
+void LcdDisplay::printFridgeSet(){
     temperature fridgeSet = tempControl.getFridgeSetting();
     if(flags & LCD_FLAG_DISPLAY_ROOM) // beer setting is not active
         fridgeSet = INVALID_TEMP;
@@ -216,7 +216,7 @@ void LcdDisplay::printTemperature(temperature temp, uint8_t font_size){
 }
 
 //print the stationary text on the lcd.
-void LcdDisplay::printStationaryText(void){
+void LcdDisplay::printStationaryText(){
 //    printAt_P(0, 0, PSTR("Mode"));
 //    printAt_P(0, 1, STR_Beer_);
 //    printAt_P(0, 2, (flags & LCD_FLAG_DISPLAY_ROOM) ?  PSTR("Room  ") : STR_Fridge_);
@@ -235,7 +235,7 @@ void LcdDisplay::printDegreeUnit(uint8_t x, uint8_t y){
 
 
 // print mode on the right location on the first line, after "Mode   "
-void LcdDisplay::printMode(void){
+void LcdDisplay::printMode(){
     tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
     tft.setTextSize(MODE_FONT_SIZE);
     clearForText(MODE_START_X, MODE_START_Y, ILI9341_BLACK, MODE_FONT_SIZE, 21);
@@ -267,7 +267,7 @@ void LcdDisplay::printMode(void){
 }
 
 // print the current state on the last line of the lcd
-void LcdDisplay::printState(void){
+void LcdDisplay::printState(){
     uint16_t time = UINT16_MAX; // init to max
     uint8_t state = tempControl.getDisplayState();
     uint8_t printed_chars = 8;
@@ -385,7 +385,7 @@ void LcdDisplay::printState(void){
 
 
 #ifdef ESP8266_WiFi
-void LcdDisplay::printWiFi(void){
+void LcdDisplay::printWiFi(){
     toggleBacklight = false;  // Assuming we need this
 
     clear();
@@ -408,7 +408,7 @@ void LcdDisplay::printWiFi(void){
 //    lcd.updateBacklight();
 }
 
-void LcdDisplay::printWiFiStartup(void){
+void LcdDisplay::printWiFiStartup(){
     toggleBacklight = false;  // Assuming we need this
 
     clear();
@@ -439,7 +439,7 @@ void LcdDisplay::printWiFiStartup(void){
 #endif
 
 
-void LcdDisplay::printEEPROMStartup(void){
+void LcdDisplay::printEEPROMStartup(){
 
     toggleBacklight = false;  // Assuming we need this
 
@@ -464,7 +464,7 @@ void LcdDisplay::printEEPROMStartup(void){
 
 }
 
-void LcdDisplay::clear(void) {
+void LcdDisplay::clear() {
     tft.fillScreen(ILI9341_BLACK);
 }
 

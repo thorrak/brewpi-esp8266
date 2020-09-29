@@ -74,7 +74,7 @@ void FixedFilter::init(temperature val){
  * \brief Detect the positive peak
  * @return positive peak or INVALID_TEMP when no peak has been found
  */
-temperature FixedFilter::detectPosPeak(void){
+temperature FixedFilter::detectPosPeak(){
 	if(yv[0] < yv[1] && yv[1] >= yv[2]){
 		return tempPreciseToRegular(yv[1]);
 	}
@@ -88,7 +88,7 @@ temperature FixedFilter::detectPosPeak(void){
  * \brief Detect the negative peak
  * @return negative peak or INVALID_TEMP when no peak has been found
  */
-temperature FixedFilter::detectNegPeak(void){
+temperature FixedFilter::detectNegPeak(){
 	if(yv[0] > yv[1] && yv[1] <= yv[2]){
 		return tempPreciseToRegular(yv[1]);
 	}

@@ -56,7 +56,7 @@ public:
   /**
    * \brief Check if sensor device is connected
    */
-	bool isConnected(void){
+	bool isConnected(){
 		return connected;
 	}
 

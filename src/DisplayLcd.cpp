@@ -82,7 +82,7 @@ bool toggleBacklight;
  */
 constexpr auto invalidTime = UINT16_MAX;
 
-void LcdDisplay::init(void){
+void LcdDisplay::init(){
 #if defined(ESP8266) || defined(ESP32)
 	toggleBacklight = false;
 #endif
@@ -100,7 +100,7 @@ void LcdDisplay::init(void){
 /**
  * \brief Print all temperatures on the LCD
  */
-void LcdDisplay::printAllTemperatures(void){
+void LcdDisplay::printAllTemperatures(){
 	// alternate between beer and room temp
 	if (flags & LCD_FLAG_ALTERNATE_ROOM) {
 		bool displayRoom = ((ticks.seconds()&0x08)==0) && !BREWPI_SIMULATE && tempControl.ambientSensor->isConnected();
@@ -134,7 +134,7 @@ void LcdDisplay::setDisplayFlags(uint8_t newFlags) {
  *
  * @see printTemperatureAt
  */
-void LcdDisplay::printBeerTemp(void){
+void LcdDisplay::printBeerTemp(){
 	printTemperatureAt(6, 1, tempControl.getBeerTemp());
 }
 
@@ -144,18 +144,18 @@ void LcdDisplay::printBeerTemp(void){
  *
  * @see printTemperatureAt
  */
-void LcdDisplay::printBeerSet(void){
+void LcdDisplay::printBeerSet(){
 	temperature beerSet = tempControl.getBeerSetting();
 	printTemperatureAt(12, 1, beerSet);
 }
 
-void LcdDisplay::printFridgeTemp(void){
+void LcdDisplay::printFridgeTemp(){
 	printTemperatureAt(6,2, flags & LCD_FLAG_DISPLAY_ROOM ?
 		tempControl.ambientSensor->read() :
 		tempControl.getFridgeTemp());
 }
 
-void LcdDisplay::printFridgeSet(void){	
+void LcdDisplay::printFridgeSet(){	
 	temperature fridgeSet = tempControl.getFridgeSetting();	
 	if(flags & LCD_FLAG_DISPLAY_ROOM) // beer setting is not active
 		fridgeSet = INVALID_TEMP;
@@ -203,7 +203,7 @@ void LcdDisplay::printTemperature(temperature temp){
 /**
  * \brief Print the stationary text on the lcd.
  */
-void LcdDisplay::printStationaryText(void){
+void LcdDisplay::printStationaryText(){
 	printAt_P(0, 0, PSTR("Mode"));
 	printAt_P(0, 1, STR_Beer_);
 	printAt_P(0, 2, (flags & LCD_FLAG_DISPLAY_ROOM) ?  PSTR("Room  ") : STR_Fridge_);
@@ -235,7 +235,7 @@ void LcdDisplay::printAt(uint8_t x, uint8_t y, char* text){
 }
 
 // print mode on the right location on the first line, after "Mode   "
-void LcdDisplay::printMode(void){
+void LcdDisplay::printMode(){
 	lcd.setCursor(7,0);
 	// Factoring prints out of switch has negative effect on code size in this function
 	switch(tempControl.getMode()){
@@ -265,7 +265,7 @@ void LcdDisplay::printMode(void){
 }
 
 // print the current state on the last line of the lcd
-void LcdDisplay::printState(void){
+void LcdDisplay::printState(){
 	uint16_t time = invalidTime;
 	uint8_t state = tempControl.getDisplayState();
 	if(state != stateOnDisplay){ //only print static text when state has changed
@@ -358,7 +358,7 @@ void LcdDisplay::printState(void){
 
 #ifdef ESP8266_WiFi
 
-void LcdDisplay::printWiFiStartup(void){
+void LcdDisplay::printWiFiStartup(){
 	toggleBacklight = false;  // Assuming we need this
 
 	lcd.setCursor(0,0);
@@ -384,7 +384,7 @@ void LcdDisplay::printWiFiStartup(void){
 }
 
 
-void LcdDisplay::printWiFi(void){
+void LcdDisplay::printWiFi(){
 	toggleBacklight = false;  // Assuming we need this
 
 	lcd.setCursor(0,0);
@@ -409,7 +409,7 @@ void LcdDisplay::printWiFi(void){
 }
 #endif
 
-void LcdDisplay::printEEPROMStartup(void){
+void LcdDisplay::printEEPROMStartup(){
 	toggleBacklight = false;  // Assuming we need this
 
 	lcd.setCursor(0,0);
@@ -436,7 +436,7 @@ void LcdDisplay::printEEPROMStartup(void){
 
 
 
-void LcdDisplay::clear(void) {
+void LcdDisplay::clear() {
 	lcd.clear();
 }
 

@@ -68,21 +68,21 @@ temperature_precise CascadedFilter::addDoublePrecision(temperature_precise val){
 /**
  * \brief Get the most recent filter input
  */
-temperature CascadedFilter::readInput(void){
+temperature CascadedFilter::readInput(){
 	return sections[0].readInput(); // return input of first section
 }
 
 /**
  * \brief Get the output value
  */
-temperature_precise CascadedFilter::readOutputDoublePrecision(void){
+temperature_precise CascadedFilter::readOutputDoublePrecision(){
 	return sections[numFilterSections - 1].readOutputDoublePrecision(); // return output of last section
 }
 
 /**
  * \brief Get the previous output value
  */
-temperature_precise CascadedFilter::readPrevOutputDoublePrecision(void){
+temperature_precise CascadedFilter::readPrevOutputDoublePrecision(){
 	return sections[numFilterSections - 1].readPrevOutputDoublePrecision(); // return previous output of last section
 }
 
