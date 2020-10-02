@@ -71,3 +71,47 @@ constexpr auto values = "v";
 constexpr auto unused = "u";
 constexpr auto function = "f";
 }; // namespace DeviceDisplayKeys
+
+
+/**
+ * \brief Strings used for JSON keys
+ * \see ControlSettings
+ */
+namespace ControlSettingsKeys {
+constexpr auto beer = "beerSetting";
+constexpr auto fridge = "fridgeSetting";
+constexpr auto heatEst = "heatEstimator";
+constexpr auto coolEst = "coolEstimator";
+constexpr auto mode = "mode";
+};
+
+/**
+ * \brief Strings used for JSON keys
+ * \see ControlConstants
+ */
+namespace ControlConstantsKeys {
+constexpr auto tempMin = "tempSettingMin";
+constexpr auto tempMax = "tempSettingMax";
+constexpr auto kp = "Kp";
+constexpr auto ki = "Ki";
+constexpr auto kd = "Kd";
+constexpr auto maxError = "iMaxError";
+constexpr auto idleHigh = "idleRangeHigh";
+constexpr auto idleLow = "idleRangeLow";
+constexpr auto heatingUpper = "heatingTargetUpper";
+constexpr auto heatingLower = "heatingTargetLower";
+constexpr auto coolingUpper = "coolingTargetUpper";
+constexpr auto coolingLower = "coolingTargetLower";
+constexpr auto maxHeatEst = "maxHeatTimeForEstimate";
+constexpr auto maxCoolEst = "maxCoolTimeForEstimate";
+constexpr auto fridgeFilterFast = "fridgeFastFilter";
+constexpr auto fridgeFilterSlow = "fridgeSlowFilter";
+constexpr auto fridgeFilterSlope = "fridgeSlopeFilter";
+constexpr auto beerFilterFast = "beerFastFilter";
+constexpr auto beerFilterSlow = "beerSlowFilter";
+constexpr auto beerFilterSlope = "beerSlopeFilter";
+constexpr auto lightHeater = "lightAsHeater";
+constexpr auto rotaryHalfSteps = "rotaryHalfSteps";
+constexpr auto pidMax = "pidMax";
+constexpr auto tempFormat = "tempFormat";
+};
