@@ -7,9 +7,6 @@
 #include <ArduinoJson.h>
 
 
-#define SPIFFS_controlConstants_fname "/controlConstants.json"
-#define SPIFFS_controlSettings_fname "/controlSettings.json"
-
 /*
  * \addtogroup tempcontrol
  * @{
@@ -65,8 +62,10 @@ public:
     void loadFromSpiffs();
     void setDefaults();
 
-
-
+    /**
+     * \brief Filename used when reading/writing data to flash
+     */
+    static constexpr auto filename = "/controlConstants.json";
 private:
 };
 
@@ -87,6 +86,10 @@ public:
     void loadFromSpiffs();
     void setDefaults();
 
+    /**
+     * \brief Filename used when reading/writing data to flash
+     */
+    static constexpr auto filename = "/controlSettings.json";
 };
 
 /*

@@ -145,7 +145,7 @@ void ControlConstants::storeToSpiffs() {
 
     doc = toJson();
 
-    writeJsonToFile(SPIFFS_controlConstants_fname, doc);  // Write the json to the file
+    writeJsonToFile(ControlConstants::filename, doc);  // Write the json to the file
 }
 
 void ControlConstants::loadFromSpiffs() {
@@ -153,7 +153,7 @@ void ControlConstants::loadFromSpiffs() {
     setDefaults();
 
     DynamicJsonDocument json_doc(2048);
-    json_doc = readJsonFromFile(SPIFFS_controlConstants_fname);
+    json_doc = readJsonFromFile(ControlConstants::filename);
 
     // Load the constants from the JSON Doc
     if(json_doc.containsKey("tempSettingMin"))
@@ -249,7 +249,7 @@ void ControlSettings::storeToSpiffs() {
 
     doc = toJson();
 
-    writeJsonToFile(SPIFFS_controlSettings_fname, doc);  // Write the json to the file
+    writeJsonToFile(ControlSettings::filename, doc);  // Write the json to the file
 }
 
 
@@ -258,7 +258,7 @@ void ControlSettings::loadFromSpiffs() {
     setDefaults();
 
     DynamicJsonDocument json_doc(1024);
-    json_doc = readJsonFromFile(SPIFFS_controlSettings_fname);
+    json_doc = readJsonFromFile(ControlSettings::filename);
 
     // Load the settings from the JSON Doc
     if(json_doc.containsKey("beerSetting"))
