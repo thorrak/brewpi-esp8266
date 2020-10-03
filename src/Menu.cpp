@@ -97,13 +97,13 @@ void settingSelected() {
 			return;
 		case 1:
 			// switch to beer constant, because beer setting will be set through display
-			tempControl.setMode(MODE_BEER_CONSTANT);
+			tempControl.setMode(Modes::beerConstant);
 			display.printMode();
 			menu.pickBeerSetting();
 			return;
 		case 2:
 			// switch to fridge constant, because fridge setting will be set through display
-			tempControl.setMode(MODE_FRIDGE_CONSTANT);
+			tempControl.setMode(Modes::fridgeConstant);
 			display.printMode();
 			menu.pickFridgeSetting();
 			return;
@@ -133,20 +133,20 @@ void clearMode() {
 
 void selectMode() {
 	char mode = tempControl.getMode();
-	if(mode ==  MODE_BEER_CONSTANT){
+	if(mode ==  Modes::beerConstant){
 		menu.pickBeerSetting();
 	}
-	else if(mode == MODE_FRIDGE_CONSTANT){
+	else if(mode == Modes::fridgeConstant){
 		menu.pickFridgeSetting();
 	}
-	else if(mode == MODE_BEER_PROFILE){
+	else if(mode == Modes::beerProfile){
 #if defined(ESP8266) || defined(ESP32)
 		piLink.printTemperatures("Changed to profile mode in menu.", 0);
 #else
 		piLink.printBeerAnnotation(PSTR("Changed to profile mode in menu."));
 #endif
 	}
-	else if(mode == MODE_OFF){
+	else if(mode == Modes::off){
 #if defined(ESP8266) || defined(ESP32)
 		piLink.printTemperatures("Temp control turned off in menu.", 0);
 #else

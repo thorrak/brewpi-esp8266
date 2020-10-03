@@ -82,11 +82,14 @@ struct ControlVariables{
 #define EEPROM_CONTROL_SETTINGS_ADDRESS (EEPROM_TC_SETTINGS_BASE_ADDRESS+sizeof(uint8_t))
 #define EEPROM_CONTROL_CONSTANTS_ADDRESS (EEPROM_CONTROL_SETTINGS_ADDRESS+sizeof(ControlSettings))
 
-#define	MODE_FRIDGE_CONSTANT 'f'
-#define MODE_BEER_CONSTANT 'b'
-#define MODE_BEER_PROFILE 'p'
-#define MODE_OFF 'o'
-#define MODE_TEST 't'
+namespace Modes {
+  constexpr auto fridgeConstant = 'f';
+  constexpr auto beerConstant = 'b';
+  constexpr auto beerProfile = 'p';
+  constexpr auto off = 'o';
+  constexpr auto test = 't';
+};
+
 
 
 /**
@@ -243,7 +246,7 @@ public:
    * Check if the current configured mode is Beer
    */
 	TEMP_CONTROL_METHOD bool modeIsBeer(){
-		return (cs.mode == MODE_BEER_CONSTANT || cs.mode == MODE_BEER_PROFILE);
+		return (cs.mode == Modes::beerConstant || cs.mode == Modes::beerProfile);
 	}
 
 	TEMP_CONTROL_METHOD void initFilters();

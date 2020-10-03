@@ -8,7 +8,7 @@
 
 #include "EepromStructs.h"
 #include "TemperatureFormats.h"
-#include "TempControl.h" // For definition of MODE_OFF
+#include "TempControl.h" // For Modes definition
 #include "JsonKeys.h"
 
 
@@ -223,7 +223,7 @@ void ControlSettings::setDefaults() {
     fridgeSetting = intToTemp(20);
     heatEstimator = intToTempDiff(2)/10; // 0.2
     coolEstimator=intToTempDiff(5);
-    mode = MODE_OFF;  // We do NOT do call set_mode here - that is handled in TempControl::loadDefaultSettings()
+    mode = Modes::off;  // We do NOT do call set_mode here - that is handled in TempControl::loadDefaultSettings()
 }
 
 

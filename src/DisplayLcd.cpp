@@ -239,22 +239,22 @@ void LcdDisplay::printMode(){
 	lcd.setCursor(7,0);
 	// Factoring prints out of switch has negative effect on code size in this function
 	switch(tempControl.getMode()){
-		case MODE_FRIDGE_CONSTANT:
+    case Modes::fridgeConstant:
 			lcd.print_P(STR_Fridge_);
 			lcd.print_P(STR_Const_);
 			break;
-		case MODE_BEER_CONSTANT:
+    case Modes::beerConstant:
 			lcd.print_P(STR_Beer_);
 			lcd.print_P(STR_Const_);
 			break;
-		case MODE_BEER_PROFILE:
+    case Modes::beerProfile:
 			lcd.print_P(STR_Beer_);
 			lcd.print_P(PSTR("Profile"));
 			break;
-		case MODE_OFF:
+    case Modes::off:
 			lcd.print_P(PSTR("Off"));
 			break;
-		case MODE_TEST:
+    case Modes::test:
 			lcd.print_P(PSTR("** Testing **"));
 			break;
 		default:
