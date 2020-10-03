@@ -34,14 +34,22 @@ void SettingLoader::processSettingKeypair(JsonPair kv) {
   // but the brewpi script presents the data as a number.  Prep a string
   // version in case we need it for this value.
   String str_value;
-  if(kv.value().is<char *>())
+  if (kv.value().is<char *>())
     str_value = kv.value().as<char *>();
-  else if(kv.value().is<float>()) {
+  else if (kv.value().is<float>()) {
     str_value = kv.value().as<float>();
   }
 
   if (kv.key() == "mode") {
-    tempControl.setMode(kv.value().as<char *>()[0]);
+    char mode = kv.value().as<char *>()[0];
+
+    if (mode == Modes::fridgeConstant || mode == Modes::beerConstant || mode == Modes::beerProfile ||
+        mode == Modes::off || mode == Modes::test) {
+      tempControl.setMode(mode);
+    } else {
+      piLink.print_fmt("Invalid mode \"%c\" (0x%02X)", mode, mode);
+      piLink.printNewLine();
+    }
   }
 
   else if (kv.key() == "beerSet") {
@@ -61,9 +69,16 @@ void SettingLoader::processSettingKeypair(JsonPair kv) {
   }
 
   else if (kv.key() == "tempFormat") {
-    tempControl.cc.tempFormat = kv.value().as<char *>()[0];
-    display.printStationaryText(); // reprint stationary text to update to right
-                                   // degree unit
+    char format = kv.value().as<char *>()[0];
+
+    if (format == 'C' || format == 'F') {
+      tempControl.cc.tempFormat = format;
+      // reprint stationary text to update to right degree unit
+      display.printStationaryText();
+    } else {
+      piLink.print_P(PSTR("Invalid temp format \"%c\" (0x%02X)"), format, format);
+      piLink.printNewLine();
+    }
   }
 
   else if (kv.key() == "tempSetMin") {
