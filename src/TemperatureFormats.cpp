@@ -334,3 +334,19 @@ temperature multiplyFactorTemperatureDiff(temperature factor, temperature b)
 {
 	return constrainTemp16(((long_temperature) factor * (long_temperature) b )>>TEMP_FIXED_POINT_BITS);
 }
+
+
+/**
+ * \brief Convert a temperature to a double.
+ * Used for JSON conversion.
+ *
+ * \param rawTemp - Temperature value to convert
+ * \param numDecimals - Number of decimal places to include
+ * \todo Do a direct conversion instead of going to string
+ */
+double tempToDouble(long_temperature rawTemp, uint8_t numDecimals) {
+  char tempString[Config::TempFormat::bufferLen];
+  String temp(tempToString(tempString, rawTemp, numDecimals, Config::TempFormat::bufferLen));
+  temp.trim();
+  return temp.toDouble();
+}

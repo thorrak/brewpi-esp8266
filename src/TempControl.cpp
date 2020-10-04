@@ -743,19 +743,18 @@ bool TempControl::stateIsHeating(){
  * \param doc - Reference to JsonDocument to populate
  */
 void TempControl::getControlVariablesDoc(JsonDocument& doc) {
-  char tempString[Config::TempFormat::bufferLen];
+  doc["beerDiff"] = tempToDouble(cv.beerDiff, Config::TempFormat::tempDiffDecimals);
+  doc["diffIntegral"] = tempToDouble(cv.diffIntegral, Config::TempFormat::tempDiffDecimals);
+  doc["beerSlope"] = tempToDouble(cv.beerSlope, Config::TempFormat::tempDiffDecimals);
 
-  doc["beerDiff"] = String(tempToString(tempString, cv.beerDiff, Config::TempFormat::tempDiffDecimals, Config::TempFormat::bufferLen));
-  doc["diffIntegral"] = String(tempToString(tempString, cv.diffIntegral, Config::TempFormat::tempDiffDecimals, Config::TempFormat::bufferLen));
-  doc["beerSlope"] = String(tempToString(tempString, cv.beerSlope, Config::TempFormat::tempDiffDecimals, Config::TempFormat::bufferLen));
-  doc["p"] = String(tempToString(tempString, cv.p, Config::TempFormat::fixedPointDecimals, Config::TempFormat::bufferLen));
-  doc["i"] = String(tempToString(tempString, cv.i, Config::TempFormat::fixedPointDecimals, Config::TempFormat::bufferLen));
-  doc["d"] = String(tempToString(tempString, cv.d, Config::TempFormat::fixedPointDecimals, Config::TempFormat::bufferLen));
-  doc["estPeak"] = String(tempToString(tempString, cv.estimatedPeak, Config::TempFormat::tempDecimals, Config::TempFormat::bufferLen));
-  doc["negPeakEst"] = String(tempToString(tempString, cv.negPeakEstimate, Config::TempFormat::tempDecimals, Config::TempFormat::bufferLen));
-  doc["posPeakEst"] = String(tempToString(tempString, cv.posPeakEstimate, Config::TempFormat::tempDecimals, Config::TempFormat::bufferLen));
-  doc["negPeak"] = String(tempToString(tempString, cv.negPeak, Config::TempFormat::tempDecimals, Config::TempFormat::bufferLen));
-  doc["posPeak"] = String(tempToString(tempString, cv.posPeak, Config::TempFormat::tempDecimals, Config::TempFormat::bufferLen));
+  doc["p"] = tempToDouble(cv.p, Config::TempFormat::fixedPointDecimals);
+  doc["i"] = tempToDouble(cv.i, Config::TempFormat::fixedPointDecimals);
+  doc["d"] = tempToDouble(cv.d, Config::TempFormat::fixedPointDecimals);
+  doc["estPeak"] = tempToDouble(cv.estimatedPeak, Config::TempFormat::tempDecimals);
+  doc["negPeakEst"] = tempToDouble(cv.negPeakEstimate, Config::TempFormat::tempDecimals);
+  doc["posPeakEst"] = tempToDouble(cv.posPeakEstimate, Config::TempFormat::tempDecimals);
+  doc["negPeak"] = tempToDouble(cv.negPeak, Config::TempFormat::tempDecimals);
+  doc["posPeak"] = tempToDouble(cv.posPeak, Config::TempFormat::tempDecimals);
 }
 
 /**
@@ -764,22 +763,22 @@ void TempControl::getControlVariablesDoc(JsonDocument& doc) {
  * \param doc - Reference to JsonDocument to populate
  */
 void TempControl::getControlConstantsDoc(JsonDocument& doc) {
-  char tempString[Config::TempFormat::bufferLen];
-
   doc["tempFormat"] = String(cc.tempFormat);
-  doc["tempSetMin"] = String(tempToString(tempString, cc.tempSettingMin, Config::TempFormat::tempDecimals, Config::TempFormat::bufferLen));
-  doc["tempSetMax"] = String(tempToString(tempString, cc.tempSettingMax, Config::TempFormat::tempDecimals, Config::TempFormat::bufferLen));
-  doc["pidMax"] = String(tempToString(tempString, cc.pidMax, Config::TempFormat::tempDiffDecimals, Config::TempFormat::bufferLen));
-  doc["Kp"] = String(tempToString(tempString, cc.Kp, Config::TempFormat::fixedPointDecimals, Config::TempFormat::bufferLen));
-  doc["Ki"] = String(tempToString(tempString, cc.Ki, Config::TempFormat::fixedPointDecimals, Config::TempFormat::bufferLen));
-  doc["Kd"] = String(tempToString(tempString, cc.Kd, Config::TempFormat::fixedPointDecimals, Config::TempFormat::bufferLen));
-  doc["iMaxErr"] = String(tempToString(tempString, cc.iMaxError, Config::TempFormat::tempDiffDecimals, Config::TempFormat::bufferLen));
-  doc["idleRangeH"] = String(tempToString(tempString, cc.idleRangeHigh, Config::TempFormat::tempDiffDecimals, Config::TempFormat::bufferLen));
-  doc["idleRangeL"] = String(tempToString(tempString, cc.idleRangeLow, Config::TempFormat::tempDiffDecimals, Config::TempFormat::bufferLen));
-  doc["heatTargetH"] = String(tempToString(tempString, cc.heatingTargetUpper, Config::TempFormat::tempDiffDecimals, Config::TempFormat::bufferLen));
-  doc["heatTargetL"] = String(tempToString(tempString, cc.heatingTargetLower, Config::TempFormat::tempDiffDecimals, Config::TempFormat::bufferLen));
-  doc["coolTargetH"] = String(tempToString(tempString, cc.coolingTargetUpper, Config::TempFormat::tempDiffDecimals, Config::TempFormat::bufferLen));
-  doc["coolTargetL"] = String(tempToString(tempString, cc.coolingTargetLower, Config::TempFormat::tempDiffDecimals, Config::TempFormat::bufferLen));
+
+  doc["tempSetMin"] = tempToDouble(cc.tempSettingMin, Config::TempFormat::tempDecimals);
+  doc["tempSetMax"] = tempToDouble(cc.tempSettingMax, Config::TempFormat::tempDecimals);
+  doc["pidMax"] = tempToDouble(cc.pidMax, Config::TempFormat::tempDiffDecimals);
+  doc["Kp"] = tempToDouble(cc.Kp, Config::TempFormat::fixedPointDecimals);
+  doc["Ki"] = tempToDouble(cc.Ki, Config::TempFormat::fixedPointDecimals);
+  doc["Kd"] = tempToDouble(cc.Kd, Config::TempFormat::fixedPointDecimals);
+
+  doc["iMaxErr"] = tempToDouble(cc.iMaxError, Config::TempFormat::tempDiffDecimals);
+  doc["idleRangeH"] = tempToDouble(cc.idleRangeHigh, Config::TempFormat::tempDiffDecimals);
+  doc["idleRangeL"] = tempToDouble(cc.idleRangeLow, Config::TempFormat::tempDiffDecimals);
+  doc["heatTargetH"] = tempToDouble(cc.heatingTargetUpper, Config::TempFormat::tempDiffDecimals);
+  doc["heatTargetL"] = tempToDouble(cc.heatingTargetLower, Config::TempFormat::tempDiffDecimals);
+  doc["coolTargetH"] = tempToDouble(cc.coolingTargetUpper, Config::TempFormat::tempDiffDecimals);
+  doc["coolTargetL"] = tempToDouble(cc.coolingTargetLower, Config::TempFormat::tempDiffDecimals);
   doc["maxHeatTimeForEst"] = tempControl.cc.maxHeatTimeForEstimate;
   doc["maxCoolTimeForEst"] = tempControl.cc.maxCoolTimeForEstimate;
   doc["fridgeFastFilt"] = tempControl.cc.fridgeFastFilter;
@@ -799,11 +798,9 @@ void TempControl::getControlConstantsDoc(JsonDocument& doc) {
  * \param doc - Reference to JsonDocument to populate
  */
 void TempControl::getControlSettingsDoc(JsonDocument& doc) {
-  char tempString[Config::TempFormat::bufferLen];
-
   doc["mode"] = String(cs.mode);
-  doc["beerSet"] = tempToString(tempString, cs.beerSetting, 2, Config::TempFormat::bufferLen);
-  doc["fridgeSet"] = tempToString(tempString, cs.fridgeSetting, 2, Config::TempFormat::bufferLen);
-  doc["heatEst"] = fixedPointToString(tempString, cs.heatEstimator, 3, Config::TempFormat::bufferLen);
-  doc["coolEst"] = fixedPointToString(tempString, cs.coolEstimator, 3, Config::TempFormat::bufferLen);
+  doc["beerSet"] = tempToDouble(cs.beerSetting, Config::TempFormat::fixedPointDecimals);
+  doc["fridgeSet"] = tempToDouble(cs.fridgeSetting, Config::TempFormat::fixedPointDecimals);
+  doc["heatEst"] = tempToDouble(cs.heatEstimator, Config::TempFormat::fixedPointDecimals);
+  doc["coolEst"] = tempToDouble(cs.coolEstimator, Config::TempFormat::fixedPointDecimals);
 }

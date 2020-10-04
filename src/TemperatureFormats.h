@@ -224,6 +224,8 @@ inline long_temperature convertFromInternalTemp(long_temperature rawTemp) {
 }
 
 
+double tempToDouble(long_temperature rawTemp, uint8_t numDecimals);
+
 #define OPTIMIZE_TEMPERATURE_FORMATS 1 && OPTIMIZE_GLOBAL
 
 /** @} */

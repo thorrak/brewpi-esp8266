@@ -72,33 +72,18 @@ public:
   void printTemperatures(const char *beerAnnotation, const char *fridgeAnnotation) {
     StaticJsonDocument<1024> doc;
 
-    temperature t;
-    char tempString[9];
-
-    t = tempControl.getBeerTemp();
-    tempToString(tempString, t, 2, 9);
-    doc["BeerTemp"] = tempString;
-
-    t = tempControl.getBeerSetting();
-    tempToString(tempString, t, 2, 9);
-    doc["BeerSet"] = tempString;
+    doc["BeerTemp"] = tempToDouble(tempControl.getBeerTemp(), Config::TempFormat::tempDecimals);
+    doc["BeerSet"] = tempToDouble(tempControl.getBeerSetting(), Config::TempFormat::fixedPointDecimals);
 
     doc["BeerAnn"] = beerAnnotation;
 
-    t = tempControl.getFridgeTemp();
-    tempToString(tempString, t, 2, 9);
-    doc["FridgeTemp"] = tempString;
-
-    t = tempControl.getFridgeSetting();
-    tempToString(tempString, t, 2, 9);
-    doc["FridgeSet"] = tempString;
+    doc["FridgeTemp"] = tempToDouble(tempControl.getFridgeTemp(), Config::TempFormat::tempDecimals);
+    doc["FridgeSet"] = tempToDouble(tempControl.getFridgeSetting(), Config::TempFormat::fixedPointDecimals);
 
     doc["FridgeAnn"] = fridgeAnnotation;
 
-    t = tempControl.getRoomTemp();
     if (tempControl.ambientSensor->isConnected()) {
-      tempToString(tempString, t, 2, 9);
-      doc["RoomTemp"] = tempString;
+      doc["RoomTemp"] = tempToDouble(tempControl.getRoomTemp(), Config::TempFormat::tempDecimals);
     } else {
       doc["RoomTemp"] = "";
     }
