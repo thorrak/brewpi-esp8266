@@ -39,17 +39,15 @@
 
 
 /*
- * Create the correct type of PiLink connection for how we're configured.  When
- * everything gets moved off of the deprecated "build JSON via string fragment
- * prints" interface, CompatiblePiLink can be replaced with PiLink.
+ * Create the correct type of PiLink connection for how we're configured.
  */
 #if defined(ESP8266_WiFi)
 // Just use the serverClient object as it supports all the same functions as Serial
 extern WiFiClient serverClient;
-CompatiblePiLink<WiFiClient> piLink(serverClient);
+PiLink<WiFiClient> piLink(serverClient);
 #else
 // Not using ESP8266 WiFi
-CompatiblePiLink<HardwareSerial> piLink(Serial);
+PiLink<HardwareSerial> piLink(Serial);
 #endif
 
 /* Configure the counter and delay timer. The actual type of these will vary depending upon the environment.

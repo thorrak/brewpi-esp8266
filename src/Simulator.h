@@ -90,7 +90,10 @@ typedef ValueSensor<bool>*	PValueSensor;
  */
 class Simulator
 {
-public:	
+public:
+  void printSettings();
+  void parseSettings();
+
 	Simulator(
 				unsigned long _time=0, 
 				unsigned int _fridgeVolume=400, double _fridgeTemp = 20.0, 
