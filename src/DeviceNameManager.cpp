@@ -27,9 +27,9 @@
 #include "DeviceNameManager.h"
 
 /**
- * Set a human readable name for a device.
- * @param device - The identifier for the device, most commonly the OneWire device address (in hex)
- * @param name - The name to set
+ * \brief Set a human readable name for a device.
+ * \param device - The identifier for the device, most commonly the OneWire device address (in hex)
+ * \param name - The name to set
  */
 void DeviceNameManager::setDeviceName(const char* device, const char* name)
 {
@@ -45,8 +45,11 @@ void DeviceNameManager::setDeviceName(const char* device, const char* name)
 
 
 /**
- * Get the human readable name for a device.
- * @param device - The identifier for the device, most commonly the OneWire device address (in hex)
+ * \brief Get the human readable name for a device.
+ *
+ * If no name has been registered, the device ID will be returned.
+ * \param device - The identifier for the device, most commonly the OneWire device address (in hex)
+ * \return The registered device name, or if none is set, the provided device ID
  */
 String DeviceNameManager::getDeviceName(const char* device) {
   char filename[32];
@@ -61,13 +64,13 @@ String DeviceNameManager::getDeviceName(const char* device) {
     }
   }
 
-  return "";
+  return device;
 }
 
 
 /**
- * Get the Filename that contains the device human name metadata for a given device.
- * @param device - The identifier for the device, most commonly the OneWire device address (in hex)
+ * \brief Get the Filename that contains the device human name metadata for a given device.
+ * \param device - The identifier for the device, most commonly the OneWire device address (in hex)
  */
 inline void DeviceNameManager::deviceNameFilename(char* filename, const char* device) {
   strcpy(filename, DeviceNameManager::filenamePrefix);
@@ -76,7 +79,7 @@ inline void DeviceNameManager::deviceNameFilename(char* filename, const char* de
 
 
 /**
- * Prefix used when building device name filenames
+ * \brief Prefix used when building device name filenames
  *
  * This helps disambiguate the name files from other data, and makes it easier
  * to produce a list of named probes.
@@ -84,7 +87,8 @@ inline void DeviceNameManager::deviceNameFilename(char* filename, const char* de
 const char DeviceNameManager::filenamePrefix[] = "/dn/";
 
 /**
- * Calculate length of filename prefix.
+ * \brief Calculate length of DeviceNameManager::filenamePrefix
+ *
  * This is done as a constexpr so it can be calculated at compile time
  */
 constexpr int DeviceNameManager::prefixLength() {
@@ -93,8 +97,8 @@ constexpr int DeviceNameManager::prefixLength() {
 
 
 /**
- * Delete a configured device name
- * @param device - The identifier for the device, most commonly the OneWire device address (in hex)
+ * \brief Delete a configured device name
+ * \param device - The identifier for the device, most commonly the OneWire device address (in hex)
  */
 void DeviceNameManager::deleteDeviceName(const char* device) {
   char filename[32];
@@ -106,7 +110,7 @@ void DeviceNameManager::deleteDeviceName(const char* device) {
 
 #if defined(ESP32)
 /**
- * Get list of configured device names
+ * \brief Get list of configured device names
  */
 void DeviceNameManager::enumerateDeviceNames(JsonDocument& doc) {
   File root = SPIFFS.open(filenamePrefix);
@@ -125,7 +129,7 @@ void DeviceNameManager::enumerateDeviceNames(JsonDocument& doc) {
 #else
 
 /**
- * Get list of configured device names
+ * \brief Get list of configured device names
  */
 void DeviceNameManager::enumerateDeviceNames(JsonDocument& doc) {
   Dir dir = SPIFFS.openDir(filenamePrefix);
@@ -139,9 +143,9 @@ void DeviceNameManager::enumerateDeviceNames(JsonDocument& doc) {
 
 
 /**
- * Given a filename, get a DeviceName
+ * \brief Given a filename, get a DeviceName
  *
- * @param filename
+ * \param filename
  */
 DeviceName DeviceNameManager::filenameToDeviceName(String filename) {
   // strip the prefix off

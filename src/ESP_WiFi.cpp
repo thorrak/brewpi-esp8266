@@ -65,9 +65,7 @@ void mdns_reset() {
 
     MDNS.end();
 
-    if (!MDNS.begin(mdns_id.c_str())) {
-        //Log.error(F("Error resetting MDNS responder."));
-    } else {
+    if (MDNS.begin(mdns_id.c_str())) {
         //Log.notice(F("mDNS responder restarted, hostname: %s.local." CR), WiFi.getHostname());
         // mDNS will stop responding after awhile unless we query the specific service we want
         MDNS.addService("brewpi", "tcp", 23);
@@ -75,6 +73,11 @@ void mdns_reset() {
         MDNS.addServiceTxt("brewpi", "tcp", "branch", "legacy");
         MDNS.addServiceTxt("brewpi", "tcp", "version", Config::Version::release);
         MDNS.addServiceTxt("brewpi", "tcp", "revision", FIRMWARE_REVISION);
+
+        if(Config::Prometheus::enable())
+          MDNS.addService("brewpi_metrics", "tcp", Config::Prometheus::port);
+    } else {
+        //Log.error(F("Error resetting MDNS responder."));
     }
 }
 

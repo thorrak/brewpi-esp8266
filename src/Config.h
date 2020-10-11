@@ -387,6 +387,11 @@ namespace Config {
      * \brief Length to use for conversion buffers
      */
     constexpr auto bufferLen = 12;
+
+    /**
+     * \brief Maximum length of a temp string
+     */
+    constexpr auto maxLength = 9;
   };
 
   /**
@@ -397,4 +402,28 @@ namespace Config {
    * overwritten with 1.
    */
   constexpr bool forceDeviceDefaults = true;
+
+  /**
+   * \brief Prometheus configuration
+   */
+  namespace Prometheus {
+    /**
+     * \brief Enable Prometheus instrumentation support
+     *
+     * Only enabled when WiFi is enabled. The feature doesn't make sense when
+     * there is only serial.
+     *
+     * \see PromServer
+     */
+    constexpr bool enable() {
+      // Enable if wifi is enabled
+      return Config::PiLink::useWifi;
+    };
+
+    /**
+     * \brief TCP port to bind Prometheus HTTP service to
+     * \see PromServer
+     */
+    constexpr auto port = 8080;
+  };
 };
