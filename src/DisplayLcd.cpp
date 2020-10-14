@@ -77,6 +77,11 @@ bool toggleBacklight;
 #define max _max
 #endif
 
+/**
+ * \brief Invalid timestamp
+ */
+constexpr auto invalidTime = UINT16_MAX;
+
 void LcdDisplay::init(void){
 #if defined(ESP8266) || defined(ESP32)
 	toggleBacklight = false;
@@ -261,7 +266,7 @@ void LcdDisplay::printMode(void){
 
 // print the current state on the last line of the lcd
 void LcdDisplay::printState(void){
-	uint16_t time = UINT16_MAX; // init to max
+	uint16_t time = invalidTime;
 	uint8_t state = tempControl.getDisplayState();
 	if(state != stateOnDisplay){ //only print static text when state has changed
 		stateOnDisplay = state;
@@ -331,7 +336,7 @@ void LcdDisplay::printState(void){
 	else if(state == WAITING_TO_COOL || state == WAITING_TO_HEAT){
 		time = tempControl.getWaitTime();
 	}
-	if(time != UINT_MAX){
+	if(time != invalidTime){
 		char timeString[10];
 #if DISPLAY_TIME_HMS  // 96 bytes more space required. 
 		unsigned int minutes = time/60;		
