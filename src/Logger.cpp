@@ -30,7 +30,7 @@
  * \param type - Type of message
  * \param errorID
  */
-void Logger::logMessageVaArg(char type, LOG_ID_TYPE errorID, const char * varTypes, ...){
+void Logger::logMessageVaArg(const char type, const LOG_ID_TYPE errorID, const char * varTypes, ...){
   DynamicJsonDocument doc(2048);
 
 	va_list args;
@@ -56,6 +56,8 @@ void Logger::logMessageVaArg(char type, LOG_ID_TYPE errorID, const char * varTyp
         varArray.add(String(fixedPointToString(buf, (temperature) va_arg(args,int), 3, 12)));
 			break;
 		}
+
+    index++;
 	}
 	va_end (args);
   piLink.sendJsonMessage('D', doc);
