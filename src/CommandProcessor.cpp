@@ -141,6 +141,10 @@ void CommandProcessor::receiveCommand() {
       resetWiFi();
       break;
 
+    case 'W': // WiFi connection info
+      wifiInfo();
+      break;
+
 #if BREWPI_SIMULATE == 1
     case 'Y':
       printSimulatorSettings();
@@ -166,10 +170,26 @@ void CommandProcessor::receiveCommand() {
 
 /**
  * \brief Display a warning about unknown commands
- * \param inByte - The recieved command
+ * \param inByte - The received command
  */
-void CommandProcessor::invalidCommand(char inByte) {
+void CommandProcessor::invalidCommand(const char inByte) {
   piLink.print_P(PSTR("Invalid command received \"%c\" (0x%02X)"), inByte, inByte);
+  piLink.printNewLine();
+}
+
+/**
+ * \brief Inform user that the requested command isn't implemented.
+ *
+ * This differs from an invalid command because an invalid command is not ever
+ * valid in the command set.  Not-implemented commands are valid, it's just
+ * that the code doesn't currently support the command.  The lack of support
+ * could be due to configuration or just a yet to be finished feature.
+ *
+ * \param command - Command requested.
+ * \param message - An message explaining why the command isn't implemented.
+ */
+void CommandProcessor::commandNotImplemented(const char command, const String message) {
+  piLink.print_P(PSTR("Command \"%c\" not implemented. %s"), command, message.c_str());
   piLink.printNewLine();
 }
 
@@ -257,6 +277,22 @@ void CommandProcessor::listHardware() {
  * \ingroup commands
  */
 void CommandProcessor::resetWiFi() { WiFi.disconnect(true); }
+
+/**
+ * \brief Get info about the WiFi connection
+ *
+ * \ingroup commands
+ */
+void CommandProcessor::wifiInfo() {
+  if (!Config::PiLink::useWifi) {
+    commandNotImplemented('W', String("WiFi info not available when WiFi is disabled"));
+    return;
+  }
+
+  DynamicJsonDocument doc(1024);
+  wifi_connection_info(doc);
+  piLink.sendJsonMessage('W', doc);
+}
 
 /**
  * \brief Toggle the state of the LCD backlight

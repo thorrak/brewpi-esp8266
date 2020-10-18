@@ -35,16 +35,13 @@ extern void handleReset();  // Terrible practice. In brewpi-esp8266.cpp.
 
 /**
  * \brief Callback notifying us of the need to save config
+ * \ingroup wifi
  */
 void saveConfigCallback() {
     Serial.println("Should save config");
     shouldSaveConfig = true;
 }
 
-
-/**
- * \brief Initialize the telnet server
- */
 void initWifiServer() {
   server.begin();
   server.setNoDelay(true);
@@ -151,6 +148,10 @@ void initialize_wifi() {
     WiFi.setAutoReconnect(true);
 }
 
+void wifi_connection_info(JsonDocument& doc) {
+  doc["ssid"] = WiFi.SSID();
+  doc["signalStrength"] = WiFi.RSSI();
+}
 
 void display_connect_info_and_create_callback() {
 #if defined(ESP8266)
@@ -162,11 +163,6 @@ void display_connect_info_and_create_callback() {
 }
 
 
-/**
- * \brief Handle incoming WiFi client connections.
- *
- * This also handles WiFi network reconnects if the network was disconnected.
- */
 void wifi_connect_clients() {
     static unsigned long last_connection_check = 0;
 
