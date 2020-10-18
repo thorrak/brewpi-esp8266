@@ -32,26 +32,26 @@
 class RotaryEncoder
 {
 	public:
-	static void init(void);
+	static void init();
 	static void setRange(int16_t start, int16_t min, int16_t max);
-	static void process(void);
+	static void process();
 			
-	static bool changed(void); // returns one if the value changed since the last call of changed.
-	static int16_t read(void);
+	static bool changed(); // returns one if the value changed since the last call of changed.
+	static int16_t read();
 	
-	static int16_t readsteps(void){
+	static int16_t readsteps(){
 		return steps;
 	}
 
-	static bool pushed(void){
+	static bool pushed(){
 		return pushFlag;
 	}
 
-	static void resetPushed(void){
+	static void resetPushed(){
 		pushFlag = false;
 	}	
 	
-	static void setPushed(void);
+	static void setPushed();
 	
 	private:
 	

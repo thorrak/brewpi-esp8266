@@ -84,25 +84,43 @@ void TempSensor::update()
 /**
  * \brief Read the sensor value after processing through the fast filter
  */
-temperature TempSensor::readFastFiltered(void){
+temperature TempSensor::readFastFiltered(){
 	return fastFilter.readOutput(); //return most recent unfiltered value
 }
 
-temperature TempSensor::readSlowFiltered(void){
+/**
+ * \brief Read the sensor value after processing through the slow filter
+ */
+temperature TempSensor::readSlowFiltered(){
   return slowFilter.readOutput(); //return most recent unfiltered value
 }
 
-temperature TempSensor::readSlope(void){
-	// return slope per hour. 
+/**
+ * \brief Read the sensor value after processing through the slope filter
+ */
+temperature TempSensor::readSlope(){
+	// return slope per hour.
 	temperature_precise doublePrecision = slopeFilter.readOutputDoublePrecision();
 	return doublePrecision>>16; // shift to single precision
 }
 
-temperature TempSensor::detectPosPeak(void){
+
+/**
+ * \brief Detect the positive peak
+ *
+ * Uses the detectPosPeak() method of the slow filter
+ */
+temperature TempSensor::detectPosPeak(){
 	return slowFilter.detectPosPeak();
 }
-	
-temperature TempSensor::detectNegPeak(void){
+
+
+/**
+ * \brief Detect the negative peak
+ *
+ * Uses the detectNegPeak() method of the slow filter
+ */
+temperature TempSensor::detectNegPeak(){
 	return slowFilter.detectNegPeak();
 }
 

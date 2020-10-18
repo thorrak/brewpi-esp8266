@@ -231,15 +231,6 @@
 #define ONEWIRE_CRC8_TABLE 0
 #endif
 
-
-#ifndef BUILD_NUMBER
-#define BUILD_NUMBER 0
-#endif
-
-#ifndef BUILD_NAME
-#define BUILD_NAME "00000000"
-#endif
-
 #ifndef DISPLAY_TIME_HMS
 #define DISPLAY_TIME_HMS 1
 #endif

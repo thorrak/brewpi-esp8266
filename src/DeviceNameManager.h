@@ -21,6 +21,7 @@
 #pragma once
 
 #include "Brewpi.h"
+#include <ArduinoJson.h>
 
 /**
  * Tuple of device name and ID
@@ -45,12 +46,7 @@ class DeviceNameManager
     static String getDeviceName(const char* device);
     static void deleteDeviceName(const char* device);
 
-    /**
-     * Function pointer for a DeviceName enumeration handler
-     */
-    typedef void (*deviceNameHandler)(DeviceName);
-
-    static void enumerateDeviceNames(deviceNameHandler callback);
+    static void enumerateDeviceNames(JsonDocument& doc);
 
 
   private:

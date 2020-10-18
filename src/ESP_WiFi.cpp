@@ -41,6 +41,15 @@ void saveConfigCallback() {
     shouldSaveConfig = true;
 }
 
+
+/**
+ * \brief Initialize the telnet server
+ */
+void initWifiServer() {
+  server.begin();
+  server.setNoDelay(true);
+}
+
 // Not sure if this is sufficient to test for validity
 bool isValidmDNSName(const String& mdns_name) {
 //    for (std::string::size_type i = 0; i < mdns_name.length(); ++i) {
@@ -67,7 +76,7 @@ void mdns_reset() {
         MDNS.addService("brewpi", "tcp", 23);
         MDNS.addServiceTxt("brewpi", "tcp", "board", CONTROLLER_TYPE);
         MDNS.addServiceTxt("brewpi", "tcp", "branch", "legacy");
-        MDNS.addServiceTxt("brewpi", "tcp", "version", VERSION_STRING);
+        MDNS.addServiceTxt("brewpi", "tcp", "version", Config::Version::release);
         MDNS.addServiceTxt("brewpi", "tcp", "revision", FIRMWARE_REVISION);
     }
 }
@@ -153,6 +162,11 @@ void display_connect_info_and_create_callback() {
 }
 
 
+/**
+ * \brief Handle incoming WiFi client connections.
+ *
+ * This also handles WiFi network reconnects if the network was disconnected.
+ */
 void wifi_connect_clients() {
     static unsigned long last_connection_check = 0;
 
@@ -165,9 +179,9 @@ void wifi_connect_clients() {
             serverClient.flush();
         }
     } else {
-        // This might be unnecessary, but let's go ahead and disconnect any "clients" we show as connected given that
-        // WiFi isn't connected
-        // If we show a client as already being disconnected, force a disconnect
+        // This might be unnecessary, but let's go ahead and disconnect any
+        // "clients" we show as connected given that WiFi isn't connected. If
+        // we show a client as already being disconnected, force a disconnect
         if (serverClient) {
             serverClient.stop();
             serverClient = server.available();

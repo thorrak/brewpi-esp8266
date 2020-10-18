@@ -1,19 +1,19 @@
 /*
- * Copyright 2013 Matthew McGowan 
+ * Copyright 2013 Matthew McGowan
  * Copyright 2013 BrewPi/Elco Jacobs.
  *
  * This file is part of BrewPi.
- * 
+ *
  * BrewPi is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * BrewPi is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -38,11 +38,14 @@
  * \defgroup hardware Hardware
  * \brief Interfacing with hardware devices
  *
- * A user has freedom to connect various devices to the arduino, either via extending the oneWire bus, or by assigning to specific pins, e.g. actuators, switch sensors.
- * Rather than make this compile-time, the configuration is stored at runtime. 
- * Also, the availability of various sensors will change. E.g. it's possible to have a fridge constant mode without a beer sensor.
+ * A user has freedom to connect various devices to the arduino, either via
+ * extending the oneWire bus, or by assigning to specific pins, e.g. actuators,
+ * switch sensors.  Rather than make this compile-time, the configuration is
+ * stored at runtime.  Also, the availability of various sensors will change.
+ * E.g. it's possible to have a fridge constant mode without a beer sensor.
  *
- * Since the data has to be persisted to EEPROM, references to the actual uses of the devices have to be encoded.  This is the function of the deviceID.
+ * Since the data has to be persisted to EEPROM, references to the actual uses
+ * of the devices have to be encoded.  This is the function of the deviceID.
  *
  * \addtogroup hardware
  * @{
@@ -54,6 +57,10 @@ class DeviceConfig;
  * \brief Device slot identifier
  */
 typedef int8_t device_slot_t;
+
+/**
+ * \brief Check if slot is valid
+ */
 inline bool isDefinedSlot(device_slot_t s) { return s>=0; }
 
 /**
@@ -169,8 +176,7 @@ struct DeviceAlternatives {
  * @see DeviceManager::enumerateOneWireDevices
  * @see DeviceManager::enumeratePinDevices
  */
-typedef void (*EnumDevicesCallback)(DeviceConfig*, void* pv);
-class EnumerateHardware;
+typedef void (*EnumDevicesCallback)(DeviceConfig*, void* pv, JsonDocument* doc);
 
 struct DeviceOutput
 {
@@ -190,6 +196,42 @@ struct DeviceDisplay {
 	int8_t value;	//!< set value
 	int8_t write;	//!< write value
 	int8_t empty;	//!< show unused devices when id==-1, default is 0
+};
+
+
+/**
+ * \brief Hardware device definition.
+ */
+struct DeviceDefinition {
+	int8_t id;
+	int8_t chamber;
+	int8_t beer;
+	int8_t deviceFunction;
+	int8_t deviceHardware;
+	int8_t pinNr;
+	int8_t invert;
+	int8_t pio;
+	int8_t deactivate;
+	int8_t calibrationAdjust;
+	DeviceAddress address;
+
+	/**
+	 * Lists the first letter of the key name for each attribute.
+	 */
+	static const char ORDER[12];
+};
+
+
+/**
+ * \brief Hardware filter definition
+ */
+struct EnumerateHardware
+{
+	int8_t hardware;	//<! Restrict the types of devices requested
+	int8_t pin;				//<! Pin to search
+	int8_t values;		//<! Fetch values for the devices.
+	int8_t unused;		//<! 0 don't care about unused state, 1 unused only.
+	int8_t function;	//<! Restrict to devices that can be used with this function
 };
 
 void HandleDeviceDisplay(const char* key, const char* value, void* pv);
@@ -263,61 +305,59 @@ public:
 	}
 
 	static void setupUnconfiguredDevices();
-	
+
 	/**
-	 * Determines if the given device config is complete.
+	 * \brief Determines if the given device config is complete.
 	 */
 	static bool firstUndefinedAlternative(DeviceConfig& config, DeviceAlternatives& alternatives);
-	
-	
+
+
 	static void installDevice(DeviceConfig& config);
-	
+
 	static void uninstallDevice(DeviceConfig& config);
-	
+
 	static void parseDeviceDefinition();
-	static void printDevice(device_slot_t slot, DeviceConfig& config, const char* value);
-		
+	static void serializeJsonDevice(JsonDocument&, device_slot_t slot, DeviceConfig& config, const char* value);
+
 	static bool allDevices(DeviceConfig& config, uint8_t deviceIndex);
 
 	static bool isDeviceValid(DeviceConfig& config, DeviceConfig& original, int8_t deviceIndex);
 
-	/**
-	 * Read hardware spec from stream and output matching devices
-	 */
-	static void enumerateHardware();
+	static void enumerateHardware(JsonDocument& doc);
 
 	static bool enumDevice(DeviceDisplay& dd, DeviceConfig& dc, uint8_t idx);
 
-	static void listDevices();
-  static void printRawDeviceValues();
+	static void listDevices(JsonDocument& doc);
+  static void rawDeviceValues(JsonDocument& doc);
 
 private:
-	static void enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output);
-	static void enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output);
-	static void OutputEnumeratedDevices(DeviceConfig* config, void* pv);
-	static void handleEnumeratedDevice(DeviceConfig& config, EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& out);
+	static void enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc);
+	static void enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc);
+	static void outputEnumeratedDevices(DeviceConfig* config, void* pv, JsonDocument* doc);
+	static void handleEnumeratedDevice(DeviceConfig& config, EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& out, JsonDocument* doc);
 	static void readTempSensorValue(DeviceConfig::Hardware hw, char* out);
-	static void outputRawDeviceValue(DeviceConfig* config, void* pv);
+	static void outputRawDeviceValue(DeviceConfig* config, void* pv, JsonDocument* doc);
+
+  static void readJsonIntoDeviceDef(DeviceDefinition&);
+  static void readJsonIntoDeviceDisplay(DeviceDisplay&);
+  static void readJsonIntoHardwareSpec(EnumerateHardware&);
 
 	static void* createDevice(DeviceConfig& config, DeviceType dc);
 	static void* createOneWireGPIO(DeviceConfig& config, DeviceType dt);
 
-	static void beginDeviceOutput() { firstDeviceOutput = true; }
-
 	static OneWire* oneWireBus(uint8_t pin);
 
 #ifdef ARDUINO
-	
+
 // There is no reason to separate the OneWire busses - if we have a single bus, use it.
 #ifdef oneWirePin
 	static OneWire primaryOneWireBus;
 #else
 	static OneWire beerSensorBus;
-	static OneWire fridgeSensorBus;        
+	static OneWire fridgeSensorBus;
 #endif
 
 #endif
-	static bool firstDeviceOutput;
 };
 
 

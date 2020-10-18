@@ -108,13 +108,14 @@ void DeviceNameManager::deleteDeviceName(const char* device) {
 /**
  * Get list of configured device names
  */
-void DeviceNameManager::enumerateDeviceNames(deviceNameHandler callback) {
+void DeviceNameManager::enumerateDeviceNames(JsonDocument& doc) {
   File root = SPIFFS.open(filenamePrefix);
 
   File file = root.openNextFile();
 
   while(file){
-    callback(filenameToDeviceName(file.name()));
+    DeviceName dn = filenameToDeviceName(file.name());
+    doc[dn.device] = dn.name;
 
     // Move to the next file
     file = root.openNextFile();
@@ -126,11 +127,12 @@ void DeviceNameManager::enumerateDeviceNames(deviceNameHandler callback) {
 /**
  * Get list of configured device names
  */
-void DeviceNameManager::enumerateDeviceNames(deviceNameHandler callback) {
+void DeviceNameManager::enumerateDeviceNames(JsonDocument& doc) {
   Dir dir = SPIFFS.openDir(filenamePrefix);
 
   while (dir.next()) {
-    callback(filenameToDeviceName(dir.fileName()));
+    DeviceName dn = filenameToDeviceName(dir.fileName());
+    doc[dn.device] = dn.name;
   }
 }
 #endif

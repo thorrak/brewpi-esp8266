@@ -96,15 +96,15 @@ class TempSensor {
 
 	void update();
 
-	temperature readFastFiltered(void);
+	temperature readFastFiltered();
 
-	temperature readSlowFiltered(void);
+	temperature readSlowFiltered();
 
-	temperature readSlope(void);
+	temperature readSlope();
 
-	temperature detectPosPeak(void);
+	temperature detectPosPeak();
 
-	temperature detectNegPeak(void);
+	temperature detectNegPeak();
 
 	void setFastFilterCoefficients(uint8_t b);
 
@@ -116,9 +116,9 @@ class TempSensor {
 
 	private:
 	BasicTempSensor* _sensor; //!< Wrapped basic sensor
-	TempSensorFilter fastFilter;
-	TempSensorFilter slowFilter;
-	TempSensorFilter slopeFilter;
+	TempSensorFilter fastFilter; //!< Fast reacting filter
+	TempSensorFilter slowFilter; //!< Slow reacting filter
+	TempSensorFilter slopeFilter; //!< Slope filter
 	unsigned char updateCounter;
 	temperature_precise prevOutputForSlope;
 

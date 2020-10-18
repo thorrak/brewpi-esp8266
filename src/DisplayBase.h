@@ -71,37 +71,37 @@ class Display{
 	DISPLAY_METHOD ~Display();
 
 	// initializes the lcd display
-	DISPLAY_METHOD void init(void) DISPLAY_METHOD_PURE_VIRTUAL;
+	DISPLAY_METHOD void init() DISPLAY_METHOD_PURE_VIRTUAL;
 
 	DISPLAY_METHOD void printAll() DISPLAY_METHOD_PURE_VIRTUAL;
 
 	// print all temperatures on the LCD
-	DISPLAY_METHOD void printAllTemperatures(void) DISPLAY_METHOD_PURE_VIRTUAL;
+	DISPLAY_METHOD void printAllTemperatures() DISPLAY_METHOD_PURE_VIRTUAL;
 
 
 	// print the stationary text on the lcd.
-	DISPLAY_METHOD void printStationaryText(void) DISPLAY_METHOD_PURE_VIRTUAL;
+	DISPLAY_METHOD void printStationaryText() DISPLAY_METHOD_PURE_VIRTUAL;
 
 	DISPLAY_METHOD void setDisplayFlags(uint8_t newFlags) DISPLAY_METHOD_PURE_VIRTUAL;
 	DISPLAY_METHOD uint8_t getDisplayFlags() DISPLAY_METHOD_PURE_VIRTUAL;
 
 	// print mode on the right location on the first line, after Mode:
-	DISPLAY_METHOD void printMode(void) DISPLAY_METHOD_PURE_VIRTUAL;
+	DISPLAY_METHOD void printMode() DISPLAY_METHOD_PURE_VIRTUAL;
 
 	// print beer temperature at the right place on the display
-	DISPLAY_METHOD void printBeerTemp(void) DISPLAY_METHOD_PURE_VIRTUAL;
+	DISPLAY_METHOD void printBeerTemp() DISPLAY_METHOD_PURE_VIRTUAL;
 
 	// print beer temperature setting at the right place on the display
-	DISPLAY_METHOD void printBeerSet(void) DISPLAY_METHOD_PURE_VIRTUAL;
+	DISPLAY_METHOD void printBeerSet() DISPLAY_METHOD_PURE_VIRTUAL;
 
 	// print fridge temperature at the right place on the display
-	DISPLAY_METHOD void printFridgeTemp(void) DISPLAY_METHOD_PURE_VIRTUAL;
+	DISPLAY_METHOD void printFridgeTemp() DISPLAY_METHOD_PURE_VIRTUAL;
 
 	// print fridge temperature setting at the right place on the display
-	DISPLAY_METHOD void printFridgeSet(void) DISPLAY_METHOD_PURE_VIRTUAL;
+	DISPLAY_METHOD void printFridgeSet() DISPLAY_METHOD_PURE_VIRTUAL;
 
 	// print the current state on the last line of the LCD
-	DISPLAY_METHOD void printState(void) DISPLAY_METHOD_PURE_VIRTUAL;
+	DISPLAY_METHOD void printState() DISPLAY_METHOD_PURE_VIRTUAL;
 
 	DISPLAY_METHOD void printAt_P(int x, int y, const char* text) DISPLAY_METHOD_PURE_VIRTUAL;
 	
@@ -129,37 +129,37 @@ class NullDisplay DISPLAY_SUPERCLASS
 {
 public:	
 	// initializes the lcd display
-	DISPLAY_METHOD void init(void){}
+	DISPLAY_METHOD void init(){}
 	
 	DISPLAY_METHOD void printAll() {}
 	
 	// print all temperatures on the LCD
-	DISPLAY_METHOD void printAllTemperatures(void){}
+	DISPLAY_METHOD void printAllTemperatures(){}
 	
 	// print the stationary text on the lcd.
-	DISPLAY_METHOD void printStationaryText(void){}
+	DISPLAY_METHOD void printStationaryText(){}
 
 	// print mode on the right location on the first line, after Mode:
-	DISPLAY_METHOD void printMode(void){}
+	DISPLAY_METHOD void printMode(){}
 
 	DISPLAY_METHOD void setDisplayFlags(uint8_t newFlags){};
 	DISPLAY_METHOD uint8_t getDisplayFlags(){ return 0; };
 		
 
 	// print beer temperature at the right place on the display
-	DISPLAY_METHOD void printBeerTemp(void){}
+	DISPLAY_METHOD void printBeerTemp(){}
 
 	// print beer temperature setting at the right place on the display
-	DISPLAY_METHOD void printBeerSet(void){}
+	DISPLAY_METHOD void printBeerSet(){}
 
 	// print fridge temperature at the right place on the display
-	DISPLAY_METHOD void printFridgeTemp(void){}
+	DISPLAY_METHOD void printFridgeTemp(){}
 
 	// print fridge temperature setting at the right place on the display
-	DISPLAY_METHOD void printFridgeSet(void){}
+	DISPLAY_METHOD void printFridgeSet(){}
 
 	// print the current state on the last line of the LCD
-	DISPLAY_METHOD void printState(void){}
+	DISPLAY_METHOD void printState(){}
 
 	DISPLAY_METHOD void printAt_P(uint8_t x, uint8_t y, const char* text) {}
 		

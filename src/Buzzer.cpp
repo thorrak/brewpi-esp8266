@@ -50,7 +50,7 @@
 #define BEEP_ON() bitSet(BUZZER_TIMER_REG,BUZZER_TIMER_REG_FLAG);
 #define BEEP_OFF() bitClear(BUZZER_TIMER_REG,BUZZER_TIMER_REG_FLAG);
 
-void Buzzer::init(void){
+void Buzzer::init(){
 	// set up square wave PWM for buzzer
 	fastPinMode(alarmPin,OUTPUT);
 

@@ -105,15 +105,15 @@ public:
 	}
 
     static bool hasSettings() {
-        return doesFileExist(SPIFFS_controlSettings_fname);
+        return doesFileExist(ControlSettings::filename);
     }
 
     static void zapData() {
         // This gets a bit tricky -- we can't just do SPIFFS.format because that would wipe out the mDNS name
         int i;
 
-        if(doesFileExist(SPIFFS_controlConstants_fname)) SPIFFS.remove(SPIFFS_controlConstants_fname);
-        if(doesFileExist(SPIFFS_controlSettings_fname)) SPIFFS.remove(SPIFFS_controlSettings_fname);
+        if(doesFileExist(ControlConstants::filename)) SPIFFS.remove(ControlConstants::filename);
+        if(doesFileExist(ControlSettings::filename)) SPIFFS.remove(ControlSettings::filename);
 
         char buf[20];
         for(i=0;i<MAX_SPIFFS_DEVICES;i++) {

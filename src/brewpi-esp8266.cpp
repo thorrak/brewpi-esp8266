@@ -21,6 +21,7 @@
 #include "SettingsManager.h"
 #include "EepromFormat.h"
 #include "ESP_WiFi.h"
+#include "CommandProcessor.h"
 
 #if BREWPI_SIMULATE
 #include "Simulator.h"
@@ -33,9 +34,22 @@
  */
 
 // global class objects static and defined in class cpp and h files
-
 // instantiate and configure the sensors, actuators and controllers we want to use
 
+
+/*
+ * Create the correct type of PiLink connection for how we're configured.  When
+ * everything gets moved off of the deprecated "build JSON via string fragment
+ * prints" interface, CompatiblePiLink can be replaced with PiLink.
+ */
+#if defined(ESP8266_WiFi)
+// Just use the serverClient object as it supports all the same functions as Serial
+extern WiFiClient serverClient;
+CompatiblePiLink<WiFiClient> piLink(serverClient);
+#else
+// Not using ESP8266 WiFi
+CompatiblePiLink<HardwareSerial> piLink(Serial);
+#endif
 
 /* Configure the counter and delay timer. The actual type of these will vary depending upon the environment.
 * They are non-virtual to keep code size minimal, so typedefs and preprocessing are used to select the actual compile-time type used. */
@@ -106,6 +120,7 @@ void setup()
 	buzzer.beep(2, 500);
 #endif
 
+
 	piLink.init();  // Initializes either the serial or telnet connection
 
 	logDebug("started");
@@ -120,7 +135,7 @@ void setup()
 #endif
 
 	// Once the WiFi and piLink are initialized, we want to display a screen with connection information
-    display_connect_info_and_create_callback();
+  display_connect_info_and_create_callback();
 
 	display.clear();
 	display.printStationaryText();
@@ -166,8 +181,9 @@ void brewpiLoop()
 		tempControl.updatePID();
 		oldState = tempControl.getState();
 		tempControl.updateState();
+
 		if (oldState != tempControl.getState()) {
-			piLink.printTemperatures(); // add a data point at every state transition
+      piLink.sendStateNotification();
 		}
 		tempControl.updateOutputs();
 
@@ -188,9 +204,8 @@ void brewpiLoop()
 	}
 
 	//listen for incoming connections while waiting to update
-    wifi_connect_clients();
-	piLink.receive();
-
+  wifi_connect_clients();
+  CommandProcessor::receiveCommand();
 }
 
 

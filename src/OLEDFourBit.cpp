@@ -164,33 +164,33 @@ void OLEDFourBit::blink() {
 }
 
 // These commands scroll the display without changing the RAM
-void OLEDFourBit::scrollDisplayLeft(void) {
+void OLEDFourBit::scrollDisplayLeft() {
 	command(LCD_CURSORSHIFT | LCD_DISPLAYMOVE | LCD_MOVELEFT);
 }
-void OLEDFourBit::scrollDisplayRight(void) {
+void OLEDFourBit::scrollDisplayRight() {
 	command(LCD_CURSORSHIFT | LCD_DISPLAYMOVE | LCD_MOVERIGHT);
 }
 
 // This is for text that flows Left to Right
-void OLEDFourBit::leftToRight(void) {
+void OLEDFourBit::leftToRight() {
 	_displaymode |= LCD_ENTRYLEFT;
 	command(LCD_ENTRYMODESET | _displaymode);
 }
 
 // This is for text that flows Right to Left
-void OLEDFourBit::rightToLeft(void) {
+void OLEDFourBit::rightToLeft() {
 	_displaymode &= ~LCD_ENTRYLEFT;
 	command(LCD_ENTRYMODESET | _displaymode);
 }
 
 // This will 'right justify' text from the cursor
-void OLEDFourBit::autoscroll(void) {
+void OLEDFourBit::autoscroll() {
 	_displaymode |= LCD_ENTRYSHIFTINCREMENT;
 	command(LCD_ENTRYMODESET | _displaymode);
 }
 
 // This will 'left justify' text from the cursor
-void OLEDFourBit::noAutoscroll(void) {
+void OLEDFourBit::noAutoscroll() {
 	_displaymode &= ~LCD_ENTRYSHIFTINCREMENT;
 	command(LCD_ENTRYMODESET | _displaymode);
 }
@@ -232,7 +232,7 @@ void OLEDFourBit::send(uint8_t value, uint8_t mode) {
 	write4bits(value);
 }
 
-void OLEDFourBit::pulseEnable(void) {
+void OLEDFourBit::pulseEnable() {
 	digitalWrite(_enable_pin, HIGH);
 	delayMicroseconds(100); // enable pulse must be >450ns
 	digitalWrite(_enable_pin, LOW);
@@ -247,7 +247,7 @@ void OLEDFourBit::write4bits(uint8_t value) {
 	pulseEnable();
 }
 
-void OLEDFourBit::waitBusy(void) {
+void OLEDFourBit::waitBusy() {
 	uint8_t busy = 1;
 	pinMode(_busy_pin, INPUT);
 	digitalWrite(_rs_pin, LOW);
@@ -270,7 +270,7 @@ void OLEDFourBit::waitBusy(void) {
 	digitalWrite(_rw_pin, LOW);
 }
 
-char OLEDFourBit::readChar(void){
+char OLEDFourBit::readChar(){
 	char value=0x00;
 	for (int i = 0; i < 4; i++) {
 		pinMode(_data_pins[i], INPUT);
@@ -301,7 +301,7 @@ void OLEDFourBit::getLine(uint8_t lineNumber, char * buffer){
 
 // Read the content from the display and store it in the local string buffer.
 // Buffer should always stay up to date, so this function is not really needed.
-void OLEDFourBit::readContent(void){
+void OLEDFourBit::readContent(){
 	setCursor(0,0);
 	for(uint8_t i =0;i<20;i++){
 		content[0][i] = readChar();
@@ -318,7 +318,7 @@ void OLEDFourBit::readContent(void){
 	}
 }
 
-void OLEDFourBit::printSpacesToRestOfLine(void){
+void OLEDFourBit::printSpacesToRestOfLine(){
 	while(_currpos < 20){
 		print(' ');
 	}

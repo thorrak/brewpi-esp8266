@@ -24,6 +24,7 @@
 
 /**
  * \file TemperatureFormats.h
+ * \brief Temperature value handling
  *
  * \defgroup temps Temperature Values
  * \brief Internal representation of temperature values
@@ -222,6 +223,8 @@ inline long_temperature convertFromInternalTemp(long_temperature rawTemp) {
     return convertFromInternalTempImpl(rawTemp, true);
 }
 
+
+double tempToDouble(long_temperature rawTemp, uint8_t numDecimals);
 
 #define OPTIMIZE_TEMPERATURE_FORMATS 1 && OPTIMIZE_GLOBAL
 

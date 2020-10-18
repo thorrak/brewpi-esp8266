@@ -51,28 +51,28 @@ class CascadedFilter {
 	void setCoefficients(uint8_t bValue);
 	temperature add(temperature val);
 	temperature_precise addDoublePrecision(temperature_precise val);
-	temperature readInput(void);
+	temperature readInput();
 
   /**
    * \brief Read the output
    */
-	temperature readOutput(void){
+	temperature readOutput(){
 		return sections[numFilterSections - 1].readOutput(); // return output of last section
 	}
-	temperature_precise readOutputDoublePrecision(void);
-	temperature_precise readPrevOutputDoublePrecision(void);
+	temperature_precise readOutputDoublePrecision();
+	temperature_precise readPrevOutputDoublePrecision();
 
   /**
    * \brief Do positive peak detection
    */
-	temperature detectPosPeak(void){
+	temperature detectPosPeak(){
 		return sections[numFilterSections - 1].detectPosPeak(); // detect peaks in last section
 	}
 
   /**
    * \brief Do negative peak detection
    */
-	temperature detectNegPeak(void){
+	temperature detectNegPeak(){
 		return sections[numFilterSections - 1].detectNegPeak(); // detect peaks in last section
 	}
 };

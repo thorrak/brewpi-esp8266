@@ -220,7 +220,7 @@ ISR(PCINT0_vect){
 #endif
 
 
-void RotaryEncoder::process(void){
+void RotaryEncoder::process(){
 	static uint8_t state=R_START;
 	// Grab state of input pins.
 	#if BREWPI_STATIC_CONFIG == BREWPI_SHIELD_DIY
@@ -261,7 +261,7 @@ void RotaryEncoder::process(void){
 }
 #endif  // BREWPI_ROTARY_ENCODER
 
-void RotaryEncoder::setPushed(void){
+void RotaryEncoder::setPushed(){
 	pushFlag = true;
 #ifndef BREWPI_TFT
 	display.resetBacklightTimer();
@@ -269,7 +269,7 @@ void RotaryEncoder::setPushed(void){
 }
 
 
-void RotaryEncoder::init(void){
+void RotaryEncoder::init(){
 #if BREWPI_ROTARY_ENCODER
 	#define BREWPI_INPUT_PULLUP (USE_INTERNAL_PULL_UP_RESISTORS ? INPUT_PULLUP : INPUT)
 	fastPinMode(rotaryAPin, BREWPI_INPUT_PULLUP);
@@ -312,7 +312,7 @@ void RotaryEncoder::setRange(int16_t start, int16_t minVal, int16_t maxVal){
 #endif        
 }
 
-bool RotaryEncoder::changed(void){
+bool RotaryEncoder::changed(){
 	// returns one if the value changed since the last call of changed.
 	static int16_t prevValue = 0;
 	int16_t r = read();
@@ -326,7 +326,7 @@ bool RotaryEncoder::changed(void){
 	return 0;
 }
 
-int16_t RotaryEncoder::read(void){
+int16_t RotaryEncoder::read(){
 #if BREWPI_ROTARY_ENCODER
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
 		return steps;		

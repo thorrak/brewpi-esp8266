@@ -89,12 +89,12 @@ uint16_t TempControl::waitTime;
 /**
  * Initialize the temp control system.  Done at startup.
  */
-void TempControl::init(void){
-	state=IDLE;		
-	cs.mode = MODE_OFF;
-	
+void TempControl::init(){
+	state=IDLE;
+	cs.mode = Modes::off;
+
 	cameraLight.setActive(false);
-	
+
 	// this is for cases where the device manager hasn't configured beer/fridge sensor.	
 	if (beerSensor==NULL) {
 		beerSensor = new TempSensor(TEMP_SENSOR_TYPE_BEER, &defaultTempSensor);
@@ -120,7 +120,7 @@ void TempControl::init(void){
 /**
  * Reset the peak detect flags
  */
-void TempControl::reset(void){
+void TempControl::reset(){
 	doPosPeakDetect=false;
 	doNegPeakDetect=false;
 }
@@ -143,7 +143,7 @@ void updateSensor(TempSensor* sensor) {
  *
  * This updates beer, fridge & room sensors.
  */
-void TempControl::updateTemperatures(void){
+void TempControl::updateTemperatures(){
 	
 	updateSensor(beerSensor);
 	updateSensor(fridgeSensor);
@@ -155,7 +155,7 @@ void TempControl::updateTemperatures(void){
 	}
 }
 
-void TempControl::updatePID(void){
+void TempControl::updatePID(){
 	static unsigned char integralUpdateCounter = 0;
 	if(tempControl.modeIsBeer()){
 		if(cs.beerSetting == INVALID_TEMP){
@@ -229,13 +229,13 @@ void TempControl::updatePID(void){
 		
 		cs.fridgeSetting = constrain(constrainTemp16(newFridgeSetting), lowerBound, upperBound);
 	}
-	else if(cs.mode == MODE_FRIDGE_CONSTANT){
+	else if(cs.mode == Modes::fridgeConstant){
 		// FridgeTemperature is set manually, use INVALID_TEMP to indicate beer temp is not active
 		cs.beerSetting = INVALID_TEMP;
 	}
 }
 
-void TempControl::updateState(void){
+void TempControl::updateState(){
 	//update state
 	bool stayIdle = false;
 	bool newDoorOpen = door->sense();
@@ -246,13 +246,13 @@ void TempControl::updateState(void){
 		String annotation = "";
 		annotation += "Fridge door ";
 		annotation += doorOpen ? "opened" : "closed";
-		piLink.printTemperaturesJSON(0, annotation.c_str());
+		piLink.printTemperatures(0, annotation.c_str());
 #else
 		piLink.printFridgeAnnotation(PSTR("Fridge door %S"), doorOpen ? PSTR("opened") : PSTR("closed"));
 #endif
 	}
 
-	if(cs.mode == MODE_OFF){
+	if(cs.mode == Modes::off){
 		state = STATE_OFF;
 		stayIdle = true;
 	}
@@ -286,7 +286,7 @@ void TempControl::updateState(void){
 			resetWaitTime();
 			if(fridgeFast > (cs.fridgeSetting+cc.idleRangeHigh) ){  // fridge temperature is too high			
 				tempControl.updateWaitTime(MIN_SWITCH_TIME, sinceHeating);			
-				if(cs.mode==MODE_FRIDGE_CONSTANT){
+				if(cs.mode==Modes::fridgeConstant){
 					tempControl.updateWaitTime(MIN_COOL_OFF_TIME_FRIDGE_CONSTANT, sinceCooling);
 				}
 				else{
@@ -308,7 +308,7 @@ void TempControl::updateState(void){
 			else if(fridgeFast < (cs.fridgeSetting+cc.idleRangeLow)){  // fridge temperature is too low
 				tempControl.updateWaitTime(MIN_SWITCH_TIME, sinceCooling);
 				tempControl.updateWaitTime(MIN_HEAT_OFF_TIME, sinceHeating);
-				if(cs.mode!=MODE_FRIDGE_CONSTANT){
+				if(cs.mode!=Modes::fridgeConstant){
 					if(beerFast > (cs.beerSetting - 16)){ // If beer is already over target, stay/go to idle. 1/2 sensor bit idle zone
 						state = IDLE;  // beer is already warmer than setting, stay in or go to idle
 						break;
@@ -346,7 +346,7 @@ void TempControl::updateState(void){
 			state = COOLING; // set to cooling here, so the display of COOLING/COOLING_MIN_TIME is correct
 			
 			// stop cooling when estimated fridge temp peak lands on target or if beer is already too cold (1/2 sensor bit idle zone)
-			if(cv.estimatedPeak <= cs.fridgeSetting || (cs.mode != MODE_FRIDGE_CONSTANT && beerFast < (cs.beerSetting - 16))){
+			if(cv.estimatedPeak <= cs.fridgeSetting || (cs.mode != Modes::fridgeConstant && beerFast < (cs.beerSetting - 16))){
 				if(sinceIdle > MIN_COOL_ON_TIME){
 					cv.negPeakEstimate = cv.estimatedPeak; // remember estimated peak when I switch to IDLE, to adjust estimator later
 					state=IDLE;
@@ -368,7 +368,7 @@ void TempControl::updateState(void){
 			state = HEATING; // reset to heating here, so the display of HEATING/HEATING_MIN_TIME is correct
 			
 			// stop heating when estimated fridge temp peak lands on target or if beer is already too warm (1/2 sensor bit idle zone)
-			if(cv.estimatedPeak >= cs.fridgeSetting || (cs.mode != MODE_FRIDGE_CONSTANT && beerFast > (cs.beerSetting + 16))){
+			if(cv.estimatedPeak >= cs.fridgeSetting || (cs.mode != Modes::fridgeConstant && beerFast > (cs.beerSetting + 16))){
 				if(sinceIdle > MIN_HEAT_ON_TIME){
 					cv.posPeakEstimate=cv.estimatedPeak; // remember estimated peak when I switch to IDLE, to adjust estimator later
 					state=IDLE;
@@ -394,8 +394,8 @@ void TempControl::updateEstimatedPeak(uint16_t timeLimit, temperature estimator,
 	cv.estimatedPeak = fridgeSensor->readFastFiltered() + estimatedOvershoot;		
 }
 
-void TempControl::updateOutputs(void) {
-	if (cs.mode==MODE_TEST)
+void TempControl::updateOutputs() {
+	if (cs.mode==Modes::test)
 		return;
 		
 	cameraLight.update();
@@ -408,7 +408,7 @@ void TempControl::updateOutputs(void) {
 }
 
 
-void TempControl::detectPeaks(void){  
+void TempControl::detectPeaks(){  
 	//detect peaks in fridge temperature to tune overshoot estimators
 	LOG_ID_TYPE detected = 0;
 	temperature peak, estimate, error, oldEstimator, newEstimator;
@@ -530,21 +530,21 @@ void TempControl::decreaseEstimator(temperature * estimator, temperature error){
 /**
  * Get time since the cooler was last ran
  */
-uint16_t TempControl::timeSinceCooling(void){
+uint16_t TempControl::timeSinceCooling(){
 	return ticks.timeSince(lastCoolTime);
 }
 
 /**
  * Get time since the heater was last ran
  */
-uint16_t TempControl::timeSinceHeating(void){
+uint16_t TempControl::timeSinceHeating(){
 	return ticks.timeSince(lastHeatTime);
 }
 
 /**
  * Get time that the controller has been neither cooling nor heating
  */
-uint16_t TempControl::timeSinceIdle(void){
+uint16_t TempControl::timeSinceIdle(){
 	return ticks.timeSince(lastIdleTime);
 }
 
@@ -554,9 +554,9 @@ uint16_t TempControl::timeSinceIdle(void){
 void TempControl::loadDefaultSettings(){
     cs.setDefaults();
 #if BREWPI_EMULATE
-	setMode(MODE_BEER_CONSTANT);
+	setMode(Modes::beerConstant);
 #else	
-	setMode(MODE_OFF);
+	setMode(Modes::off);
 #endif	
 }
 
@@ -638,7 +638,7 @@ void TempControl::setMode(char newMode, bool force){
 	}
 	if (force) {
 		cs.mode = newMode;
-		if(newMode == MODE_OFF){
+		if(newMode == Modes::off){
 			cs.beerSetting = INVALID_TEMP;
 			cs.fridgeSetting = INVALID_TEMP;
 		}
@@ -650,7 +650,7 @@ void TempControl::setMode(char newMode, bool force){
 /**
  * Get current beer temperature
  */
-temperature TempControl::getBeerTemp(void){
+temperature TempControl::getBeerTemp(){
 	if(beerSensor->isConnected()){
 		return beerSensor->readFastFiltered();
 	}
@@ -662,7 +662,7 @@ temperature TempControl::getBeerTemp(void){
 /**
  * Get current beer target temperature
  */
-temperature TempControl::getBeerSetting(void){
+temperature TempControl::getBeerSetting(){
 	return cs.beerSetting;
 }
 
@@ -670,7 +670,7 @@ temperature TempControl::getBeerSetting(void){
 /**
  * Get current fridge temperature
  */
-temperature TempControl::getFridgeTemp(void){
+temperature TempControl::getFridgeTemp(){
 	if(fridgeSensor->isConnected()){
 		return fridgeSensor->readFastFiltered();
 	}
@@ -682,7 +682,7 @@ temperature TempControl::getFridgeTemp(void){
 /**
  * Get current fridge target temperature
  */
-temperature TempControl::getFridgeSetting(void){
+temperature TempControl::getFridgeSetting(){
 	return cs.fridgeSetting;
 }
 
@@ -700,7 +700,7 @@ void TempControl::setBeerTemp(temperature newTemp){
 	}
 	updatePID();
 	updateState();
-	if(cs.mode != MODE_BEER_PROFILE || abs(storedBeerSetting - newTemp) > intToTempDiff(1)/4){
+	if(cs.mode != Modes::beerProfile || abs(storedBeerSetting - newTemp) > intToTempDiff(1)/4){
 		// more than 1/4 degree C difference with EEPROM
 		// Do not store settings every time in profile mode, because EEPROM has limited number of write cycles.
 		// A temperature ramp would cause a lot of writes
@@ -725,13 +725,82 @@ void TempControl::setFridgeTemp(temperature newTemp){
 /**
  * Check if current state is cooling (or waiting to cool)
  */
-bool TempControl::stateIsCooling(void){
+bool TempControl::stateIsCooling(){
 	return (state==COOLING || state==COOLING_MIN_TIME);
 }
 
 /**
  * Check if current state is heating (or waiting to heat)
  */
-bool TempControl::stateIsHeating(void){
+bool TempControl::stateIsHeating(){
 	return (state==HEATING || state==HEATING_MIN_TIME);
+}
+
+
+/**
+ * \brief Get current control variables as JsonDocument
+ *
+ * \param doc - Reference to JsonDocument to populate
+ */
+void TempControl::getControlVariablesDoc(JsonDocument& doc) {
+  doc["beerDiff"] = tempToDouble(cv.beerDiff, Config::TempFormat::tempDiffDecimals);
+  doc["diffIntegral"] = tempToDouble(cv.diffIntegral, Config::TempFormat::tempDiffDecimals);
+  doc["beerSlope"] = tempToDouble(cv.beerSlope, Config::TempFormat::tempDiffDecimals);
+
+  doc["p"] = tempToDouble(cv.p, Config::TempFormat::fixedPointDecimals);
+  doc["i"] = tempToDouble(cv.i, Config::TempFormat::fixedPointDecimals);
+  doc["d"] = tempToDouble(cv.d, Config::TempFormat::fixedPointDecimals);
+  doc["estPeak"] = tempToDouble(cv.estimatedPeak, Config::TempFormat::tempDecimals);
+  doc["negPeakEst"] = tempToDouble(cv.negPeakEstimate, Config::TempFormat::tempDecimals);
+  doc["posPeakEst"] = tempToDouble(cv.posPeakEstimate, Config::TempFormat::tempDecimals);
+  doc["negPeak"] = tempToDouble(cv.negPeak, Config::TempFormat::tempDecimals);
+  doc["posPeak"] = tempToDouble(cv.posPeak, Config::TempFormat::tempDecimals);
+}
+
+/**
+ * \brief Get current control constants as JsonDocument
+ *
+ * \param doc - Reference to JsonDocument to populate
+ */
+void TempControl::getControlConstantsDoc(JsonDocument& doc) {
+  doc["tempFormat"] = String(cc.tempFormat);
+
+  doc["tempSetMin"] = tempToDouble(cc.tempSettingMin, Config::TempFormat::tempDecimals);
+  doc["tempSetMax"] = tempToDouble(cc.tempSettingMax, Config::TempFormat::tempDecimals);
+  doc["pidMax"] = tempToDouble(cc.pidMax, Config::TempFormat::tempDiffDecimals);
+  doc["Kp"] = tempToDouble(cc.Kp, Config::TempFormat::fixedPointDecimals);
+  doc["Ki"] = tempToDouble(cc.Ki, Config::TempFormat::fixedPointDecimals);
+  doc["Kd"] = tempToDouble(cc.Kd, Config::TempFormat::fixedPointDecimals);
+
+  doc["iMaxErr"] = tempToDouble(cc.iMaxError, Config::TempFormat::tempDiffDecimals);
+  doc["idleRangeH"] = tempToDouble(cc.idleRangeHigh, Config::TempFormat::tempDiffDecimals);
+  doc["idleRangeL"] = tempToDouble(cc.idleRangeLow, Config::TempFormat::tempDiffDecimals);
+  doc["heatTargetH"] = tempToDouble(cc.heatingTargetUpper, Config::TempFormat::tempDiffDecimals);
+  doc["heatTargetL"] = tempToDouble(cc.heatingTargetLower, Config::TempFormat::tempDiffDecimals);
+  doc["coolTargetH"] = tempToDouble(cc.coolingTargetUpper, Config::TempFormat::tempDiffDecimals);
+  doc["coolTargetL"] = tempToDouble(cc.coolingTargetLower, Config::TempFormat::tempDiffDecimals);
+  doc["maxHeatTimeForEst"] = tempControl.cc.maxHeatTimeForEstimate;
+  doc["maxCoolTimeForEst"] = tempControl.cc.maxCoolTimeForEstimate;
+  doc["fridgeFastFilt"] = tempControl.cc.fridgeFastFilter;
+  doc["fridgeSlowFilt"] = tempControl.cc.fridgeSlowFilter;
+  doc["fridgeSlopeFilt"] = tempControl.cc.fridgeSlopeFilter;
+  doc["beerFastFilt"] = tempControl.cc.beerFastFilter;
+  doc["beerSlowFilt"] = tempControl.cc.beerSlowFilter;
+  doc["beerSlopeFilt"] = tempControl.cc.beerSlopeFilter;
+  doc["lah"] = tempControl.cc.lightAsHeater;
+  doc["hs"] = tempControl.cc.rotaryHalfSteps;
+}
+
+
+/**
+ * \brief Get current control settings as a JsonDocument
+ *
+ * \param doc - Reference to JsonDocument to populate
+ */
+void TempControl::getControlSettingsDoc(JsonDocument& doc) {
+  doc["mode"] = String(cs.mode);
+  doc["beerSet"] = tempToDouble(cs.beerSetting, Config::TempFormat::fixedPointDecimals);
+  doc["fridgeSet"] = tempToDouble(cs.fridgeSetting, Config::TempFormat::fixedPointDecimals);
+  doc["heatEst"] = tempToDouble(cs.heatEstimator, Config::TempFormat::fixedPointDecimals);
+  doc["coolEst"] = tempToDouble(cs.coolEstimator, Config::TempFormat::fixedPointDecimals);
 }

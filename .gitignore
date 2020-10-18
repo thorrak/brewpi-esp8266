@@ -31,3 +31,5 @@ bin/esp32_wifi_tft.bin
 
 apidocs/
 *.sw?
+
+src/Version.h

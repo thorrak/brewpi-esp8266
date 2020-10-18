@@ -62,6 +62,7 @@
 #include <Arduino.h>
 
 #include "Actuator.h"
+#include "Logger.h"
 
 extern ValueActuator alarm_actuator;
 #if defined(ESP8266) || defined(ESP32)

@@ -143,33 +143,33 @@ void SpiLcd::blink() {
 }
 
 // These commands scroll the display without changing the RAM
-void SpiLcd::scrollDisplayLeft(void) {
+void SpiLcd::scrollDisplayLeft() {
 	command(LCD_CURSORSHIFT | LCD_DISPLAYMOVE | LCD_MOVELEFT);
 }
-void SpiLcd::scrollDisplayRight(void) {
+void SpiLcd::scrollDisplayRight() {
 	command(LCD_CURSORSHIFT | LCD_DISPLAYMOVE | LCD_MOVERIGHT);
 }
 
 // This is for text that flows Left to Right
-void SpiLcd::leftToRight(void) {
+void SpiLcd::leftToRight() {
 	_displaymode |= LCD_ENTRYLEFT;
 	command(LCD_ENTRYMODESET | _displaymode);
 }
 
 // This is for text that flows Right to Left
-void SpiLcd::rightToLeft(void) {
+void SpiLcd::rightToLeft() {
 	_displaymode &= ~LCD_ENTRYLEFT;
 	command(LCD_ENTRYMODESET | _displaymode);
 }
 
 // This will 'right justify' text from the cursor
-void SpiLcd::autoscroll(void) {
+void SpiLcd::autoscroll() {
 	_displaymode |= LCD_ENTRYSHIFTINCREMENT;
 	command(LCD_ENTRYMODESET | _displaymode);
 }
 
 // This will 'left justify' text from the cursor
-void SpiLcd::noAutoscroll(void) {
+void SpiLcd::noAutoscroll() {
 	_displaymode &= ~LCD_ENTRYSHIFTINCREMENT;
 	command(LCD_ENTRYMODESET | _displaymode);
 }
@@ -185,13 +185,13 @@ void SpiLcd::createChar(uint8_t location, uint8_t charmap[]) {
 }
 
 // This resets the backlight timer and updates the SPI output
-void SpiLcd::resetBacklightTimer(void){
+void SpiLcd::resetBacklightTimer(){
 	_backlightTime = ticks.seconds();
 	updateBacklight();
 	spiOut();		// instant update since the backlight may be turned on by user input
 }
 
-void SpiLcd::updateBacklight(void){
+void SpiLcd::updateBacklight(){
 	bool backLightOutput = BREWPI_SIMULATE || ticks.timeSince(_backlightTime) > BACKLIGHT_AUTO_OFF_PERIOD;
 	bitWrite(_spiByte, LCD_SHIFT_BACKLIGHT, backLightOutput); // 1=OFF, 0=ON	
 }
@@ -225,7 +225,7 @@ inline size_t SpiLcd::write(uint8_t value) {
 }
 
 /************ low level data pushing commands **********/
-void SpiLcd::initSpi(void){
+void SpiLcd::initSpi(){
 	// Set MOSI and CLK to output
 	fastPinMode(MOSI, OUTPUT);
 	fastPinMode(SCK, OUTPUT);
@@ -253,7 +253,7 @@ void SpiLcd::initSpi(void){
 }
 
 // Update the pins of the shift register
-void SpiLcd::spiOut(void){
+void SpiLcd::spiOut(){
 	fastDigitalWrite(lcdLatchPin, LOW);
 	SPDR = _spiByte; // Send the byte to the SPI
 	// wait for send to finish
@@ -277,7 +277,7 @@ void SpiLcd::send(uint8_t value, uint8_t mode) {
 	}
 }
 
-void SpiLcd::pulseEnable(void) {
+void SpiLcd::pulseEnable() {
 	bitSet(_spiByte, LCD_SHIFT_ENABLE);
 	spiOut();
 	delayMicroseconds(1); // enable pulse must be >450ns
@@ -291,12 +291,12 @@ void SpiLcd::write4bits(uint8_t value) {
 	pulseEnable();
 }
 
-void SpiLcd::waitBusy(void) {
+void SpiLcd::waitBusy() {
 	// we cannot read the busy pin, so just wait 1 ms
 	_delay_ms(1);
 }
 
-void SpiLcd::printSpacesToRestOfLine(void){
+void SpiLcd::printSpacesToRestOfLine(){
 	while(_currpos < 20){
 		print(' ');
 	}
