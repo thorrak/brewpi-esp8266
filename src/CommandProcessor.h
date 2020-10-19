@@ -30,7 +30,8 @@ public:
   static void receiveCommand();
 
 private:
-  static void invalidCommand(char inByte);
+  static void invalidCommand(const char inByte);
+  static void commandNotImplemented(const char command, const String message);
   static void versionInfo();
 
   static void sendControlSettings();
@@ -50,6 +51,7 @@ private:
   static void listDevices();
   static void listHardware();
   static void resetWiFi();
+  static void wifiInfo();
 
   // LCD
   static void toggleBacklight();
