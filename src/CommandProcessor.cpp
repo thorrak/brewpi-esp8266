@@ -23,6 +23,7 @@
 #include "Brewpi.h"
 #include "Display.h"
 #include "PiLink.h"
+#include "PromServer.h"
 #include "SettingLoader.h"
 #include "SettingsManager.h"
 #include "TempControl.h"
@@ -403,6 +404,11 @@ void CommandProcessor::setDeviceNames() {
   for (JsonPair kv : root) {
     DeviceNameManager::setDeviceName(kv.key().c_str(), kv.value().as<char *>());
   }
+
+  // The probe names are used in the prometheus output, so changing the
+  // name should invalidate the cache.
+  if (Config::Prometheus::enable())
+    promServer.invalidateCache();
 }
 
 /**

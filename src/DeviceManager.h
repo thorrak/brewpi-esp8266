@@ -28,6 +28,7 @@
 #include "OneWireDevices.h"
 #include "Pins.h"
 #include "EepromStructs.h"
+#include "Ticks.h"
 
 
 #ifdef ARDUINO

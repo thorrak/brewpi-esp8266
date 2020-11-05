@@ -24,12 +24,12 @@
 #include <ArduinoJson.h>
 
 /**
- * Tuple of device name and ID
+ * \brief Tuple of device name and ID
  */
 struct DeviceName
 {
-  String name;
-  String device;
+  String name; //!< Human readable name
+  String device; //!< Device ID
 
   DeviceName(String device, String name): name(name), device(device){}
 };
@@ -37,7 +37,7 @@ struct DeviceName
 
 
 /**
- * Class to manage human readable names for devices
+ * \brief Class to manage human readable names for devices
  */
 class DeviceNameManager
 {
@@ -48,7 +48,6 @@ class DeviceNameManager
 
     static void enumerateDeviceNames(JsonDocument& doc);
 
-
   private:
     static void deviceNameFilename(char* filename, const char* device);
     static DeviceName filenameToDeviceName(String filename);
@@ -56,4 +55,3 @@ class DeviceNameManager
     static const char filenamePrefix[];
     static constexpr int prefixLength();
 };
-

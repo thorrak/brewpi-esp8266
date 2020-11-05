@@ -22,6 +22,7 @@
 #include "EepromFormat.h"
 #include "ESP_WiFi.h"
 #include "CommandProcessor.h"
+#include "PromServer.h"
 
 #if BREWPI_SIMULATE
 #include "Simulator.h"
@@ -140,6 +141,9 @@ void setup()
 	display.clear();
 	display.printStationaryText();
 	display.printState();
+
+  if(Config::Prometheus::enable())
+    promServer.setup();
 
 //	rotaryEncoder.init();
 
