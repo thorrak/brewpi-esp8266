@@ -39,6 +39,31 @@
  * @{
  */
 
+#ifdef TEMP_CONTROL_LOWDELAY
+#warning "Lowdelay mode enabled"
+//! Minimum cooler off time, in seconds. To prevent short cycling the compressor
+const uint16_t MIN_COOL_OFF_TIME = 60;
+//! Minimum heater off time, in seconds. To heat in cycles, not lots of short bursts
+const uint16_t MIN_HEAT_OFF_TIME = 300;
+//! Minimum on time for the cooler.
+const uint16_t MIN_COOL_ON_TIME = 20;
+//! Minimum on time for the heater.
+const uint16_t MIN_HEAT_ON_TIME = 180;
+
+/**
+ * Minimum cooler off time, in seconds.  Used when the controller is in Fridge Constant mode.
+ * Larger than MIN_COOL_OFF_TIME. No need for very fast cycling.
+ */
+const uint16_t MIN_COOL_OFF_TIME_FRIDGE_CONSTANT = 60;
+//! Minimum off time between switching between heating and cooling
+const uint16_t MIN_SWITCH_TIME = 600;
+//! Time allowed for cooling peak detection
+const uint16_t COOL_PEAK_DETECT_TIME = 1800;
+//! Time allowed for heating peak detection
+const uint16_t HEAT_PEAK_DETECT_TIME = 900;
+
+
+#else
 //! Minimum cooler off time, in seconds. To prevent short cycling the compressor
 const uint16_t MIN_COOL_OFF_TIME = 300;
 //! Minimum heater off time, in seconds. To heat in cycles, not lots of short bursts
@@ -60,6 +85,8 @@ const uint16_t COOL_PEAK_DETECT_TIME = 1800;
 //! Time allowed for heating peak detection
 const uint16_t HEAT_PEAK_DETECT_TIME = 900;
 
+#endif
+
 // These two structs are stored in and loaded from EEPROM
 // struct ControlSettings was moved to EepromStructs.h
 struct ControlVariables{
@@ -76,11 +103,26 @@ struct ControlVariables{
 	temperature posPeak;
 };
 
-// struct ControlConstants was moved to EepromStructs.h
+// TODO - Use this for something
+// MinTimes is intended as a replacement for the defines above once we start to get glycol support going
+struct MinTimes {
+    const uint16_t MIN_COOL_OFF_TIME;  //! Minimum cooler off time, in seconds. To prevent short cycling the compressor
+    const uint16_t MIN_HEAT_OFF_TIME;  //! Minimum heater off time, in seconds. To heat in cycles, not lots of short bursts
+    const uint16_t MIN_COOL_ON_TIME;  //! Minimum on time for the cooler.
+    const uint16_t MIN_HEAT_ON_TIME;  //! Minimum on time for the heater.
 
-#define EEPROM_TC_SETTINGS_BASE_ADDRESS 0
-#define EEPROM_CONTROL_SETTINGS_ADDRESS (EEPROM_TC_SETTINGS_BASE_ADDRESS+sizeof(uint8_t))
-#define EEPROM_CONTROL_CONSTANTS_ADDRESS (EEPROM_CONTROL_SETTINGS_ADDRESS+sizeof(ControlSettings))
+/**
+ * Minimum cooler off time, in seconds.  Used when the controller is in Fridge Constant mode.
+ * Larger than MIN_COOL_OFF_TIME. No need for very fast cycling.
+ */
+    const uint16_t MIN_COOL_OFF_TIME_FRIDGE_CONSTANT;
+    const uint16_t MIN_SWITCH_TIME;  //! Minimum off time between switching between heating and cooling
+    const uint16_t COOL_PEAK_DETECT_TIME;  //! Time allowed for cooling peak detection
+    const uint16_t HEAT_PEAK_DETECT_TIME;  //! Time allowed for heating peak detection
+
+};
+
+// struct ControlConstants was moved to EepromStructs.h
 
 namespace Modes {
   constexpr auto fridgeConstant = 'f';
