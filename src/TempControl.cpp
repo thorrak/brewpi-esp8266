@@ -255,11 +255,9 @@ void TempControl::updateState(){
 	if(cs.mode == Modes::off){
 		state = STATE_OFF;
 		stayIdle = true;
-	}
-	// stay idle when one of the required sensors is disconnected, or the fridge setting is INVALID_TEMP
-	if( cs.fridgeSetting == INVALID_TEMP || 
-		!fridgeSensor->isConnected() || 
-		(!beerSensor->isConnected() && tempControl.modeIsBeer())){
+	} else if( cs.fridgeSetting == INVALID_TEMP || !fridgeSensor->isConnected() || (!beerSensor->isConnected() && tempControl.modeIsBeer())){
+        // stay idle when one of the required sensors is disconnected, or the fridge setting is INVALID_TEMP
+        // Of note - setting the mode to Modes::off also sets cs.fridgeSetting to INVALID_TEMP
 		state = IDLE;
 		stayIdle = true;
 	}
