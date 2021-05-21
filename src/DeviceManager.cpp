@@ -464,7 +464,7 @@ void DeviceManager::parseDeviceDefinition()
 
 	// setting function to none clears all other fields.
 	if (target.deviceFunction==DEVICE_NONE) {
-		piLink.print("Function set to NONE\r\n");
+//		piLink.print("Function set to NONE\r\n");
 		clear((uint8_t*)&target, sizeof(target));
 	}
 
@@ -1032,6 +1032,7 @@ void DeviceManager::listDevices(JsonDocument& doc) {
 	dd.empty = 0;
 
   readJsonIntoDeviceDisplay(dd);
+    doc.to<JsonArray>();
 
 	if (dd.id==-2) {
 		if (dd.write>=0)
