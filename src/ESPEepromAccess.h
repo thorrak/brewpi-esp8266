@@ -21,8 +21,9 @@
 #error Incorrect processor type!
 #endif
 
-#include <FS.h>
-#if defined(ESP32)
+#if defined(ESP8266)
+#include <LittleFS.h>
+#elif defined(ESP32)
 #include <SPIFFS.h>
 #endif
 
@@ -41,7 +42,7 @@ class ESPEepromAccess
 {
 private:
 	template <class T> static bool writeBlockToFile(String target_name, T& data) {
-		File out_file = SPIFFS.open(target_name, "w");
+        File out_file = FILESYSTEM.open(target_name, "w");
 		if (out_file) {
 			out_file.write((const uint8_t*)&data, sizeof(data));
 			out_file.close();
@@ -58,7 +59,7 @@ private:
 		if(!doesFileExist(target_name))
 			return false;
 
-		File in_file = SPIFFS.open(target_name, "r");
+        File in_file = FILESYSTEM.open(target_name, "r");
 		if (in_file) {
 			uint8_t holding[sizeof(data)];
 			in_file.read(holding, sizeof(data));
@@ -70,12 +71,12 @@ private:
 	}
 
     static bool doesFileExist(String target_name) {
-		return SPIFFS.exists(target_name);
+        return FILESYSTEM.exists(target_name);
     }
 
 
 public:
-	// Since we're basically switching to using SPIFFS for everything, I don't want these to compile
+	// Since we're basically switching to using the filesystem for everything, I don't want these to compile
 /*	static uint8_t readByte(eptr_t offset) {
 		return EEPROM.read(offset);
 	}
@@ -109,16 +110,15 @@ public:
     }
 
     static void zapData() {
-        // This gets a bit tricky -- we can't just do SPIFFS.format because that would wipe out the mDNS name
+        // This gets a bit tricky -- we can't just do FS.format because that would wipe out the mDNS name
         int i;
-
-        if(doesFileExist(ControlConstants::filename)) SPIFFS.remove(ControlConstants::filename);
-        if(doesFileExist(ControlSettings::filename)) SPIFFS.remove(ControlSettings::filename);
+        if(doesFileExist(ControlConstants::filename)) FILESYSTEM.remove(ControlConstants::filename);
+        if(doesFileExist(ControlSettings::filename)) FILESYSTEM.remove(ControlSettings::filename);
 
         char buf[20];
         for(i=0;i<MAX_SPIFFS_DEVICES;i++) {
             sprintf(buf, "%s%d", SPIFFS_device_fname_prepend, i);
-            if(doesFileExist(buf)) SPIFFS.remove(buf);
+            if(doesFileExist(buf)) FILESYSTEM.remove(buf);
         }
     }
 };

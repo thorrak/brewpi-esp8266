@@ -18,9 +18,9 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <FS.h>
-#if defined(ESP32)
+#ifdef ESP8266
+#include <LittleFS.h>
+#elif defined(ESP32)
 #include <SPIFFS.h>
 #endif
 
@@ -36,7 +36,8 @@ void DeviceNameManager::setDeviceName(const char* device, const char* name)
   char filename[32];
   DeviceNameManager::deviceNameFilename(filename, device);
 
-  File f = SPIFFS.open(filename, "w");
+    File f = FILESYSTEM.open(filename, "w");
+
   if (f) {
     f.print(name);
     f.close();
@@ -55,13 +56,13 @@ String DeviceNameManager::getDeviceName(const char* device) {
   char filename[32];
   DeviceNameManager::deviceNameFilename(filename, device);
 
-  if (SPIFFS.exists(filename)) {
-    File f = SPIFFS.open(filename, "r");
-    if (f) {
-      String res = f.readString();
-      f.close();
-      return res;
-    }
+    if (FILESYSTEM.exists(filename)) {
+        File f = FILESYSTEM.open(filename, "r");
+        if (f) {
+          String res = f.readString();
+          f.close();
+          return res;
+        }
   }
 
   return device;
@@ -104,7 +105,7 @@ void DeviceNameManager::deleteDeviceName(const char* device) {
   char filename[32];
   DeviceNameManager::deviceNameFilename(filename, device);
 
-  SPIFFS.remove(filename);
+    FILESYSTEM.remove(filename);
 }
 
 
@@ -113,7 +114,7 @@ void DeviceNameManager::deleteDeviceName(const char* device) {
  * \brief Get list of configured device names
  */
 void DeviceNameManager::enumerateDeviceNames(JsonDocument& doc) {
-  File root = SPIFFS.open(filenamePrefix);
+  File root = FILESYSTEM.open(filenamePrefix);
 
   File file = root.openNextFile();
 
@@ -132,7 +133,8 @@ void DeviceNameManager::enumerateDeviceNames(JsonDocument& doc) {
  * \brief Get list of configured device names
  */
 void DeviceNameManager::enumerateDeviceNames(JsonDocument& doc) {
-  Dir dir = SPIFFS.openDir(filenamePrefix);
+    // This is ESP8266 only
+  Dir dir = FILESYSTEM.openDir(filenamePrefix);
 
   while (dir.next()) {
     DeviceName dn = filenameToDeviceName(dir.fileName());

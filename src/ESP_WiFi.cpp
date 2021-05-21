@@ -38,9 +38,18 @@ extern void handleReset();  // Terrible practice. In brewpi-esp8266.cpp.
  * \ingroup wifi
  */
 void saveConfigCallback() {
-    Serial.println("Should save config");
+//    Serial.println("Should save config");
     shouldSaveConfig = true;
 }
+
+void apCallback(WiFiManager *myWiFiManager) {
+    // Callback to display the WiFi LCD notification and set bandwidth
+    DisplayType::printWiFiStartup();
+#ifdef ESP32
+    esp_wifi_set_bandwidth(WIFI_IF_AP, WIFI_BW_HT20);  // Set the bandwidth of ESP32 interface
+#endif
+}
+
 
 void initWifiServer() {
   server.begin();
@@ -93,24 +102,27 @@ void onStationConnected(const WiFiEventSoftAPModeStationConnected& evt) {
 
 void initialize_wifi() {
     String mdns_id;
+    WiFiManager wifiManager;
 
-    // TODO - Figure out how to make the below only appear when the AP is created
-    // (it currently always appears at startup for a few seconds)
-    DisplayType::printWiFiStartup();
-
+    Serial.println("prefetching mdns");
     mdns_id = eepromManager.fetchmDNSName();
+    Serial.println("fetched mdns");
 //	if(mdns_id.length()<=0)
 //		mdns_id = "ESP" + String(ESP.getChipId());
 
 
+//    wifiManager.setHostname(config.mdnsID);  // Allow DHCP to get proper name
+    wifiManager.setWiFiAutoReconnect(true);  // Enable auto reconnect (should remove need for reconnectWiFi())
+    wifiManager.setWiFiAPChannel(1);         // Pick the most common channel, safe for all countries
+    wifiManager.setCleanConnect(true);       // Always disconnect before connecting
+    wifiManager.setCountry("US");            // US country code is most restrictive, use for all countries
+
     // If we're going to set up WiFi, let's get to it
-    WiFiManager wifiManager;
     wifiManager.setConfigPortalTimeout(5*60); // Time out after 5 minutes so that we can keep managing temps
     wifiManager.setDebugOutput(false); // In case we have a serial connection to BrewPi
 
-    // The main purpose of this is to set a boolean value which will allow us to know we
-    // just saved a new configuration (as opposed to rebooting normally)
-    wifiManager.setSaveConfigCallback(saveConfigCallback);
+    wifiManager.setSaveParamsCallback(saveConfigCallback);
+    wifiManager.setAPCallback(apCallback);                   // Set up when portal fires
 
     // The third parameter we're passing here (mdns_id.c_str()) is the default name that will appear on the form.
     // It's nice, but it means the user gets no actual prompt for what they're entering.

@@ -1,6 +1,7 @@
-
+#ifdef ESP8266
+#include <LittleFS.h>
+#elif defined(ESP32)
 #include <FS.h>
-#if defined(ESP32)
 #include <SPIFFS.h>
 #endif
 
@@ -14,7 +15,8 @@
 
 
 void JSONSaveable::writeJsonToFile(const char *filename, const ArduinoJson::JsonDocument& json_doc) {
-    File file_out = SPIFFS.open(filename, "w");
+    File file_out = FILESYSTEM.open(filename, "w");
+
     if (!file_out) {
         // If the above fails, we weren't able to open the file for writing
         return;
@@ -31,7 +33,7 @@ void JSONSaveable::writeJsonToFile(const char *filename, const ArduinoJson::Json
 ArduinoJson::DynamicJsonDocument JSONSaveable::readJsonFromFile(const char *filename) {
     DynamicJsonDocument json_doc(2048);
 
-    File file_in = SPIFFS.open(filename, "r");
+    File file_in = FILESYSTEM.open(filename, "r");
     if (!file_in) {
         // If the above fails, we weren't able to open the file for writing
         return json_doc;

@@ -65,7 +65,13 @@
 #include "Logger.h"
 
 extern ValueActuator alarm_actuator;
-#if defined(ESP8266) || defined(ESP32)
 extern bool toggleBacklight;  // To allow us to toggle the backlight
+
+#if defined(ESP8266)
+#define FILESYSTEM LittleFS
+#elif defined(ESP32)
+#define FILESYSTEM SPIFFS
+#else
+#error "Not supported!"
 #endif
 

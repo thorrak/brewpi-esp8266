@@ -165,9 +165,11 @@ String EepromManager::fetchmDNSName()
 {
 	String mdns_id;
 	// The below loads the mDNS name from the file we saved it to (if the file exists)
-	if (SPIFFS.exists("/mdns.txt")) {
-		// The file exists - load it up
-		File dns_name_file = SPIFFS.open("/mdns.txt", "r");  //TODO - Break "mdns.txt" into something configurable
+
+    if (FILESYSTEM.exists("/mdns.txt")) {
+        // The file exists - load it up
+        File dns_name_file = FILESYSTEM.open("/mdns.txt", "r");  //TODO - Break "mdns.txt" into something configurable
+
 		if (dns_name_file) {
 			// Assuming everything goes well, read in the mdns name
 			mdns_id = dns_name_file.readStringUntil('\n');
@@ -195,7 +197,7 @@ String EepromManager::fetchmDNSName()
 
 void EepromManager::savemDNSName(String mdns_id)
 {
-	File dns_name_file = SPIFFS.open("/mdns.txt", "w");
+	File dns_name_file = FILESYSTEM.open("/mdns.txt", "w");
 	if (dns_name_file) {
 		// If the above fails, we weren't able to open the file for writing
 		mdns_id.trim();

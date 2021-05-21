@@ -1,5 +1,9 @@
 
+#ifdef ESP8266
+#include <LittleFS.h>  // Apparently this needs to be first
+#elif defined(ESP32)
 #include <FS.h>  // Apparently this needs to be first
+#endif
 
 #include "Brewpi.h"
 #include <OneWire.h>
@@ -74,7 +78,7 @@ void handleReset()
 /**
  * \brief Startup configuration
  *
- * - Start up the SPIFFS filesystem
+ * - Start up the filesystem
  * - Initialize the display
  * - If in simulation mode, bootstrap the simulator
  * - Start the PiLink connection (either tcp socket or serial, depending on compile time configuration)
@@ -85,34 +89,9 @@ void setup()
     display.init();
     display.printEEPROMStartup();
 
-    // Before anything else, let's get SPIFFS working. We need to start it up, and then test if the file system was
-    // formatted.
-#ifdef ESP8266
-    // SPIFFS.begin doesn't allow for formatOnFail as a first argument on ESP8266. The way they ended up implementing
-    // this was with the configuation options below. We'll go that route.
-    // For more info, see: https://github.com/esp8266/Arduino/issues/4185
-
-    SPIFFSConfig cfg;
-    cfg.setAutoFormat(true);
-    SPIFFS.setConfig(cfg);
-    SPIFFS.begin();
-#elif defined(ESP32)
-    SPIFFS.begin(true);
-#else
-// We no longer support anything but ESP8266 or ESP32 in this codebase
-#error "Invalid platform!"
-#endif
-
-
-    if (!SPIFFS.exists("/formatComplete.txt")) {
-        if (!SPIFFS.exists("/mdns.txt")) {
-            // This prevents installations that are being upgraded from v0.10 to v0.11 from having their mdns settings
-            // wiped out
-            SPIFFS.format();
-        }
-        File f = SPIFFS.open("/formatComplete.txt", "w");
-        f.close();
-    }
+    // Before anything else, let's get the filesystem working. We need to start it up, and then test if the file system
+    // wasformatted.
+    FILESYSTEM.begin();
 
     initialize_wifi();
 
@@ -142,8 +121,8 @@ void setup()
 	display.printStationaryText();
 	display.printState();
 
-  if(Config::Prometheus::enable())
-    promServer.setup();
+//  if(Config::Prometheus::enable())
+//    promServer.setup();
 
 //	rotaryEncoder.init();
 
