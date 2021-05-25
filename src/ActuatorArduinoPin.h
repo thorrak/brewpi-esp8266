@@ -9,27 +9,27 @@
 
 #include "Actuator.h"
 
-template<uint8_t pin, bool invert>
-class DigitalConstantPinActuator ACTUATOR_BASE_CLASS_DECL
-{
-	private:
-	bool active;
-	
-	public:
-	DigitalConstantPinActuator() : active(false)
-	{
-		setActive(false);
-		fastPinMode(pin, OUTPUT);
-	}
-	
-	inline ACTUATOR_METHOD void setActive(bool active) {
-		this->active = active;
-		fastDigitalWrite(pin, active^invert ? HIGH : LOW);
-	}
-	
-	bool isActive() { return active; }
-
-};
+//template<uint8_t pin, bool invert>
+//class DigitalConstantPinActuator ACTUATOR_BASE_CLASS_DECL
+//{
+//	private:
+//	bool active;
+//
+//	public:
+//	DigitalConstantPinActuator() : active(false)
+//	{
+//		setActive(false);
+//		fastPinMode(pin, OUTPUT);
+//	}
+//
+//	inline ACTUATOR_METHOD void setActive(bool active) {
+//		this->active = active;
+//		fastDigitalWrite(pin, active^invert ? HIGH : LOW);
+//	}
+//
+//	bool isActive() { return active; }
+//
+//};
 
 class DigitalPinActuator ACTUATOR_BASE_CLASS_DECL
 {
@@ -46,8 +46,11 @@ class DigitalPinActuator ACTUATOR_BASE_CLASS_DECL
 	}
 	
 	inline ACTUATOR_METHOD void setActive(bool active) {
-		this->active = active;
-		digitalWrite(pin, active^invert ? HIGH : LOW);
+        this->active = active;
+        if((active && !invert) || (!active && invert)) digitalWrite(pin, HIGH);
+        else digitalWrite(pin, LOW);
+        // The xor originally used isn't working on this branch. Very strange, as none of the other code has changed.
+//        digitalWrite(pin, active^invert ? HIGH : LOW);
 	}
 	
 	bool isActive() { return active; }
