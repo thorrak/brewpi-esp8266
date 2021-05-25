@@ -25,6 +25,7 @@
 #endif
 
 #include "DeviceNameManager.h"
+#include "ESPEepromAccess.h"
 
 /**
  * \brief Set a human readable name for a device.

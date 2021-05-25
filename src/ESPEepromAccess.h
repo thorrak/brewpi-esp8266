@@ -15,10 +15,14 @@
 * along with this file.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#pragma once
 
-#if !defined(ESP8266) && !defined(ESP32)
-// Generate an error if we have been incorrectly included in an Arduino build
-#error Incorrect processor type!
+#if defined(ESP8266)
+#define FILESYSTEM LittleFS
+#elif defined(ESP32)
+#define FILESYSTEM SPIFFS
+#else
+#error "Not supported!"
 #endif
 
 #if defined(ESP8266)

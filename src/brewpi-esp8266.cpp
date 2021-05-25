@@ -121,8 +121,8 @@ void setup()
 	display.printStationaryText();
 	display.printState();
 
-//  if(Config::Prometheus::enable())
-//    promServer.setup();
+  if(Config::Prometheus::enable())
+    promServer.setup();
 
 //	rotaryEncoder.init();
 
@@ -166,7 +166,7 @@ void brewpiLoop()
 		tempControl.updateState();
 
 		if (oldState != tempControl.getState()) {
-      piLink.sendStateNotification();
+          piLink.sendStateNotification();
 		}
 		tempControl.updateOutputs();
 

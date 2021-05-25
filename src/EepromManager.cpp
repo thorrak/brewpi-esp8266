@@ -27,7 +27,7 @@
 #include "PiLink.h"
 
 EepromManager eepromManager;
-EepromAccess eepromAccess;
+ESPEepromAccess eepromAccess;
 
 #define pointerOffset(x) offsetof(EepromFormat, x)
 
