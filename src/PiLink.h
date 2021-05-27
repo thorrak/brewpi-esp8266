@@ -73,12 +73,12 @@ public:
     StaticJsonDocument<1024> doc;
 
     doc["BeerTemp"] = tempToDouble(tempControl.getBeerTemp(), Config::TempFormat::tempDecimals);
-    doc["BeerSet"] = tempToDouble(tempControl.getBeerSetting(), Config::TempFormat::fixedPointDecimals);
+    doc["BeerSet"] = tempToDouble(tempControl.getBeerSetting(), Config::TempFormat::tempDecimals);
 
     doc["BeerAnn"] = beerAnnotation;
 
     doc["FridgeTemp"] = tempToDouble(tempControl.getFridgeTemp(), Config::TempFormat::tempDecimals);
-    doc["FridgeSet"] = tempToDouble(tempControl.getFridgeSetting(), Config::TempFormat::fixedPointDecimals);
+    doc["FridgeSet"] = tempToDouble(tempControl.getFridgeSetting(), Config::TempFormat::tempDecimals);
 
     doc["FridgeAnn"] = fridgeAnnotation;
 

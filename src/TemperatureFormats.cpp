@@ -350,3 +350,33 @@ double tempToDouble(long_temperature rawTemp, uint8_t numDecimals) {
   temp.trim();
   return temp.toDouble();
 }
+
+/**
+ * \brief Convert a temperature difference to a double.
+ * Used for JSON conversion.
+ *
+ * \param rawTempDiff - Temperature difference value to convert
+ * \param numDecimals - Number of decimal places to include
+ * \todo Do a direct conversion instead of going to string
+ */
+double tempDiffToDouble(long_temperature rawTempDiff, uint8_t numDecimals) {
+    char tempString[Config::TempFormat::bufferLen];
+    String temp(tempDiffToString(tempString, rawTempDiff, numDecimals, Config::TempFormat::bufferLen));
+    temp.trim();
+    return temp.toDouble();
+}
+
+/**
+ * \brief Convert a temperature to a double.
+ * Used for JSON conversion.
+ *
+ * \param rawFixedPoint - Fixed point value to convert
+ * \param numDecimals - Number of decimal places to include
+ * \todo Do a direct conversion instead of going to string
+ */
+double fixedPointToDouble(long_temperature rawFixedPoint, uint8_t numDecimals) {
+    char tempString[Config::TempFormat::bufferLen];
+    String temp(fixedPointToString(tempString, rawFixedPoint, numDecimals, Config::TempFormat::bufferLen));
+    temp.trim();
+    return temp.toDouble();
+}

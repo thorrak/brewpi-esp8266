@@ -741,13 +741,14 @@ bool TempControl::stateIsHeating(){
  * \param doc - Reference to JsonDocument to populate
  */
 void TempControl::getControlVariablesDoc(JsonDocument& doc) {
-  doc["beerDiff"] = tempToDouble(cv.beerDiff, Config::TempFormat::tempDiffDecimals);
-  doc["diffIntegral"] = tempToDouble(cv.diffIntegral, Config::TempFormat::tempDiffDecimals);
-  doc["beerSlope"] = tempToDouble(cv.beerSlope, Config::TempFormat::tempDiffDecimals);
+  doc["beerDiff"] = tempDiffToDouble(cv.beerDiff, Config::TempFormat::tempDiffDecimals);
+  doc["diffIntegral"] = tempDiffToDouble(cv.diffIntegral, Config::TempFormat::tempDiffDecimals);
+  doc["beerSlope"] = tempDiffToDouble(cv.beerSlope, Config::TempFormat::tempDiffDecimals);
 
-  doc["p"] = tempToDouble(cv.p, Config::TempFormat::fixedPointDecimals);
-  doc["i"] = tempToDouble(cv.i, Config::TempFormat::fixedPointDecimals);
-  doc["d"] = tempToDouble(cv.d, Config::TempFormat::fixedPointDecimals);
+  doc["p"] = fixedPointToDouble(cv.p, Config::TempFormat::fixedPointDecimals);
+  doc["i"] = fixedPointToDouble(cv.i, Config::TempFormat::fixedPointDecimals);
+  doc["d"] = fixedPointToDouble(cv.d, Config::TempFormat::fixedPointDecimals);
+
   doc["estPeak"] = tempToDouble(cv.estimatedPeak, Config::TempFormat::tempDecimals);
   doc["negPeakEst"] = tempToDouble(cv.negPeakEstimate, Config::TempFormat::tempDecimals);
   doc["posPeakEst"] = tempToDouble(cv.posPeakEstimate, Config::TempFormat::tempDecimals);
@@ -765,18 +766,18 @@ void TempControl::getControlConstantsDoc(JsonDocument& doc) {
 
   doc["tempSetMin"] = tempToDouble(cc.tempSettingMin, Config::TempFormat::tempDecimals);
   doc["tempSetMax"] = tempToDouble(cc.tempSettingMax, Config::TempFormat::tempDecimals);
-  doc["pidMax"] = tempToDouble(cc.pidMax, Config::TempFormat::tempDiffDecimals);
-  doc["Kp"] = tempToDouble(cc.Kp, Config::TempFormat::fixedPointDecimals);
-  doc["Ki"] = tempToDouble(cc.Ki, Config::TempFormat::fixedPointDecimals);
-  doc["Kd"] = tempToDouble(cc.Kd, Config::TempFormat::fixedPointDecimals);
+  doc["pidMax"] = tempDiffToDouble(cc.pidMax, Config::TempFormat::tempDiffDecimals);
+  doc["Kp"] = fixedPointToDouble(cc.Kp, Config::TempFormat::fixedPointDecimals);
+  doc["Ki"] = fixedPointToDouble(cc.Ki, Config::TempFormat::fixedPointDecimals);
+  doc["Kd"] = fixedPointToDouble(cc.Kd, Config::TempFormat::fixedPointDecimals);
 
-  doc["iMaxErr"] = tempToDouble(cc.iMaxError, Config::TempFormat::tempDiffDecimals);
-  doc["idleRangeH"] = tempToDouble(cc.idleRangeHigh, Config::TempFormat::tempDiffDecimals);
-  doc["idleRangeL"] = tempToDouble(cc.idleRangeLow, Config::TempFormat::tempDiffDecimals);
-  doc["heatTargetH"] = tempToDouble(cc.heatingTargetUpper, Config::TempFormat::tempDiffDecimals);
-  doc["heatTargetL"] = tempToDouble(cc.heatingTargetLower, Config::TempFormat::tempDiffDecimals);
-  doc["coolTargetH"] = tempToDouble(cc.coolingTargetUpper, Config::TempFormat::tempDiffDecimals);
-  doc["coolTargetL"] = tempToDouble(cc.coolingTargetLower, Config::TempFormat::tempDiffDecimals);
+  doc["iMaxErr"] = tempDiffToDouble(cc.iMaxError, Config::TempFormat::tempDiffDecimals);
+  doc["idleRangeH"] = tempDiffToDouble(cc.idleRangeHigh, Config::TempFormat::tempDiffDecimals);
+  doc["idleRangeL"] = tempDiffToDouble(cc.idleRangeLow, Config::TempFormat::tempDiffDecimals);
+  doc["heatTargetH"] = tempDiffToDouble(cc.heatingTargetUpper, Config::TempFormat::tempDiffDecimals);
+  doc["heatTargetL"] = tempDiffToDouble(cc.heatingTargetLower, Config::TempFormat::tempDiffDecimals);
+  doc["coolTargetH"] = tempDiffToDouble(cc.coolingTargetUpper, Config::TempFormat::tempDiffDecimals);
+  doc["coolTargetL"] = tempDiffToDouble(cc.coolingTargetLower, Config::TempFormat::tempDiffDecimals);
   doc["maxHeatTimeForEst"] = tempControl.cc.maxHeatTimeForEstimate;
   doc["maxCoolTimeForEst"] = tempControl.cc.maxCoolTimeForEstimate;
   doc["fridgeFastFilt"] = tempControl.cc.fridgeFastFilter;
@@ -797,8 +798,8 @@ void TempControl::getControlConstantsDoc(JsonDocument& doc) {
  */
 void TempControl::getControlSettingsDoc(JsonDocument& doc) {
   doc["mode"] = String(cs.mode);
-  doc["beerSet"] = tempToDouble(cs.beerSetting, Config::TempFormat::fixedPointDecimals);
-  doc["fridgeSet"] = tempToDouble(cs.fridgeSetting, Config::TempFormat::fixedPointDecimals);
-  doc["heatEst"] = tempToDouble(cs.heatEstimator, Config::TempFormat::fixedPointDecimals);
-  doc["coolEst"] = tempToDouble(cs.coolEstimator, Config::TempFormat::fixedPointDecimals);
+  doc["beerSet"] = tempToDouble(cs.beerSetting, Config::TempFormat::tempDecimals);
+  doc["fridgeSet"] = tempToDouble(cs.fridgeSetting, Config::TempFormat::tempDecimals);
+  doc["heatEst"] = fixedPointToDouble(cs.heatEstimator, Config::TempFormat::fixedPointDecimals);
+  doc["coolEst"] = fixedPointToDouble(cs.coolEstimator, Config::TempFormat::fixedPointDecimals);
 }

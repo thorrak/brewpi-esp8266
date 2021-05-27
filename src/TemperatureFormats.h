@@ -225,6 +225,8 @@ inline long_temperature convertFromInternalTemp(long_temperature rawTemp) {
 
 
 double tempToDouble(long_temperature rawTemp, uint8_t numDecimals);
+double tempDiffToDouble(long_temperature rawTempDiff, uint8_t numDecimals);
+double fixedPointToDouble(long_temperature rawFixedPoint, uint8_t numDecimals);
 
 #define OPTIMIZE_TEMPERATURE_FORMATS 1 && OPTIMIZE_GLOBAL
 
