@@ -11,6 +11,7 @@
 #include "TemperatureFormats.h"
 #include "TempControl.h" // For Modes definition
 #include "JsonKeys.h"
+#include "PiLink.h"
 
 
 
@@ -106,21 +107,21 @@ DynamicJsonDocument ControlConstants::toJson() {
     DynamicJsonDocument doc(1024);  // Should be a max of 642, per the ArduinoJson Size Assistant
 
     // Load the constants into the JSON Doc
-    doc[ControlConstantsKeys::tempMin] = tempToInt(tempSettingMin);
-    doc[ControlConstantsKeys::tempMax] = tempToInt(tempSettingMax);
+    doc[ControlConstantsKeys::tempMin] = tempSettingMin;
+    doc[ControlConstantsKeys::tempMax] = tempSettingMax;
 
-    doc[ControlConstantsKeys::kp] = tempDiffToInt(Kp);
-    doc[ControlConstantsKeys::ki] = tempDiffToInt(Ki);
-    doc[ControlConstantsKeys::kd] = tempDiffToInt(Kd);
-    doc[ControlConstantsKeys::maxError] = tempDiffToInt(iMaxError);
+    doc[ControlConstantsKeys::kp] = Kp;
+    doc[ControlConstantsKeys::ki] = Ki;
+    doc[ControlConstantsKeys::kd] = Kd;
+    doc[ControlConstantsKeys::maxError] = iMaxError;
 
-    doc[ControlConstantsKeys::idleHigh] = tempDiffToInt(idleRangeHigh);
-    doc[ControlConstantsKeys::idleLow] = tempDiffToInt(idleRangeLow);
+    doc[ControlConstantsKeys::idleHigh] = idleRangeHigh;
+    doc[ControlConstantsKeys::idleLow] = idleRangeLow;
 
-    doc[ControlConstantsKeys::heatingUpper] = tempDiffToInt(heatingTargetUpper);
-    doc[ControlConstantsKeys::heatingLower] = tempDiffToInt(heatingTargetLower);
-    doc[ControlConstantsKeys::coolingUpper] = tempDiffToInt(coolingTargetUpper);
-    doc[ControlConstantsKeys::coolingLower] = tempDiffToInt(coolingTargetLower);
+    doc[ControlConstantsKeys::heatingUpper] = heatingTargetUpper;
+    doc[ControlConstantsKeys::heatingLower] = heatingTargetLower;
+    doc[ControlConstantsKeys::coolingUpper] = coolingTargetUpper;
+    doc[ControlConstantsKeys::coolingLower] = coolingTargetLower;
 
     doc[ControlConstantsKeys::maxHeatEst] = maxHeatTimeForEstimate;
     doc[ControlConstantsKeys::maxCoolEst] = maxCoolTimeForEstimate;
@@ -134,7 +135,7 @@ DynamicJsonDocument ControlConstants::toJson() {
 
     doc[ControlConstantsKeys::lightHeater] = lightAsHeater;
     doc[ControlConstantsKeys::rotaryHalfSteps] = rotaryHalfSteps;
-    doc[ControlConstantsKeys::pidMax] = tempDiffToInt(pidMax);
+    doc[ControlConstantsKeys::pidMax] = pidMax;
     doc[ControlConstantsKeys::tempFormat] = tempFormat;
     doc[ControlConstantsKeys::tempFormat].is<char>();
 
@@ -158,33 +159,25 @@ void ControlConstants::loadFromSpiffs() {
     json_doc = readJsonFromFile(ControlConstants::filename);
 
     // Load the constants from the JSON Doc
-    if(json_doc.containsKey(ControlConstantsKeys::tempMin))
-        tempSettingMin = intToTemp(json_doc[ControlConstantsKeys::tempMin]);
-    if(json_doc.containsKey(ControlConstantsKeys::tempMax))
-        tempSettingMax = intToTemp(json_doc[ControlConstantsKeys::tempMax]);
+    if(json_doc.containsKey(ControlConstantsKeys::tempMin)) tempSettingMin = json_doc[ControlConstantsKeys::tempMin];
+    if(json_doc.containsKey(ControlConstantsKeys::tempMax)) tempSettingMax = json_doc[ControlConstantsKeys::tempMax];
 
-    if(json_doc.containsKey(ControlConstantsKeys::kp))
-        Kp = intToTempDiff(json_doc[ControlConstantsKeys::kp]);
-    if(json_doc.containsKey(ControlConstantsKeys::ki))
-        Ki = intToTempDiff(json_doc[ControlConstantsKeys::ki]);
-    if(json_doc.containsKey(ControlConstantsKeys::kd))
-        Kd = intToTempDiff(json_doc[ControlConstantsKeys::kd]);
-    if(json_doc.containsKey(ControlConstantsKeys::maxError))
-        iMaxError = intToTempDiff(json_doc[ControlConstantsKeys::maxError]);
+    if(json_doc.containsKey(ControlConstantsKeys::kp)) Kp = json_doc[ControlConstantsKeys::kp];
+    if(json_doc.containsKey(ControlConstantsKeys::ki)) Ki = json_doc[ControlConstantsKeys::ki];
+    if(json_doc.containsKey(ControlConstantsKeys::kd)) Kd = json_doc[ControlConstantsKeys::kd];
+    if(json_doc.containsKey(ControlConstantsKeys::maxError)) iMaxError = json_doc[ControlConstantsKeys::maxError];
 
-    if(json_doc.containsKey(ControlConstantsKeys::idleHigh))
-        idleRangeHigh = intToTempDiff(json_doc[ControlConstantsKeys::idleHigh]);
-    if(json_doc.containsKey(ControlConstantsKeys::idleLow))
-        idleRangeLow = intToTempDiff(json_doc[ControlConstantsKeys::idleLow]);
+    if(json_doc.containsKey(ControlConstantsKeys::idleHigh)) idleRangeHigh = json_doc[ControlConstantsKeys::idleHigh];
+    if(json_doc.containsKey(ControlConstantsKeys::idleLow)) idleRangeLow = json_doc[ControlConstantsKeys::idleLow];
 
     if(json_doc.containsKey(ControlConstantsKeys::heatingUpper))
-        heatingTargetUpper = intToTempDiff(json_doc[ControlConstantsKeys::heatingUpper]);
+        heatingTargetUpper = json_doc[ControlConstantsKeys::heatingUpper];
     if(json_doc.containsKey(ControlConstantsKeys::heatingLower))
-        heatingTargetLower = intToTempDiff(json_doc[ControlConstantsKeys::heatingLower]);
+        heatingTargetLower = json_doc[ControlConstantsKeys::heatingLower];
     if(json_doc.containsKey(ControlConstantsKeys::coolingUpper))
-        coolingTargetUpper = intToTempDiff(json_doc[ControlConstantsKeys::coolingUpper]);
+        coolingTargetUpper = json_doc[ControlConstantsKeys::coolingUpper];
     if(json_doc.containsKey(ControlConstantsKeys::coolingLower))
-        coolingTargetLower = intToTempDiff(json_doc[ControlConstantsKeys::coolingLower]);
+        coolingTargetLower = json_doc[ControlConstantsKeys::coolingLower];
 
     maxHeatTimeForEstimate = json_doc[ControlConstantsKeys::maxHeatEst] | maxHeatTimeForEstimate;
     maxCoolTimeForEstimate = json_doc[ControlConstantsKeys::maxCoolEst] | maxCoolTimeForEstimate;
@@ -198,8 +191,7 @@ void ControlConstants::loadFromSpiffs() {
 
     lightAsHeater = json_doc[ControlConstantsKeys::lightHeater] | lightAsHeater;
     rotaryHalfSteps = json_doc[ControlConstantsKeys::rotaryHalfSteps] | rotaryHalfSteps;
-    if(json_doc.containsKey(ControlConstantsKeys::pidMax))
-        pidMax = intToTempDiff(json_doc[ControlConstantsKeys::pidMax]);
+    if(json_doc.containsKey(ControlConstantsKeys::pidMax)) pidMax = json_doc[ControlConstantsKeys::pidMax];
     tempFormat = json_doc[ControlConstantsKeys::tempFormat] | tempFormat;
 }
 
@@ -233,10 +225,10 @@ DynamicJsonDocument ControlSettings::toJson() {
     DynamicJsonDocument doc(512);
 
     // Load the settings into the JSON Doc
-    doc[ControlSettingsKeys::beer] = tempToInt(beerSetting);
-    doc[ControlSettingsKeys::fridge] = tempToInt(fridgeSetting);
-    doc[ControlSettingsKeys::heatEst] = tempDiffToInt(heatEstimator);
-    doc[ControlSettingsKeys::coolEst] = tempDiffToInt(coolEstimator);
+    doc[ControlSettingsKeys::beer] = beerSetting;
+    doc[ControlSettingsKeys::fridge] = fridgeSetting;
+    doc[ControlSettingsKeys::heatEst] = heatEstimator;
+    doc[ControlSettingsKeys::coolEst] = coolEstimator;
     doc[ControlSettingsKeys::mode] = mode;
     doc[ControlSettingsKeys::mode].is<char>();
 
@@ -262,14 +254,10 @@ void ControlSettings::loadFromSpiffs() {
     json_doc = readJsonFromFile(ControlSettings::filename);
 
     // Load the settings from the JSON Doc
-    if(json_doc.containsKey(ControlSettingsKeys::beer))
-        beerSetting = intToTemp(json_doc[ControlSettingsKeys::beer]);
-    if(json_doc.containsKey(ControlSettingsKeys::fridge))
-        fridgeSetting = intToTemp(json_doc[ControlSettingsKeys::fridge]);
-    if(json_doc.containsKey(ControlSettingsKeys::heatEst))
-        heatEstimator = intToTempDiff(json_doc[ControlSettingsKeys::heatEst]);
-    if(json_doc.containsKey(ControlSettingsKeys::coolEst))
-        coolEstimator = intToTempDiff(json_doc[ControlSettingsKeys::coolEst]);
+    if(json_doc.containsKey(ControlSettingsKeys::beer)) beerSetting = json_doc[ControlSettingsKeys::beer];
+    if(json_doc.containsKey(ControlSettingsKeys::fridge)) fridgeSetting = json_doc[ControlSettingsKeys::fridge];
+    if(json_doc.containsKey(ControlSettingsKeys::heatEst)) heatEstimator = json_doc[ControlSettingsKeys::heatEst];
+    if(json_doc.containsKey(ControlSettingsKeys::coolEst)) coolEstimator = json_doc[ControlSettingsKeys::coolEst];
 
     mode = json_doc[ControlSettingsKeys::mode] | mode;
 }
