@@ -58,7 +58,6 @@ private:
   static void getLcdContent();
 
   // EEPROM
-  static void zapEeprom();
   static void initEeprom();
 
   // Device name

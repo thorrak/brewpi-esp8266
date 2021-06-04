@@ -46,35 +46,17 @@ bool EepromManager::hasSettings()
 	return eepromAccess.hasSettings();
 }
 
-void EepromManager::zapEeprom()
-{
-	eepromAccess.zapData();
-}
-
-
 void EepromManager::initializeEeprom()
 {
 	// clear all eeprom
-	zapEeprom();
+    eepromAccess.zapData();
 
 	deviceManager.setupUnconfiguredDevices();
 
 	// fetch the default values
 	TempControl::loadDefaultConstants();
 	TempControl::loadDefaultSettings();
-	
-	// write the default constants 
-/*	for (uint8_t c=0; c<EepromFormat::MAX_CHAMBERS; c++) {
-		eptr_t pv = pointerOffset(chambers)+(c*sizeof(ChamberBlock)) ;
-		tempControl.storeToSpiffs();
-		pv += offsetof(ChamberBlock, beer)+offsetof(BeerBlock, cs);
-		for (uint8_t b=0; b<ChamberBlock::MAX_BEERS; b++) {
-//			logDeveloper(PSTR("EepromManager - saving settings for beer %d at %d"), b, (uint16_t)pv);
-			tempControl.storeSettings();
-			pv += sizeof(BeerBlock);		// advance to next beer
-		}
-	}*/
-	// TODO - Eventually, restore ability to have more than one chamber/beer
+
 	TempControl::storeConstants();
 	TempControl::storeSettings();
 

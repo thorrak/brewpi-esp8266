@@ -156,12 +156,6 @@ void CommandProcessor::receiveCommand() {
       break;
 #endif
 
-#if (BREWPI_DEBUG > 0)
-    case 'Z': // zap eeprom
-      zapEeprom();
-      break;
-#endif
-
     // Alert the user that the command issued wasn't valid
     default:
       invalidCommand(inByte);
@@ -338,16 +332,6 @@ void CommandProcessor::printRawTemperatures() {
   DynamicJsonDocument doc(1024);
   deviceManager.rawDeviceValues(doc);
   piLink.sendJsonMessage('R', doc);
-}
-
-/**
- * \brief Erase EEPROM data
- *
- * \see EepromManager::zapEeprom()
- */
-void CommandProcessor::zapEeprom() {
-  eepromManager.zapEeprom();
-  logInfo(INFO_EEPROM_ZAPPED);
 }
 
 /**
