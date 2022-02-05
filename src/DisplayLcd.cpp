@@ -409,6 +409,32 @@ void LcdDisplay::printWiFi(){
 }
 #endif
 
+#ifdef HAS_BLUETOOTH
+void LcdDisplay::printBluetoothStartup(){
+	toggleBacklight = false;  // Assuming we need this
+
+	lcd.setCursor(0,0);
+
+	lcd.print("Performing initial");
+	lcd.printSpacesToRestOfLine();
+
+	lcd.setCursor(0,1);
+	lcd.print(eepromManager.fetchmDNSName());
+	lcd.print("bluetooth scan");
+	lcd.printSpacesToRestOfLine();
+
+	lcd.setCursor(0,2);
+	lcd.print(" ");
+	lcd.printSpacesToRestOfLine();
+
+	lcd.setCursor(0,3);
+	lcd.print("Please wait...");
+	lcd.printSpacesToRestOfLine();
+
+	lcd.updateBacklight();
+}
+#endif
+
 void LcdDisplay::printEEPROMStartup(){
 	toggleBacklight = false;  // Assuming we need this
 

@@ -106,6 +106,10 @@ inline bool isAssignable(DeviceType type, DeviceHardware hardware)
 #if BREWPI_DS2413
 	|| (hardware==DEVICE_HARDWARE_ONEWIRE_2413 && (type==DEVICETYPE_SWITCH_ACTUATOR || (DS2413_SUPPORT_SENSE && type==DEVICETYPE_SWITCH_SENSOR)))
 #endif
+#ifdef HAS_BLUETOOTH
+	|| (hardware==DEVICE_HARDWARE_BLUETOOTH_INKBIRD && type==DEVICETYPE_TEMP_SENSOR)
+	|| (hardware==DEVICE_HARDWARE_BLUETOOTH_TILT && type==DEVICETYPE_TEMP_SENSOR)
+#endif
 	|| (hardware==DEVICE_HARDWARE_ONEWIRE_TEMP && type==DEVICETYPE_TEMP_SENSOR)
 	|| (hardware==DEVICE_HARDWARE_NONE && type==DEVICETYPE_NONE);
 }
@@ -176,6 +180,7 @@ struct DeviceAlternatives {
  *
  * @see DeviceManager::enumerateOneWireDevices
  * @see DeviceManager::enumeratePinDevices
+ * @see DeviceManager::enumerateInkbirdDevices
  */
 typedef void (*EnumDevicesCallback)(DeviceConfig*, void* pv, JsonDocument* doc);
 
@@ -215,6 +220,7 @@ struct DeviceDefinition {
 	int8_t deactivate;
 	int8_t calibrationAdjust;
 	DeviceAddress address;
+	NimBLEAddress btAddress;
 
 	/**
 	 * Lists the first letter of the key name for each attribute.
@@ -334,6 +340,7 @@ public:
 private:
 	static void enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc);
 	static void enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc);
+	static void enumerateInkbirdDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc);
 	static void outputEnumeratedDevices(DeviceConfig* config, void* pv, JsonDocument* doc);
 	static void handleEnumeratedDevice(DeviceConfig& config, EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& out, JsonDocument* doc);
 	static void readTempSensorValue(DeviceConfig::Hardware hw, char* out);

@@ -33,7 +33,7 @@ ESPEepromAccess eepromAccess;
 
 EepromManager::EepromManager()
 {
-	eepromSizeCheck();
+	// eepromSizeCheck();
 }
 
 

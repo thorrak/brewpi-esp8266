@@ -434,10 +434,27 @@ void LcdDisplay::printWiFiStartup(){
 
 //    tft.updateBacklight();
 }
-
-
 #endif
 
+#ifdef HAS_BLUETOOTH
+void LcdDisplay::printBluetoothStartup(){
+    toggleBacklight = false;  // Assuming we need this
+
+    clear();
+
+    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft.setTextSize(WIFI_FONT_SIZE);
+
+    tft.setCursor(0, 0);
+
+    tft.println("Searching for Bluetooth");
+    tft.println("devices. ");
+    tft.println("");
+    tft.println("This scan will take about");
+    tft.println("15 seconds. Booting will");
+    tft.println("continue once complete.");
+}
+#endif
 
 void LcdDisplay::printEEPROMStartup(){
 

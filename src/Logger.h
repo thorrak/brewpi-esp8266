@@ -17,7 +17,8 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#ifndef BREWPI_LOGGER_H
+#define BREWPI_LOGGER_H
 
 #include <stdarg.h>
 #include "TemperatureFormats.h"
@@ -130,4 +131,6 @@ extern Logger logger;
 	#define logDebug(string, ...) piLink.debugMessage(PSTR(string), ##__VA_ARGS__)
 #else
 	#define logDebug(string, ...) {}
+#endif
+
 #endif

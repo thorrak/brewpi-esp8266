@@ -45,6 +45,11 @@
 #include "SensorArduinoPin.h"
 #endif
 
+#ifdef HAS_BLUETOOTH
+#include "InkbirdTempSensor.h"
+#include "wireless/BTScanner.h"
+#endif
+
 constexpr auto calibrationOffsetPrecision = 4;
 
 /*
@@ -152,6 +157,12 @@ void* DeviceManager::createDevice(DeviceConfig& config, DeviceType dt)
 			return new OneWireActuator(oneWireBus(config.hw.pinNr), config.hw.address, config.hw.pio, config.hw.invert);
 		#endif
 #endif
+
+#ifdef HAS_BLUETOOTH
+		case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
+			return new InkbirdTempSensor(config.hw.btAddress, config.hw.calibration);
+#endif
+
 	}
 	return nullptr;
 }
@@ -332,14 +343,45 @@ void DeviceManager::readJsonIntoDeviceDef(DeviceDefinition& dev) {
   StaticJsonDocument<deviceDefinitionJsonSize> doc;
   piLink.receiveJsonMessage(doc);
 
+  JsonVariant hardware = doc[DeviceDefinitionKeys::hardware];
+  if(!hardware.isNull())
+    dev.deviceHardware = hardware.as<uint8_t>();
+
+	// piLink.print("Parsed Hardware Type: ");
+	// piLink.print(doc[DeviceDefinitionKeys::hardware].as<const char *>());
+	// piLink.printNewLine();
+
   const char* address = doc[DeviceDefinitionKeys::address];
-  if(address)
-    parseBytes(dev.address, address, 8);
+
+	// piLink.print("Parsed Address: ");
+	// piLink.print(address);
+	// piLink.printNewLine();
+
+  if(address) {
+	  uint8_t bt_address[6];
+	  switch(dev.deviceHardware) {
+		case DEVICE_HARDWARE_ONEWIRE_TEMP:
+			parseBytes(dev.address, address, 8);
+			break;
+#ifdef HAS_BLUETOOTH
+		case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
+		case DEVICE_HARDWARE_BLUETOOTH_TILT:
+			parseBytes(bt_address, address, 6);
+			dev.btAddress = NimBLEAddress(bt_address);
+			break;
+#endif
+		default:
+			break;
+	  }
+  }
 
   JsonVariant calibration = doc[DeviceDefinitionKeys::calibrateadjust];
   if(calibration) {
-    dev.calibrationAdjust = fixed4_4(stringToTempDiff(calibration.as<char *>()) >> (TEMP_FIXED_POINT_BITS - calibrationOffsetPrecision));
-  }
+    dev.calibrationAdjust = fixed4_4(stringToTempDiff(calibration.as<const char *>()) >> (TEMP_FIXED_POINT_BITS - calibrationOffsetPrecision));
+  } 
+//   else {
+// 	  dev.calibrationAdjust = 0;
+//   }
 
   JsonVariant id = doc[DeviceDefinitionKeys::index];
   if(!id.isNull())
@@ -357,9 +399,7 @@ void DeviceManager::readJsonIntoDeviceDef(DeviceDefinition& dev) {
   if(!function.isNull())
     dev.deviceFunction = function.as<uint8_t>();
 
-  JsonVariant hardware = doc[DeviceDefinitionKeys::hardware];
-  if(!hardware.isNull())
-    dev.deviceHardware = hardware.as<uint8_t>();
+
 
   JsonVariant pin = doc[DeviceDefinitionKeys::pin];
   if(!pin.isNull())
@@ -412,14 +452,14 @@ void DeviceManager::parseDeviceDefinition()
 	static DeviceDefinition dev;
 	fill((int8_t*)&dev, sizeof(dev));
 
-  readJsonIntoDeviceDef(dev);
+	readJsonIntoDeviceDef(dev);
 
 	if (!inRangeInt8(dev.id, 0, MAX_DEVICE_SLOT))	{
-    // no device id given, or it's out of range, can't do anything else.
-    piLink.print_fmt("Out of range: %d", dev.id);
-    piLink.printNewLine();
+		// no device id given, or it's out of range, can't do anything else.
+		piLink.print_fmt("Out of range: %d", dev.id);
+		piLink.printNewLine();
 		return;
-  }
+	}
 
   if(Config::forceDeviceDefaults) {
     // Overwrite the chamber/beer number to prevent user error.
@@ -460,6 +500,10 @@ void DeviceManager::parseDeviceDefinition()
 	if (dev.address[0] != 0xFF) {// first byte is family identifier. I don't have a complete list, but so far 0xFF is not used.
 		memcpy(target.hw.address, dev.address, 8);
 	}
+
+	if(dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD || dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT)
+		target.hw.btAddress = dev.btAddress;
+
 	assignIfSet(dev.deactivate, (uint8_t*)&target.hw.deactivate);
 
 	// setting function to none clears all other fields.
@@ -634,17 +678,25 @@ void DeviceManager::serializeJsonDevice(JsonDocument& doc, device_slot_t slot, D
 
 
 	if (value && *value) {
-    deviceObj[DeviceDefinitionKeys::value] = value;
+    	deviceObj[DeviceDefinitionKeys::value] = value;
 	}
 
 	if (hasInvert(config.deviceHardware))
-    deviceObj[DeviceDefinitionKeys::invert] = config.hw.invert;
+    	deviceObj[DeviceDefinitionKeys::invert] = config.hw.invert;
 
-	char buf[17];
 	if (hasOnewire(config.deviceHardware)) {
+		char buf[17];
 		printBytes(config.hw.address, 8, buf);
-    deviceObj[DeviceDefinitionKeys::address] = buf;
+    	deviceObj[DeviceDefinitionKeys::address] = buf;
 	}
+
+#ifdef HAS_BLUETOOTH
+	if (config.deviceHardware==DEVICE_HARDWARE_BLUETOOTH_INKBIRD || config.deviceHardware==DEVICE_HARDWARE_BLUETOOTH_TILT) {
+		char buf[17];
+		printBytes(config.hw.btAddress.getNative(), 6, buf);
+    	deviceObj[DeviceDefinitionKeys::address] = buf;
+	}
+#endif
 
 #if BREWPI_DS2413
 	if (config.deviceHardware==DEVICE_HARDWARE_ONEWIRE_2413) {
@@ -652,9 +704,10 @@ void DeviceManager::serializeJsonDevice(JsonDocument& doc, device_slot_t slot, D
 	}
 #endif
 
-	if (config.deviceHardware==DEVICE_HARDWARE_ONEWIRE_TEMP) {
+	if (config.deviceHardware==DEVICE_HARDWARE_ONEWIRE_TEMP || config.deviceHardware==DEVICE_HARDWARE_BLUETOOTH_INKBIRD || config.deviceHardware==DEVICE_HARDWARE_BLUETOOTH_TILT) {
+		char buf[17];
 		tempDiffToString(buf, temperature(config.hw.calibration)<<(TEMP_FIXED_POINT_BITS - calibrationOffsetPrecision), 3, 8);
-    deviceObj[DeviceDefinitionKeys::calibrateadjust] = buf;
+    	deviceObj[DeviceDefinitionKeys::calibrateadjust] = buf;
 	}
 }
 
@@ -731,6 +784,12 @@ device_slot_t findHardwareDevice(DeviceConfig& find)
 		if (find.deviceHardware==config.deviceHardware) {
 			bool match = true;
 			switch (find.deviceHardware) {
+#ifdef HAS_BLUETOOTH
+				case DEVICE_HARDWARE_BLUETOOTH_TILT:
+				case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
+					match &= find.hw.btAddress == config.hw.btAddress;
+					break;
+#endif
 #if BREWPI_DS2413
 				case DEVICE_HARDWARE_ONEWIRE_2413:
 					match &= find.hw.pio==config.hw.pio;
@@ -798,6 +857,12 @@ void DeviceManager::handleEnumeratedDevice(DeviceConfig& config, EnumerateHardwa
 			case DEVICE_HARDWARE_ONEWIRE_TEMP:
 				readTempSensorValue(config.hw, out.value);
 				break;
+#if HAS_BLUETOOTH
+			case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
+				tempToString(out.value, bt_scanner.get_inkbird(config.hw.btAddress)->getTempFixedPoint(), 3, 9);
+				break;
+#endif
+
       // unassigned pins could be input or output so we can't determine any
       // other details from here.  values can be read once the pin has been
       // assigned a function
@@ -910,6 +975,35 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 }
 
 
+#ifdef HAS_BLUETOOTH
+/**
+ * \brief Enumerate all Inkbird devices
+ *
+ * \param h - Hardware spec, used to filter sensors
+ * \param callback - Callback function, called for every found hardware device
+ * \param output -
+ * \param doc - JsonDocument to populate
+ */
+void DeviceManager::enumerateInkbirdDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc)
+{
+#if !BREWPI_SIMULATE
+
+	DeviceConfig config;
+	clear((uint8_t*)&config, sizeof(config));
+	config.hw.pinNr = 0;  			// 0 for wireless devices
+	config.chamber = 1; 			// chamber 1 is default
+	config.deviceHardware = DEVICE_HARDWARE_BLUETOOTH_INKBIRD;
+
+	for(inkbird & ib : lInkbirds) {
+		for(uint8_t i = 0; i < 6; i++)
+			config.hw.btAddress = ib.deviceAddress;
+		handleEnumeratedDevice(config, h, callback, output, doc);
+    }
+	
+#endif
+}
+#endif
+
 /**
  * \brief Read hardware spec from stream and output matching devices
  */
@@ -934,6 +1028,10 @@ void DeviceManager::enumerateHardware(JsonDocument& doc)
 	}
 	if (spec.hardware==-1 || isDigitalPin(DeviceHardware(spec.hardware))) {
 		enumeratePinDevices(spec, outputEnumeratedDevices, out, &doc);
+	}
+	if (spec.hardware==-1 || spec.hardware==DEVICE_HARDWARE_BLUETOOTH_INKBIRD) {
+		spec.values = 1;  // TODO - Remove this
+		enumerateInkbirdDevices(spec, outputEnumeratedDevices, out, &doc);
 	}
 }
 
@@ -1070,7 +1168,11 @@ void DeviceManager::rawDeviceValues(JsonDocument& doc) {
 
 	DeviceOutput out;
 
-  enumerateOneWireDevices(spec, outputRawDeviceValue, out, &doc);
+	enumerateOneWireDevices(spec, outputRawDeviceValue, out, &doc);
+#ifdef HAS_BLUETOOTH
+	spec.values = 1;  // Costs nothing for non-Onewire temp sensors
+	enumerateInkbirdDevices(spec, outputRawDeviceValue, out, &doc);
+#endif
 }
 
 
@@ -1095,6 +1197,24 @@ void DeviceManager::outputRawDeviceValue(DeviceConfig* config, void* pv, JsonDoc
     deviceObj["value"] = str_temp;
     deviceObj["name"] = humanName;
   }
+
+  if(config->deviceHardware == DeviceHardware::DEVICE_HARDWARE_BLUETOOTH_INKBIRD) {
+    // Read the temp
+    char str_temp[10];
+	tempToString(str_temp, bt_scanner.get_inkbird(config->hw.btAddress)->getTempFixedPoint(), 3, 9);
+
+    // Pretty-print the address
+    char devName[17];
+    printBytes(config->hw.btAddress.getNative(), 6, devName);
+
+    String humanName = DeviceNameManager::getDeviceName(devName);
+
+    JsonObject deviceObj = doc->createNestedObject();
+    deviceObj["device"] = devName;
+    deviceObj["value"] = str_temp;
+    deviceObj["name"] = humanName;
+  }
+
 }
 
 

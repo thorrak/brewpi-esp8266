@@ -24,9 +24,10 @@
 #include "Sensor.h"
 #include "SettingsManager.h"
 #include "EepromFormat.h"
-#include "ESP_WiFi.h"
+#include "ESP_BP_WiFi.h"
 #include "CommandProcessor.h"
 #include "PromServer.h"
+#include "wireless/BTScanner.h"
 
 #if BREWPI_SIMULATE
 #include "Simulator.h"
@@ -91,7 +92,7 @@ void setup()
 
     // Before anything else, let's get the filesystem working. We need to start it up, and then test if the file system
     // wasformatted.
-    FILESYSTEM.begin();
+    FILESYSTEM.begin(true);
 
     initialize_wifi();
 
@@ -102,6 +103,13 @@ void setup()
 
 
 	piLink.init();  // Initializes either the serial or telnet connection
+
+#ifdef HAS_BLUETOOTH
+    bt_scanner.init();
+    bt_scanner.scan();
+    DisplayType::printBluetoothStartup();  // Alert the user as to the startup delay
+    delay(10000);
+#endif
 
 	logDebug("started");
 	tempControl.init();
@@ -137,10 +145,9 @@ void setup()
 void brewpiLoop()
 {
 	static unsigned long lastUpdate = 0;
-  static unsigned long lastLcdUpdate = 0;
-
 	uint8_t oldState;
 #ifndef BREWPI_TFT  // We don't want to do this for the TFT display
+    static unsigned long lastLcdUpdate = 0;
     if(ticks.millis() - lastLcdUpdate >= (180000)) { //reset lcd every 180 seconds as a workaround for screen scramble
         lastLcdUpdate = ticks.millis();
 
@@ -189,6 +196,10 @@ void brewpiLoop()
 	//listen for incoming connections while waiting to update
   wifi_connect_clients();
   CommandProcessor::receiveCommand();
+
+#ifdef HAS_BLUETOOTH
+  bt_scanner.scan();        // Check/restart scan 
+#endif
 }
 
 

@@ -2,7 +2,7 @@
 // Created by John Beeler on 1/12/20.
 //
 
-#include "ESP_WiFi.h"
+#include "ESP_BP_WiFi.h"
 
 #ifdef ESP8266_WiFi
 
@@ -18,6 +18,7 @@
 #include <ESPmDNS.h>
 #include <DNSServer.h>			//Local DNS Server used for redirecting all requests to the configuration portal
 #include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
+#include <esp_wifi.h>
 #endif
 
 #include "Version.h" 			// Used in mDNS announce string
@@ -46,7 +47,7 @@ void apCallback(WiFiManager *myWiFiManager) {
     // Callback to display the WiFi LCD notification and set bandwidth
     DisplayType::printWiFiStartup();
 #ifdef ESP32
-    esp_wifi_set_bandwidth(WIFI_IF_AP, WIFI_BW_HT20);  // Set the bandwidth of ESP32 interface
+    esp_wifi_set_bandwidth(WIFI_IF_AP, WIFI_BW_HT20);  // Set the bandwidth of ESP32 interface 
 #endif
 }
 

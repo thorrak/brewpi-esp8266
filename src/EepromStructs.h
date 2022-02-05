@@ -4,6 +4,10 @@
 #include "DallasTemperature.h"	// for DeviceAddress
 #endif
 
+#ifdef HAS_BLUETOOTH
+#include <NimBLEDevice.h>
+#endif
+
 #include <ArduinoJson.h>
 
 
@@ -135,8 +139,13 @@ enum DeviceHardware {
 	DEVICE_HARDWARE_PIN = 1, //!< A digital pin, either input or output
 	DEVICE_HARDWARE_ONEWIRE_TEMP = 2,	//<! A onewire temperature sensor
 #if BREWPI_DS2413
-	DEVICE_HARDWARE_ONEWIRE_2413 = 3	//<! A onewire 2-channel PIO input or output.
+	DEVICE_HARDWARE_ONEWIRE_2413 = 3,	//<! A onewire 2-channel PIO input or output.
 #endif
+#ifdef HAS_BLUETOOTH
+  DEVICE_HARDWARE_BLUETOOTH_INKBIRD = 4,
+  DEVICE_HARDWARE_BLUETOOTH_TILT = 5,
+#endif
+
 };
 
 
@@ -150,10 +159,13 @@ struct DeviceConfig {
 	DeviceFunction deviceFunction;				// The function of the device to configure
 	DeviceHardware deviceHardware;				// flag to indicate the runtime type of device
 	struct Hardware {
-		uint8_t pinNr;							// the arduino pin nr this device is connected to
-		bool invert;							// for actuators/sensors, controls if the signal value is inverted.
-		bool deactivate;							// disable this device - the device will not be installed.
-		DeviceAddress address;					// for onewire devices, if address[0]==0 then use the first matching device type, otherwise use the device with the specific address
+		uint8_t pinNr;                // the arduino pin nr this device is connected to (0 if wireless)
+		bool invert;                  // for actuators/sensors, controls if the signal value is inverted.
+		bool deactivate;              // disable this device - the device will not be installed.
+#ifdef HAS_BLUETOOTH
+    NimBLEAddress btAddress;
+#endif
+		DeviceAddress address;        // for onewire devices, if address[0]==0 then use the first matching device type, otherwise use the device with the specific address
 
 												/* The pio and sensor calibration are never needed at the same time so they are a union.
 												* To ensure the eeprom format is stable when including/excluding DS2413 support, ensure all fields are the same size.

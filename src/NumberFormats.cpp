@@ -36,7 +36,7 @@ void parseBytes(uint8_t *data, const char *s, uint8_t len) {
 /**
  * \brief Render 8-bit data as hex
  */
-void printBytes(uint8_t *data, uint8_t len, char *buf) {
+void printBytes(const uint8_t *data, uint8_t len, char *buf) {
   for (int i = 0; i < len; i++) {
     uint8_t b = (data[i] >> 4) & 0x0f;
     *buf++ = (b > 9 ? b - 10 + 'A' : b + '0');

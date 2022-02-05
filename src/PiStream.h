@@ -31,7 +31,7 @@
 #include <WiFi.h>
 #endif
 
-#include "ESP_WiFi.h"
+#include "ESP_BP_WiFi.h"
 
 /**
  * \brief Template for abstracting low level Stream interaction details
@@ -145,7 +145,7 @@ public:
    */
   void printNewLine() {
     stream.println();
-    stream.flush();
+    // stream.flush();
   };
 
   /**
@@ -186,7 +186,7 @@ public:
    * message
    * \param doc - Reference to JsonDocument that should be sent
    */
-  void sendSingleItemJsonMessage(const char prefix, const JsonDocument &doc) {
+  void sendSingleItemJsonMessage(const char prefix, JsonDocument &doc) {
     if (prefix) {
       print(prefix);
       print(':');

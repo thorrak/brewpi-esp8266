@@ -34,14 +34,14 @@ void SettingLoader::processSettingKeypair(JsonPair kv) {
   // but the brewpi script presents the data as a number.  Prep a string
   // version in case we need it for this value.
   String str_value;
-  if (kv.value().is<char *>())
-    str_value = kv.value().as<char *>();
+  if (kv.value().is<const char *>())
+    str_value = kv.value().as<const char *>();
   else if (kv.value().is<float>()) {
     str_value = kv.value().as<float>();
   }
 
   if (kv.key() == "mode") {
-    char mode = kv.value().as<char *>()[0];
+    char mode = kv.value().as<const char *>()[0];
 
     if (mode == Modes::fridgeConstant || mode == Modes::beerConstant || mode == Modes::beerProfile ||
         mode == Modes::off || mode == Modes::test) {
@@ -69,7 +69,7 @@ void SettingLoader::processSettingKeypair(JsonPair kv) {
   }
 
   else if (kv.key() == "tempFormat") {
-    char format = kv.value().as<char *>()[0];
+    char format = kv.value().as<const char *>()[0];
 
     if (format == 'C' || format == 'F') {
       tempControl.cc.tempFormat = format;

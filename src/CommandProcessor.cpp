@@ -386,7 +386,7 @@ void CommandProcessor::setDeviceNames() {
 
   JsonObject root = doc.as<JsonObject>();
   for (JsonPair kv : root) {
-    DeviceNameManager::setDeviceName(kv.key().c_str(), kv.value().as<char *>());
+    DeviceNameManager::setDeviceName(kv.key().c_str(), kv.value().as<const char *>());
   }
 
   // The probe names are used in the prometheus output, so changing the

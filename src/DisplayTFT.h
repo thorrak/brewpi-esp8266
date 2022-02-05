@@ -152,6 +152,10 @@ class LcdDisplay DISPLAY_SUPERCLASS
         DISPLAY_METHOD void printWiFiStartup();
 #endif
 
+#ifdef HAS_BLUETOOTH
+        DISPLAY_METHOD void printBluetoothStartup();
+#endif
+
         DISPLAY_METHOD void printEEPROMStartup();
         DISPLAY_METHOD void clear();
         DISPLAY_METHOD void clearForText(uint8_t start_x, uint8_t start_y, uint16_t color, uint8_t font_size, uint8_t characters);

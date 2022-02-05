@@ -319,7 +319,7 @@ namespace Config {
     /**
      * \brief Buffer data coming out of PiLink
      */
-    constexpr bool bufferPrints = true;
+    constexpr bool bufferPrints = false;
 
     /**
      * \brief Amount of memory used for Stream buffering.
@@ -332,7 +332,12 @@ namespace Config {
     /**
      * \brief Speed of serial connection
      */
+
+#ifdef ESP8266_WiFi
+    constexpr auto serialSpeed = 115200;
+#else
     constexpr auto serialSpeed = 57600;
+#endif
 
     /**
      * \brief Size of buffer used for printf

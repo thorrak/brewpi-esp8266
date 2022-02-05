@@ -5,7 +5,7 @@
 #include <ArduinoJson.h>
 
 /**
- * \file ESP_WiFi.h
+ * \file ESP_BP_WiFi.h
  *
  * \defgroup wifi WiFi Configuration & Management
  * \brief WiFi configuration functions
