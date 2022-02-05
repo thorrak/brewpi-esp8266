@@ -27,7 +27,6 @@
 
 
 void fill(int8_t* p, uint8_t size);
-void clear(uint8_t* p, uint8_t size);
 
 class DeviceConfig;
 
@@ -66,8 +65,8 @@ public:
 	 */
 	static void storeTempSettings();
 
-	static bool fetchDevice(DeviceConfig& config, int8_t deviceIndex);
-	static bool storeDevice(const DeviceConfig& config, int8_t deviceIndex);
+	static DeviceConfig fetchDevice(uint8_t deviceIndex);
+	static bool storeDevice(DeviceConfig& config, uint8_t deviceIndex);
 	
 	static uint8_t saveDefaultDevices();
 

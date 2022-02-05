@@ -46,7 +46,6 @@ void SettingsManager::loadSettings()
 		// temp sensors are special in the simulator - make sure they are set up even if not
 		// configured in the eeprom
 		DeviceConfig cfg;
-		clear((uint8_t*)&cfg, sizeof(cfg));
 		cfg.deviceHardware = DEVICE_HARDWARE_ONEWIRE_TEMP;	
 		cfg.chamber = 1;
 		cfg.deviceFunction = DEVICE_CHAMBER_ROOM_TEMP;	

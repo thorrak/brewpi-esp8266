@@ -98,6 +98,11 @@ public:
   void print(const String out) { print(out.c_str()); };
 
   /**
+   * \brief Print a C++ String
+   */
+  void print(const std::string out) { print(out.c_str()); };
+
+  /**
    * \brief A printf like interface.  Format string stored in PROGMEM
    *
    * \param fmt - PROGMEM stored sprintf format string

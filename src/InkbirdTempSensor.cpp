@@ -23,17 +23,12 @@ InkbirdTempSensor::~InkbirdTempSensor(){
  * Clients should attempt to re-initialize the sensor by calling init() again.
  */
 bool InkbirdTempSensor::init() {
-    // save address and pinNr for log messages
-    char addressString[17];
-    printBytes(btAddress.getNative(), 6, addressString);
-
     if (ib==NULL) {
         ib = bt_scanner.get_or_create_inkbird(btAddress);
         if (ib==NULL) {
-            logErrorString(ERROR_SRAM_SENSOR, addressString);
+            logErrorString(ERROR_SRAM_SENSOR, btAddress.toString().c_str());
         }
     }
-    
     return isConnected();
 }
 

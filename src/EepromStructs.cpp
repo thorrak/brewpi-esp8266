@@ -36,7 +36,10 @@ ArduinoJson::DynamicJsonDocument JSONSaveable::readJsonFromFile(const char *file
 
     File file_in = FILESYSTEM.open(filename, "r");
     if (!file_in) {
-        // If the above fails, we weren't able to open the file for writing
+        // If the above fails, we weren't able to open the file for reading
+        piLink.print("Failed to open file: ");
+        piLink.print(filename);
+        piLink.printNewLine();
         return json_doc;
     }
 

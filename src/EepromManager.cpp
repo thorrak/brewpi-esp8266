@@ -95,12 +95,13 @@ bool EepromManager::applySettings()
 	
 	
 	DeviceConfig deviceConfig;
-	for (uint8_t index = 0; fetchDevice(deviceConfig, index); index++)
+	for (uint8_t index = 0; index<EepromFormat::MAX_DEVICES; index++)
 	{	
+		deviceConfig = fetchDevice(index);
 		if (deviceManager.isDeviceValid(deviceConfig, deviceConfig, index))
 			deviceManager.installDevice(deviceConfig);
 		else {
-			clear((uint8_t*)&deviceConfig, sizeof(deviceConfig));
+			deviceConfig.setDefaults();
 			eepromManager.storeDevice(deviceConfig, index);
 		}			
 	}
@@ -121,21 +122,22 @@ void EepromManager::storeTempSettings()
 	TempControl::storeSettings();
 }
 
-bool EepromManager::fetchDevice(DeviceConfig& config, int8_t deviceIndex)
+DeviceConfig EepromManager::fetchDevice(uint8_t deviceIndex)
 {
+	DeviceConfig config;
 	bool ok = (hasSettings() && deviceIndex<EepromFormat::MAX_DEVICES);
 	if (ok)
-		eepromAccess.readDeviceDefinition(config, deviceIndex, sizeof(DeviceConfig));
-//        eepromAccess.readDeviceDefinition(config, pointerOffset(devices)+sizeof(DeviceConfig)*deviceIndex, sizeof(DeviceConfig));
-	return ok;
+		config.loadFromSpiffs(deviceIndex);
+		// eepromAccess.readDeviceDefinition(config, deviceIndex, sizeof(DeviceConfig));
+	return config;
 }	
 
-bool EepromManager::storeDevice(const DeviceConfig& config, int8_t deviceIndex)
+
+bool EepromManager::storeDevice(DeviceConfig& config, uint8_t deviceIndex)
 {
 	bool ok = (hasSettings() && deviceIndex<EepromFormat::MAX_DEVICES);
 	if (ok)
-        eepromAccess.writeDeviceDefinition(deviceIndex, config, sizeof(DeviceConfig));
-//        eepromAccess.writeDeviceDefinition(pointerOffset(devices)+sizeof(DeviceConfig)*deviceIndex, config, sizeof(DeviceConfig));
+		config.storeToSpiffs(deviceIndex);
 	return ok;
 }
 
@@ -193,8 +195,5 @@ void EepromManager::savemDNSName(String mdns_id)
 
 void fill(int8_t* p, uint8_t size) {
 	while (size-->0) *p++ = -1;
-}
-void clear(uint8_t* p, uint8_t size) {
-	while (size-->0) *p++ = 0;
 }
 

@@ -109,7 +109,6 @@ void DeviceManager::setupUnconfiguredDevices()
 	// right now, uninstall doesn't care about chamber/beer distinction.
 	// but this will need to match beer/function when multiferment is available
 	DeviceConfig cfg;
-	cfg.chamber = 1; cfg.beer = 1;
 	for (uint8_t i=0; i<DEVICE_MAX; i++) {
 		cfg.deviceFunction = DeviceFunction(i);
 		uninstallDevice(cfg);
@@ -331,7 +330,7 @@ void DeviceManager::installDevice(DeviceConfig& config)
 
 
 // the special cases are placed at the end. All others should map directly to an int8_t via atoi().
-const char DeviceDefinition::ORDER[12] = "icbfhpxndja";
+// const char DeviceDefinition::ORDER[12] = "icbfhpxndja";
 
 
 /**
@@ -358,7 +357,6 @@ void DeviceManager::readJsonIntoDeviceDef(DeviceDefinition& dev) {
 	// piLink.printNewLine();
 
   if(address) {
-	  uint8_t bt_address[6];
 	  switch(dev.deviceHardware) {
 		case DEVICE_HARDWARE_ONEWIRE_TEMP:
 			parseBytes(dev.address, address, 8);
@@ -366,8 +364,7 @@ void DeviceManager::readJsonIntoDeviceDef(DeviceDefinition& dev) {
 #ifdef HAS_BLUETOOTH
 		case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
 		case DEVICE_HARDWARE_BLUETOOTH_TILT:
-			parseBytes(bt_address, address, 6);
-			dev.btAddress = NimBLEAddress(bt_address);
+			dev.btAddress = NimBLEAddress(doc[DeviceDefinitionKeys::address].as<std::string>());
 			break;
 #endif
 		default:
@@ -456,8 +453,8 @@ void DeviceManager::parseDeviceDefinition()
 
 	if (!inRangeInt8(dev.id, 0, MAX_DEVICE_SLOT))	{
 		// no device id given, or it's out of range, can't do anything else.
-		piLink.print_fmt("Out of range: %d", dev.id);
-		piLink.printNewLine();
+		// piLink.print_fmt("Out of range: %d", dev.id);
+		// piLink.printNewLine();
 		return;
 	}
 
@@ -476,40 +473,45 @@ void DeviceManager::parseDeviceDefinition()
 	DeviceConfig target;
 	DeviceConfig original;
 
-	// todo - should ideally check if the eeprom is correctly initialized.
-	eepromManager.fetchDevice(original, dev.id);
-	memcpy(&target, &original, sizeof(target));
+	// Fetch either the saved device (or an empty one if a saved one doesn't exist) 
+	original = eepromManager.fetchDevice(dev.id);
+	target = original;
 
 
-	assignIfSet(dev.chamber, &target.chamber);
-	assignIfSet(dev.beer, &target.beer);
-	assignIfSet(dev.deviceFunction, (uint8_t*)&target.deviceFunction);
-	assignIfSet(dev.deviceHardware, (uint8_t*)&target.deviceHardware);
-	assignIfSet(dev.pinNr, &target.hw.pinNr);
+	target.chamber = dev.chamber;
+	target.beer = dev.beer;
+	target.deviceFunction = (DeviceFunction) dev.deviceFunction;
+	target.deviceHardware = (DeviceHardware) dev.deviceHardware;
+	target.hw.pinNr = dev.pinNr;
 
 
 #if BREWPI_DS2413
-	assignIfSet(dev.pio, &target.hw.pio);
+	target.hw.pio = dev.pio;
+#error The above/following code may no longer work for 2413 sensors. Check on this if this is enabled!
 #endif
-
-	if (dev.calibrationAdjust!=-1)		// since this is a union, it also handles pio for 2413 sensors
+	// The following may no longer work for 2413 sensors
+	if (dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD || dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT || dev.deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP)
 		target.hw.calibration = dev.calibrationAdjust;
 
-	assignIfSet(dev.invert, (uint8_t*)&target.hw.invert);
+	target.hw.invert = (bool) dev.invert;
 
-	if (dev.address[0] != 0xFF) {// first byte is family identifier. I don't have a complete list, but so far 0xFF is not used.
+
+#ifdef HAS_BLUETOOTH
+	if(dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD || dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT) {
+		target.hw.btAddress = dev.btAddress;
+	} else
+#endif	
+	if (dev.address[0] != 0xFF && dev.deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP) {// first byte is family identifier. I don't have a complete list, but so far 0xFF is not used.
 		memcpy(target.hw.address, dev.address, 8);
 	}
 
-	if(dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD || dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT)
-		target.hw.btAddress = dev.btAddress;
-
-	assignIfSet(dev.deactivate, (uint8_t*)&target.hw.deactivate);
+	target.hw.deactivate = (bool) dev.deactivate;
 
 	// setting function to none clears all other fields.
 	if (target.deviceFunction==DEVICE_NONE) {
-//		piLink.print("Function set to NONE\r\n");
-		clear((uint8_t*)&target, sizeof(target));
+		// piLink.print("Function set to NONE");
+		// piLink.printNewLine();
+		target.setDefaults();
 	}
 
 	bool valid = isDeviceValid(target, original, dev.id);
@@ -662,79 +664,12 @@ inline bool hasOnewire(DeviceHardware hw)
  * Used for outputting device information
  */
 void DeviceManager::serializeJsonDevice(JsonDocument& doc, device_slot_t slot, DeviceConfig& config, const char* value) {
-  JsonObject deviceObj = doc.createNestedObject();
+  DynamicJsonDocument deviceObj = config.toJson();
 
-  deviceObj[DeviceDefinitionKeys::index] = slot;
-
-	DeviceType dt = deviceType(config.deviceFunction);
-  deviceObj[DeviceDefinitionKeys::type] = dt;
-
-  deviceObj[DeviceDefinitionKeys::chamber] = config.chamber;
-  deviceObj[DeviceDefinitionKeys::beer] = config.beer;
-  deviceObj[DeviceDefinitionKeys::function] = config.deviceFunction;
-  deviceObj[DeviceDefinitionKeys::hardware] = config.deviceHardware;
-  deviceObj[DeviceDefinitionKeys::deactivated] = config.hw.deactivate;
-  deviceObj[DeviceDefinitionKeys::pin] = config.hw.pinNr;
-
-
-	if (value && *value) {
-    	deviceObj[DeviceDefinitionKeys::value] = value;
-	}
-
-	if (hasInvert(config.deviceHardware))
-    	deviceObj[DeviceDefinitionKeys::invert] = config.hw.invert;
-
-	if (hasOnewire(config.deviceHardware)) {
-		char buf[17];
-		printBytes(config.hw.address, 8, buf);
-    	deviceObj[DeviceDefinitionKeys::address] = buf;
-	}
-
-#ifdef HAS_BLUETOOTH
-	if (config.deviceHardware==DEVICE_HARDWARE_BLUETOOTH_INKBIRD || config.deviceHardware==DEVICE_HARDWARE_BLUETOOTH_TILT) {
-		char buf[17];
-		printBytes(config.hw.btAddress.getNative(), 6, buf);
-    	deviceObj[DeviceDefinitionKeys::address] = buf;
-	}
-#endif
-
-#if BREWPI_DS2413
-	if (config.deviceHardware==DEVICE_HARDWARE_ONEWIRE_2413) {
-    deviceObj[DeviceDefinitionKeys::pio] = config.hw.pio;
-	}
-#endif
-
-	if (config.deviceHardware==DEVICE_HARDWARE_ONEWIRE_TEMP || config.deviceHardware==DEVICE_HARDWARE_BLUETOOTH_INKBIRD || config.deviceHardware==DEVICE_HARDWARE_BLUETOOTH_TILT) {
-		char buf[17];
-		tempDiffToString(buf, temperature(config.hw.calibration)<<(TEMP_FIXED_POINT_BITS - calibrationOffsetPrecision), 3, 8);
-    	deviceObj[DeviceDefinitionKeys::calibrateadjust] = buf;
-	}
+  doc.add(deviceObj);
+  return;
 }
 
-
-/**
- * Iterate over the defined devices.
- *
- * Caller first calls with deviceIndex 0. If the return value is true, config
- * is filled out with the config for the device. The caller can then increment
- * deviceIndex and try again.
- *
- * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
- * for (device_slot_t idx=0; deviceManager.allDevices(dc, idx); idx++) {
- *  // The "current" device info is in dc, use it somehow
- * }
- * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- *
- * @param config - A reference to a DeviceConfig.  This is populated with the
- * current device info.
- * @param deviceIndex - The index of the current device.
- *
- * @returns - true if the deviceIndex is valid, otherwise false.
- */
-bool DeviceManager::allDevices(DeviceConfig& config, uint8_t deviceIndex)
-{
-  return eepromManager.fetchDevice(config, deviceIndex);
-}
 
 
 /**
@@ -780,7 +715,9 @@ inline bool matchAddress(uint8_t* detected, uint8_t* configured, uint8_t count) 
 device_slot_t findHardwareDevice(DeviceConfig& find)
 {
 	DeviceConfig config;
-	for (device_slot_t slot= 0; deviceManager.allDevices(config, slot); slot++) {
+	for (device_slot_t slot= 0; slot<EepromFormat::MAX_DEVICES ; slot++) {
+		config = eepromManager.fetchDevice(slot);
+
 		if (find.deviceHardware==config.deviceHardware) {
 			bool match = true;
 			switch (find.deviceHardware) {
@@ -848,7 +785,7 @@ void DeviceManager::handleEnumeratedDevice(DeviceConfig& config, EnumerateHardwa
 		if (h.unused)	// only list unused devices, and this one is already used
 			return;
 		// display the actual matched value
-		deviceManager.allDevices(config, out.slot);
+		config = eepromManager.fetchDevice(out.slot);
 	}
 
 	out.value[0] = 0;
@@ -883,7 +820,6 @@ void DeviceManager::handleEnumeratedDevice(DeviceConfig& config, EnumerateHardwa
 void DeviceManager::enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc)
 {
 	DeviceConfig config;
-	clear((uint8_t*)&config, sizeof(config));
 	config.deviceHardware = DEVICE_HARDWARE_PIN;
 	config.chamber = 1; // chamber 1 is default
 
@@ -919,7 +855,6 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 	int8_t pin;
 	for (uint8_t count=0; (pin=deviceManager.enumOneWirePins(count))>=0; count++) {
 		DeviceConfig config;
-		clear((uint8_t*)&config, sizeof(config));
 		if (h.pin!=-1 && h.pin!=pin)
 			continue;
 		config.hw.pinNr = pin;
@@ -989,14 +924,12 @@ void DeviceManager::enumerateInkbirdDevices(EnumerateHardware& h, EnumDevicesCal
 #if !BREWPI_SIMULATE
 
 	DeviceConfig config;
-	clear((uint8_t*)&config, sizeof(config));
 	config.hw.pinNr = 0;  			// 0 for wireless devices
 	config.chamber = 1; 			// chamber 1 is default
 	config.deviceHardware = DEVICE_HARDWARE_BLUETOOTH_INKBIRD;
 
 	for(inkbird & ib : lInkbirds) {
-		for(uint8_t i = 0; i < 6; i++)
-			config.hw.btAddress = ib.deviceAddress;
+		config.hw.btAddress = ib.deviceAddress;
 		handleEnumeratedDevice(config, h, callback, output, doc);
     }
 	
@@ -1139,7 +1072,8 @@ void DeviceManager::listDevices(JsonDocument& doc) {
 		return;
 	}
 
-	for (device_slot_t idx=0; deviceManager.allDevices(dc, idx); idx++) {
+	for (device_slot_t idx=0; idx<EepromFormat::MAX_DEVICES; idx++) {
+		dc = eepromManager.fetchDevice(idx);
 		if (deviceManager.enumDevice(dd, dc, idx))
 		{
 			char val[10];
@@ -1204,13 +1138,10 @@ void DeviceManager::outputRawDeviceValue(DeviceConfig* config, void* pv, JsonDoc
 	tempToString(str_temp, bt_scanner.get_inkbird(config->hw.btAddress)->getTempFixedPoint(), 3, 9);
 
     // Pretty-print the address
-    char devName[17];
-    printBytes(config->hw.btAddress.getNative(), 6, devName);
-
-    String humanName = DeviceNameManager::getDeviceName(devName);
+    String humanName = DeviceNameManager::getDeviceName(config->hw.btAddress.toString().c_str());
 
     JsonObject deviceObj = doc->createNestedObject();
-    deviceObj["device"] = devName;
+    deviceObj["device"] = config->hw.btAddress.toString();
     deviceObj["value"] = str_temp;
     deviceObj["name"] = humanName;
   }

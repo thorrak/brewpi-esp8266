@@ -24,7 +24,7 @@ public:
      * /param calibration    A temperature value that is added to all readings. This can be used to calibrate the sensor.
      */
     InkbirdTempSensor(NimBLEAddress address, fixed4_4 calibrationOffset) {
-        btAddress = address;  // Convert the address to a NimBLEAddress
+        btAddress = address;
 
         this->calibrationOffset = calibrationOffset;
         ib = nullptr;

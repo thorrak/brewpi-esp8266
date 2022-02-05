@@ -152,7 +152,10 @@ enum DeviceHardware {
 /**
  * A union of all device types.
  */
-struct DeviceConfig {
+class DeviceConfig : public JSONSaveable {
+public:
+  DeviceConfig() {setDefaults();};
+
 	uint8_t chamber;		//!< Chamber assignment. 0 means no chamber. 1 is the first chamber.
 	uint8_t beer;				//!< Beer assignment.  0 means no beer, 1 is the first beer
 
@@ -177,8 +180,15 @@ struct DeviceConfig {
 			int8_t /* fixed4_4 */ calibration;	// for temp sensors (deviceHardware==2), calibration adjustment to add to sensor readings
 												// this is intentionally chosen to match the raw value precision returned by the ds18b20 sensors
 		};
-		bool reserved;								// extra space so that additional fields can be added without breaking layout
 	} hw;
-	bool reserved2;
+
+    DynamicJsonDocument toJson();
+    void fromJson(DynamicJsonDocument json_doc);
+    void storeToSpiffs(uint8_t devID);
+    void loadFromSpiffs(uint8_t devID);
+    void setDefaults();
+
+    static void deviceFilename(char * fname, uint8_t devid);
+
 };
 /** @} */

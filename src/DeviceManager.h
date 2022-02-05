@@ -209,23 +209,18 @@ struct DeviceDisplay {
  * \brief Hardware device definition.
  */
 struct DeviceDefinition {
-	int8_t id;
-	int8_t chamber;
-	int8_t beer;
-	int8_t deviceFunction;
-	int8_t deviceHardware;
-	int8_t pinNr;
-	int8_t invert;
-	int8_t pio;
-	int8_t deactivate;
-	int8_t calibrationAdjust;
-	DeviceAddress address;
+	int8_t id=0;
+	int8_t chamber=0;
+	int8_t beer=0;
+	int8_t deviceFunction=0;
+	int8_t deviceHardware=0;
+	int8_t pinNr=0;
+	int8_t invert=0;
+	int8_t pio=0;
+	int8_t deactivate=0;
+	int8_t calibrationAdjust=0;
+	DeviceAddress address={0};
 	NimBLEAddress btAddress;
-
-	/**
-	 * Lists the first letter of the key name for each attribute.
-	 */
-	static const char ORDER[12];
 };
 
 
@@ -325,8 +320,6 @@ public:
 
 	static void parseDeviceDefinition();
 	static void serializeJsonDevice(JsonDocument&, device_slot_t slot, DeviceConfig& config, const char* value);
-
-	static bool allDevices(DeviceConfig& config, uint8_t deviceIndex);
 
 	static bool isDeviceValid(DeviceConfig& config, DeviceConfig& original, int8_t deviceIndex);
 
