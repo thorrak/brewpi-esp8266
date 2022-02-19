@@ -47,6 +47,7 @@
 
 #ifdef HAS_BLUETOOTH
 #include "InkbirdTempSensor.h"
+#include "TiltTempSensor.h"
 #include "wireless/BTScanner.h"
 #endif
 
@@ -160,6 +161,8 @@ void* DeviceManager::createDevice(DeviceConfig& config, DeviceType dt)
 #ifdef HAS_BLUETOOTH
 		case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
 			return new InkbirdTempSensor(config.hw.btAddress, config.hw.calibration);
+		case DEVICE_HARDWARE_BLUETOOTH_TILT:
+			return new TiltTempSensor(config.hw.btAddress, config.hw.calibration);
 #endif
 
 	}
@@ -798,6 +801,9 @@ void DeviceManager::handleEnumeratedDevice(DeviceConfig& config, EnumerateHardwa
 			case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
 				tempToString(out.value, bt_scanner.get_inkbird(config.hw.btAddress)->getTempFixedPoint(), 3, 9);
 				break;
+			case DEVICE_HARDWARE_BLUETOOTH_TILT:
+				tempToString(out.value, bt_scanner.get_tilt(config.hw.btAddress)->getTempFixedPoint(), 3, 9);
+				break;
 #endif
 
       // unassigned pins could be input or output so we can't determine any
@@ -921,8 +927,6 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
  */
 void DeviceManager::enumerateInkbirdDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc)
 {
-#if !BREWPI_SIMULATE
-
 	DeviceConfig config;
 	config.hw.pinNr = 0;  			// 0 for wireless devices
 	config.chamber = 1; 			// chamber 1 is default
@@ -932,8 +936,27 @@ void DeviceManager::enumerateInkbirdDevices(EnumerateHardware& h, EnumDevicesCal
 		config.hw.btAddress = ib.deviceAddress;
 		handleEnumeratedDevice(config, h, callback, output, doc);
     }
-	
-#endif
+}
+
+/**
+ * \brief Enumerate all Tilt devices
+ *
+ * \param h - Hardware spec, used to filter sensors
+ * \param callback - Callback function, called for every found hardware device
+ * \param output -
+ * \param doc - JsonDocument to populate
+ */
+void DeviceManager::enumerateTiltDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc)
+{
+	DeviceConfig config;
+	config.hw.pinNr = 0;  			// 0 for wireless devices
+	config.chamber = 1; 			// chamber 1 is default
+	config.deviceHardware = DEVICE_HARDWARE_BLUETOOTH_TILT;
+
+	for(tilt & th : lTilts) {
+		config.hw.btAddress = th.deviceAddress;
+		handleEnumeratedDevice(config, h, callback, output, doc);
+    }
 }
 #endif
 
@@ -962,10 +985,16 @@ void DeviceManager::enumerateHardware(JsonDocument& doc)
 	if (spec.hardware==-1 || isDigitalPin(DeviceHardware(spec.hardware))) {
 		enumeratePinDevices(spec, outputEnumeratedDevices, out, &doc);
 	}
+#ifdef HAS_BLUETOOTH
 	if (spec.hardware==-1 || spec.hardware==DEVICE_HARDWARE_BLUETOOTH_INKBIRD) {
 		spec.values = 1;  // TODO - Remove this
 		enumerateInkbirdDevices(spec, outputEnumeratedDevices, out, &doc);
 	}
+	if (spec.hardware==-1 || spec.hardware==DEVICE_HARDWARE_BLUETOOTH_TILT) {
+		spec.values = 1;  // TODO - Remove this
+		enumerateTiltDevices(spec, outputEnumeratedDevices, out, &doc);
+	}
+#endif
 }
 
 /**
@@ -1106,6 +1135,7 @@ void DeviceManager::rawDeviceValues(JsonDocument& doc) {
 #ifdef HAS_BLUETOOTH
 	spec.values = 1;  // Costs nothing for non-Onewire temp sensors
 	enumerateInkbirdDevices(spec, outputRawDeviceValue, out, &doc);
+	enumerateTiltDevices(spec, outputRawDeviceValue, out, &doc);
 #endif
 }
 
@@ -1132,10 +1162,16 @@ void DeviceManager::outputRawDeviceValue(DeviceConfig* config, void* pv, JsonDoc
     deviceObj["name"] = humanName;
   }
 
-  if(config->deviceHardware == DeviceHardware::DEVICE_HARDWARE_BLUETOOTH_INKBIRD) {
+#ifdef HAS_BLUETOOTH
+  if(config->deviceHardware == DeviceHardware::DEVICE_HARDWARE_BLUETOOTH_INKBIRD || 
+  	config->deviceHardware == DeviceHardware::DEVICE_HARDWARE_BLUETOOTH_TILT) {
     // Read the temp
     char str_temp[10];
-	tempToString(str_temp, bt_scanner.get_inkbird(config->hw.btAddress)->getTempFixedPoint(), 3, 9);
+
+	if(config->deviceHardware == DeviceHardware::DEVICE_HARDWARE_BLUETOOTH_INKBIRD)
+		tempToString(str_temp, bt_scanner.get_inkbird(config->hw.btAddress)->getTempFixedPoint(), 3, 9);
+	else if(config->deviceHardware == DeviceHardware::DEVICE_HARDWARE_BLUETOOTH_TILT)
+		tempToString(str_temp, bt_scanner.get_tilt(config->hw.btAddress)->getTempFixedPoint(), 3, 9);
 
     // Pretty-print the address
     String humanName = DeviceNameManager::getDeviceName(config->hw.btAddress.toString().c_str());
@@ -1145,7 +1181,7 @@ void DeviceManager::outputRawDeviceValue(DeviceConfig* config, void* pv, JsonDoc
     deviceObj["value"] = str_temp;
     deviceObj["name"] = humanName;
   }
-
+#endif
 }
 
 

@@ -18,6 +18,7 @@
 // Create the scanner
 btScanner bt_scanner;
 std::list<inkbird> lInkbirds;
+std::list<tilt> lTilts;
 
 #define ENDIAN_CHANGE_U16(x) ((((x)&0xFF00) >> 8) + (((x)&0xFF) << 8))
 
@@ -27,6 +28,7 @@ std::list<inkbird> lInkbirds;
 
 
 void load_inkbird_from_advert(NimBLEAdvertisedDevice* advertisedDevice);
+void load_tilt_from_advert(NimBLEAdvertisedDevice* advertisedDevice);
 
 /** Handles callbacks when advertisments are received */
 class AdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
@@ -36,6 +38,13 @@ class AdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
             // Log.verbose(F("Advertised Device: %s \r\n"), advertisedDevice->toString().c_str());
             load_inkbird_from_advert(advertisedDevice);
             return;
+        } else if (advertisedDevice->getManufacturerData().length() > 4) {  // Tilt
+            if (advertisedDevice->getManufacturerData()[0] == 0x4c && advertisedDevice->getManufacturerData()[1] == 0x00 &&
+                advertisedDevice->getManufacturerData()[2] == 0x02 && advertisedDevice->getManufacturerData()[3] == 0x15)
+            {
+                load_tilt_from_advert(advertisedDevice);
+                return;
+            }
         }
     };
 };
@@ -63,6 +72,49 @@ void load_inkbird_from_advert(NimBLEAdvertisedDevice* advertisedDevice)
     return;
 }
 
+void load_tilt_from_advert(NimBLEAdvertisedDevice* advertisedDevice)
+{
+    // The advertisement string is the "manufacturer data" part of the following:
+    //Advertised Device: Name: Tilt, Address: 88:c2:55:ac:26:81, manufacturer data: 4c000215a495bb40c5b14b44b5121370f02d74de005004d9c5
+    //4c000215a495bb40c5b14b44b5121370f02d74de005004d9c5
+    //????????iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiittttggggXR
+    //**********----------**********----------**********
+    TiltColor m_color;
+    char hex_code[3] = {'\0'};
+    char m_color_arr[33] = {'\0'};
+    char temp_arr[5] = {'\0'};
+    char grav_arr[5] = {'\0'};
+    char tx_pwr_arr[3] = {'\0'};
+
+    for (int i = 4; i < advertisedDevice->getManufacturerData().length(); i++)
+    {
+        sprintf(hex_code, "%.2x", advertisedDevice->getManufacturerData()[i]);
+
+        if ((i > 3) && (i < 20))  // Indices 4 - 19 each generate two characters of the color array
+            strncat(m_color_arr, hex_code, 2);
+        else if (i == 20 || i == 21)  // Indices 20-21 each generate two characters of the temperature array
+            strncat(temp_arr, hex_code, 2);
+        else if (i == 22 || i == 23)  // Indices 22-23 each generate two characters of the sp_gravity array
+            strncat(grav_arr, hex_code, 2);
+        else if (i == 24)  // Index 24 contains the tx_pwr (which is used by recent tilts to indicate battery age)
+            strncat(tx_pwr_arr, hex_code, 2);
+    }
+
+    m_color = tilt::uuid_to_color_no(m_color_arr);
+
+    uint16_t temp = std::strtoul(temp_arr, nullptr, 16);
+    uint16_t gravity = std::strtoul(grav_arr, nullptr, 16);
+    uint8_t tx_pwr = std::strtoul(tx_pwr_arr, nullptr, 16);
+
+    // Log.verbose(F("Detected Tilt: Temp: %d, Hum: %d, Bat: %d\r\n"), temp, hum, bat);
+
+
+    // Locate & update the tilt object in the list
+    tilt *th = bt_scanner.get_or_create_tilt(advertisedDevice->getAddress());
+    th->update(m_color, temp, gravity, tx_pwr, advertisedDevice->getRSSI());
+}
+
+
 ////////////////////////////
 // btScanner Implementation
 ////////////////////////////
@@ -71,6 +123,7 @@ btScanner::btScanner()
 {
     shouldRun = false;
     m_last_inkbird_purge_at = 0;
+    m_last_tilt_purge_at = 0;
 }
 
 void btScanner::init()
@@ -117,7 +170,6 @@ inkbird* btScanner::get_inkbird(const NimBLEAddress devAddress)
     for(inkbird & ib : lInkbirds) {
         if(ib.deviceAddress == devAddress) {
             // Access the object through the iterator
-            // Log.verbose(F("Found matching Kegtron: %s \r\n"), kt.id);
             return &ib;
         }
     }
@@ -140,6 +192,32 @@ inkbird* btScanner::get_or_create_inkbird(const NimBLEAddress devAddress)
 }
 
 
+tilt* btScanner::get_tilt(const NimBLEAddress devAddress)
+{
+    for(tilt & th : lTilts) {
+        if(th.deviceAddress == devAddress) {
+            // Access the object through the iterator
+            return &th;
+        }
+    }
+
+    return nullptr;
+}
+
+tilt* btScanner::get_or_create_tilt(const NimBLEAddress devAddress)
+{
+    tilt *found_th = get_tilt(devAddress);
+
+    if(found_th)
+        return found_th;
+
+    // No matching device was found
+    tilt newTilt(devAddress);
+    lTilts.push_front(newTilt);
+
+    return get_tilt(devAddress);  // We specifically want to access the object as referenced in the list
+}
+
 // void btScanner::purge_stale_inkbirds()
 // {
 //     // Check if we've passed the threshhold to purge devices
@@ -155,5 +233,22 @@ inkbird* btScanner::get_or_create_inkbird(const NimBLEAddress devAddress)
 //     }
 //     m_last_inkbird_purge_at = millis();
 // }
+
+// void btScanner::purge_stale_tilts()
+// {
+//     // Check if we've passed the threshhold to purge devices
+//     if(millis() < (1000 * BT_SCANNER_TILT_PURGE_TIME + m_last_tilt_purge_at))
+//         return;
+
+//     // We've passed the threshhold. Loop through devices and purge as appropriate
+//     for(tilt & th : lTilts) {
+//         if(millis() > (ib.m_lastUpdate + (BT_SCANNER_TILT_PURGE_TIME * 1000) ))
+//         {
+//             lTilts.remove(ib);
+//         }
+//     }
+//     m_last_tilts_purge_at = millis();
+// }
+
 
 #endif

@@ -216,6 +216,15 @@
 //////////////////////////////////////////////////////////////////////////
 
 
+// If a device has bluetooth support, that bluetooth support is specifically for supporting external sensors/relays.
+// Enable external sensors/relays as a result. 
+#ifdef HAS_BLUETOOTH
+#ifndef EXTERN_SENSOR_ACTUATOR_SUPPORT
+#define EXTERN_SENSOR_ACTUATOR_SUPPORT
+#endif
+#endif
+
+
 
 //////////////////////////////////////////////////////////////////////////
 //

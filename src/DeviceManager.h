@@ -181,6 +181,7 @@ struct DeviceAlternatives {
  * @see DeviceManager::enumerateOneWireDevices
  * @see DeviceManager::enumeratePinDevices
  * @see DeviceManager::enumerateInkbirdDevices
+ * @see DeviceManager::enumerateTiltDevices
  */
 typedef void (*EnumDevicesCallback)(DeviceConfig*, void* pv, JsonDocument* doc);
 
@@ -333,7 +334,10 @@ public:
 private:
 	static void enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc);
 	static void enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc);
+#ifdef HAS_BLUETOOTH
 	static void enumerateInkbirdDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc);
+	static void enumerateTiltDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc);
+#endif
 	static void outputEnumeratedDevices(DeviceConfig* config, void* pv, JsonDocument* doc);
 	static void handleEnumeratedDevice(DeviceConfig& config, EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& out, JsonDocument* doc);
 	static void readTempSensorValue(DeviceConfig::Hardware hw, char* out);

@@ -66,6 +66,15 @@ DisplayType realDisplay;
 DisplayType DISPLAY_REF display = realDisplay;
 
 ValueActuator alarm_actuator;
+void printMem() {
+    char buf[256];
+    const uint32_t free = ESP.getFreeHeap();
+    const uint32_t max = ESP.getMaxAllocHeap();
+    const uint8_t frag = 100 - (max * 100) / free;
+    sprintf(buf, "Free Heap: %d, Largest contiguous block: %d, Frag: %d%%\r\n", free, max, frag );
+    // PiLink.print(F(), free, max, frag);
+    piLink.print(buf);
+}
 
 /**
  * \brief Restart the board
@@ -160,6 +169,8 @@ void brewpiLoop()
 #endif
 
     if (ticks.millis() - lastUpdate >= (1000)) { //update settings every second
+    printMem();
+
 		lastUpdate = ticks.millis();
 
 #if BREWPI_BUZZER

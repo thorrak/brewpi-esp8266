@@ -7,36 +7,36 @@
 // #include "DallasTemperature.h" // for DeviceAddress
 #include <NimBLEDevice.h>
 
-#include "wireless/Inkbird.h"
+#include "wireless/Tilt.h"
 
 
 /**
- * \brief An Inkbird bluetooth temperature sensor
+ * \brief A Tilt bluetooth temperature sensor
  *
  * \ingroup hardware
  */
-class InkbirdTempSensor : public BasicTempSensor {
+class TiltTempSensor : public BasicTempSensor {
 public:
     /**
-     * \brief Constructs a new Inkbird temp sensor.
+     * \brief Constructs a new Tilt temp sensor.
    *
      * /param address    The MAC address for this sensor.
      * /param calibration    A temperature value that is added to all readings. This can be used to calibrate the sensor.
      */
-    InkbirdTempSensor(NimBLEAddress address, fixed4_4 calibrationOffset) {
+    TiltTempSensor(NimBLEAddress address, fixed4_4 calibrationOffset) {
         btAddress = address;
 
         this->calibrationOffset = calibrationOffset;
-        ib = nullptr;
+        th = nullptr;
     };
 
-    ~InkbirdTempSensor();
+    ~TiltTempSensor();
 
   /**
    * \brief Check if sensor device is connected
    */
     bool isConnected(){
-        if (ib && ib->isConnected())
+        if (th && th->isConnected())
             return true;
         return false;
     }
@@ -45,7 +45,7 @@ public:
     temperature read();
 
     NimBLEAddress btAddress;
-    inkbird *ib;
+    tilt *th;
 
 private:
   /**
