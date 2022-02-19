@@ -36,6 +36,10 @@
 #include <WiFi.h>
 #endif
 
+#if BREWPI_SIMULATE == 1
+#include "Simulator.h"
+#endif
+
 extern void handleReset();
 
 /**
@@ -148,11 +152,11 @@ void CommandProcessor::receiveCommand() {
 
 #if BREWPI_SIMULATE == 1
     case 'Y':
-      printSimulatorSettings();
+      simulator.printSettings();
       break;
 
     case 'y':
-      parseJson(HandleSimulatorConfig);
+      simulator.parseSettings();
       break;
 #endif
 

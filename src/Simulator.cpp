@@ -23,6 +23,7 @@
 
 #include "Display.h"
 #include "PiLink.h"
+#include "CommandProcessor.h"
 
 #if BREWPI_SIMULATE
 
@@ -87,7 +88,7 @@ void simulateLoop()
 		#if !BREWPI_EMULATE			// simulation on actual hardware
 		static byte updateCount = 0;
 		if (printTempInterval && (++updateCount%printTempInterval)==0) {
-			piLink.printTemperatures();
+			piLink.printTemperatures(nullptr, nullptr);
 			updateCount = 0;
 		}
 		static unsigned long lastDisplayUpdate = 0;  // update the display every second
@@ -98,7 +99,10 @@ void simulateLoop()
 			display.printState();
 			display.printAllTemperatures();
 			display.printMode();
+
+#ifndef BREWPI_TFT
 			display.updateBacklight();
+#endif
 		}
 		
 		simulator.step();
@@ -108,8 +112,7 @@ void simulateLoop()
 	if ((::millis()-lastCheckSerial)>=1000 && (lastCheckSerial=::millis()>0))	// only listen if 1s passed since last time
 	#endif
 	//listen for incoming serial connections while waiting to update
-	piLink.receive();
-
+	CommandProcessor::receiveCommand();
 }
 
 #include "TempSensorExternal.h"
@@ -219,48 +222,45 @@ void HandleSimulatorConfig(const char* key, const char* val, void* pv)
 	else if (strcmp_P(key, SimulatorEnabled)==0) {		// 0 for closed, anything else for open
 		simulator.setSimulationEnabled(strcmp(val, "0")!=0);
 	}
-        
+
 }
 
-void PiLink::printDouble(double val)
+
+/**
+ * \brief Dump current simulator settings
+ */
+void Simulator::printSettings()
 {
-	char buf[30];
-	val *= 10000;
-	long l = val;
-	ltoa(l/10000, buf, 10);	// print the whole part
-	piLink.print(buf);
-	l = l % 10000;
-	piLink.print_P(PSTR(".%05d"), uint16_t(l));
+  DynamicJsonDocument doc(1024);
+
+  doc[SimulatorRoomTempMin] = simulator.getMinRoomTemp();
+	doc[SimulatorRoomTempMax] = simulator.getMaxRoomTemp();
+	doc[SimulatorFridgeVolume] = simulator.getFridgeVolume();
+	doc[SimulatorBeerVolume] = simulator.getBeerVolume();
+	doc[SimulatorBeerDensity] = simulator.getBeerDensity();
+	doc[SimulatorFridgeTemp] = simulator.getFridgeTemp();
+	doc[SimulatorBeerTemp] = simulator.getBeerTemp();
+	doc[SimulatorFridgeConnected] = simulator.getConnected(tempControl.fridgeSensor) ? "1" : "0";
+	doc[SimulatorBeerConnected] = simulator.getConnected(tempControl.beerSensor) ? "1" : "0";
+	doc[SimulatorHeatPower] = (uint16_t)simulator.getHeatPower();
+	doc[SimulatorCoolPower] = (uint16_t)simulator.getCoolPower();
+	doc[SimulatorCoeffRoom] = simulator.getRoomCoefficient();
+ 	doc[SimulatorCoeffBeer] = simulator.getBeerCoefficient();
+	doc[SimulatorDoorState] = simulator.doorState() ? "1" : "0";
+	doc[SimulatorDoorState] = printTempInterval;
+  doc[SimulatorNoise] = simulator.getSensorNoise();
+
+  piLink.sendJsonMessage('Y', doc);
 }
 
-void PiLink::sendJsonPair(const char* name, double val)
-{
-	printJsonName(name);
-	printDouble(val);
-}
 
-void PiLink::printSimulatorSettings()
-{
-	printResponse('Y');	
-	sendJsonPair(SimulatorRoomTempMin, simulator.getMinRoomTemp());
-	sendJsonPair(SimulatorRoomTempMax, simulator.getMaxRoomTemp());
-	sendJsonPair(SimulatorFridgeVolume, simulator.getFridgeVolume());
-	sendJsonPair(SimulatorBeerVolume, simulator.getBeerVolume());
-	sendJsonPair(SimulatorBeerDensity, simulator.getBeerDensity());
-	sendJsonPair(SimulatorFridgeTemp, simulator.getFridgeTemp());
-	sendJsonPair(SimulatorBeerTemp, simulator.getBeerTemp());
-	sendJsonPair(SimulatorFridgeConnected, simulator.getConnected(tempControl.fridgeSensor) ? "1" : "0");
-	sendJsonPair(SimulatorBeerConnected, simulator.getConnected(tempControl.beerSensor) ? "1" : "0");
-	sendJsonPair(SimulatorHeatPower, (uint16_t)simulator.getHeatPower());
-	sendJsonPair(SimulatorCoolPower, (uint16_t)simulator.getCoolPower());
-	sendJsonPair(SimulatorCoeffRoom, simulator.getRoomCoefficient());
- 	sendJsonPair(SimulatorCoeffBeer, simulator.getBeerCoefficient());
-	sendJsonPair(SimulatorDoorState, simulator.doorState() ? "1" : "0");
-	sendJsonPair(SimulatorDoorState, printTempInterval);
-  	sendJsonPair(SimulatorNoise, simulator.getSensorNoise());
-		
-	sendJsonClose();		
+/**
+ * \brief Parse simulator settings
+ *
+ * \todo Implement this feature
+ */
+void Simulator::parseSettings() {
+
 }
 
 #endif // brewpi simulate
-
