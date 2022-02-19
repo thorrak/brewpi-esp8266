@@ -76,7 +76,6 @@ void mdns_reset() {
     MDNS.end();
 
     if (MDNS.begin(mdns_id.c_str())) {
-        //Log.notice(F("mDNS responder restarted, hostname: %s.local." CR), WiFi.getHostname());
         // mDNS will stop responding after awhile unless we query the specific service we want
         MDNS.addService("brewpi", "tcp", 23);
         MDNS.addServiceTxt("brewpi", "tcp", "board", CONTROLLER_TYPE);
@@ -88,6 +87,24 @@ void mdns_reset() {
           MDNS.addService("brewpi_metrics", "tcp", Config::Prometheus::port);
     } else {
         //Log.error(F("Error resetting MDNS responder."));
+    }
+}
+
+void mdns_check() {
+    char mdns_hostname[40];
+    snprintf(mdns_hostname, 40, "%s.local", eepromManager.fetchmDNSName().c_str());
+    if(!MDNS.queryHost(mdns_hostname, 2000)) {
+        log_e("Lost mDNS Host - resetting");
+        mdns_reset();
+        return;
+    }
+
+    // As long as we can query the host, also check that something responds with the service we want
+    MDNSResponder mdQuery;
+    // int has_svc = mdQuery.queryService("brewpi", "tcp");
+    if(mdQuery.queryService("brewpi", "tcp") == 0) {
+        log_e("Lost mDNS Service - resetting");
+        mdns_reset();
     }
 }
 
@@ -203,14 +220,16 @@ void wifi_connect_clients() {
     yield();
 
     // Additionally, every 3 minutes either attempt to reconnect WiFi, or rebroadcast mdns info
-    if(ticks.millis() - last_connection_check >= (180000)) {
+    if(ticks.millis() - last_connection_check >= (3 * 60 * 1000)) {
         last_connection_check = ticks.millis();
         if(!WiFi.isConnected()) {
             // If we are disconnected, reconnect. On an ESP8266 this will ALSO trigger mdns_reset due to the callback
             // but on the ESP32, this means that we'll have to wait an additional 3 minutes for mdns to come back up
             WiFi.reconnect();
         } else {
-            mdns_reset();
+            // Commenting these out for now as there is a memory leak caused by this
+            // mdns_reset();
+            // mdns_check();
         }
     }
     yield();
