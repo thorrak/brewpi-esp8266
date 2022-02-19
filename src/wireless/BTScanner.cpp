@@ -98,6 +98,7 @@ bool btScanner::scan()
         return false;
     if (NimBLEDevice::getScan()->isScanning())
         return false;
+    delay(500);
     if (NimBLEDevice::getScan()->start(BLE_SCAN_TIME, nullptr, false))
         return true; //Scan successfully started.
     return false;  //Scan failed to start
