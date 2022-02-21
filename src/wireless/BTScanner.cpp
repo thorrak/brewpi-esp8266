@@ -38,7 +38,7 @@ class AdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
             // Log.verbose(F("Advertised Device: %s \r\n"), advertisedDevice->toString().c_str());
             load_inkbird_from_advert(advertisedDevice);
             return;
-        } else if (advertisedDevice->getManufacturerData().length() > 4) {  // Tilt
+        } else if (advertisedDevice->getManufacturerData().length() >= 24) {  // Tilt
             if (advertisedDevice->getManufacturerData()[0] == 0x4c && advertisedDevice->getManufacturerData()[1] == 0x00 &&
                 advertisedDevice->getManufacturerData()[2] == 0x02 && advertisedDevice->getManufacturerData()[3] == 0x15)
             {
@@ -101,6 +101,9 @@ void load_tilt_from_advert(NimBLEAdvertisedDevice* advertisedDevice)
     }
 
     m_color = tilt::uuid_to_color_no(m_color_arr);
+
+    if(m_color==TiltColor::TILT_COLOR_NONE)  // No color was matched from the advert string
+        return;
 
     uint16_t temp = std::strtoul(temp_arr, nullptr, 16);
     uint16_t gravity = std::strtoul(grav_arr, nullptr, 16);

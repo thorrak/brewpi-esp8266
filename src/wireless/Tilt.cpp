@@ -73,7 +73,7 @@ long_temperature tilt::getTempFixedPoint() {
 	long_temperature fracPart = 0;
 
     // Tilts always report in Fahrenheit - convert to celsius and then split
-    double conv_temp = (rawTemp / (tilt_pro ? 10 : 1) - 32) * 5 / 9;
+    double conv_temp = ((double) rawTemp / (tilt_pro ? 10 : 1) - 32) * 5 / 9;
 
     // Split into an integer and a fractional part
     double intPartRaw;
