@@ -33,8 +33,8 @@ void load_tilt_from_advert(NimBLEAdvertisedDevice* advertisedDevice);
 /** Handles callbacks when advertisments are received */
 class AdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
     void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
-        // Inkbird IBS-TH2
-        if(advertisedDevice->getName().rfind("sps",0) == 0 && advertisedDevice->getManufacturerData().length() == 9) {
+        // Inkbird IBS-TH2 (sps) and Inkbird IBS-TH1 (tps)
+        if((advertisedDevice->getName().rfind("sps",0) == 0 || advertisedDevice->getName().rfind("tps",0) == 0) && advertisedDevice->getManufacturerData().length() == 9) {
             // Log.verbose(F("Advertised Device: %s \r\n"), advertisedDevice->toString().c_str());
             load_inkbird_from_advert(advertisedDevice);
             return;
@@ -54,9 +54,11 @@ void load_inkbird_from_advert(NimBLEAdvertisedDevice* advertisedDevice)
 {
     // The advertisement string is the "manufacturer data" part of the following:
     // example: f208361300f28b6408
-    // format:  tttthhhh??????bb??
+    // format:  tttthhhhssaaaabb??
     // tttt = 100* temp in C (needs endian change)
     // hhhh = 100 * humidity in C (needs endian change)
+    // ss = Sensor selection (00 for internal, 01 for external)
+    // aaaa = Alternate sensor reading (internal sensor reading if ss is 01, garbage data if ss is 00)
     // bb = battery in %
 
     // Decode temp/humidity/battery
