@@ -320,7 +320,7 @@ public:
 	static void uninstallDevice(DeviceConfig& config);
 
 	static void parseDeviceDefinition();
-	static void serializeJsonDevice(JsonDocument&, device_slot_t slot, DeviceConfig& config, const char* value);
+	static void serializeJsonDevice(JsonDocument&, device_slot_t slot, DeviceConfig& config, char* value);
 
 	static bool isDeviceValid(DeviceConfig& config, DeviceConfig& original, int8_t deviceIndex);
 

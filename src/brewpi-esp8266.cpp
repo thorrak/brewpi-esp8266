@@ -167,7 +167,7 @@ void brewpiLoop()
 #endif
 
     if (ticks.millis() - lastUpdate >= (1000)) { //update settings every second
-    printMem();
+    // printMem();
 
 		lastUpdate = ticks.millis();
 
