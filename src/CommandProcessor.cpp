@@ -254,7 +254,7 @@ void CommandProcessor::setAlarmState(bool enabled) { alarm_actuator.setActive(en
  * \ingroup commands
  */
 void CommandProcessor::listDevices() {
-  DynamicJsonDocument doc(1024);
+  DynamicJsonDocument doc(2048);
   deviceManager.listDevices(doc);
   piLink.sendJsonMessage('d', doc);
 }
@@ -265,7 +265,7 @@ void CommandProcessor::listDevices() {
  * \ingroup commands
  */
 void CommandProcessor::listHardware() {
-  DynamicJsonDocument doc(1024);
+  DynamicJsonDocument doc(2048);
   deviceManager.enumerateHardware(doc);
   piLink.sendJsonMessage('h', doc);
 }

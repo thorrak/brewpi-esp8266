@@ -28,6 +28,7 @@
 #include "CommandProcessor.h"
 #include "PromServer.h"
 #include "wireless/BTScanner.h"
+#include "tplink/TPLinkScanner.h"
 
 #if BREWPI_SIMULATE
 #include "Simulator.h"
@@ -110,6 +111,15 @@ void setup()
 
 
 	piLink.init();  // Initializes either the serial or telnet connection
+
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+  // Initialize UDP and send the initial discovery message
+  // TODO - Test how this reacts when WiFi is not available
+  tp_link_scanner.init();
+  tp_link_scanner.send_discover();
+  delay(200); // This should be very quick
+  tp_link_scanner.process_udp_incoming();
+#endif
 
 #ifdef HAS_BLUETOOTH
     bt_scanner.init();
@@ -209,6 +219,11 @@ void brewpiLoop()
 #ifdef HAS_BLUETOOTH
   bt_scanner.scan();        // Check/restart scan 
 #endif
+
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+  tp_link_scanner.scan_and_refresh();
+#endif
+
 }
 
 

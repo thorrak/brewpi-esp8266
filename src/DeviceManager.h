@@ -110,6 +110,9 @@ inline bool isAssignable(DeviceType type, DeviceHardware hardware)
 	|| (hardware==DEVICE_HARDWARE_BLUETOOTH_INKBIRD && type==DEVICETYPE_TEMP_SENSOR)
 	|| (hardware==DEVICE_HARDWARE_BLUETOOTH_TILT && type==DEVICETYPE_TEMP_SENSOR)
 #endif
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+	|| (hardware==DEVICE_HARDWARE_TPLINK_SWITCH && type==DEVICETYPE_SWITCH_ACTUATOR)
+#endif
 	|| (hardware==DEVICE_HARDWARE_ONEWIRE_TEMP && type==DEVICETYPE_TEMP_SENSOR)
 	|| (hardware==DEVICE_HARDWARE_NONE && type==DEVICETYPE_NONE);
 }
@@ -221,7 +224,15 @@ struct DeviceDefinition {
 	int8_t deactivate=0;
 	int8_t calibrationAdjust=0;
 	DeviceAddress address={0};
+#ifdef HAS_BLUETOOTH
 	NimBLEAddress btAddress;
+#endif
+
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+	char tplink_mac[18];
+	char tplink_child_id[3];
+#endif
+
 };
 
 
@@ -338,6 +349,10 @@ private:
 	static void enumerateInkbirdDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc);
 	static void enumerateTiltDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc);
 #endif
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+	static void enumerateTplinkDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc);
+#endif
+
 	static void outputEnumeratedDevices(DeviceConfig* config, void* pv, JsonDocument* doc);
 	static void handleEnumeratedDevice(DeviceConfig& config, EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& out, JsonDocument* doc);
 	static void readTempSensorValue(DeviceConfig::Hardware hw, char* out);

@@ -145,6 +145,9 @@ enum DeviceHardware {
   DEVICE_HARDWARE_BLUETOOTH_INKBIRD = 4,
   DEVICE_HARDWARE_BLUETOOTH_TILT = 5,
 #endif
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+  DEVICE_HARDWARE_TPLINK_SWITCH = 6,
+#endif
 
 };
 
@@ -167,6 +170,10 @@ public:
 		bool deactivate;              // disable this device - the device will not be installed.
 #ifdef HAS_BLUETOOTH
     NimBLEAddress btAddress;
+#endif
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+    char tplink_mac[18];                 // TP Link MAC address
+    char tplink_child_id[3];             // TP Link Child ID (for multi-plug switches)
 #endif
 		DeviceAddress address;        // for onewire devices, if address[0]==0 then use the first matching device type, otherwise use the device with the specific address
 

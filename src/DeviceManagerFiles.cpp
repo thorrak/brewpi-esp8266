@@ -8,6 +8,10 @@
 #include <NimBLEDevice.h>
 #endif
 
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+#include "tplink/TPLinkScanner.h"
+#endif
+
 
 DynamicJsonDocument DeviceConfig::toJson() {
     DynamicJsonDocument doc(1024);
@@ -29,6 +33,16 @@ DynamicJsonDocument DeviceConfig::toJson() {
 #ifdef HAS_BLUETOOTH
     else if(deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD || deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT) {
         doc[DeviceDefinitionKeys::address] = hw.btAddress.toString();
+    }
+#endif
+
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+    else if(deviceHardware == DEVICE_HARDWARE_TPLINK_SWITCH) {
+        doc[DeviceDefinitionKeys::address] = hw.tplink_mac;
+        doc[DeviceDefinitionKeys::child_id] = hw.tplink_child_id;
+        TPLinkPlug *tp = tp_link_scanner.get_tplink_plug(hw.tplink_mac, hw.tplink_child_id);
+        if(tp != nullptr)
+            doc[DeviceDefinitionKeys::alias] = tp->device_alias;
     }
 #endif
 
@@ -73,6 +87,11 @@ void DeviceConfig::fromJson(DynamicJsonDocument json_doc) {
 #ifdef HAS_BLUETOOTH
     } else if(json_doc[DeviceDefinitionKeys::address].is<std::string>() && (deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD || deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT)) {
         hw.btAddress = NimBLEAddress(json_doc[DeviceDefinitionKeys::address].as<std::string>());
+#endif
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+    } else if(json_doc[DeviceDefinitionKeys::address].is<const char *>() && json_doc[DeviceDefinitionKeys::child_id].is<const char *>() && (deviceHardware == DEVICE_HARDWARE_TPLINK_SWITCH)) {
+		snprintf(hw.tplink_mac, 18, "%s", json_doc[DeviceDefinitionKeys::address].as<const char *>());
+		snprintf(hw.tplink_child_id, 3, "%s", json_doc[DeviceDefinitionKeys::child_id].as<const char *>());
 #endif
     } else if(json_doc.containsKey(DeviceDefinitionKeys::address)) {
         piLink.print("Contains unhandled address!!");

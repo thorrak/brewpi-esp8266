@@ -51,6 +51,11 @@
 #include "wireless/BTScanner.h"
 #endif
 
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+#include "tplink/TPLinkScanner.h"
+#endif
+
+
 constexpr auto calibrationOffsetPrecision = 4;
 
 /*
@@ -164,6 +169,13 @@ void* DeviceManager::createDevice(DeviceConfig& config, DeviceType dt)
 		case DEVICE_HARDWARE_BLUETOOTH_TILT:
 			return new TiltTempSensor(config.hw.btAddress, config.hw.calibration);
 #endif
+
+// #ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+// 		case DEVICE_HARDWARE_TPLINK_SWITCH:
+// 			return new TPLinkPlug(config.hw.tplink_mac, config.hw.tplink_child_id);
+
+// 	|| (hardware==DEVICE_HARDWARE_TPLINK_SWITCH && type==DEVICETYPE_SWITCH_ACTUATOR)
+// #endif
 
 	}
 	return nullptr;
@@ -370,6 +382,12 @@ void DeviceManager::readJsonIntoDeviceDef(DeviceDefinition& dev) {
 			dev.btAddress = NimBLEAddress(doc[DeviceDefinitionKeys::address].as<std::string>());
 			break;
 #endif
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+		case DEVICE_HARDWARE_TPLINK_SWITCH:
+			snprintf(dev.tplink_mac, 18, "%s", doc[DeviceDefinitionKeys::address].as<const char *>());
+			snprintf(dev.tplink_child_id, 3, "%s", doc[DeviceDefinitionKeys::child_id].as<const char *>());
+			break;
+#endif
 		default:
 			break;
 	  }
@@ -503,8 +521,14 @@ void DeviceManager::parseDeviceDefinition()
 	if(dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD || dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT) {
 		target.hw.btAddress = dev.btAddress;
 	} else
-#endif	
-	if (dev.address[0] != 0xFF && dev.deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP) {// first byte is family identifier. I don't have a complete list, but so far 0xFF is not used.
+#endif
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+	if(dev.deviceHardware == DEVICE_HARDWARE_TPLINK_SWITCH) {
+		snprintf(target.hw.tplink_mac, 18, "%s", dev.tplink_mac);
+		snprintf(target.hw.tplink_child_id, 3, "%s", dev.tplink_child_id);
+	} else
+#endif
+	if (dev.address[0] != 0xFF && dev.deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP) { // first byte is family identifier. I don't have a complete list, but so far 0xFF is not used.
 		memcpy(target.hw.address, dev.address, 8);
 	}
 
@@ -717,6 +741,8 @@ inline bool matchAddress(uint8_t* detected, uint8_t* configured, uint8_t count) 
  *   - pinNr  for simple digital pin devices
  *   - pinNr+address for one-wire devices
  *   - pinNr+address+pio for 2413
+ *   - btAddress for bluetooth devices (Tilt/Inkbird)
+ *   - tplink_mac+tplink_child_id for tplink devices
  */
 device_slot_t findHardwareDevice(DeviceConfig& find)
 {
@@ -733,6 +759,15 @@ device_slot_t findHardwareDevice(DeviceConfig& find)
 					match &= find.hw.btAddress == config.hw.btAddress;
 					break;
 #endif
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+				case DEVICE_HARDWARE_TPLINK_SWITCH:
+					if (strcmp(find.hw.tplink_mac, config.hw.tplink_mac) == 0 && strcmp(find.hw.tplink_child_id, config.hw.tplink_child_id) == 0)
+						match &= true;
+					else
+						match &= false;
+					break;
+#endif
+
 #if BREWPI_DS2413
 				case DEVICE_HARDWARE_ONEWIRE_2413:
 					match &= find.hw.pio==config.hw.pio;
@@ -963,6 +998,30 @@ void DeviceManager::enumerateTiltDevices(EnumerateHardware& h, EnumDevicesCallba
 }
 #endif
 
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+/**
+ * \brief Enumerate all TPLink Kasa Smart Plug devices
+ *
+ * \param h - Hardware spec, used to filter sensors
+ * \param callback - Callback function, called for every found hardware device
+ * \param output -
+ * \param doc - JsonDocument to populate
+ */
+void DeviceManager::enumerateTplinkDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc)
+{
+	DeviceConfig config;
+	config.hw.pinNr = 0;  			// 0 for wireless devices
+	config.chamber = 1; 			// chamber 1 is default
+	config.deviceHardware = DEVICE_HARDWARE_TPLINK_SWITCH;
+
+	for(TPLinkPlug & tp : tp_link_scanner.lTPLinkPlugs) {
+		strcpy(config.hw.tplink_mac, tp.device_mac);
+		strcpy(config.hw.tplink_child_id, tp.child_id);
+		handleEnumeratedDevice(config, h, callback, output, doc);
+    }
+}
+#endif
+
 /**
  * \brief Read hardware spec from stream and output matching devices
  */
@@ -998,6 +1057,13 @@ void DeviceManager::enumerateHardware(JsonDocument& doc)
 		enumerateTiltDevices(spec, outputEnumeratedDevices, out, &doc);
 	}
 #endif
+
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+	if (spec.hardware==-1 || spec.hardware==DEVICE_HARDWARE_TPLINK_SWITCH) {
+		enumerateTplinkDevices(spec, outputEnumeratedDevices, out, &doc);
+	}
+#endif
+
 }
 
 /**
