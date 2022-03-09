@@ -119,3 +119,16 @@ constexpr auto rotaryHalfSteps = "rotaryHalfSteps";
 constexpr auto pidMax = "pidMax";
 constexpr auto tempFormat = "tempFormat";
 };
+
+/**
+ * \brief Strings used for JSON keys
+ * \see EnumerateHardware
+ */
+namespace ExtendedSettingsKeys {
+constexpr auto eepromReset = "confirmReset";
+// constexpr auto pin = "p";
+// constexpr auto values = "v";
+// constexpr auto unused = "u";
+// constexpr auto function = "f";
+}; // namespace ExtendedSettingsKeys
+

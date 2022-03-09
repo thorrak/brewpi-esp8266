@@ -344,9 +344,10 @@ void CommandProcessor::printRawTemperatures() {
  * \see EepromManager::initializeEeprom()
  */
 void CommandProcessor::initEeprom() {
-  eepromManager.initializeEeprom();
-  logInfo(INFO_EEPROM_INITIALIZED);
-  settingsManager.loadSettings();
+  if(eepromManager.initializeEeprom()) {
+    logInfo(INFO_EEPROM_INITIALIZED);
+    settingsManager.loadSettings();
+  }
 }
 
 /**

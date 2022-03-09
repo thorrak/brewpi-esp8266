@@ -25,6 +25,7 @@
 #include "TempControl.h"
 #include "EepromFormat.h"
 #include "PiLink.h"
+#include "JsonKeys.h"
 
 EepromManager eepromManager;
 ESPEepromAccess eepromAccess;
@@ -46,8 +47,19 @@ bool EepromManager::hasSettings()
 	return eepromAccess.hasSettings();
 }
 
-void EepromManager::initializeEeprom()
+bool EepromManager::initializeEeprom()
 {
+	StaticJsonDocument<128> doc;
+	piLink.receiveJsonMessage(doc);
+
+	// Due to the "scanning" issue, we now need to test that there is an
+	// additional key being appended to the initializeEeprom command
+	if(!doc.containsKey(ExtendedSettingsKeys::eepromReset) || 
+	   !doc[ExtendedSettingsKeys::eepromReset].is<bool>() || !doc[ExtendedSettingsKeys::eepromReset].as<bool>()) {
+		logError(INFO_UNCONFIRMED_EEPROM_RESET);
+		return false;
+	}
+
 	// clear all eeprom
     eepromAccess.zapData();
 
@@ -65,6 +77,7 @@ void EepromManager::initializeEeprom()
 	// set state to startup
 	TempControl::init();
 
+	return true;
 }
 
 uint8_t EepromManager::saveDefaultDevices() 
