@@ -53,6 +53,7 @@
 
 #ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
 #include "tplink/TPLinkScanner.h"
+#include "ActuatorTPLink.h"
 #endif
 
 
@@ -170,12 +171,10 @@ void* DeviceManager::createDevice(DeviceConfig& config, DeviceType dt)
 			return new TiltTempSensor(config.hw.btAddress, config.hw.calibration);
 #endif
 
-// #ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
-// 		case DEVICE_HARDWARE_TPLINK_SWITCH:
-// 			return new TPLinkPlug(config.hw.tplink_mac, config.hw.tplink_child_id);
-
-// 	|| (hardware==DEVICE_HARDWARE_TPLINK_SWITCH && type==DEVICETYPE_SWITCH_ACTUATOR)
-// #endif
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+		case DEVICE_HARDWARE_TPLINK_SWITCH:
+			return new TPLinkActuator(config.hw.tplink_mac, config.hw.tplink_child_id);
+#endif
 
 	}
 	return nullptr;
