@@ -199,20 +199,32 @@ void LcdDisplay::printTemperature(temperature temp, uint8_t font_size){
     tft.setTextSize(font_size);
 
     if (temp==INVALID_TEMP) {
-        tft.print("--.-");
+        tft.print(" --.-");
         return;
     }
 
 
     char tempString[9];
+    char tempBuf[7];
     tempToString(tempString, temp, 1 , 9);
-    // TODO - Determine if I want to pad single digits
-//    int8_t spacesToWrite = 5 - (int8_t) strlen(tempString);
-//    for(int8_t i = 0; i < spacesToWrite ;i++){
-//        lcd.write(' ');
-//    }
-//    lcd.print(tempString);
-    tft.print(tempString);
+
+    // Pad the width 
+    switch(strlen(tempString)) {
+        case 5:
+            snprintf(tempBuf, 7, " %s", tempString);
+            break;
+        case 4:
+            snprintf(tempBuf, 7, "  %s", tempString);
+            break;
+        case 3:
+            snprintf(tempBuf, 7, "   %s", tempString);
+            break;
+        default:
+            snprintf(tempBuf, 7, "%s", tempString);
+            break;
+    }
+
+    tft.print(tempBuf);
 }
 
 //print the stationary text on the lcd.
@@ -264,6 +276,33 @@ void LcdDisplay::printMode(){
             break;
     }
 
+}
+
+uint8_t printTime(uint16_t time) {
+    if(time == UINT_MAX)
+        return 0;
+
+    char timeString[10];
+#if DISPLAY_TIME_HMS  // 96 bytes more space required.
+    unsigned int minutes = time/60;
+    unsigned int hours = minutes/60;
+    int stringLength = sprintf_P(timeString, PSTR("%dh%02dm%02ds"), hours, minutes%60, time%60);
+    char * printString = timeString;
+    if(!hours){
+        printString = &timeString[2];
+        stringLength = stringLength-2;
+    }
+//        printAt(20-stringLength, 3, printString);
+    tft.print(printString);
+    return stringLength;
+
+#else
+#warning "This has not been tested"
+    int stringLength = sprintf_P(timeString, STR_FMT_U, (unsigned int)time);
+    printAt(20-stringLength, 3, timeString);
+    tft.print(timeString);
+    return stringLength;
+#endif
 }
 
 // print the current state on the last line of the lcd
@@ -331,48 +370,27 @@ void LcdDisplay::printState(){
         tft.print(" for ");
         printed_chars += 15;
         time = 	min(tempControl.timeSinceCooling(), tempControl.timeSinceHeating());
-    }
-    else if(state==COOLING || state==HEATING){
+        printed_chars += printTime(time);
+    } else if(state==COOLING || state==HEATING){
         tft.print(" for ");
         printed_chars += 5;
         time = sinceIdleTime;
-    }
-    else if(state==COOLING_MIN_TIME){
+        printed_chars += printTime(time);
+    } else if(state==COOLING_MIN_TIME){
         tft.print(" time left ");
         printed_chars += 5;
         time = MIN_COOL_ON_TIME-sinceIdleTime;
-    }
-
-    else if(state==HEATING_MIN_TIME){
+        printed_chars += printTime(time);
+    } else if(state==HEATING_MIN_TIME){
         tft.print(" time left ");
         printed_chars += 11;
         time = MIN_HEAT_ON_TIME-sinceIdleTime;
-    }
-    else if(state == WAITING_TO_COOL || state == WAITING_TO_HEAT){
+        printed_chars += printTime(time);
+    } else if(state == WAITING_TO_COOL || state == WAITING_TO_HEAT){
         tft.print(" ");
         printed_chars += 1;
         time = tempControl.getWaitTime();
-    }
-    if(time != UINT_MAX){
-        char timeString[10];
-#if DISPLAY_TIME_HMS  // 96 bytes more space required.
-        unsigned int minutes = time/60;
-        unsigned int hours = minutes/60;
-        int stringLength = sprintf_P(timeString, PSTR("%dh%02dm%02d"), hours, minutes%60, time%60);
-        char * printString = timeString;
-        if(!hours){
-            printString = &timeString[2];
-            stringLength = stringLength-2;
-        }
-//        printAt(20-stringLength, 3, printString);
-        tft.print(printString);
-        printed_chars += stringLength;
-
-#else
-        int stringLength = sprintf_P(timeString, STR_FMT_U, (unsigned int)time);
-		printAt(20-stringLength, 3, timeString);
-        tft.print(timeString);
-#endif
+        printed_chars += printTime(time);
     }
 
     // Because of the way we're updating the display, we need to clear out everything to the right of the status
@@ -419,7 +437,7 @@ void LcdDisplay::printWiFiStartup(){
     tft.setCursor(0, 0);
 
     tft.println("Using a phone, laptop, or ");
-    tft.println("other device, connect to ");
+    tft.println("other device connect to ");
     tft.println("the following WiFi network");
     tft.println("to configure this BrewPi");
     tft.println("controller:");
@@ -473,12 +491,6 @@ void LcdDisplay::printEEPROMStartup(){
     tft.println("for new installs.");
     tft.println("");
 
-    tft.print("AP Name: ");
-    tft.println(WIFI_SETUP_AP_NAME);
-
-    tft.print("AP Pass: ");
-    tft.println(WIFI_SETUP_AP_PASS);
-
 }
 
 void LcdDisplay::clear() {
@@ -494,119 +506,168 @@ void LcdDisplay::clearForText(uint8_t start_x, uint8_t start_y, uint16_t color, 
 
 
 
-#define FAKE_DISPLAY_COLS 20
-#define FAKE_DISPLAY_ROWS 4
+/*
+Mode   Beer Const.  
+Beer   52.1  52.0 °F
+Fridge 58.7  44.9 °F
+Cooling for    04m01
+*/
+
+std::string getline_temp_string(temperature temp) {
+    if (temp==INVALID_TEMP) {
+        std::string str(" --.-");
+        return str;
+    }
+
+    char tempString[9];
+    tempToString(tempString, temp, 1 , 9);
+    std::string str(tempString);
+    return str;
+}
 
 void LcdDisplay::getLine(uint8_t lineNumber, char * buffer) {
 
-    std::string line;
+    char line_buf[25];
 
     // Could this be replaced with a switch block? Absolutely. Will I? Nope!
-    if(lineNumber == 0) {
-        line = "Mode  ";
 
-
-    } else if(lineNumber == 1) {
-        line = "Beer  ";
-
-
-    } else if(lineNumber == 2) {
-        line = "Fridge ";
-
-
-
-    } else if(lineNumber == 3) {
-        line = "";
-
-        uint16_t time = UINT16_MAX; // init to max
-        uint8_t state = tempControl.getDisplayState();
-
-
-        switch (state){
-            case IDLE:
-                line = "Idling";
+    switch(lineNumber) {
+        case 0:
+            {
+                std::string line;
+                switch(tempControl.getMode()) {
+                    case Modes::fridgeConstant:
+                        line = "Fridge Const.";
+                        break;
+                    case Modes::beerConstant:
+                        line = "Beer Const.";
+                        break;
+                    case Modes::beerProfile:
+                        line = "Beer Profile";
+                        break;
+                    case Modes::off:
+                        line = "Off";
+                        break;
+                    case Modes::test:
+                        line = "** Testing **";
+                        break;
+                    default:
+                        line = "Invalid Mode";
+                        break;
+                }
+                snprintf(line_buf, 25, "Mode   %s", line.c_str());
                 break;
-            case WAITING_TO_COOL:
-                line = "Wait to cool";
-                break;
-            case WAITING_TO_HEAT:
-                line = "Wait to heat";
-                break;
-            case WAITING_FOR_PEAK_DETECT:
-                line = "Wait for peak";
-                break;
-            case COOLING:
-                line = "Cooling";
-                break;
-            case HEATING:
-                line = "Heating";
-                break;
-            case COOLING_MIN_TIME:
-                line = "Cooling";
-                break;
-            case HEATING_MIN_TIME:
-                line = "Heating";
-                break;
-            case DOOR_OPEN:
-                line = "Door open";
-                break;
-            case STATE_OFF:
-                line = "Temp control OFF";
-                break;
-            default:
-                line = "Unknown status!";
-                break;
-        }
-
-        uint16_t sinceIdleTime = tempControl.timeSinceIdle();
-        if(state==IDLE){
-            line += " for ";
-            time = 	min(tempControl.timeSinceCooling(), tempControl.timeSinceHeating());
-        }
-        else if(state==COOLING || state==HEATING){
-            line += " for ";
-            time = sinceIdleTime;
-        }
-        else if(state==COOLING_MIN_TIME){
-            line += " time left ";
-            time = MIN_COOL_ON_TIME-sinceIdleTime;
-        }
-
-        else if(state==HEATING_MIN_TIME){
-            line += " time left ";
-            time = MIN_HEAT_ON_TIME-sinceIdleTime;
-        }
-        else if(state == WAITING_TO_COOL || state == WAITING_TO_HEAT){
-            line += " ";
-            time = tempControl.getWaitTime();
-        }
-        if(time != UINT_MAX){
-            char timeString[10];
-            unsigned int minutes = time/60;
-            unsigned int hours = minutes/60;
-            int stringLength = sprintf_P(timeString, PSTR("%dh%02dm%02d"), hours, minutes%60, time%60);
-            char * printString = timeString;
-            if(!hours){
-                printString = &timeString[2];
-                stringLength = stringLength-2;
             }
-//        printAt(20-stringLength, 3, printString);
-            line += printString;
-        }
+        case 1:
+            {
+                snprintf(line_buf, 25, "Beer  %s %s °%c", getline_temp_string(tempControl.getBeerTemp()).c_str(), getline_temp_string(tempControl.getBeerSetting()).c_str(), tempControl.cc.tempFormat);
+                break;
+            }
+        case 2:
+            {
+                snprintf(line_buf, 25, "Fridge%s %s °%c", getline_temp_string(tempControl.getFridgeTemp()).c_str(), getline_temp_string(tempControl.getFridgeSetting()).c_str(), tempControl.cc.tempFormat);
+                break;
+            }
+        case 3:
+            {
+                std::string line;
+                line = "";
 
-    } else {
-        line = "Invalid line requested.";
+                uint16_t time = UINT16_MAX; // init to max
+                uint8_t state = tempControl.getDisplayState();
 
+
+                switch (state){
+                    case IDLE:
+                        line = "Idling";
+                        break;
+                    case WAITING_TO_COOL:
+                        line = "Wait to cool";
+                        break;
+                    case WAITING_TO_HEAT:
+                        line = "Wait to heat";
+                        break;
+                    case WAITING_FOR_PEAK_DETECT:
+                        line = "Wait for peak";
+                        break;
+                    case COOLING:
+                        line = "Cooling";
+                        break;
+                    case HEATING:
+                        line = "Heating";
+                        break;
+                    case COOLING_MIN_TIME:
+                        line = "Cooling";
+                        break;
+                    case HEATING_MIN_TIME:
+                        line = "Heating";
+                        break;
+                    case DOOR_OPEN:
+                        line = "Door open";
+                        break;
+                    case STATE_OFF:
+                        line = "Temp control OFF";
+                        break;
+                    default:
+                        line = "Unknown status!";
+                        break;
+                }
+
+                uint16_t sinceIdleTime = tempControl.timeSinceIdle();
+                if(state==IDLE){
+                    line += " for ";
+                    time = 	min(tempControl.timeSinceCooling(), tempControl.timeSinceHeating());
+                }
+                else if(state==COOLING || state==HEATING){
+                    line += " for ";
+                    time = sinceIdleTime;
+                }
+                else if(state==COOLING_MIN_TIME){
+                    line += " time left ";
+                    time = MIN_COOL_ON_TIME-sinceIdleTime;
+                }
+
+                else if(state==HEATING_MIN_TIME){
+                    line += " time left ";
+                    time = MIN_HEAT_ON_TIME-sinceIdleTime;
+                }
+                else if(state == WAITING_TO_COOL || state == WAITING_TO_HEAT){
+                    line += " ";
+                    time = tempControl.getWaitTime();
+                }
+                if(time != UINT_MAX){
+                    char timeString[10];
+                    unsigned int minutes = time/60;
+                    unsigned int hours = minutes/60;
+                    int stringLength = sprintf_P(timeString, PSTR("%dh%02dm%02d"), hours, minutes%60, time%60);
+                    char * printString = timeString;
+                    if(!hours){
+                        printString = &timeString[2];
+                        stringLength = stringLength-2;
+                    }
+        //        printAt(20-stringLength, 3, printString);
+                    line += printString;
+                }
+                // TODO - Convert this to use c strings all the way through
+                snprintf(line_buf, 25, "%s", line.c_str());
+
+                break;
+            }
+
+        default:
+            {
+                snprintf(line_buf, 25, "Invalid line requested.");
+                break;
+            }
     }
 
-    const char* src = line.c_str();;
-    for (uint8_t i = 0; i < FAKE_DISPLAY_COLS; i++) {
+    for (uint8_t i = 0; i <= Config::Lcd::columns; i++) {
         char c = ' ';
-        if(i < line.length())
-            c = src[i];
+        if(i < strlen(line_buf))
+            c = line_buf[i];
         buffer[i] = (c == 0b11011111) ? 0xB0 : c;
     }
-    buffer[FAKE_DISPLAY_COLS] = '\0'; // NULL terminate string
+    buffer[Config::Lcd::columns + 1] = '\0'; // NULL terminate string
 
 
 }

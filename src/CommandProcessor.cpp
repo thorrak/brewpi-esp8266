@@ -308,7 +308,7 @@ void CommandProcessor::toggleBacklight() { ::toggleBacklight = !::toggleBackligh
 void CommandProcessor::getLcdContent() {
   DynamicJsonDocument doc(256);
   JsonArray rootArray = doc.to<JsonArray>();
-  char stringBuffer[Config::Lcd::columns + 1];
+  char stringBuffer[Config::Lcd::columns + 2];
 
   for (uint8_t i = 0; i < Config::Lcd::lines; i++) {
     display.getLine(i, stringBuffer);
