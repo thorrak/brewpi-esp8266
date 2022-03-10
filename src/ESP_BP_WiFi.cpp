@@ -122,9 +122,7 @@ void initialize_wifi() {
     String mdns_id;
     WiFiManager wifiManager;
 
-    Serial.println("prefetching mdns");
     mdns_id = eepromManager.fetchmDNSName();
-    Serial.println("fetched mdns");
 //	if(mdns_id.length()<=0)
 //		mdns_id = "ESP" + String(ESP.getChipId());
 

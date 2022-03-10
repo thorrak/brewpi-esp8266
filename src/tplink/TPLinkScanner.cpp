@@ -53,7 +53,7 @@ void TPLinkScanner::process_udp_incoming() {
         if(incoming_packet.length() <= 0)
             return; // No data returned
 
-        Serial.printf("process_udp_incoming: Received %s from IP address %s\n", incoming_packet.c_str(), udp_ip.toString().c_str());
+        // Serial.printf("process_udp_incoming: Received %s from IP address %s\n", incoming_packet.c_str(), udp_ip.toString().c_str());
 
 
         DynamicJsonDocument json_doc(4096);

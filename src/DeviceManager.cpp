@@ -79,7 +79,7 @@ OneWire DeviceManager::fridgeSensorBus(fridgeSensorPin);
 /**
  * \brief Memory required for a DeviceDefinition JSON document
  */
-constexpr auto deviceDefinitionJsonSize = 256;
+constexpr auto deviceDefinitionJsonSize = 512;
 
 OneWire* DeviceManager::oneWireBus(uint8_t pin) {
 #if !BREWPI_SIMULATE
@@ -320,8 +320,7 @@ void DeviceManager::installDevice(DeviceConfig& config)
 			if (isBasicSensor(config.deviceFunction)) {
 				s->init();
 				*ppv = s;
-			}
-			else {
+			} else {
 				ts = ((TempSensor*)*ppv);
 				ts->setSensor(s);
 				ts->init();
@@ -416,7 +415,7 @@ void DeviceManager::readJsonIntoDeviceDef(DeviceDefinition& dev) {
   if(!function.isNull())
     dev.deviceFunction = function.as<uint8_t>();
 
-
+	dev.deactivate = false;  // TODO - Actually check if deactivate is set
 
   JsonVariant pin = doc[DeviceDefinitionKeys::pin];
   if(!pin.isNull())
@@ -466,8 +465,9 @@ void assignIfSet(int8_t value, uint8_t* target) {
  */
 void DeviceManager::parseDeviceDefinition()
 {
-	static DeviceDefinition dev;
-	fill((int8_t*)&dev, sizeof(dev));
+	// static DeviceDefinition dev;
+	// fill((int8_t*)&dev, sizeof(dev));
+	DeviceDefinition dev;
 
 	readJsonIntoDeviceDef(dev);
 
@@ -556,7 +556,7 @@ void DeviceManager::parseDeviceDefinition()
 	}
 
   StaticJsonDocument<deviceDefinitionJsonSize> doc;
-  serializeJsonDevice(doc, dev.id, *print, nullptr);
+  serializeJsonDevice(doc, dev.id, *print, "");
   piLink.sendSingleItemJsonMessage('U', doc);
 }
 
@@ -694,6 +694,8 @@ void DeviceManager::serializeJsonDevice(JsonDocument& doc, device_slot_t slot, D
 
   if(strlen(value) > 0)
   	deviceObj[DeviceDefinitionKeys::value] = value;  // NOTE - value must be char*, not const char* or ArduinoJson will not copy the value - just link it
+
+	deviceObj[DeviceDefinitionKeys::index] = slot;
 
   doc.add(deviceObj);
   return;
