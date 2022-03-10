@@ -69,6 +69,31 @@ TiltColor tilt::uuid_to_color_no(std::string uuid)
     return TiltColor::TILT_COLOR_NONE;  // Should never get here
 }
 
+std:: string tilt::get_color_string() {
+
+    switch(color) {
+        case TiltColor::TILT_COLOR_RED:
+            return TiltColorNames::red;
+        case TiltColor::TILT_COLOR_GREEN:
+            return TiltColorNames::green;
+        case TiltColor::TILT_COLOR_BLACK:
+            return TiltColorNames::black;
+        case TiltColor::TILT_COLOR_PURPLE:
+            return TiltColorNames::purple;
+        case TiltColor::TILT_COLOR_ORANGE:
+            return TiltColorNames::orange;
+        case TiltColor::TILT_COLOR_BLUE:
+            return TiltColorNames::red;
+        case TiltColor::TILT_COLOR_YELLOW:
+            return TiltColorNames::yellow;
+        case TiltColor::TILT_COLOR_PINK:
+            return TiltColorNames::pink;
+        default:
+            return TiltColorNames::none;
+    }
+}
+
+
 long_temperature tilt::getTempFixedPoint() {
 	long_temperature fracPart = 0;
 

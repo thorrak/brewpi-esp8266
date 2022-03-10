@@ -6,6 +6,7 @@
 
 #ifdef HAS_BLUETOOTH
 #include <NimBLEDevice.h>
+#include "wireless/BTScanner.h"
 #endif
 
 #ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
@@ -33,6 +34,15 @@ DynamicJsonDocument DeviceConfig::toJson() {
 #ifdef HAS_BLUETOOTH
     else if(deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD || deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT) {
         doc[DeviceDefinitionKeys::address] = hw.btAddress.toString();
+        if(deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT) {
+            tilt *th = bt_scanner.get_tilt(hw.btAddress);
+            if(th != nullptr) {
+                // ArduinoJson attempts to deduplicate strings - we explicitly do not want that here
+                char color[20];
+                strcpy(color, th->get_color_string().c_str());
+                doc[DeviceDefinitionKeys::alias] = color;
+            }
+        }
     }
 #endif
 
@@ -77,7 +87,7 @@ void DeviceConfig::fromJson(DynamicJsonDocument json_doc) {
 
     if(json_doc[DeviceDefinitionKeys::pin].is<uint8_t>()) hw.pinNr = json_doc[DeviceDefinitionKeys::pin];
     if(json_doc[DeviceDefinitionKeys::invert].is<bool>()) hw.invert = json_doc[DeviceDefinitionKeys::invert];
-    if(json_doc[DeviceDefinitionKeys::deactivated].is<bool>()) hw.deactivate = json_doc[DeviceDefinitionKeys::deactivated];
+   if(json_doc[DeviceDefinitionKeys::deactivated].is<bool>()) hw.deactivate = json_doc[DeviceDefinitionKeys::deactivated];
 
 
     if(deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP && json_doc[DeviceDefinitionKeys::address].is<JsonArray>()) {

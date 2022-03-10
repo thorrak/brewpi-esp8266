@@ -38,6 +38,23 @@ enum TiltColor {
 };
 
 
+/**
+ * \brief Tilt Color Names
+ * \see TiltColor
+ */
+namespace TiltColorNames {
+    constexpr auto none = "None";
+    constexpr auto red = "Red";
+    constexpr auto green = "Green";
+    constexpr auto black = "Black";
+    constexpr auto purple = "Purple";
+    constexpr auto orange = "Orange";
+    constexpr auto blue = "Blue";
+    constexpr auto yellow = "Yellow";
+    constexpr auto pink = "Pink";
+};
+
+
 #define TILT_CONNECTED_TIMEOUT       (30 * 1000)     // Time before the sensor is considered "disconnected" (in ms)
 
 class tilt
@@ -57,6 +74,9 @@ public:
 
 
     void update(TiltColor color_index, uint16_t temp, uint16_t grav, uint8_t i_tx_pwr, int16_t rssi);
+
+    std::string get_color_string();
+
 
     uint16_t getTemp();
     uint16_t getGravity();

@@ -111,7 +111,7 @@ void load_tilt_from_advert(NimBLEAdvertisedDevice* advertisedDevice)
     uint16_t gravity = std::strtoul(grav_arr, nullptr, 16);
     uint8_t tx_pwr = std::strtoul(tx_pwr_arr, nullptr, 16);
 
-    // Log.verbose(F("Detected Tilt: Temp: %d, Hum: %d, Bat: %d\r\n"), temp, hum, bat);
+    //Serial.printf("Detected Tilt: Temp: %d, Grav: %d\r\n", temp, gravity);
 
 
     // Locate & update the tilt object in the list
