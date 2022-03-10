@@ -87,7 +87,8 @@ void DeviceConfig::fromJson(DynamicJsonDocument json_doc) {
 
     if(json_doc[DeviceDefinitionKeys::pin].is<uint8_t>()) hw.pinNr = json_doc[DeviceDefinitionKeys::pin];
     if(json_doc[DeviceDefinitionKeys::invert].is<bool>()) hw.invert = json_doc[DeviceDefinitionKeys::invert];
-   if(json_doc[DeviceDefinitionKeys::deactivated].is<bool>()) hw.deactivate = json_doc[DeviceDefinitionKeys::deactivated];
+//    if(json_doc[DeviceDefinitionKeys::deactivated].is<bool>()) hw.deactivate = json_doc[DeviceDefinitionKeys::deactivated];
+    hw.deactivate = false;
 
 
     if(deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP && json_doc[DeviceDefinitionKeys::address].is<JsonArray>()) {
