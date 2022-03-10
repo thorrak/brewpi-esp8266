@@ -46,8 +46,8 @@ void TPLinkScanner::process_udp_incoming() {
     IPAddress udp_ip;
     std::string incoming_packet;
 
-    uint64_t scan_until = xTaskGetTickCount() + (5 * 1000); // Read replies for 5 seconds at most 
-    while(xTaskGetTickCount() < scan_until) {
+    uint64_t scan_until = millis() + (5 * 1000); // Read replies for 5 seconds at most 
+    while(millis() < scan_until) {
         incoming_packet = tplink_connector.receive_udp(&udp_ip);
 
         if(incoming_packet.length() <= 0)

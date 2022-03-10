@@ -510,7 +510,11 @@ void DeviceManager::parseDeviceDefinition()
 #error The above/following code may no longer work for 2413 sensors. Check on this if this is enabled!
 #endif
 	// The following may no longer work for 2413 sensors
-	if (dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD || dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT || dev.deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP)
+	if (dev.deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP
+#ifdef HAS_BLUETOOTH
+		|| dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD || dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT 
+#endif
+		)
 		target.hw.calibration = dev.calibrationAdjust;
 
 	target.hw.invert = (bool) dev.invert;
@@ -690,15 +694,15 @@ inline bool hasOnewire(DeviceHardware hw)
  * Used for outputting device information
  */
 void DeviceManager::serializeJsonDevice(JsonDocument& doc, device_slot_t slot, DeviceConfig& config, char* value) {
-  DynamicJsonDocument deviceObj = config.toJson();
+	DynamicJsonDocument deviceObj = config.toJson();
 
-  if(strlen(value) > 0)
-  	deviceObj[DeviceDefinitionKeys::value] = value;  // NOTE - value must be char*, not const char* or ArduinoJson will not copy the value - just link it
+	if(strlen(value) > 0)
+		deviceObj[DeviceDefinitionKeys::value] = value;  // NOTE - value must be char*, not const char* or ArduinoJson will not copy the value - just link it
 
 	deviceObj[DeviceDefinitionKeys::index] = slot;
 
-  doc.add(deviceObj);
-  return;
+	doc.add(deviceObj);
+	return;
 }
 
 

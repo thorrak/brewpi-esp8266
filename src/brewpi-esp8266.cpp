@@ -65,6 +65,8 @@ DisplayType realDisplay;
 DisplayType DISPLAY_REF display = realDisplay;
 
 ValueActuator alarm_actuator;
+
+#ifdef ESP32
 void printMem() {
     char buf[256];
     const uint32_t free = ESP.getFreeHeap();
@@ -74,6 +76,7 @@ void printMem() {
     // PiLink.print(F(), free, max, frag);
     piLink.print(buf);
 }
+#endif
 
 /**
  * \brief Restart the board
@@ -103,8 +106,12 @@ void setup()
     display.printEEPROMStartup();
 
     // Before anything else, let's get the filesystem working. We need to start it up, and then test if the file system
-    // wasformatted.
+    // was formatted.
+  #ifdef ESP32
     FILESYSTEM.begin(true);
+  #else
+    FILESYSTEM.begin();
+  #endif
 
     initialize_wifi();
 

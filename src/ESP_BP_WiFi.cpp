@@ -91,6 +91,7 @@ void mdns_reset() {
 }
 
 void mdns_check() {
+#if defined(ESP32)
     char mdns_hostname[40];
     snprintf(mdns_hostname, 40, "%s.local", eepromManager.fetchmDNSName().c_str());
     if(!MDNS.queryHost(mdns_hostname, 2000)) {
@@ -106,6 +107,7 @@ void mdns_check() {
         log_e("Lost mDNS Service - resetting");
         mdns_reset();
     }
+#endif
 }
 
 #if defined(ESP8266)

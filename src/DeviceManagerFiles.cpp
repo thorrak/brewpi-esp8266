@@ -56,7 +56,11 @@ DynamicJsonDocument DeviceConfig::toJson() {
     }
 #endif
 
-	if (deviceHardware==DEVICE_HARDWARE_ONEWIRE_TEMP || deviceHardware==DEVICE_HARDWARE_BLUETOOTH_INKBIRD || deviceHardware==DEVICE_HARDWARE_BLUETOOTH_TILT) {
+	if (deviceHardware==DEVICE_HARDWARE_ONEWIRE_TEMP 
+#ifdef HAS_BLUETOOTH
+        || deviceHardware==DEVICE_HARDWARE_BLUETOOTH_INKBIRD || deviceHardware==DEVICE_HARDWARE_BLUETOOTH_TILT
+#endif
+        ) {
 		char buf[17];
         constexpr auto calibrationOffsetPrecision = 4;
 		tempDiffToString(buf, temperature(hw.calibration)<<(TEMP_FIXED_POINT_BITS - calibrationOffsetPrecision), 3, 8);

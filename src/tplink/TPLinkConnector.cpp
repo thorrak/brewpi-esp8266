@@ -2,7 +2,11 @@
 #include "TPLinkPlug.h"
 
 #include <Arduino.h>
+#if defined(ESP8266)
+#include <ESP8266WiFi.h>
+#elif defined(ESP32)
 #include <WiFi.h>
+#endif
 #include <WiFiUdp.h>
 
 
@@ -45,13 +49,19 @@ int hex_value(char hex_digit)
         case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
             return hex_digit - 'a' + 10;
     }
+#ifdef ESP32
     throw std::invalid_argument("invalid hex digit");
+#else 
+    return 0;
+#endif
 }
 
 std::string hex_to_string(const std::string& input)
 {
     const auto len = input.length();
+#ifdef ESP32
     if (len & 1) throw std::invalid_argument("odd length");
+#endif
 
     std::string output;
     output.reserve(len / 2);
@@ -144,7 +154,12 @@ void TPLinkConnector::discover() {
 }
 
 void TPLinkConnector::init_udp() {
+#ifdef ESP32
     udp.begin(WiFi.localIP(), UDP_TPLINK_PORT);
+#elif defined(ESP8266)
+    udp.begin(UDP_TPLINK_PORT);
+#endif
+
 }
 
 std::string TPLinkConnector::receive_udp() {
