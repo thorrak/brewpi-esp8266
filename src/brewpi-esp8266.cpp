@@ -94,6 +94,10 @@ void handleReset()
  */
 void setup()
 {
+#ifdef ESP8266_WiFi
+    Serial.begin(Config::PiLink::serialSpeed);
+#endif
+
     // Let's get the display going so that we can provide the user a bit of feedback on what's happening
     display.init();
     display.printEEPROMStartup();
