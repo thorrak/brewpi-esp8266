@@ -49,7 +49,7 @@
  */
 #if defined(ESP8266_WiFi)
 // Just use the serverClient object as it supports all the same functions as Serial
-extern WiFiClient serverClient;
+// extern WiFiClient serverClient;
 PiLink<WiFiClient> piLink(serverClient);
 #else
 // Not using ESP8266 WiFi
@@ -135,7 +135,7 @@ void setup()
 #ifdef HAS_BLUETOOTH
     bt_scanner.init();
     bt_scanner.scan();
-    DisplayType::printBluetoothStartup();  // Alert the user as to the startup delay
+    DisplayType::printBluetoothStartup();  // Alert the user about the startup delay
     delay(10000);
 #endif
 

@@ -636,27 +636,6 @@ bool DeviceManager::isDeviceValid(DeviceConfig& config, DeviceConfig& original, 
 	return true;
 }
 
-void printAttrib(Print& p, char c, int8_t val, bool first=false)
-{
-	if (!first)
-        	p.print(',');
-
-	char tempString[32]; // resulting string limited to 128 chars
-	sprintf_P(tempString, PSTR("\"%c\":%d"), c, val);
-	p.print(tempString);
-}
-
-// I really want to buffer stuff rather than printing directly to the serial stream
-void appendAttrib(String& str, char c, int8_t val, bool first = false)
-{
-	if (!first)
-		str += ",";
-
-	char tempString[32]; // resulting string limited to 128 chars
-	sprintf_P(tempString, PSTR("\"%c\":%d"), c, val);
-	str += tempString;
-}
-
 
 /**
  * Check if DeviceHardware definition is for a device which is "invertable"
@@ -1046,9 +1025,9 @@ void DeviceManager::enumerateHardware(JsonDocument& doc)
   // Initialize the document as an array
   doc.to<JsonArray>();
 
-	if (spec.hardware==-1 || isOneWire(DeviceHardware(spec.hardware))) {
-		enumerateOneWireDevices(spec, outputEnumeratedDevices, out, &doc);
-	}
+	// if (spec.hardware==-1 || isOneWire(DeviceHardware(spec.hardware))) {
+	// 	enumerateOneWireDevices(spec, outputEnumeratedDevices, out, &doc);
+	// }
 	if (spec.hardware==-1 || isDigitalPin(DeviceHardware(spec.hardware))) {
 		enumeratePinDevices(spec, outputEnumeratedDevices, out, &doc);
 	}
