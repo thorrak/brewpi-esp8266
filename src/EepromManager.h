@@ -52,8 +52,6 @@ public:
 	 * Applies the settings from the eeprom
 	 */
 	static bool applySettings();
-		
-	static void dumpEeprom(Print& stream, uint16_t offset);
 
 	/**
 	 * Save the chamber constants and beer settings to eeprom for the currently active chamber.
