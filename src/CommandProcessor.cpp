@@ -29,6 +29,7 @@
 #include "TempControl.h"
 #include "Version.h"
 #include <ArduinoJson.h>
+#include "JsonKeys.h"
 
 #if defined(ESP8266)
 #include <ESP8266WiFi.h>
@@ -344,16 +345,16 @@ void CommandProcessor::printRawTemperatures() {
  * \see EepromManager::initializeEeprom()
  */
 void CommandProcessor::initEeprom() {
-	// StaticJsonDocument<128> doc;
-	// piLink.receiveJsonMessage(doc);
+	StaticJsonDocument<128> doc;
+	piLink.receiveJsonMessage(doc);
 
 	// Due to the "scanning" issue, we now need to test that there is an
 	// additional key being appended to the initializeEeprom command
-	// if(!doc.containsKey(ExtendedSettingsKeys::eepromReset) || 
-	//    !doc[ExtendedSettingsKeys::eepromReset].is<bool>() || !doc[ExtendedSettingsKeys::eepromReset].as<bool>()) {
-	// 	logError(INFO_UNCONFIRMED_EEPROM_RESET);
-	// 	return;
-	// }
+	if(!doc.containsKey(ExtendedSettingsKeys::eepromReset) || 
+	   !doc[ExtendedSettingsKeys::eepromReset].is<bool>() || !doc[ExtendedSettingsKeys::eepromReset].as<bool>()) {
+		logError(INFO_UNCONFIRMED_EEPROM_RESET);
+		return;
+	}
 
   if(eepromManager.initializeEeprom()) {
     logInfo(INFO_EEPROM_INITIALIZED);
