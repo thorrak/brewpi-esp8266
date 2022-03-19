@@ -407,6 +407,25 @@ void LcdDisplay::printWiFi(){
 
 	lcd.updateBacklight();
 }
+
+void LcdDisplay::printWiFiConnect(){
+	toggleBacklight = false;  // Assuming we need this
+
+	lcd.setCursor(0,0);
+	// Factoring prints out of switch has negative effect on code size in this function
+	lcd.print("Connecting to WiFi");
+	lcd.printSpacesToRestOfLine();
+
+	lcd.setCursor(0,1);
+	lcd.print("Please wait up to");
+	lcd.printSpacesToRestOfLine();
+
+	lcd.setCursor(0,2);
+	lcd.print("60 seconds.");
+	lcd.printSpacesToRestOfLine();
+
+	lcd.updateBacklight();
+}
 #endif
 
 #ifdef HAS_BLUETOOTH

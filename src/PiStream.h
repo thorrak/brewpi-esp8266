@@ -149,8 +149,14 @@ public:
    * Flushes the buffer, if buffering was enabled.
    */
   void printNewLine() {
-    stream.println();
-    // stream.flush();
+
+    if(Config::PiLink::bufferPrints) {
+      stream.println();
+      stream.flush();  // This currently causes a crash on ESP32, and is not required if bufferPrints is disabled
+    } else {
+      stream.println();
+    }
+
   };
 
   /**
@@ -281,7 +287,8 @@ private:
    *
    * This may be tricky to combine with the write buffering, that's why I haven't done it yet.
    */
-  WriteBufferingStream stream;
+  // WriteBufferingStream stream;
+  WriteBufferingClient stream;
 
   /**
    * \brief _bool implementation for non WiFiClient Streams

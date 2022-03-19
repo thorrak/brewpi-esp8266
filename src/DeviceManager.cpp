@@ -1025,9 +1025,9 @@ void DeviceManager::enumerateHardware(JsonDocument& doc)
   // Initialize the document as an array
   doc.to<JsonArray>();
 
-	// if (spec.hardware==-1 || isOneWire(DeviceHardware(spec.hardware))) {
-	// 	enumerateOneWireDevices(spec, outputEnumeratedDevices, out, &doc);
-	// }
+	if (spec.hardware==-1 || isOneWire(DeviceHardware(spec.hardware))) {
+		enumerateOneWireDevices(spec, outputEnumeratedDevices, out, &doc);
+	}
 	if (spec.hardware==-1 || isDigitalPin(DeviceHardware(spec.hardware))) {
 		enumeratePinDevices(spec, outputEnumeratedDevices, out, &doc);
 	}

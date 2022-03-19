@@ -150,6 +150,7 @@ class LcdDisplay DISPLAY_SUPERCLASS
 #ifdef ESP8266_WiFi
         DISPLAY_METHOD void printWiFi();
         DISPLAY_METHOD void printWiFiStartup();
+	DISPLAY_METHOD void printWiFiConnect();
 #endif
 
 #ifdef HAS_BLUETOOTH

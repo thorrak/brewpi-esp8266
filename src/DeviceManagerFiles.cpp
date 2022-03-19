@@ -29,7 +29,13 @@ DynamicJsonDocument DeviceConfig::toJson() {
     doc[DeviceDefinitionKeys::deactivated] = hw.deactivate;
 
     if(deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP) {
-        copyArray(hw.address, doc[DeviceDefinitionKeys::address]);
+        // copyArray doesn't work here since we don't want a JSON array, we want a string
+        // If we ever want to switch to outputting an array, we can do so (but we need to ensure backwards
+        // compatibility in brewpi-script)
+        // copyArray(hw.address, doc[DeviceDefinitionKeys::address]);
+        char buf[17];
+        printBytes(hw.address, 8, buf);
+        doc[DeviceDefinitionKeys::address] = buf;
     }
 #ifdef HAS_BLUETOOTH
     else if(deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD || deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT) {
@@ -98,6 +104,11 @@ void DeviceConfig::fromJson(DynamicJsonDocument json_doc) {
     if(deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP && json_doc[DeviceDefinitionKeys::address].is<JsonArray>()) {
         // piLink.print("Loading using native address (JsonArray)");
         // piLink.printNewLine();
+        copyArray(json_doc[DeviceDefinitionKeys::address], hw.address);
+    } else if(deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP && json_doc[DeviceDefinitionKeys::address].is<const char *>()) {
+        // piLink.print("Loading using string address");
+        // piLink.printNewLine();
+        parseBytes(hw.address, json_doc[DeviceDefinitionKeys::address].as<const char *>(), 8);
         copyArray(json_doc[DeviceDefinitionKeys::address], hw.address);
 #ifdef HAS_BLUETOOTH
     } else if(json_doc[DeviceDefinitionKeys::address].is<std::string>() && (deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD || deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT)) {

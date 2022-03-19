@@ -49,17 +49,6 @@ bool EepromManager::hasSettings()
 
 bool EepromManager::initializeEeprom()
 {
-	StaticJsonDocument<128> doc;
-	piLink.receiveJsonMessage(doc);
-
-	// Due to the "scanning" issue, we now need to test that there is an
-	// additional key being appended to the initializeEeprom command
-	if(!doc.containsKey(ExtendedSettingsKeys::eepromReset) || 
-	   !doc[ExtendedSettingsKeys::eepromReset].is<bool>() || !doc[ExtendedSettingsKeys::eepromReset].as<bool>()) {
-		logError(INFO_UNCONFIRMED_EEPROM_RESET);
-		return false;
-	}
-
 	// clear all eeprom
     eepromAccess.zapData();
 
@@ -182,7 +171,7 @@ String EepromManager::fetchmDNSName()
     char ssid[15]; //Create a Unique AP from MAC address
     uint64_t chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
     uint16_t chip = (uint16_t)(chipid>>32);
-    snprintf(ssid,15,"ESP%04X",chip);
+    snprintf(ssid,15,"%04X",chip);
 
     mdns_id = "ESP" + (String) ssid;
 #else

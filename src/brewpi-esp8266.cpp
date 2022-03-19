@@ -1,6 +1,8 @@
 
 #ifdef ESP8266
-#include <LittleFS.h>  // Apparently this needs to be first
+#include <FS.h>  // Apparently this needs to be first
+#include <LittleFS.h>
+#include <ESP8266mDNS.h>
 #elif defined(ESP32)
 #include <FS.h>  // Apparently this needs to be first
 #endif
@@ -233,6 +235,10 @@ void brewpiLoop()
 
 #ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
   tp_link_scanner.scan_and_refresh();
+#endif
+
+#ifdef ESP8266
+  MDNS.update();
 #endif
 
 }
