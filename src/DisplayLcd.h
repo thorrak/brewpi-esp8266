@@ -124,6 +124,7 @@ class LcdDisplay DISPLAY_SUPERCLASS
 	DISPLAY_METHOD void printWiFiStartup();
 	DISPLAY_METHOD void printWiFi();
 	DISPLAY_METHOD void printWiFi_setup();
+	DISPLAY_METHOD void printWiFiConnect();
 #endif
 
 #ifdef HAS_BLUETOOTH

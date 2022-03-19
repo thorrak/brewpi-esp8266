@@ -1,7 +1,3 @@
-//
-// Created by John Beeler on 1/12/20.
-//
-
 #include "ESP_BP_WiFi.h"
 
 #ifdef ESP8266_WiFi
@@ -12,7 +8,6 @@
 #if defined(ESP8266)
 #include <ESP8266mDNS.h>
 #include <DNSServer.h>			//Local DNS Server used for redirecting all requests to the configuration portal
-#include <ESP8266WebServer.h>	//Local WebServer used to serve the configuration portal
 #include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 #elif defined(ESP32)
 #include <ESPmDNS.h>
@@ -52,11 +47,6 @@ void apCallback(WiFiManager *myWiFiManager) {
 }
 
 
-void initWifiServer() {
-  server.begin();
-  server.setNoDelay(true);
-}
-
 // Not sure if this is sufficient to test for validity
 bool isValidmDNSName(const String& mdns_name) {
 //    for (std::string::size_type i = 0; i < mdns_name.length(); ++i) {
@@ -68,46 +58,33 @@ bool isValidmDNSName(const String& mdns_name) {
     return true;
 }
 
+const char * mdns_servicename = "brewpi";
 
 void mdns_reset() {
     String mdns_id;
     mdns_id = eepromManager.fetchmDNSName();
 
-    MDNS.end();
+    MDNS.end();  // TODO - Determine if we still need to do this, given the addition of mDNS.update() to the loop
 
     if (MDNS.begin(mdns_id.c_str())) {
         // mDNS will stop responding after awhile unless we query the specific service we want
-        MDNS.addService("brewpi", "tcp", 23);
-        MDNS.addServiceTxt("brewpi", "tcp", "board", CONTROLLER_TYPE);
-        MDNS.addServiceTxt("brewpi", "tcp", "branch", "legacy");
-        MDNS.addServiceTxt("brewpi", "tcp", "version", Config::Version::release);
-        MDNS.addServiceTxt("brewpi", "tcp", "revision", FIRMWARE_REVISION);
+        MDNS.addService(mdns_servicename, "tcp", 23);
+        MDNS.addServiceTxt(mdns_servicename, "tcp", "board", CONTROLLER_TYPE);
+        MDNS.addServiceTxt(mdns_servicename, "tcp", "branch", "legacy");
+        MDNS.addServiceTxt(mdns_servicename, "tcp", "version", Config::Version::release);
+        MDNS.addServiceTxt(mdns_servicename, "tcp", "revision", FIRMWARE_REVISION);
 
-        if(Config::Prometheus::enable())
-          MDNS.addService("brewpi_metrics", "tcp", Config::Prometheus::port);
+        // if(Config::Prometheus::enable())
+        //   MDNS.addService("brewpi_metrics", "tcp", Config::Prometheus::port);
     } else {
-        //Log.error(F("Error resetting MDNS responder."));
+        // Serial.println("Error resetting mDNS responder.");
     }
 }
 
-void mdns_check() {
-#if defined(ESP32)
-    char mdns_hostname[40];
-    snprintf(mdns_hostname, 40, "%s.local", eepromManager.fetchmDNSName().c_str());
-    if(!MDNS.queryHost(mdns_hostname, 2000)) {
-        log_e("Lost mDNS Host - resetting");
-        mdns_reset();
-        return;
-    }
-
-    // As long as we can query the host, also check that something responds with the service we want
-    MDNSResponder mdQuery;
-    // int has_svc = mdQuery.queryService("brewpi", "tcp");
-    if(mdQuery.queryService("brewpi", "tcp") == 0) {
-        log_e("Lost mDNS Service - resetting");
-        mdns_reset();
-    }
-#endif
+void initWifiServer() {
+  server.begin();
+  server.setNoDelay(true);
+    mdns_reset();
 }
 
 #if defined(ESP8266)
@@ -124,16 +101,33 @@ void initialize_wifi() {
     String mdns_id;
     WiFiManager wifiManager;
 
+    display.clear();
+    display.printWiFiConnect();  // TODO - Check if we have saved credentials before displaying this
+
     mdns_id = eepromManager.fetchmDNSName();
-//	if(mdns_id.length()<=0)
-//		mdns_id = "ESP" + String(ESP.getChipId());
 
+    WiFi.mode(WIFI_STA);        // explicitly set mode, esp defaults to STA+AP
 
-//    wifiManager.setHostname(config.mdnsID);  // Allow DHCP to get proper name
+#ifdef ESP8266
+    WiFi.setOutputPower(20.5);  // Max transmit power
+#endif
+
+    wifiManager.setHostname(mdns_id);        // Allow DHCP to get proper name
     wifiManager.setWiFiAutoReconnect(true);  // Enable auto reconnect (should remove need for reconnectWiFi())
     wifiManager.setWiFiAPChannel(1);         // Pick the most common channel, safe for all countries
-    wifiManager.setCleanConnect(true);       // Always disconnect before connecting
-    wifiManager.setCountry("US");            // US country code is most restrictive, use for all countries
+    // Not sure if wm.SetCleanConnect breaks the hack we have below for the race condition - no reason to test it.
+    // wifiManager.setCleanConnect(true);       // Always disconnect before connecting
+    // wm.setCountry is causing crashes under Arduino Core 2.0, apparently
+    // wifiManager.setCountry("US");            // US country code is most restrictive, use for all countries
+
+
+    // There is a race condition on some routers when processing the deauthorization that the ESP attempts as it
+    // connects. This can result in it seeming like every other connection attempt works, or only connection
+    // attempts after a hard reset. One way around this bug is to just reattempt connection multiple times until
+    // it takes. 
+    wifiManager.setConnectTimeout(10);
+    // sets number of retries for autoconnect, force retry after wait failure exit
+    wifiManager.setConnectRetries(4); // default 1
 
     // If we're going to set up WiFi, let's get to it
     wifiManager.setConfigPortalTimeout(5*60); // Time out after 5 minutes so that we can keep managing temps
@@ -146,7 +140,6 @@ void initialize_wifi() {
     // It's nice, but it means the user gets no actual prompt for what they're entering.
     WiFiManagerParameter custom_mdns_name("mdns", "Device (mDNS) Name", mdns_id.c_str(), 20);
     wifiManager.addParameter(&custom_mdns_name);
-
 
     if(wifiManager.autoConnect(WIFI_SETUP_AP_NAME, WIFI_SETUP_AP_PASS)) {
         // If we succeeded at connecting, switch to station mode.
@@ -164,18 +157,15 @@ void initialize_wifi() {
     if (shouldSaveConfig) {
         // If the mDNS name is valid, save it.
         if (isValidmDNSName(custom_mdns_name.getValue())) {
+            // TODO - Set hostname here again (in case it changed)
             eepromManager.savemDNSName(custom_mdns_name.getValue());
         } else {
-            // If the mDNS name is invalid, reset the WiFi configuration and restart the ESP8266
+            // If the mDNS name is invalid, reset the WiFi configuration and restart the device
             WiFi.disconnect(true);
             delay(2000);
             handleReset();
         }
     }
-
-    // Regardless of the above, we need to set the mDNS name and announce it
-    mdns_reset();
-
     // This will trigger autoreconnection, but will not connect if we aren't connected at this point (e.g. if the AP is
     // not yet broadcasting)
     WiFi.setAutoReconnect(true);
@@ -227,9 +217,10 @@ void wifi_connect_clients() {
             // but on the ESP32, this means that we'll have to wait an additional 3 minutes for mdns to come back up
             WiFi.reconnect();
         } else {
-            // Commenting these out for now as there is a memory leak caused by this
-            // mdns_reset();
-            // mdns_check();
+            // #defining this out for now as there is a memory leak caused by this
+#ifdef ESP32
+            mdns_reset();  // TODO - Add this to the WiFi.reconnect() process
+#endif
         }
     }
     yield();

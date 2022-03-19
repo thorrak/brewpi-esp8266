@@ -404,8 +404,6 @@ void LcdDisplay::printState(){
 
 #ifdef ESP8266_WiFi
 void LcdDisplay::printWiFi(){
-    toggleBacklight = false;  // Assuming we need this
-
     clear();
 
     tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
@@ -422,13 +420,9 @@ void LcdDisplay::printWiFi(){
     tft.println("IP Address: ");
 
     tft.println(WiFi.localIP());
-
-//    lcd.updateBacklight();
 }
 
 void LcdDisplay::printWiFiStartup(){
-    toggleBacklight = false;  // Assuming we need this
-
     clear();
 
     tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
@@ -448,10 +442,21 @@ void LcdDisplay::printWiFiStartup(){
 
     tft.print("AP Pass: ");
     tft.println(WIFI_SETUP_AP_PASS);
-
-
-//    tft.updateBacklight();
 }
+
+void LcdDisplay::printWiFiConnect(){
+    clear();
+
+    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft.setTextSize(WIFI_FONT_SIZE);
+
+    tft.setCursor(0, 0);
+
+    tft.println("Attempting to connect to ");
+    tft.println("WiFi. This may take up to ");
+    tft.println("one minute.");
+}
+
 #endif
 
 #ifdef HAS_BLUETOOTH

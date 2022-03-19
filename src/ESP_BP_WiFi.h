@@ -1,6 +1,3 @@
-//
-// Created by John Beeler on 1/12/20.
-//
 #pragma once
 #include <ArduinoJson.h>
 
