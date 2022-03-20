@@ -511,7 +511,7 @@ void TempControl::increaseEstimator(temperature * estimator, temperature error){
 	if(*estimator < 25){
 		*estimator = intToTempDiff(5)/100; // make estimator at least 0.05
 	}
-	eepromManager.storeTempSettings();
+	TempControl::storeSettings();
 }
 
 /**
@@ -522,7 +522,7 @@ void TempControl::increaseEstimator(temperature * estimator, temperature error){
 void TempControl::decreaseEstimator(temperature * estimator, temperature error){
 	temperature factor = 426 - constrainTemp((temperature) abs(error)>>5, 0, 85); // 0.833 - 3.1% of error, limit between 0.667 and 0.833
 	*estimator = multiplyFactorTemperatureDiff(factor, *estimator);
-	eepromManager.storeTempSettings();
+	TempControl::storeSettings();
 }
 
 /**
@@ -640,7 +640,7 @@ void TempControl::setMode(char newMode, bool force){
 			cs.beerSetting = INVALID_TEMP;
 			cs.fridgeSetting = INVALID_TEMP;
 		}
-		eepromManager.storeTempSettings();
+		TempControl::storeSettings();
 	}
 }
 
@@ -702,7 +702,7 @@ void TempControl::setBeerTemp(temperature newTemp){
 		// Do not store settings every time in profile mode, because EEPROM has limited number of write cycles.
 		// A temperature ramp would cause a lot of writes
 		// If Raspberry Pi is connected, it will update the settings anyway. This is just a safety feature.
-		eepromManager.storeTempSettings();
+		TempControl::storeSettings();
 	}
 }
 
@@ -716,7 +716,7 @@ void TempControl::setFridgeTemp(temperature newTemp){
 	reset(); // reset peak detection and PID
 	updatePID();
 	updateState();
-	eepromManager.storeTempSettings();
+	TempControl::storeSettings();
 }
 
 /**
