@@ -110,20 +110,6 @@ bool EepromManager::applySettings()
 	return true;
 }
 
-void EepromManager::storeTempConstantsAndSettings()
-{
-	// TODO - Refactor out storeTempConstantsAndSettings()
-	TempControl::storeConstants();
-	storeTempSettings();
-}
-
-void EepromManager::storeTempSettings()
-{
-	// TODO - Refactor out storeTempSettings()
-	// for now assume just one beer.
-	TempControl::storeSettings();
-}
-
 DeviceConfig EepromManager::fetchDevice(uint8_t deviceIndex)
 {
 	DeviceConfig config;

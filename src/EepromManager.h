@@ -53,16 +53,6 @@ public:
 	 */
 	static bool applySettings();
 
-	/**
-	 * Save the chamber constants and beer settings to eeprom for the currently active chamber.
-	 */
-	static void storeTempConstantsAndSettings();
-
-	/**
-	 * Save just the beer temp settings.
-	 */
-	static void storeTempSettings();
-
 	static DeviceConfig fetchDevice(uint8_t deviceIndex);
 	static bool storeDevice(DeviceConfig& config, uint8_t deviceIndex);
 	

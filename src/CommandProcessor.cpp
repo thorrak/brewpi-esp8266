@@ -385,7 +385,8 @@ void CommandProcessor::processSettingsJson() {
   }
 
   // Save the settings
-  eepromManager.storeTempConstantsAndSettings();
+	TempControl::storeSettings();
+  TempControl::storeConstants();
 
   // Inform the other end of the new state of affairs
   sendControlSettings();
