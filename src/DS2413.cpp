@@ -18,9 +18,9 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if BREWPI_DS2413
 #include "Brewpi.h"
 
-#if BREWPI_DS2413
 #include <OneWire.h>
 
 #include "DS2413.h"

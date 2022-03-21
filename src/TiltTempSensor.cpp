@@ -48,7 +48,7 @@ temperature TiltTempSensor::read(){
  *
  * If successful, constrains the temp to the range of the temperature type
  * and updates lastRequestTime. On successful, leaves lastRequestTime alone
- * and returns DEVICE_DISCONNECTED.
+ * and returns TEMP_SENSOR_DISCONNECTED.
  */
 temperature TiltTempSensor::readAndConstrainTemp()
 {

@@ -26,10 +26,8 @@
 #include "FastDigitalPin.h"
 #include "Pins.h"
 
-#if !defined(ESP8266) && !defined(ESP32)
-#include <util/delay.h>
-#include <util/atomic.h>
-#endif
+// #include <util/delay.h>
+// #include <util/atomic.h>
 
 #if BREWPI_SHIFT_LCD
 

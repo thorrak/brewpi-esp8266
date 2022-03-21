@@ -242,14 +242,10 @@ void TempControl::updateState(){
 		
 	if(newDoorOpen!=doorOpen) {
 		doorOpen = newDoorOpen;
-#if defined(ESP8266) || defined(ESP32)  // ESP8266 Doesn't support %S
 		String annotation = "";
 		annotation += "Fridge door ";
 		annotation += doorOpen ? "opened" : "closed";
 		piLink.printTemperatures(0, annotation.c_str());
-#else
-		piLink.printFridgeAnnotation(PSTR("Fridge door %S"), doorOpen ? PSTR("opened") : PSTR("closed"));
-#endif
 	}
 
 	if(cs.mode == Modes::off){

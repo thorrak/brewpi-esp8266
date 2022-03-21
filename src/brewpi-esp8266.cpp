@@ -8,7 +8,7 @@
 #endif
 
 #include "Brewpi.h"
-#include <OneWire.h>
+
 #include <Wire.h>
 
 #include "Ticks.h"

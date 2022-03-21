@@ -20,8 +20,7 @@
 
 #include "Brewpi.h"
 #include "OneWireTempSensor.h"
-#include "DallasTemperature.h"
-#include <OneWire.h>
+#include "DallasTempNG.h"
 #include "OneWireDevices.h"
 #include "PiLink.h"
 #include "Ticks.h"
@@ -59,12 +58,12 @@ bool OneWireTempSensor::init() {
 	// This quickly tests if the sensor is connected and initializes the reset detection.
 	// During the main TempControl loop, we don't want to spend many seconds
 	// scanning each sensor since this brings things to a halt.
-	if (sensor && sensor->initConnection(sensorAddress) && requestConversion()) {
+	if (sensor && initConnection(*sensor, sensorAddress) && requestConversion()) {
 		logDebug("init onewire sensor - wait for conversion");
 		waitForConversion();
 		temperature temp = readAndConstrainTemp();
 		DEBUG_ONLY(logInfoIntStringTemp(INFO_TEMP_SENSOR_INITIALIZED, pinNr, addressString, temp));
-		success = temp!=DEVICE_DISCONNECTED && requestConversion();
+		success = temp!=TEMP_SENSOR_DISCONNECTED && requestConversion();
 	}	
 	setConnected(success);
 	logDebug("init onewire sensor complete %d", success);
@@ -128,13 +127,14 @@ temperature OneWireTempSensor::read(){
  * \brief Reads the temperature.
  *
  * If successful, constrains the temp to the range of the temperature type
- * and updates lastRequestTime. On successful, leaves lastRequestTime alone
- * and returns DEVICE_DISCONNECTED.
+ * and updates lastRequestTime. If unsuccessful, leaves lastRequestTime alone
+ * and returns TEMP_SENSOR_DISCONNECTED.
  */
 temperature OneWireTempSensor::readAndConstrainTemp()
 {
-	temperature temp = sensor->getTempRaw(sensorAddress);
-	if(temp == DEVICE_DISCONNECTED){
+	// getTempRaw is the same as sensor.getTemp() but also checks for reset
+	temperature temp = getTempRaw(*sensor, sensorAddress);
+	if(temp == DEVICE_DISCONNECTED_RAW){
 		setConnected(false);
 		return TEMP_SENSOR_DISCONNECTED;
 	}

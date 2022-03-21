@@ -278,7 +278,7 @@
 //#define rotarySwitchPin 0 // INT2
 
 
-#elif defined(ESP32)
+#elif defined(ESP32_STOCK)
 
 #define CONTROLLER_TYPE "ESP32"  // Used in the announce strings
 
@@ -299,6 +299,47 @@
 //#define rotaryBPin 18 // INT3?
 //#define rotarySwitchPin 23 // INT2?
 
+
+#elif defined(ESP32S2)
+
+#define CONTROLLER_TYPE "ESP32-S2"  // Used in the announce strings
+
+// This matches the physical pin locations used for the ESP8266 so the PCBs can be reused
+#define heatingPin 5
+#define coolingPin 7
+#define oneWirePin 9
+#define doorPin    11
+#define IIC_SDA 33
+#define IIC_SCL 35
+
+// Pay attention when changing the pins for the rotary encoder.
+// They should be connected to external interrupt INT0, INT1 and INT3
+//#define rotaryAPin 19 // INT1?
+//#define rotaryBPin 18 // INT3?
+//#define rotarySwitchPin 23 // INT2?
+
+#elif defined(ESP32C3)
+
+#define CONTROLLER_TYPE "ESP32-C3"  // Used in the announce strings
+
+// This matches the physical pin locations used for the ESP8266 so the PCBs can be reused
+#define heatingPin 1
+#define coolingPin 2
+#define oneWirePin 3
+#define doorPin    4
+#define IIC_SDA 8
+#define IIC_SCL 10
+
+// Pay attention when changing the pins for the rotary encoder.
+// They should be connected to external interrupt INT0, INT1 and INT3
+//#define rotaryAPin 19 // INT1?
+//#define rotaryBPin 18 // INT3?
+//#define rotarySwitchPin 23 // INT2?
+
+
+
+#else
+#error "Undefined pins configuration!"
 
 #endif
 

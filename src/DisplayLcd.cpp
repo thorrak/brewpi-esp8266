@@ -64,9 +64,7 @@ static const char STR_Wait_to_[] PROGMEM = "Wait to ";
 static const char STR__time_left[] PROGMEM = " time left";
 static const char STR_empty_string[] PROGMEM = "";
 
-#if defined(ESP8266) || defined(ESP32)
 bool toggleBacklight;
-#endif
 
 
 #ifndef min
@@ -83,9 +81,7 @@ bool toggleBacklight;
 constexpr auto invalidTime = UINT16_MAX;
 
 void LcdDisplay::init(){
-#if defined(ESP8266) || defined(ESP32)
 	toggleBacklight = false;
-#endif
 	stateOnDisplay = 0xFF; // set to unknown state to force update
 	flags = LCD_FLAG_ALTERNATE_ROOM;
 	lcd.init(); // initialize LCD

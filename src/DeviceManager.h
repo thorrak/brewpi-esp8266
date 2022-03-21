@@ -31,9 +31,7 @@
 #include "Ticks.h"
 
 
-#ifdef ARDUINO
-#include "DallasTemperature.h"	// for DeviceAddress
-#endif
+typedef uint8_t DeviceAddress[8];
 
 /**
  * \defgroup hardware Hardware
