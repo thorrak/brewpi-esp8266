@@ -50,6 +50,8 @@
 #define BREWPI_BOARD_UNKNOWN '?'
 #define BREWPI_BOARD_ESP8266 'e'
 #define BREWPI_BOARD_ESP32 '3'
+#define BREWPI_BOARD_ESP32C3 'c'
+#define BREWPI_BOARD_ESP32S2 '2'
 
 
 #ifdef ARDUINO

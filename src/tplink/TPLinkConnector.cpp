@@ -49,21 +49,18 @@ int hex_value(char hex_digit)
         case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
             return hex_digit - 'a' + 10;
     }
-#ifdef ESP32
-    throw std::invalid_argument("invalid hex digit");
-#else 
     return 0;
-#endif
 }
 
 std::string hex_to_string(const std::string& input)
 {
     const auto len = input.length();
-#ifdef ESP32
-    if (len & 1) throw std::invalid_argument("odd length");
-#endif
-
     std::string output;
+
+    if (len & 1) {
+        return output;  // TODO - Do something better here
+    }
+
     output.reserve(len / 2);
     for (auto it = input.begin(); it != input.end(); )
     {

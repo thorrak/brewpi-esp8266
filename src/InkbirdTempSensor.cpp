@@ -1,9 +1,6 @@
 #ifdef HAS_BLUETOOTH
 #include "Brewpi.h"
 #include "InkbirdTempSensor.h"
-// #include "DallasTemperature.h"
-// #include <OneWire.h>
-// #include "OneWireDevices.h"
 #include "PiLink.h"  // For printBytes
 // #include "Ticks.h"
 #include "TemperatureFormats.h"
@@ -52,7 +49,7 @@ temperature InkbirdTempSensor::read(){
  *
  * If successful, constrains the temp to the range of the temperature type
  * and updates lastRequestTime. On successful, leaves lastRequestTime alone
- * and returns DEVICE_DISCONNECTED.
+ * and returns TEMP_SENSOR_DISCONNECTED.
  */
 temperature InkbirdTempSensor::readAndConstrainTemp()
 {

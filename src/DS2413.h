@@ -20,7 +20,7 @@
 
 #pragma once
 
-#ifdef ARDUINO
+#ifdef BREWPI_DS2413
 
 #include "Brewpi.h"
 #include <OneWire.h>

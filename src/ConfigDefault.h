@@ -208,8 +208,12 @@
         #define BREWPI_BOARD BREWPI_BOARD_MEGA
 #elif defined(ESP8266)
 		#define BREWPI_BOARD BREWPI_BOARD_ESP8266
-#elif defined(ESP32)
+#elif defined(ESP32_STOCK)
 		#define BREWPI_BOARD BREWPI_BOARD_ESP32
+#elif defined(ESP32C3)
+		#define BREWPI_BOARD BREWPI_BOARD_ESP32C3
+#elif defined(ESP32S2)
+		#define BREWPI_BOARD BREWPI_BOARD_ESP32S2
 #else
         #error Unknown processor type!
         #define BREWPI_BOARD BREWPI_BOARD_UNKNOWN

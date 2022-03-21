@@ -1,8 +1,7 @@
 #pragma once
 
-#ifdef ARDUINO
-#include "DallasTemperature.h"	// for DeviceAddress
-#endif
+#include "TemperatureFormats.h"
+typedef uint8_t DeviceAddress[8];
 
 #ifdef HAS_BLUETOOTH
 #include <NimBLEDevice.h>

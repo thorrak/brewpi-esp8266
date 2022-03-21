@@ -113,9 +113,7 @@ void LcdDisplay::print_layout() {
 }
 
 void LcdDisplay::init(){
-#if defined(ESP8266) || defined(ESP32)
     toggleBacklight = false;
-#endif
     stateOnDisplay = 0xFF; // set to unknown state to force update
     flags = LCD_FLAG_ALTERNATE_ROOM;  // TODO - Test with a room sensor to see what happens
 //    lcd.init(); // initialize LCD

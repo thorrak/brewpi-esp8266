@@ -34,16 +34,17 @@
 #include "NumberFormats.h"
 
 
-#ifdef ARDUINO
+#include <DallasTempNG.h>  // Instead of DallasTemperature.h
+
 #include "OneWireTempSensor.h"
 
+#ifdef BREWPI_DS2413
 #include "OneWireActuator.h"
 #include "DS2413.h"
-#include <OneWire.h>
-#include "DallasTemperature.h"
+#endif
+
 #include "ActuatorArduinoPin.h"
 #include "SensorArduinoPin.h"
-#endif
 
 #ifdef HAS_BLUETOOTH
 #include "InkbirdTempSensor.h"
@@ -898,7 +899,7 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 						config.deviceHardware = DEVICE_HARDWARE_ONEWIRE_2413;
 						break;
 		#endif
-					case DS18B20MODEL:
+					case 0x28:  // DS18B20MODEL
 						config.deviceHardware = DEVICE_HARDWARE_ONEWIRE_TEMP;
 						break;
 					default:
@@ -920,7 +921,7 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 		#if !ONEWIRE_PARASITE_SUPPORT
 						{	// check that device is not parasite powered
 							DallasTemperature sensor(wire);
-							if(sensor.initConnection(config.hw.address)){
+							if(initConnection(sensor, config.hw.address)){
 								handleEnumeratedDevice(config, h, callback, output, doc);
 							}
 						}

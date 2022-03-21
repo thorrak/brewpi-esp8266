@@ -4,7 +4,6 @@
 #include "TempSensor.h"
 #include "FastDigitalPin.h"
 #include "Ticks.h"
-// #include "DallasTemperature.h" // for DeviceAddress
 #include <NimBLEDevice.h>
 
 #include "wireless/Tilt.h"

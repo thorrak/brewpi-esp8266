@@ -23,7 +23,6 @@
 #include <limits.h>
 #include "TempControl.h"
 
-#if defined(ESP8266) || defined(ESP32)
 /**
  * Provide missing strchrnul on ESP8266
  *
@@ -38,7 +37,6 @@ strchrnul(const char *s, int c_in)
 
 	return (char *)s;
 }
-#endif
 
 
 // See header file for details about the temp format used.

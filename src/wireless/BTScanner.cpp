@@ -66,7 +66,7 @@ void load_inkbird_from_advert(NimBLEAdvertisedDevice* advertisedDevice)
     uint16_t hum = (advertisedDevice->getManufacturerData()[3]<<8) + advertisedDevice->getManufacturerData()[2];
     uint8_t bat = advertisedDevice->getManufacturerData()[7];
 
-    // Log.verbose(F("Detected Inkbird: Temp: %d, Hum: %d, Bat: %d\r\n"), temp, hum, bat);
+    // Serial.printf("Detected Inkbird: Temp: %d, Hum: %d, Bat: %d\r\n", temp, hum, bat);
 
     // Locate & update the inkbird object in the list
     inkbird *ib = bt_scanner.get_or_create_inkbird(advertisedDevice->getAddress());
