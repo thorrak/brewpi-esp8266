@@ -277,6 +277,8 @@ void DeviceManager::uninstallDevice(DeviceConfig& config)
 		case DEVICETYPE_SWITCH_ACTUATOR:
 			if (*ppv!=&defaultActuator) {
 //				DEBUG_ONLY(logInfoInt(INFO_UNINSTALL_ACTUATOR, config.deviceFunction));
+				if(((Actuator*)*ppv)->isActive())
+					((Actuator*)*ppv)->setActive(false);
 				delete (Actuator*)*ppv;
 				*ppv = &defaultActuator;
 			}
