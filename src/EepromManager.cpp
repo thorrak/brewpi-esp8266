@@ -23,14 +23,12 @@
 
 #include "EepromManager.h"
 #include "TempControl.h"
-#include "EepromFormat.h"
 #include "PiLink.h"
 #include "JsonKeys.h"
 
 EepromManager eepromManager;
 ESPEepromAccess eepromAccess;
-
-#define pointerOffset(x) offsetof(EepromFormat, x)
+DeviceConfig cached_devices[Config::EepromFormat::MAX_DEVICES];
 
 EepromManager::EepromManager()
 {
@@ -40,10 +38,6 @@ EepromManager::EepromManager()
 
 bool EepromManager::hasSettings()
 {
-	// TODO - Technically, this acts as a version check as well.
-	// We're eliminating that by just returning if the settings exist
-//	uint8_t version = eepromAccess.readByte(pointerOffset(version));
-//	return (version==EEPROM_FORMAT_VERSION);
 	return eepromAccess.hasSettings();
 }
 
@@ -75,8 +69,6 @@ uint8_t EepromManager::saveDefaultDevices()
 	return 0;
 }
 
-#define arraySize(x) (sizeof(x)/sizeof(x[0]))
-
 
 bool EepromManager::applySettings()
 {
@@ -97,7 +89,7 @@ bool EepromManager::applySettings()
 	
 	
 	DeviceConfig deviceConfig;
-	for (uint8_t index = 0; index<EepromFormat::MAX_DEVICES; index++)
+	for (uint8_t index = 0; index<Config::EepromFormat::MAX_DEVICES; index++)
 	{	
 		deviceConfig = fetchDevice(index);
 		if (deviceManager.isDeviceValid(deviceConfig, deviceConfig, index))
@@ -113,9 +105,14 @@ bool EepromManager::applySettings()
 DeviceConfig EepromManager::fetchDevice(uint8_t deviceIndex)
 {
 	DeviceConfig config;
-	bool ok = (hasSettings() && deviceIndex<EepromFormat::MAX_DEVICES);
-	if (ok)
-		config.loadFromSpiffs(deviceIndex);
+	bool ok = (hasSettings() && deviceIndex<Config::EepromFormat::MAX_DEVICES);
+	if (ok) {
+		if(!cached_devices[deviceIndex].cached) {
+			cached_devices[deviceIndex].loadFromSpiffs(deviceIndex);
+			cached_devices[deviceIndex].cached = true;
+		}
+		return cached_devices[deviceIndex];
+	}
 		// eepromAccess.readDeviceDefinition(config, deviceIndex, sizeof(DeviceConfig));
 	return config;
 }	
@@ -123,9 +120,11 @@ DeviceConfig EepromManager::fetchDevice(uint8_t deviceIndex)
 
 bool EepromManager::storeDevice(DeviceConfig& config, uint8_t deviceIndex)
 {
-	bool ok = (hasSettings() && deviceIndex<EepromFormat::MAX_DEVICES);
-	if (ok)
+	bool ok = (hasSettings() && deviceIndex<Config::EepromFormat::MAX_DEVICES);
+	if (ok) {
 		config.storeToSpiffs(deviceIndex);
+		cached_devices[deviceIndex].cached = false;
+	}
 	return ok;
 }
 
@@ -179,9 +178,3 @@ void EepromManager::savemDNSName(String mdns_id)
 }
 
 #endif
-
-
-void fill(int8_t* p, uint8_t size) {
-	while (size-->0) *p++ = -1;
-}
-
