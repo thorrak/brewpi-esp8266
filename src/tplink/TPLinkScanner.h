@@ -20,7 +20,7 @@ public:
     std::list<TPLinkPlug> lTPLinkPlugs;
 
     TPLinkPlug* get_tplink_plug(const char *deviceMAC, const char *childID);
-    TPLinkPlug* get_or_create_tplink_plug(IPAddress ip_addr, const char *deviceMAC, const char *childID, const char *alias);
+    TPLinkPlug* get_or_create_tplink_plug(IPAddress ip_addr, const char *deviceMAC, const char *deviceID, const char *childID, const char *alias);
 
     void init();
     void process_udp_incoming();

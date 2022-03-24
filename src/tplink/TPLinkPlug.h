@@ -8,8 +8,8 @@
 class TPLinkPlug : public TPLinkDevice {
 
 public:
-    TPLinkPlug(IPAddress ip, const char * deviceMAC, const char * childID, TPLinkConnector* tplink_conn);
-    TPLinkPlug(IPAddress ip, const char * deviceMAC, const char * childID, const char * devAlias, TPLinkConnector* tplink_conn);
+    TPLinkPlug(IPAddress ip, const char * deviceMAC, const char * deviceID, const char * childID, TPLinkConnector* tplink_conn);
+    TPLinkPlug(IPAddress ip, const char * deviceMAC, const char * deviceID, const char * childID, const char * devAlias, TPLinkConnector* tplink_conn);
 
     bool last_read_on;
 

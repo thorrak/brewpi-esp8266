@@ -19,9 +19,9 @@ void TPLinkActuator::setActive(bool active) {
     if(!tp) // Unable to find the actuator in the list, we can't set active.
         return;
 
-    if(active)
+    if(active && !isActive())
         tp->set_on();
-    else
+    else if(!active && isActive())
         tp->set_off();
 }
 
