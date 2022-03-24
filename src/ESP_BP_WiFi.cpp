@@ -14,12 +14,12 @@
 #include <DNSServer.h>			//Local DNS Server used for redirecting all requests to the configuration portal
 #include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 #include <esp_wifi.h>
+#include <Ticks.h>
 #endif
 
 #include "Version.h" 			// Used in mDNS announce string
 #include "Display.h"
 #include "EepromManager.h"
-#include "EepromFormat.h"
 
 
 bool shouldSaveConfig = false;

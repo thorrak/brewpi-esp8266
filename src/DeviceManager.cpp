@@ -27,7 +27,6 @@
 #include "TempSensorDisconnected.h"
 #include "TempSensorExternal.h"
 #include "PiLink.h"
-#include "EepromFormat.h"
 #include "DeviceNameManager.h"
 #include <ArduinoJson.h>
 #include "JsonKeys.h"
@@ -466,13 +465,11 @@ void assignIfSet(int8_t value, uint8_t* target) {
  */
 void DeviceManager::parseDeviceDefinition()
 {
-	// static DeviceDefinition dev;
-	// fill((int8_t*)&dev, sizeof(dev));
 	DeviceDefinition dev;
 
 	readJsonIntoDeviceDef(dev);
 
-	if (!inRangeInt8(dev.id, 0, MAX_DEVICE_SLOT))	{
+	if (!inRangeInt8(dev.id, 0, Config::EepromFormat::MAX_DEVICES))	{
 		// no device id given, or it's out of range, can't do anything else.
 		// piLink.print_fmt("Out of range: %d", dev.id);
 		// piLink.printNewLine();
@@ -583,14 +580,14 @@ bool DeviceManager::isDeviceValid(DeviceConfig& config, DeviceConfig& original, 
 	   More refined checks that may cause confusing results are not yet implemented. See todo below. */
 
 	/* chamber and beer within range.*/
-	if (!inRangeUInt8(config.chamber, 0, EepromFormat::MAX_CHAMBERS))
+	if (!inRangeUInt8(config.chamber, 0, Config::EepromFormat::MAX_CHAMBERS))
 	{
 		logErrorInt(ERROR_INVALID_CHAMBER, config.chamber);
 		return false;
 	}
 
 	/* 0 is allowed - represents a chamber device not assigned to a specific beer */
-	if (!inRangeUInt8(config.beer, 0, ChamberBlock::MAX_BEERS))
+	if (!inRangeUInt8(config.beer, 0, Config::EepromFormat::MAX_BEERS))
 	{
 		logErrorInt(ERROR_INVALID_BEER, config.beer);
 		return false;
@@ -732,7 +729,7 @@ inline bool matchAddress(uint8_t* detected, uint8_t* configured, uint8_t count) 
 device_slot_t findHardwareDevice(DeviceConfig& find)
 {
 	DeviceConfig config;
-	for (device_slot_t slot= 0; slot<EepromFormat::MAX_DEVICES ; slot++) {
+	for (device_slot_t slot= 0; slot<Config::EepromFormat::MAX_DEVICES ; slot++) {
 		config = eepromManager.fetchDevice(slot);
 
 		if (find.deviceHardware==config.deviceHardware) {
@@ -1119,17 +1116,14 @@ void UpdateDeviceState(DeviceDisplay& dd, DeviceConfig& dc, char* val)
 		// write value to a specific device. For now, only actuators are relevant targets
 		DEBUG_ONLY(logInfoInt(INFO_SETTING_ACTIVATOR_STATE, dd.write!=0));
 		((Actuator*)*ppv)->setActive(dd.write!=0);
-	}
-	else if (dd.value==1) {		// read values
+	} else if (dd.value==1) {		// read values
 		if (dt==DEVICETYPE_SWITCH_SENSOR) {
 			sprintf_P(val, STR_FMT_U, (unsigned int) ((SwitchSensor*)*ppv)->sense()!=0); // cheaper than itoa, because it overlaps with vsnprintf
-		}
-		else if (dt==DEVICETYPE_TEMP_SENSOR) {
+		} else if (dt==DEVICETYPE_TEMP_SENSOR) {
 			BasicTempSensor& s = unwrapSensor(dc.deviceFunction, *ppv);
 			temperature temp = s.read();
 			tempToString(val, temp, 3, 9);
-		}
-		else if (dt==DEVICETYPE_SWITCH_ACTUATOR) {
+		} else if (dt==DEVICETYPE_SWITCH_ACTUATOR) {
 			sprintf_P(val, STR_FMT_U, (unsigned int) ((Actuator*)*ppv)->isActive()!=0);
 		}
 	}
@@ -1142,8 +1136,6 @@ void UpdateDeviceState(DeviceDisplay& dd, DeviceConfig& dc, char* val)
 void DeviceManager::listDevices(JsonDocument& doc) {
 	DeviceConfig dc;
 	DeviceDisplay dd;
-	fill((int8_t*)&dd, sizeof(dd));
-	dd.empty = 0;
 
   readJsonIntoDeviceDisplay(dd);
     doc.to<JsonArray>();
@@ -1155,7 +1147,7 @@ void DeviceManager::listDevices(JsonDocument& doc) {
 		return;
 	}
 
-	for (device_slot_t idx=0; idx<EepromFormat::MAX_DEVICES; idx++) {
+	for (device_slot_t idx=0; idx<Config::EepromFormat::MAX_DEVICES; idx++) {
 		dc = eepromManager.fetchDevice(idx);
 		if (deviceManager.enumDevice(dd, dc, idx))
 		{

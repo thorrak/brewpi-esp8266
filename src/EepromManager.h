@@ -26,8 +26,6 @@
 #include "EepromStructs.h"
 
 
-void fill(int8_t* p, uint8_t size);
-
 class DeviceConfig;
 
 

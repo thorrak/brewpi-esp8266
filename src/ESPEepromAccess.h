@@ -32,10 +32,7 @@
 #endif
 
 #include "EepromStructs.h"
-#include "EepromFormat.h"
 
-
-#define MAX_SPIFFS_DEVICES EepromFormat::MAX_DEVICES
 
 //TODO - Clean this up
 class ESPEepromAccess
@@ -57,7 +54,7 @@ public:
         if(doesFileExist(ControlSettings::filename)) FILESYSTEM.remove(ControlSettings::filename);
 
         char buf[20];
-        for(i=0;i<MAX_SPIFFS_DEVICES;i++) {
+        for(i=0;i<Config::EepromFormat::MAX_DEVICES;i++) {
 			DeviceConfig::deviceFilename(buf, i);  // Get the filename from the function in the class
             if(doesFileExist(buf)) FILESYSTEM.remove(buf);
         }

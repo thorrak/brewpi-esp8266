@@ -174,6 +174,8 @@ void DeviceConfig::setDefaults() {
     // Load the settings from the JSON Doc
     chamber = 0;
     beer = 0;
+    cached = false;  // Not yet loaded into memory
+
     deviceFunction = DEVICE_NONE;
     deviceHardware = DEVICE_HARDWARE_NONE;
 

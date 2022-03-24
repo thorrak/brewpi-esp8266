@@ -25,7 +25,6 @@
 #include "Ticks.h"
 #include "Sensor.h"
 #include "SettingsManager.h"
-#include "EepromFormat.h"
 #include "ESP_BP_WiFi.h"
 #include "CommandProcessor.h"
 #include "PromServer.h"
