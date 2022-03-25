@@ -92,23 +92,10 @@ void LcdDisplay::print_layout() {
     tft.setCursor(BEER_SET_HEADER_START_X, SET_HEADER_START_Y);
     tft.print("Set");
 
-    tft.setTextSize(GRAVITY_HEADER_FONT_SIZE);
-    tft.setCursor(GRAVITY_START_X, GRAVITY_HEADER_START_Y);
-//    tft.print("Gravity");
-
-
-
     // Print the "Now Fermenting" mesage
     tft.setTextSize(BEER_NAME_FONT_SIZE);
     tft.setCursor(BEER_NAME_START_X, BEER_NAME_START_Y);
 //    tft.print("Current Beer: Belgian Beer Series - The Saisoning");
-
-
-    // Print the Gravity
-    tft.setTextSize(GRAVITY_FONT_SIZE);
-    tft.setCursor(GRAVITY_START_X, GRAVITY_START_Y);
-//    tft.print("1.084");
-
 
 }
 
@@ -227,22 +214,8 @@ void LcdDisplay::printTemperature(temperature temp, uint8_t font_size){
 
 //print the stationary text on the lcd.
 void LcdDisplay::printStationaryText(){
-//    printAt_P(0, 0, PSTR("Mode"));
-//    printAt_P(0, 1, STR_Beer_);
-//    printAt_P(0, 2, (flags & LCD_FLAG_DISPLAY_ROOM) ?  PSTR("Room  ") : STR_Fridge_);
-//    printDegreeUnit(18, 1);
-//    printDegreeUnit(18, 2);
-
     print_layout();
 }
-
-//print degree sign + temp unit
-void LcdDisplay::printDegreeUnit(uint8_t x, uint8_t y){
-//    lcd.setCursor(x,y);
-//    lcd.write(0b11011111);
-//    lcd.write(tempControl.cc.tempFormat);
-}
-
 
 // print mode on the right location on the first line, after "Mode   "
 void LcdDisplay::printMode(){
@@ -475,6 +448,28 @@ void LcdDisplay::printBluetoothStartup(){
     tft.println("15 seconds. Booting will");
     tft.println("continue once complete.");
 }
+
+void LcdDisplay::printGravity(){
+    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft.setTextSize(GRAVITY_HEADER_FONT_SIZE);
+    clearForText(GRAVITY_START_X, GRAVITY_HEADER_START_Y, ILI9341_BLACK, GRAVITY_HEADER_FONT_SIZE, 7);
+    clearForText(GRAVITY_START_X, GRAVITY_START_Y, ILI9341_BLACK, GRAVITY_HEADER_FONT_SIZE, 5);
+
+    tft.setCursor(GRAVITY_START_X, GRAVITY_HEADER_START_Y);
+    tft.print("Gravity");
+
+
+    // Print the Gravity
+    double grav = 80.0 / 1000.0;
+
+
+
+    char grav_text[6];
+    snprintf(grav_text, 6, "%05.3f", grav);
+    tft.setTextSize(GRAVITY_FONT_SIZE);
+    tft.setCursor(GRAVITY_START_X, GRAVITY_START_Y);
+    tft.print(grav_text);
+}
 #endif
 
 void LcdDisplay::printEEPROMStartup(){
@@ -531,8 +526,6 @@ std::string getline_temp_string(temperature temp) {
 void LcdDisplay::getLine(uint8_t lineNumber, char * buffer) {
 
     char line_buf[25];
-
-    // Could this be replaced with a switch block? Absolutely. Will I? Nope!
 
     switch(lineNumber) {
         case 0:
@@ -651,7 +644,6 @@ void LcdDisplay::getLine(uint8_t lineNumber, char * buffer) {
         //        printAt(20-stringLength, 3, printString);
                     line += printString;
                 }
-                // TODO - Convert this to use c strings all the way through
                 snprintf(line_buf, 25, "%s", line.c_str());
 
                 break;
