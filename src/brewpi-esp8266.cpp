@@ -216,12 +216,7 @@ void brewpiLoop()
 #endif
 
 		// update the lcd for the chamber being displayed
-        DisplayType::printState();
-        DisplayType::printAllTemperatures();
-        DisplayType::printMode();
-#ifndef BREWPI_TFT
-        DisplayType::updateBacklight();
-#endif
+    DisplayType::printAll();
 	}
 
 	//listen for incoming connections while waiting to update
