@@ -145,7 +145,9 @@ void TPLinkConnector::send_payload(const IPAddress host, const std::string paylo
 
 
 void TPLinkConnector::discover() {
-    const std::string discover_payload = "{\"system\": {\"get_sysinfo\": null}, \"emeter\": {\"get_realtime\": null}, \"smartlife.iot.dimmer\": {\"get_dimmer_parameters\": null}, \"smartlife.iot.common.emeter\": {\"get_realtime\": null}, \"smartlife.iot.smartbulb.lightingservice\": {\"get_light_state\": null}}";
+    // Newer HS103s require the "short" discovery payload
+    // const std::string discover_payload = "{\"system\": {\"get_sysinfo\": null}, \"emeter\": {\"get_realtime\": null}, \"smartlife.iot.dimmer\": {\"get_dimmer_parameters\": null}, \"smartlife.iot.common.emeter\": {\"get_realtime\": null}, \"smartlife.iot.smartbulb.lightingservice\": {\"get_light_state\": null}}";
+    const std::string discover_payload = "{\"system\":{\"get_sysinfo\":{}}}";
     broadcast_payload(discover_payload, false);
     return;
 }
