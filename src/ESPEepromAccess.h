@@ -19,16 +19,18 @@
 
 #if defined(ESP8266)
 #define FILESYSTEM LittleFS
+#include <LittleFS.h>
+
+#elif defined(ESP32S2)
+#define FILESYSTEM LittleFS
+#include <LittleFS.h>
+
 #elif defined(ESP32)
 #define FILESYSTEM SPIFFS
+#include <SPIFFS.h>
+
 #else
 #error "Not supported!"
-#endif
-
-#if defined(ESP8266)
-#include <LittleFS.h>
-#elif defined(ESP32)
-#include <SPIFFS.h>
 #endif
 
 #include "EepromStructs.h"

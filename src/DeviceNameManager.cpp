@@ -20,6 +20,8 @@
 
 #ifdef ESP8266
 #include <LittleFS.h>
+#elif defined(ESP32S2)
+#include <LittleFS.h>
 #elif defined(ESP32)
 #include <SPIFFS.h>
 #endif
