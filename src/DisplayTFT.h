@@ -100,7 +100,9 @@ class LcdDisplay DISPLAY_SUPERCLASS
             printState();
             printAllTemperatures();
             printMode();
+#ifdef HAS_BLUETOOTH
                 // printGravity();
+#endif
         }
 
         // print all temperatures on the LCD
