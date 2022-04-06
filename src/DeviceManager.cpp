@@ -672,7 +672,7 @@ inline bool hasOnewire(DeviceHardware hw)
  *
  * Used for outputting device information
  */
-void DeviceManager::serializeJsonDevice(JsonDocument& doc, device_slot_t slot, DeviceConfig& config, char* value) {
+void DeviceManager::serializeJsonDevice(JsonDocument& doc, device_slot_t slot, DeviceConfig& config, const char* value) {
 	DynamicJsonDocument deviceObj = config.toJson();
 
 	if(strlen(value) > 0)
