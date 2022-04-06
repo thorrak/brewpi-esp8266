@@ -266,7 +266,11 @@ void CommandProcessor::listDevices() {
  * \ingroup commands
  */
 void CommandProcessor::listHardware() {
+#if !defined(HAS_BLUETOOTH) && !defined(EXTERN_SENSOR_ACTUATOR_SUPPORT)
   DynamicJsonDocument doc(2048);
+#else
+  DynamicJsonDocument doc(8192);
+#endif
   deviceManager.enumerateHardware(doc);
   piLink.sendJsonMessage('h', doc);
 }
