@@ -129,6 +129,14 @@ void TPLinkPlug::set_countdown(uint8_t act, uint16_t secs) {
     return;
 }
 
+void TPLinkPlug::set_countdown_to_off(uint16_t secs) {
+    set_countdown(0, secs);
+}
+
+void TPLinkPlug::set_countdown_to_on(uint16_t secs) {
+    set_countdown(1, secs);
+}
+
 void TPLinkPlug::clear_countdown() {
     std::string command;
 

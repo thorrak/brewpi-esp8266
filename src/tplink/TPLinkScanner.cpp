@@ -3,6 +3,17 @@
 #include <ArduinoJson.h>
 #include "TPLinkScanner.h"
 #include "TPLinkPlug.h"
+#include "Config.h"
+#include "EepromStructs.h"
+#include "DeviceManager.h"
+#include "EepromManager.h"
+
+#if defined(ESP8266)
+#include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
+#elif defined(ESP32)
+#include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
+#include <esp_wifi.h>
+#endif
 
 
 TPLinkScanner tp_link_scanner;
@@ -119,14 +130,38 @@ void TPLinkScanner::send_discover() {
     tplink_connector.discover();
 }
 
+void TPLinkScanner::send_refresh() {
+    DeviceConfig dc;
+
+    // We need to check which devices are assigned, and ensure that they are TPLink Switches
+    for (device_slot_t idx=0; idx<Config::EepromFormat::MAX_DEVICES; idx++) {
+        dc = eepromManager.fetchDevice(idx);
+        if(dc.deviceHardware == DEVICE_HARDWARE_TPLINK_SWITCH) {
+            // Run through plugs that are on, clear the timer, and refresh the timer
+            TPLinkPlug *tp = get_tplink_plug(dc.hw.tplink_mac, dc.hw.tplink_child_id);
+            if(tp && tp->last_read_on) {
+                // Countdown is cleared automatically by set_countdown
+                // tp.clear_countdown();
+                tp->set_countdown_to_off(TPLINK_SAFETY_TIMEOUT);
+            }
+        }
+    }
+}
 
 void TPLinkScanner::scan_and_refresh() {
+
+    if(!WiFi.isConnected())
+        return;
+
     if(millis() > (last_discover_at + (TPLINK_DISCOVER_EVERY * 1000))) {
         tp_link_scanner.send_discover();
         last_discover_at = millis();
     }
 
-    // TODO - Loop through and process safety timeouts here
+    if(millis() > (last_refresh_at + (TPLINK_SAFETY_TIMEOUT_REFRESH * 1000))) {
+        tp_link_scanner.send_refresh();
+        last_refresh_at = millis();
+    }
 
     tp_link_scanner.process_udp_incoming();
 }

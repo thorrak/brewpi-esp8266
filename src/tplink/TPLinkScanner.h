@@ -25,11 +25,12 @@ public:
     void init();
     void process_udp_incoming();
     void send_discover();
+    void send_refresh();
 
     void scan_and_refresh();
 
     uint64_t last_discover_at=0;
-
+    uint64_t last_refresh_at=0;
 };
 
 extern TPLinkScanner tp_link_scanner;
