@@ -113,7 +113,6 @@ void initialize_wifi() {
 #endif
 
     wifiManager.setHostname(mdns_id);        // Allow DHCP to get proper name
-    wifiManager.setWiFiAutoReconnect(true);  // Enable auto reconnect (should remove need for reconnectWiFi())
     wifiManager.setWiFiAPChannel(1);         // Pick the most common channel, safe for all countries
     // Not sure if wm.SetCleanConnect breaks the hack we have below for the race condition - no reason to test it.
     // wifiManager.setCleanConnect(true);       // Always disconnect before connecting
