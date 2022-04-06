@@ -131,6 +131,7 @@ void TPLinkScanner::send_discover() {
 }
 
 void TPLinkScanner::send_refresh() {
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
     DeviceConfig dc;
 
     // We need to check which devices are assigned, and ensure that they are TPLink Switches
@@ -146,6 +147,7 @@ void TPLinkScanner::send_refresh() {
             }
         }
     }
+#endif
 }
 
 void TPLinkScanner::scan_and_refresh() {
