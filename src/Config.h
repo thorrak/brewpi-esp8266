@@ -278,7 +278,7 @@
 //#define rotarySwitchPin 0 // INT2
 
 
-#elif defined(ESP32)
+#elif defined(ESP32_STOCK)
 
 #define CONTROLLER_TYPE "ESP32"  // Used in the announce strings
 
@@ -299,6 +299,47 @@
 //#define rotaryBPin 18 // INT3?
 //#define rotarySwitchPin 23 // INT2?
 
+
+#elif defined(ESP32S2)
+
+#define CONTROLLER_TYPE "ESP32-S2"  // Used in the announce strings
+
+// This matches the physical pin locations used for the ESP8266 so the PCBs can be reused
+#define heatingPin 5
+#define coolingPin 7
+#define oneWirePin 9
+#define doorPin    11
+#define IIC_SDA 33
+#define IIC_SCL 35
+
+// Pay attention when changing the pins for the rotary encoder.
+// They should be connected to external interrupt INT0, INT1 and INT3
+//#define rotaryAPin 19 // INT1?
+//#define rotaryBPin 18 // INT3?
+//#define rotarySwitchPin 23 // INT2?
+
+#elif defined(ESP32C3)
+
+#define CONTROLLER_TYPE "ESP32-C3"  // Used in the announce strings
+
+// This matches the physical pin locations used for the ESP8266 so the PCBs can be reused
+#define heatingPin 1
+#define coolingPin 2
+#define oneWirePin 3
+#define doorPin    4
+#define IIC_SDA 8
+#define IIC_SCL 10
+
+// Pay attention when changing the pins for the rotary encoder.
+// They should be connected to external interrupt INT0, INT1 and INT3
+//#define rotaryAPin 19 // INT1?
+//#define rotaryBPin 18 // INT3?
+//#define rotarySwitchPin 23 // INT2?
+
+
+
+#else
+#error "Undefined pins configuration!"
 
 #endif
 
@@ -353,6 +394,20 @@ namespace Config {
      */
     constexpr auto printfBufferSize = 128;
 
+    /**
+     * \brief Size of buffer used for internal replacement of StreamUtils when not available
+     */
+    constexpr uint_fast16_t intBufferSize() {
+#if defined(HAS_BLUETOOTH) || defined(EXTERN_SENSOR_ACTUATOR_SUPPORT)
+      return bufferPrints ? 0 : 4096;
+#else
+      // Need less space if we don't have bluetooth or external actuator support
+      return bufferPrints ? 0 : 2048;
+#endif
+    };
+
+
+
 
 #ifdef ESP8266_WiFi
     constexpr bool useWifi = true;
@@ -406,6 +461,25 @@ namespace Config {
      * \brief Maximum length of a temp string
      */
     constexpr auto maxLength = 9;
+  };
+
+
+  /**
+   * \brief Maximum values when storing information
+   */
+  namespace EepromFormat {
+    constexpr auto MAX_BEERS = 6;	  // TODO - Change to 1
+    constexpr auto MAX_CHAMBERS = 4;  // TODO - Change to 1
+
+    /**
+     * \brief Maximum number of device slots
+     */
+#if defined(HAS_BLUETOOTH) || defined(EXTERN_SENSOR_ACTUATOR_SUPPORT)
+    // Need more device slots if we have bluetooth or external actuator support
+    static const int8_t MAX_DEVICES = 64;
+#else
+    static const int8_t MAX_DEVICES = 16;
+#endif
   };
 
   /**

@@ -49,21 +49,18 @@ int hex_value(char hex_digit)
         case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
             return hex_digit - 'a' + 10;
     }
-#ifdef ESP32
-    throw std::invalid_argument("invalid hex digit");
-#else 
     return 0;
-#endif
 }
 
 std::string hex_to_string(const std::string& input)
 {
     const auto len = input.length();
-#ifdef ESP32
-    if (len & 1) throw std::invalid_argument("odd length");
-#endif
-
     std::string output;
+
+    if (len & 1) {
+        return output;  // TODO - Do something better here
+    }
+
     output.reserve(len / 2);
     for (auto it = input.begin(); it != input.end(); )
     {
@@ -148,7 +145,9 @@ void TPLinkConnector::send_payload(const IPAddress host, const std::string paylo
 
 
 void TPLinkConnector::discover() {
-    const std::string discover_payload = "{\"system\": {\"get_sysinfo\": null}, \"emeter\": {\"get_realtime\": null}, \"smartlife.iot.dimmer\": {\"get_dimmer_parameters\": null}, \"smartlife.iot.common.emeter\": {\"get_realtime\": null}, \"smartlife.iot.smartbulb.lightingservice\": {\"get_light_state\": null}}";
+    // Newer HS103s require the "short" discovery payload
+    // const std::string discover_payload = "{\"system\": {\"get_sysinfo\": null}, \"emeter\": {\"get_realtime\": null}, \"smartlife.iot.dimmer\": {\"get_dimmer_parameters\": null}, \"smartlife.iot.common.emeter\": {\"get_realtime\": null}, \"smartlife.iot.smartbulb.lightingservice\": {\"get_light_state\": null}}";
+    const std::string discover_payload = "{\"system\":{\"get_sysinfo\":{}}}";
     broadcast_payload(discover_payload, false);
     return;
 }

@@ -18,8 +18,6 @@
  */
 
 #pragma once
-
-#include "Brewpi.h"
 #include <stdint.h>
 
 /**

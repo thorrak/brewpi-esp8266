@@ -51,7 +51,7 @@ public:
    *
    * \param stream - Reference to the Stream object used for communications
    */
-  PiStream(StreamType &stream) : upstream(stream), stream{stream, Config::PiLink::printBufferSize()} {};
+  PiStream(StreamType &stream) : intBuffOn(0), upstream(stream), stream{stream, Config::PiLink::printBufferSize()} {};
 
   /**
    * \brief Read data from the stream
@@ -85,12 +85,35 @@ public:
   /**
    * \brief Print a single char
    */
-  void print(const char out) { stream.print(out); };
+  void print(const char out) { 
+    if(Config::PiLink::bufferPrints) {
+      stream.print(out); 
+    } else {
+      if((intBuffOn + 1)  < Config::PiLink::intBufferSize()) {
+        intBuff[intBuffOn] = out;
+        intBuff[intBuffOn+1] = '\0';
+        intBuffOn++;
+      }
+    }
+    
+  };
 
   /**
    * \brief Print a C-str
    */
-  void print(const char *out) { stream.print(out); };
+  void print(const char *out) { 
+    if(Config::PiLink::bufferPrints) {
+      stream.print(out); 
+    } else {
+      for(uint16_t x = 0; x < strlen(out) ; x++) {
+        if((intBuffOn + 1)  < Config::PiLink::intBufferSize()) {
+          intBuff[intBuffOn] = out[x];
+          intBuff[intBuffOn+1] = '\0';
+          intBuffOn++;
+        }
+      }
+    }
+  };
 
   /**
    * \brief Print a String
@@ -154,7 +177,9 @@ public:
       stream.println();
       stream.flush();  // This currently causes a crash on ESP32, and is not required if bufferPrints is disabled
     } else {
-      stream.println();
+      stream.println(intBuff);
+      intBuff[0] = '\0';
+      intBuffOn = 0;
     }
 
   };
@@ -182,7 +207,13 @@ public:
       print(':');
     }
 
-    serializeJson(doc, stream);
+    if(Config::PiLink::bufferPrints) {
+      serializeJson(doc, stream);
+    } else {
+      char buf[2048];
+      serializeJson(doc, buf, 2048);
+      print(buf);
+    }
     printNewLine();
   }
 
@@ -266,6 +297,13 @@ private:
    * \see Config::PiLink::printfBufferSize
    */
   static char printfBuff[Config::PiLink::printfBufferSize];
+
+  /**
+   * \brief Buffer used for printf operations
+   * \see Config::PiLink::printfBufferSize
+   */
+  char intBuff[Config::PiLink::intBufferSize()];
+  uint16_t intBuffOn;
 
   /**
    * \brief Reference to the wrapped StreamType object

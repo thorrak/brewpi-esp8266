@@ -20,16 +20,17 @@ public:
     std::list<TPLinkPlug> lTPLinkPlugs;
 
     TPLinkPlug* get_tplink_plug(const char *deviceMAC, const char *childID);
-    TPLinkPlug* get_or_create_tplink_plug(IPAddress ip_addr, const char *deviceMAC, const char *childID, const char *alias);
+    TPLinkPlug* get_or_create_tplink_plug(IPAddress ip_addr, const char *deviceMAC, const char *deviceID, const char *childID, const char *alias);
 
     void init();
     void process_udp_incoming();
     void send_discover();
+    void send_refresh();
 
     void scan_and_refresh();
 
     uint64_t last_discover_at=0;
-
+    uint64_t last_refresh_at=0;
 };
 
 extern TPLinkScanner tp_link_scanner;

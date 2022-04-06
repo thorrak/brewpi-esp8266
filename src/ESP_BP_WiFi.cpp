@@ -14,12 +14,12 @@
 #include <DNSServer.h>			//Local DNS Server used for redirecting all requests to the configuration portal
 #include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 #include <esp_wifi.h>
+#include <Ticks.h>
 #endif
 
 #include "Version.h" 			// Used in mDNS announce string
 #include "Display.h"
 #include "EepromManager.h"
-#include "EepromFormat.h"
 
 
 bool shouldSaveConfig = false;
@@ -113,7 +113,6 @@ void initialize_wifi() {
 #endif
 
     wifiManager.setHostname(mdns_id);        // Allow DHCP to get proper name
-    wifiManager.setWiFiAutoReconnect(true);  // Enable auto reconnect (should remove need for reconnectWiFi())
     wifiManager.setWiFiAPChannel(1);         // Pick the most common channel, safe for all countries
     // Not sure if wm.SetCleanConnect breaks the hack we have below for the race condition - no reason to test it.
     // wifiManager.setCleanConnect(true);       // Always disconnect before connecting
@@ -142,14 +141,10 @@ void initialize_wifi() {
     wifiManager.addParameter(&custom_mdns_name);
 
     if(wifiManager.autoConnect(WIFI_SETUP_AP_NAME, WIFI_SETUP_AP_PASS)) {
-        // If we succeeded at connecting, switch to station mode.
+        // We succeeded at connecting
         // TODO - Determine if we can merge shouldSaveConfig in here
-        WiFi.softAPdisconnect(true);
-        WiFi.mode(WIFI_AP_STA);
     } else {
-        // If we failed to connect, we still want to control temps. Disable the AP, and flip to STA mode
-        WiFi.softAPdisconnect(true);
-        WiFi.mode(WIFI_AP_STA);
+        // If we failed to connect, we still want to control temps. Continue.
     }
 
     // Alright. We're theoretically connected here (or we timed out).
@@ -215,7 +210,9 @@ void wifi_connect_clients() {
         if(!WiFi.isConnected()) {
             // If we are disconnected, reconnect. On an ESP8266 this will ALSO trigger mdns_reset due to the callback
             // but on the ESP32, this means that we'll have to wait an additional 3 minutes for mdns to come back up
-            WiFi.reconnect();
+            WiFi.disconnect();
+            delay(50);
+            WiFi.begin();
         } else {
             // #defining this out for now as there is a memory leak caused by this
 #ifdef ESP32

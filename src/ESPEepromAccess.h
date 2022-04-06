@@ -19,23 +19,22 @@
 
 #if defined(ESP8266)
 #define FILESYSTEM LittleFS
+#include <LittleFS.h>
+
+#elif defined(ESP32S2)
+#define FILESYSTEM LittleFS
+#include <LittleFS.h>
+
 #elif defined(ESP32)
 #define FILESYSTEM SPIFFS
+#include <SPIFFS.h>
+
 #else
 #error "Not supported!"
 #endif
 
-#if defined(ESP8266)
-#include <LittleFS.h>
-#elif defined(ESP32)
-#include <SPIFFS.h>
-#endif
-
 #include "EepromStructs.h"
-#include "EepromFormat.h"
 
-
-#define MAX_SPIFFS_DEVICES EepromFormat::MAX_DEVICES
 
 //TODO - Clean this up
 class ESPEepromAccess
@@ -57,7 +56,7 @@ public:
         if(doesFileExist(ControlSettings::filename)) FILESYSTEM.remove(ControlSettings::filename);
 
         char buf[20];
-        for(i=0;i<MAX_SPIFFS_DEVICES;i++) {
+        for(i=0;i<Config::EepromFormat::MAX_DEVICES;i++) {
 			DeviceConfig::deviceFilename(buf, i);  // Get the filename from the function in the class
             if(doesFileExist(buf)) FILESYSTEM.remove(buf);
         }

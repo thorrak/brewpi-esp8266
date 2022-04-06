@@ -55,7 +55,7 @@ namespace TiltColorNames {
 };
 
 
-#define TILT_CONNECTED_TIMEOUT       (30 * 1000)     // Time before the sensor is considered "disconnected" (in ms)
+#define TILT_CONNECTED_TIMEOUT       (90 * 1000)     // Time before the sensor is considered "disconnected" (in ms)
 
 class tilt
 {

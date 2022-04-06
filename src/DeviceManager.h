@@ -31,9 +31,7 @@
 #include "Ticks.h"
 
 
-#ifdef ARDUINO
-#include "DallasTemperature.h"	// for DeviceAddress
-#endif
+typedef uint8_t DeviceAddress[8];
 
 /**
  * \defgroup hardware Hardware
@@ -64,10 +62,6 @@ typedef int8_t device_slot_t;
  */
 inline bool isDefinedSlot(device_slot_t s) { return s>=0; }
 
-/**
- * \brief Maximum number of device slots
- */
-const device_slot_t MAX_DEVICE_SLOT = 16;		// exclusive
 
 /**
  * \brief An invalid device slot
@@ -202,6 +196,11 @@ struct DeviceOutput
  * @see DeviceManager::UpdateDeviceState
  */
 struct DeviceDisplay {
+	/**
+	 * \brief Constructor
+	 */
+	DeviceDisplay() : id(-1), value(-1), write(-1), empty(0) {};
+
 	int8_t id;		//!< -1 for all devices, >=0 for specific device
 	int8_t value;	//!< set value
 	int8_t write;	//!< write value
@@ -247,8 +246,6 @@ struct EnumerateHardware
 	int8_t unused;		//<! 0 don't care about unused state, 1 unused only.
 	int8_t function;	//<! Restrict to devices that can be used with this function
 };
-
-void HandleDeviceDisplay(const char* key, const char* value, void* pv);
 
 /**
  * Reads or writes a value to a device.

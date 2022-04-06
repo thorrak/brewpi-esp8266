@@ -74,7 +74,7 @@ constexpr auto pin = "p";
 constexpr auto values = "v";
 constexpr auto unused = "u";
 constexpr auto function = "f";
-}; // namespace DeviceDisplayKeys
+}; // namespace EnumerateHardwareKeys
 
 
 /**

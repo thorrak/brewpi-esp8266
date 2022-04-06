@@ -50,13 +50,11 @@
 #define BREWPI_BOARD_UNKNOWN '?'
 #define BREWPI_BOARD_ESP8266 'e'
 #define BREWPI_BOARD_ESP32 '3'
+#define BREWPI_BOARD_ESP32C3 'c'
+#define BREWPI_BOARD_ESP32S2 '2'
 
 
-#ifdef ARDUINO
 #include "Config.h"
-#else
-#include <Config.h>                     // use search path rather than current directory, so that config.h
-#endif
 #include "ConfigDefault.h"
 
 #include <Arduino.h>

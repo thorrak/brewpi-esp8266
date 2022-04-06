@@ -96,10 +96,13 @@ class LcdDisplay DISPLAY_SUPERCLASS
 
         DISPLAY_METHOD void printAll()
         {
-            printStationaryText();
+        //     printStationaryText();
             printState();
             printAllTemperatures();
             printMode();
+#ifdef HAS_BLUETOOTH
+                // printGravity();
+#endif
         }
 
         // print all temperatures on the LCD
@@ -144,9 +147,6 @@ class LcdDisplay DISPLAY_SUPERCLASS
         DISPLAY_METHOD void printTemperature(temperature temp, uint8_t font_size);
         DISPLAY_METHOD void printTemperatureAt(uint8_t x, uint8_t y, uint8_t font_size, temperature temp);
 
-        // print degree sign + C/F
-        DISPLAY_METHOD void printDegreeUnit(uint8_t x, uint8_t y);
-
 #ifdef ESP8266_WiFi
         DISPLAY_METHOD void printWiFi();
         DISPLAY_METHOD void printWiFiStartup();
@@ -155,6 +155,7 @@ class LcdDisplay DISPLAY_SUPERCLASS
 
 #ifdef HAS_BLUETOOTH
         DISPLAY_METHOD void printBluetoothStartup();
+        DISPLAY_METHOD void printGravity();
 #endif
 
         DISPLAY_METHOD void printEEPROMStartup();

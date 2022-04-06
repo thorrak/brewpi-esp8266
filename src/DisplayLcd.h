@@ -21,8 +21,6 @@
 
 #include "Brewpi.h"
 #include "DisplayBase.h"
-//#include "SpiLcd.h"
-//#include "NullLcdDriver.h"
 
 // If BREWPI_TFT is set, we're going to use the DisplayTFT headers instead
 #ifdef BREWPI_TFT
@@ -34,7 +32,7 @@
  * @{
  */
 
-#if BREWPI_EMULATE || !BREWPI_LCD || !ARDUINO
+#if BREWPI_EMULATE || !BREWPI_LCD
 #include "NullLcdDriver.h"
 	typedef NullLcdDriver LcdDriver;
 #elif defined(BREWPI_OLED)
@@ -71,6 +69,7 @@ class LcdDisplay DISPLAY_SUPERCLASS
 		printState();
 		printAllTemperatures();
 		printMode();
+		updateBacklight();
 	}
 
 	DISPLAY_METHOD void printAllTemperatures();

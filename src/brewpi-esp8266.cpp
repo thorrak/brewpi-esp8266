@@ -8,7 +8,7 @@
 #endif
 
 #include "Brewpi.h"
-#include <OneWire.h>
+
 #include <Wire.h>
 
 #include "Ticks.h"
@@ -25,7 +25,6 @@
 #include "Ticks.h"
 #include "Sensor.h"
 #include "SettingsManager.h"
-#include "EepromFormat.h"
 #include "ESP_BP_WiFi.h"
 #include "CommandProcessor.h"
 #include "PromServer.h"
@@ -217,12 +216,7 @@ void brewpiLoop()
 #endif
 
 		// update the lcd for the chamber being displayed
-        DisplayType::printState();
-        DisplayType::printAllTemperatures();
-        DisplayType::printMode();
-#ifndef BREWPI_TFT
-        DisplayType::updateBacklight();
-#endif
+    DisplayType::printAll();
 	}
 
 	//listen for incoming connections while waiting to update

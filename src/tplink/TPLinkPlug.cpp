@@ -4,12 +4,10 @@
 #include <string>
 
 
-TPLinkPlug::TPLinkPlug(IPAddress ip, const char * deviceMAC, const char * childID, TPLinkConnector* tplink_conn) {
-    if(strlen(deviceMAC) <= 17)
-        strcpy(device_mac, deviceMAC);
-
-    if(strlen(childID) <= 3)
-        strcpy(child_id, childID);
+TPLinkPlug::TPLinkPlug(IPAddress ip, const char * deviceMAC, const char * deviceID, const char * childID, TPLinkConnector* tplink_conn) {
+    snprintf(device_mac, 18, "%s", deviceMAC);
+    snprintf(device_id, 41, "%s", deviceID);
+    snprintf(child_id, 3, "%s", childID);
 
     ip_addr = ip;
     tp_link_connector = tplink_conn;
@@ -17,14 +15,12 @@ TPLinkPlug::TPLinkPlug(IPAddress ip, const char * deviceMAC, const char * childI
 }
 
 
-TPLinkPlug::TPLinkPlug(IPAddress ip, const char * deviceMAC, const char * childID, const char * devAlias, TPLinkConnector* tplink_conn) {
-    if(strlen(deviceMAC) <= 17)
-        strcpy(device_mac, deviceMAC);
-
+TPLinkPlug::TPLinkPlug(IPAddress ip, const char * deviceMAC, const char * deviceID, const char * childID, const char * devAlias, TPLinkConnector* tplink_conn) {
+    snprintf(device_mac, 18, "%s", deviceMAC);
+    snprintf(device_id, 41, "%s", deviceID);
     snprintf(device_alias, 32, "%s", devAlias);
+    snprintf(child_id, 3, "%s", childID);
 
-    if(strlen(childID) <= 3)
-        strcpy(child_id, childID);
 
     ip_addr = ip;
     tp_link_connector = tplink_conn;
@@ -33,7 +29,13 @@ TPLinkPlug::TPLinkPlug(IPAddress ip, const char * deviceMAC, const char * childI
 
 
 bool TPLinkPlug::set_on() {
-    const std::string command = "{\"system\": {\"set_relay_state\": {\"state\": 1}}}";
+    std::string command;
+    
+    if(strlen(child_id) == 0)
+        command = "{\"system\": {\"set_relay_state\": {\"state\": 1}}}";
+    else
+        command = "{\"context\": {\"child_ids\": [\"" + (std::string) device_id + (std::string) child_id + "\"]}, \"system\": {\"set_relay_state\": {\"state\": 1}}}";
+
     send_payload(command, false);
     last_read_on = true;  // Update the cache to assume that we processed successfully. Alternatively, we can test for the response message. 
     return true;
@@ -41,7 +43,13 @@ bool TPLinkPlug::set_on() {
 
 
 bool TPLinkPlug::set_off() {
-    const std::string command = "{\"system\": {\"set_relay_state\": {\"state\": 0}}}";
+    std::string command;
+
+    if(strlen(child_id) == 0)
+        command = "{\"system\": {\"set_relay_state\": {\"state\": 0}}}";
+    else
+        command = "{\"context\": {\"child_ids\": [\"" + (std::string) device_id + (std::string) child_id + "\"]}, \"system\": {\"set_relay_state\": {\"state\": 0}}}";
+
     send_payload(command, false);
     last_read_on = false;  // Update the cache to assume that we processed successfully. Alternatively, we can test for the response message. 
     return true;
@@ -49,7 +57,13 @@ bool TPLinkPlug::set_off() {
 
 
 void TPLinkPlug::get_countdown() {
-    const std::string command = "{\"count_down\":{\"get_rules\":null}}";
+    std::string command;
+
+    if(strlen(child_id) == 0)
+        command = "{\"count_down\":{\"get_rules\":null}}";
+    else
+        command = "{\"context\": {\"child_ids\": [\"" + (std::string) device_id + (std::string) child_id + "\"]}, \"count_down\":{\"get_rules\":null}}";
+
     send_payload(command, false);
     return;
 
@@ -101,8 +115,11 @@ void TPLinkPlug::get_countdown() {
 }
 
 void TPLinkPlug::set_countdown(uint8_t act, uint16_t secs) {
-    char command[128];
-    snprintf(command, 128, "{\"count_down\":{\"add_rule\":{\"enable\":1,\"delay\":%d,\"act\":%d,\"name\":\"take action\"}}}", secs, act);
+    char command[256];
+    if(strlen(child_id) == 0)
+        snprintf(command, 256, "{\"count_down\":{\"add_rule\":{\"enable\":1,\"delay\":%d,\"act\":%d,\"name\":\"take action\"}}}", secs, act);
+    else
+        snprintf(command, 256, "{{\"context\": {\"child_ids\": [\"%s%s\"]}, \"count_down\":{\"add_rule\":{\"enable\":1,\"delay\":%d,\"act\":%d,\"name\":\"take action\"}}}", device_id, child_id, secs, act);
 
     // Before we send the command to set a new countdown, clear any countdown that may already exist
     clear_countdown();
@@ -112,8 +129,23 @@ void TPLinkPlug::set_countdown(uint8_t act, uint16_t secs) {
     return;
 }
 
+void TPLinkPlug::set_countdown_to_off(uint16_t secs) {
+    set_countdown(0, secs);
+}
+
+void TPLinkPlug::set_countdown_to_on(uint16_t secs) {
+    set_countdown(1, secs);
+}
+
 void TPLinkPlug::clear_countdown() {
-    const std::string command = "{\"count_down\":{\"delete_all_rules\":null}}";
+    std::string command;
+
+    if(strlen(child_id) == 0)
+        command = "{\"count_down\":{\"delete_all_rules\":null}}";
+    else
+        command = "{\"context\": {\"child_ids\": [\"" + (std::string) device_id + (std::string) child_id + "\"]}, \"count_down\":{\"delete_all_rules\":null}}";
+
+
     send_payload(command, false);
     return;
 }

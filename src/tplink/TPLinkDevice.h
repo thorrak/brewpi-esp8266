@@ -17,6 +17,7 @@ public:
 
     char device_mac[18];
     char device_alias[32];
+    char device_id[41];
 
 protected:
     TPLinkConnector* tp_link_connector;
