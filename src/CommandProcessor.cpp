@@ -161,6 +161,15 @@ void CommandProcessor::receiveCommand() {
       break;
 #endif
 
+    case 'X': // Set extended settings
+      processExtendedSettingsJson();
+      break;
+
+    case 'x': // Extended settings requested
+      sendExtendedSettings();
+      break;
+
+
     // Alert the user that the command issued wasn't valid
     default:
       invalidCommand(inByte);
@@ -398,6 +407,31 @@ void CommandProcessor::processSettingsJson() {
 }
 
 /**
+ * \brief Process incoming extended settings
+ */
+void CommandProcessor::processExtendedSettingsJson() {
+  DynamicJsonDocument doc(256);
+  piLink.receiveJsonMessage(doc);
+
+  // Process
+  JsonObject root = doc.as<JsonObject>();
+  for (JsonPair kv : root) {
+    extendedSettings.processSettingKeypair(kv);
+  }
+
+  // Save the settings
+  extendedSettings.storeToSpiffs();
+
+#ifdef BREWPI_TFT
+  display.init(); // For TFTs specifically, we need to reinitialize after updating the extended settings in case invertTFT changed
+  display.printStationaryText();
+#endif
+
+  // Inform the other end of the new state of affairs
+  sendExtendedSettings();
+}
+
+/**
  * \brief Set device names
  *
  * @see DeviceNameManager::setDeviceName
@@ -425,6 +459,16 @@ void CommandProcessor::sendControlSettings() {
   tempControl.getControlSettingsDoc(doc);
   piLink.sendJsonMessage('S', doc);
 }
+
+/**
+ * \brief Send extended settings as JSON string
+ */
+void CommandProcessor::sendExtendedSettings() {
+  DynamicJsonDocument doc(256);
+  doc = extendedSettings.toJson();
+  piLink.sendJsonMessage('X', doc);
+}
+
 
 /**
  * \brief Send control constants as JSON string.

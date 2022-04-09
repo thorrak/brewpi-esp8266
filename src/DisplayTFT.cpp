@@ -103,12 +103,12 @@ void LcdDisplay::init(){
     toggleBacklight = false;
     stateOnDisplay = 0xFF; // set to unknown state to force update
     flags = LCD_FLAG_ALTERNATE_ROOM;  // TODO - Test with a room sensor to see what happens
-//    lcd.init(); // initialize LCD
-//    lcd.begin(20, 4);
-//    lcd.clear();
 
     tft.begin();
-    tft.setRotation(3);
+    if (extendedSettings.invertTFT)
+        tft.setRotation(3);
+    else
+        tft.setRotation(1);
     tft.fillScreen(ILI9341_BLACK);
     tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
 
@@ -472,24 +472,6 @@ void LcdDisplay::printGravity(){
 }
 #endif
 
-void LcdDisplay::printEEPROMStartup(){
-
-    toggleBacklight = false;  // Assuming we need this
-
-    clear();
-
-    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-    tft.setTextSize(WIFI_FONT_SIZE);
-
-    tft.setCursor(0, 0);
-
-    tft.println("Setting up EEPROM...");
-    tft.println("Please wait. This");
-    tft.println("can take 5+ minutes");
-    tft.println("for new installs.");
-    tft.println("");
-
-}
 
 void LcdDisplay::clear() {
     tft.fillScreen(ILI9341_BLACK);

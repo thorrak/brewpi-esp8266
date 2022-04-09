@@ -267,3 +267,82 @@ void ControlSettings::loadFromSpiffs() {
     mode = json_doc[ControlSettingsKeys::mode] | mode;
 }
 
+
+
+/**
+ * \brief Constructor
+ *
+ * \see setDefaults
+ */
+ExtendedSettings::ExtendedSettings() {
+    setDefaults();
+}
+
+/**
+ * \brief Set default values for extended settings
+ */
+void ExtendedSettings::setDefaults() {
+    invertTFT = false;
+    glycol = false;
+}
+
+
+/**
+ * \brief Serialize extended settings to JSON
+ */
+DynamicJsonDocument ExtendedSettings::toJson() {
+    DynamicJsonDocument doc(256);
+
+    // Load the settings into the JSON Doc
+    doc[ExtendedSettingsKeys::invertTFT] = invertTFT;
+    doc[ExtendedSettingsKeys::glycol] = glycol;
+
+    // Return the JSON document
+    return doc;
+}
+
+void ExtendedSettings::storeToSpiffs() {
+    DynamicJsonDocument doc(256);
+
+    doc = toJson();
+
+    writeJsonToFile(ExtendedSettings::filename, doc);  // Write the json to the file
+}
+
+void ExtendedSettings::loadFromSpiffs() {
+    // We start by setting the defaults, as we use them as the alternative to loaded values if the keys don't exist
+    setDefaults();
+
+    DynamicJsonDocument json_doc(256);
+    json_doc = readJsonFromFile(ExtendedSettings::filename);
+
+    // Load the constants from the JSON Doc
+    if(json_doc.containsKey(ExtendedSettingsKeys::invertTFT)) invertTFT = json_doc[ExtendedSettingsKeys::invertTFT];
+    if(json_doc.containsKey(ExtendedSettingsKeys::glycol)) glycol = json_doc[ExtendedSettingsKeys::glycol];
+
+}
+
+/**
+ * \brief Process a single setting key/value pair
+ *
+ * \param kv - The parsed JsonPair of the setting
+ */
+void ExtendedSettings::processSettingKeypair(JsonPair kv) {
+  // A good chunk of the conversions want a string representation of the value,
+  // but the brewpi script presents the data as a number.  Prep a string
+  // version in case we need it for this value.
+  String str_value;
+  if (kv.value().is<const char *>())
+    str_value = kv.value().as<const char *>();
+  else if (kv.value().is<float>()) {
+    str_value = kv.value().as<float>();
+  }
+
+  if (kv.key() == ExtendedSettingsKeys::invertTFT) {
+    invertTFT = kv.value().as<bool>();
+  }
+
+  else if (kv.key() == ExtendedSettingsKeys::glycol) {
+    glycol = kv.value().as<bool>();
+  }
+}

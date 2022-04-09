@@ -102,9 +102,6 @@ void setup()
     Serial.begin(Config::PiLink::serialSpeed);
 #endif
 
-    // Let's get the display going so that we can provide the user a bit of feedback on what's happening
-    display.init();
-    display.printEEPROMStartup();
 
     // Before anything else, let's get the filesystem working. We need to start it up, and then test if the file system
     // was formatted.
@@ -113,6 +110,9 @@ void setup()
   #else
     FILESYSTEM.begin();
   #endif
+
+  extendedSettings.loadFromSpiffs();
+  display.init();
 
     initialize_wifi();
 

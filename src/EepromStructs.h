@@ -201,3 +201,26 @@ public:
 
 };
 /** @} */
+
+/**
+ * \brief PID Control constants
+ */
+class ExtendedSettings : public JSONSaveable {
+public:
+    ExtendedSettings();
+
+    bool invertTFT;  //<! Whether or not to invert the TFT
+    bool glycol;  //<! Whether or not to use glycol mode
+
+    DynamicJsonDocument toJson();
+    void storeToSpiffs();
+    void loadFromSpiffs();
+    void setDefaults();
+    void processSettingKeypair(JsonPair kv);
+
+    /**
+     * \brief Filename used when reading/writing data to flash
+     */
+    static constexpr auto filename = "/extendedSettings.json";
+private:
+};

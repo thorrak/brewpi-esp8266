@@ -65,3 +65,4 @@ public:
 
 
 extern EepromManager eepromManager;
+extern ExtendedSettings extendedSettings;

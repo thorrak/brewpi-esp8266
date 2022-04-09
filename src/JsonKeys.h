@@ -126,9 +126,7 @@ constexpr auto tempFormat = "tempFormat";
  */
 namespace ExtendedSettingsKeys {
 constexpr auto eepromReset = "confirmReset";
-// constexpr auto pin = "p";
-// constexpr auto values = "v";
-// constexpr auto unused = "u";
-// constexpr auto function = "f";
+constexpr auto invertTFT = "invertTFT";
+constexpr auto glycol = "glycol";
 }; // namespace ExtendedSettingsKeys
 

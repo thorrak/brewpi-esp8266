@@ -37,11 +37,13 @@ private:
   static void sendControlSettings();
   static void sendControlConstants();
   static void sendControlVariables();
+  static void sendExtendedSettings();
 
   static void setDefaultConstants();
   static void setDefaultSettings();
 
   static void processSettingsJson();
+  static void processExtendedSettingsJson();
 
   static void printTemperatures();
   static void printRawTemperatures();

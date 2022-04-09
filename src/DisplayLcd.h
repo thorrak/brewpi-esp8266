@@ -130,7 +130,6 @@ class LcdDisplay DISPLAY_SUPERCLASS
 	DISPLAY_METHOD void printBluetoothStartup();
 #endif
 
-	DISPLAY_METHOD void printEEPROMStartup();
 	DISPLAY_METHOD void clear();
 
 
