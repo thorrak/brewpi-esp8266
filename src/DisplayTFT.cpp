@@ -250,7 +250,7 @@ void LcdDisplay::printMode(){
 }
 
 uint8_t printTime(uint16_t time) {
-    if(time == UINT_MAX)
+    if(time == UINT16_MAX)
         return 0;
 
     char timeString[10];
@@ -508,6 +508,7 @@ std::string getline_temp_string(temperature temp) {
 void LcdDisplay::getLine(uint8_t lineNumber, char * buffer) {
 
     char line_buf[25];
+    const char degree_symbol = 248;
 
     switch(lineNumber) {
         case 0:
@@ -538,12 +539,12 @@ void LcdDisplay::getLine(uint8_t lineNumber, char * buffer) {
             }
         case 1:
             {
-                snprintf(line_buf, 25, "Beer  %s %s °%c", getline_temp_string(tempControl.getBeerTemp()).c_str(), getline_temp_string(tempControl.getBeerSetting()).c_str(), tempControl.cc.tempFormat);
+                snprintf(line_buf, 25, "Beer  %s %s %c%c", getline_temp_string(tempControl.getBeerTemp()).c_str(), getline_temp_string(tempControl.getBeerSetting()).c_str(), degree_symbol, tempControl.cc.tempFormat);
                 break;
             }
         case 2:
             {
-                snprintf(line_buf, 25, "Fridge%s %s °%c", getline_temp_string(tempControl.getFridgeTemp()).c_str(), getline_temp_string(tempControl.getFridgeSetting()).c_str(), tempControl.cc.tempFormat);
+                snprintf(line_buf, 25, "Fridge%s %s %c%c", getline_temp_string(tempControl.getFridgeTemp()).c_str(), getline_temp_string(tempControl.getFridgeSetting()).c_str(), degree_symbol, tempControl.cc.tempFormat);
                 break;
             }
         case 3:
@@ -612,8 +613,8 @@ void LcdDisplay::getLine(uint8_t lineNumber, char * buffer) {
                 else if(state == WAITING_TO_COOL || state == WAITING_TO_HEAT){
                     line += " ";
                     time = tempControl.getWaitTime();
-                }
-                if(time != UINT_MAX){
+                } 
+                if(time != UINT16_MAX) {
                     char timeString[10];
                     unsigned int minutes = time/60;
                     unsigned int hours = minutes/60;
