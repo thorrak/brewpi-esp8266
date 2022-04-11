@@ -325,8 +325,8 @@ private:
    *
    * This may be tricky to combine with the write buffering, that's why I haven't done it yet.
    */
-  // WriteBufferingStream stream;
-  WriteBufferingClient stream;
+  WriteBufferingStream stream;
+  // WriteBufferingClient stream;
 
   /**
    * \brief _bool implementation for non WiFiClient Streams
