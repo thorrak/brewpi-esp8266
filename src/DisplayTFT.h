@@ -71,6 +71,10 @@
 #define STATUS_START_X 2
 #define STATUS_START_Y (MODE_START_Y + (MODE_FONT_SIZE * 7 + 7))
 
+#define IP_ADDRESS_FONT_SIZE 1
+#define IP_ADDRESS_START_X 2
+#define IP_ADDRESS_START_Y (STATUS_START_Y + (MODE_FONT_SIZE * 7 + 7))
+
 // Gravity Display
 #define GRAVITY_FONT_SIZE 3
 #define GRAVITY_HEADER_FONT_SIZE 2
@@ -100,6 +104,7 @@ class LcdDisplay DISPLAY_SUPERCLASS
             printState();
             printAllTemperatures();
             printMode();
+            printIPAddressInfo();
 #ifdef HAS_BLUETOOTH
                 // printGravity();
 #endif
@@ -114,6 +119,7 @@ class LcdDisplay DISPLAY_SUPERCLASS
 
         // print mode on the right location on the first line, after Mode:
         DISPLAY_METHOD void printMode();
+        DISPLAY_METHOD void printIPAddressInfo();
 
         DISPLAY_METHOD void setDisplayFlags(uint8_t newFlags);
         DISPLAY_METHOD uint8_t getDisplayFlags() { return flags; };

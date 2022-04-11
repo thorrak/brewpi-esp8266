@@ -217,7 +217,6 @@ void LcdDisplay::printStationaryText(){
     print_layout();
 }
 
-// print mode on the right location on the first line, after "Mode   "
 void LcdDisplay::printMode(){
     tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
     tft.setTextSize(MODE_FONT_SIZE);
@@ -246,8 +245,24 @@ void LcdDisplay::printMode(){
             tft.print("Invalid Mode");
             break;
     }
+}
+
+void LcdDisplay::printIPAddressInfo(){
+    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft.setTextSize(IP_ADDRESS_FONT_SIZE);
+    clearForText(IP_ADDRESS_START_X, IP_ADDRESS_START_Y, ILI9341_BLACK, MODE_FONT_SIZE, 21);
+
+    tft.setCursor(IP_ADDRESS_START_X, IP_ADDRESS_START_Y);
+    tft.print("IP Address: ");
+
+    if(WiFi.isConnected()) {
+        tft.print(WiFi.localIP());
+    } else {
+        tft.print("Disconnected");
+    }
 
 }
+
 
 uint8_t printTime(uint16_t time) {
     if(time == UINT16_MAX)
