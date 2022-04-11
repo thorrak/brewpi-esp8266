@@ -211,6 +211,7 @@ public:
 
     bool invertTFT;  //<! Whether or not to invert the TFT
     bool glycol;  //<! Whether or not to use glycol mode
+    bool lowDelay;  //<! Whether or not to use lowdelay mode
 
     DynamicJsonDocument toJson();
     void storeToSpiffs();

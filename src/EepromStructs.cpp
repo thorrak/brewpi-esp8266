@@ -284,6 +284,7 @@ ExtendedSettings::ExtendedSettings() {
 void ExtendedSettings::setDefaults() {
     invertTFT = false;
     glycol = false;
+    lowDelay = false;
 }
 
 
@@ -296,6 +297,7 @@ DynamicJsonDocument ExtendedSettings::toJson() {
     // Load the settings into the JSON Doc
     doc[ExtendedSettingsKeys::invertTFT] = invertTFT;
     doc[ExtendedSettingsKeys::glycol] = glycol;
+    doc[ExtendedSettingsKeys::lowDelay] = lowDelay;
 
     // Return the JSON document
     return doc;
@@ -319,6 +321,7 @@ void ExtendedSettings::loadFromSpiffs() {
     // Load the constants from the JSON Doc
     if(json_doc.containsKey(ExtendedSettingsKeys::invertTFT)) invertTFT = json_doc[ExtendedSettingsKeys::invertTFT];
     if(json_doc.containsKey(ExtendedSettingsKeys::glycol)) glycol = json_doc[ExtendedSettingsKeys::glycol];
+    if(json_doc.containsKey(ExtendedSettingsKeys::lowDelay)) lowDelay = json_doc[ExtendedSettingsKeys::lowDelay];
 
 }
 
@@ -340,9 +343,9 @@ void ExtendedSettings::processSettingKeypair(JsonPair kv) {
 
   if (kv.key() == ExtendedSettingsKeys::invertTFT) {
     invertTFT = kv.value().as<bool>();
-  }
-
-  else if (kv.key() == ExtendedSettingsKeys::glycol) {
+  } else if (kv.key() == ExtendedSettingsKeys::glycol) {
     glycol = kv.value().as<bool>();
+  } else if (kv.key() == ExtendedSettingsKeys::lowDelay) {
+    lowDelay = kv.value().as<bool>();
   }
 }
