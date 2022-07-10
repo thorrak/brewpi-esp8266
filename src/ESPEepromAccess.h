@@ -22,8 +22,11 @@
 #include <LittleFS.h>
 
 #elif defined(ESP32S2)
-#define FILESYSTEM LittleFS
-#include <LittleFS.h>
+// #define FILESYSTEM LittleFS
+// #include <LittleFS.h>
+#define FILESYSTEM SPIFFS
+#include <SPIFFS.h>
+
 
 #elif defined(ESP32)
 #define FILESYSTEM SPIFFS

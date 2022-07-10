@@ -54,7 +54,12 @@
 PiLink<WiFiClient> piLink(serverClient);
 #else
 // Not using ESP8266 WiFi
+#if defined(ESP32S2)
+// The ESP32-S2 has USB built onto the chip, and uses USBCDC rather than HardwareSerial
+PiLink<USBCDC> piLink(Serial);
+#else
 PiLink<HardwareSerial> piLink(Serial);
+#endif
 #endif
 
 /* Configure the counter and delay timer. The actual type of these will vary depending upon the environment.

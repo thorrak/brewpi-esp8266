@@ -18,16 +18,9 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifdef ESP8266
-#include <LittleFS.h>
-#elif defined(ESP32S2)
-#include <LittleFS.h>
-#elif defined(ESP32)
-#include <SPIFFS.h>
-#endif
 
 #include "DeviceNameManager.h"
-#include "ESPEepromAccess.h"
+#include "ESPEepromAccess.h"  // Includes filesystem headers/definition
 
 /**
  * \brief Set a human readable name for a device.
