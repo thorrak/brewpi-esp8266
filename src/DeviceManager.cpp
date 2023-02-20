@@ -673,7 +673,8 @@ inline bool hasOnewire(DeviceHardware hw)
  * Used for outputting device information
  */
 void DeviceManager::serializeJsonDevice(JsonDocument& doc, device_slot_t slot, DeviceConfig& config, const char* value) {
-	DynamicJsonDocument deviceObj = config.toJson();
+	DynamicJsonDocument deviceObj(1024);
+	config.toJson(deviceObj);
 
 	if(strlen(value) > 0)
 		deviceObj[DeviceDefinitionKeys::value] = value;  // NOTE - value must be char*, not const char* or ArduinoJson will not copy the value - just link it

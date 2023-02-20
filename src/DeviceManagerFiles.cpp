@@ -15,9 +15,7 @@
 #endif
 
 
-DynamicJsonDocument DeviceConfig::toJson() {
-    DynamicJsonDocument doc(1024);
-
+void DeviceConfig::toJson(DynamicJsonDocument &doc) {
     // Load the settings into the JSON Doc
     doc[DeviceDefinitionKeys::chamber] = chamber;
     doc[DeviceDefinitionKeys::beer] = beer;
@@ -83,8 +81,6 @@ DynamicJsonDocument DeviceConfig::toJson() {
     //     piLink.printNewLine();
     // }
 
-    // Return the JSON document
-    return doc;
 }
 
 
@@ -152,7 +148,7 @@ void DeviceConfig::storeToSpiffs(uint8_t devID) {
     char fname[32];
     deviceFilename(fname, devID);
 
-    doc = toJson();
+    toJson(doc);
 
     writeJsonToFile(fname, doc);  // Write the json to the file
 }

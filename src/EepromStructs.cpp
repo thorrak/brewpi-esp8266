@@ -108,9 +108,7 @@ void ControlConstants::setDefaults() {
 /**
  * \brief Serialize control constants to JSON
  */
-DynamicJsonDocument ControlConstants::toJson() {
-    DynamicJsonDocument doc(1024);  // Should be a max of 642, per the ArduinoJson Size Assistant
-
+void ControlConstants::toJson(DynamicJsonDocument &doc) {
     // Load the constants into the JSON Doc
     doc[ControlConstantsKeys::tempMin] = tempSettingMin;
     doc[ControlConstantsKeys::tempMax] = tempSettingMax;
@@ -143,15 +141,12 @@ DynamicJsonDocument ControlConstants::toJson() {
     doc[ControlConstantsKeys::pidMax] = pidMax;
     doc[ControlConstantsKeys::tempFormat] = tempFormat;
     doc[ControlConstantsKeys::tempFormat].is<char>();
-
-    // Return the JSON document
-    return doc;
 }
 
 void ControlConstants::storeToSpiffs() {
     DynamicJsonDocument doc(1024);  // Should be a max of 642, per the ArduinoJson Size Assistant
 
-    doc = toJson();
+    toJson(doc);
 
     writeJsonToFile(ControlConstants::filename, doc);  // Write the json to the file
 }
@@ -226,9 +221,7 @@ void ControlSettings::setDefaults() {
 }
 
 
-DynamicJsonDocument ControlSettings::toJson() {
-    DynamicJsonDocument doc(512);
-
+void ControlSettings::toJson(DynamicJsonDocument &doc) {
     // Load the settings into the JSON Doc
     doc[ControlSettingsKeys::beer] = beerSetting;
     doc[ControlSettingsKeys::fridge] = fridgeSetting;
@@ -236,16 +229,13 @@ DynamicJsonDocument ControlSettings::toJson() {
     doc[ControlSettingsKeys::coolEst] = coolEstimator;
     doc[ControlSettingsKeys::mode] = mode;
     doc[ControlSettingsKeys::mode].is<char>();
-
-    // Return the JSON document
-    return doc;
 }
 
 
 void ControlSettings::storeToSpiffs() {
     DynamicJsonDocument doc(512);
 
-    doc = toJson();
+    toJson(doc);
 
     writeJsonToFile(ControlSettings::filename, doc);  // Write the json to the file
 }
@@ -291,22 +281,17 @@ void ExtendedSettings::setDefaults() {
 /**
  * \brief Serialize extended settings to JSON
  */
-DynamicJsonDocument ExtendedSettings::toJson() {
-    DynamicJsonDocument doc(256);
-
+void ExtendedSettings::toJson(DynamicJsonDocument &doc) {
     // Load the settings into the JSON Doc
     doc[ExtendedSettingsKeys::invertTFT] = invertTFT;
     doc[ExtendedSettingsKeys::glycol] = glycol;
     doc[ExtendedSettingsKeys::lowDelay] = lowDelay;
-
-    // Return the JSON document
-    return doc;
 }
 
 void ExtendedSettings::storeToSpiffs() {
     DynamicJsonDocument doc(256);
 
-    doc = toJson();
+    toJson(doc);
 
     writeJsonToFile(ExtendedSettings::filename, doc);  // Write the json to the file
 }

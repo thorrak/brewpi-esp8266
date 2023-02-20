@@ -60,7 +60,7 @@ public:
     temperature pidMax;
     char tempFormat; //!< Temperature format (F/C)
 
-    DynamicJsonDocument toJson();
+    void toJson(DynamicJsonDocument &doc);
     void storeToSpiffs();
     void loadFromSpiffs();
     void setDefaults();
@@ -84,7 +84,7 @@ public:
     temperature coolEstimator; // updated automatically by self learning algorithm
     char mode;
 
-    DynamicJsonDocument toJson();
+    void toJson(DynamicJsonDocument &doc);
     void storeToSpiffs();
     void loadFromSpiffs();
     void setDefaults();
@@ -191,7 +191,7 @@ public:
 		};
 	} hw;
 
-    DynamicJsonDocument toJson();
+    void toJson(DynamicJsonDocument &doc);
     void fromJson(DynamicJsonDocument json_doc);
     void storeToSpiffs(uint8_t devID);
     void loadFromSpiffs(uint8_t devID);
@@ -213,7 +213,7 @@ public:
     bool glycol;  //<! Whether or not to use glycol mode
     bool lowDelay;  //<! Whether or not to use lowdelay mode
 
-    DynamicJsonDocument toJson();
+    void toJson(DynamicJsonDocument &doc);
     void storeToSpiffs();
     void loadFromSpiffs();
     void setDefaults();
