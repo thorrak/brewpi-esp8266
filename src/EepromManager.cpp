@@ -29,6 +29,7 @@
 EepromManager eepromManager;
 ESPEepromAccess eepromAccess;
 ExtendedSettings extendedSettings;
+UpstreamSettings upstreamSettings;
 DeviceConfig cached_devices[Config::EepromFormat::MAX_DEVICES];
 
 EepromManager::EepromManager()

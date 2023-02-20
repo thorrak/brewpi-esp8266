@@ -117,6 +117,7 @@ void setup()
   #endif
 
   extendedSettings.loadFromSpiffs();
+  upstreamSettings.loadFromSpiffs();
   display.init();
 
     initialize_wifi();

@@ -89,6 +89,7 @@ constexpr auto coolEst = "coolEstimator";
 constexpr auto mode = "mode";
 };
 
+
 /**
  * \brief Strings used for JSON keys
  * \see ControlConstants
@@ -120,14 +121,26 @@ constexpr auto pidMax = "pidMax";
 constexpr auto tempFormat = "tempFormat";
 };
 
+
 /**
  * \brief Strings used for JSON keys
- * \see EnumerateHardware
+ * \see ExtendedSettings
  */
 namespace ExtendedSettingsKeys {
 constexpr auto eepromReset = "confirmReset";
 constexpr auto invertTFT = "invertTFT";
 constexpr auto glycol = "glycol";
 constexpr auto lowDelay = "lowDelay";
+}; // namespace ExtendedSettingsKeys
+
+
+/**
+ * \brief Strings used for JSON keys
+ * \see UpstreamSettings
+ */
+namespace UpstreamSettingsKeys {
+constexpr auto upstreamHost = "upstreamHost";
+constexpr auto upstreamPort = "upstreamPort";
+constexpr auto deviceID = "deviceID";
 }; // namespace ExtendedSettingsKeys
 

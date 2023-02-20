@@ -37,6 +37,7 @@
 #endif
 
 #include "EepromStructs.h"
+#include "Brewpi.h"  // Only needed for Config:: below
 
 
 //TODO - Clean this up

@@ -349,3 +349,70 @@ void ExtendedSettings::processSettingKeypair(JsonPair kv) {
     lowDelay = kv.value().as<bool>();
   }
 }
+
+
+
+/**
+ * \brief Constructor
+ *
+ * \see setDefaults
+ */
+UpstreamSettings::UpstreamSettings() {
+    setDefaults();
+}
+
+/**
+ * \brief Set default values for extended settings
+ */
+void UpstreamSettings::setDefaults() {
+    upstreamHost[0] = '\0';
+    upstreamPort = 80;
+    deviceID[0] = '\0';
+}
+
+
+/**
+ * \brief Serialize extended settings to JSON
+ */
+void UpstreamSettings::toJson(DynamicJsonDocument &doc) {
+    // Load the settings into the JSON Doc
+    doc[UpstreamSettings::upstreamHost] = upstreamHost;
+    doc[UpstreamSettings::upstreamPort] = upstreamPort;
+    doc[UpstreamSettings::deviceID] = deviceID;
+}
+
+void UpstreamSettings::storeToSpiffs() {
+    DynamicJsonDocument doc(256);
+    toJson(doc);
+
+    writeJsonToFile(UpstreamSettings::filename, doc);  // Write the json to the file
+}
+
+void UpstreamSettings::loadFromSpiffs() {
+    // We start by setting the defaults, as we use them as the alternative to loaded values if the keys don't exist
+    setDefaults();
+
+    DynamicJsonDocument json_doc(256);
+    json_doc = readJsonFromFile(ExtendedSettings::filename);
+
+    // Load the constants from the JSON Doc
+    if(json_doc.containsKey(UpstreamSettingsKeys::upstreamHost)) strcpy(upstreamHost, json_doc[UpstreamSettingsKeys::upstreamHost]);
+    if(json_doc.containsKey(UpstreamSettingsKeys::upstreamPort)) upstreamPort = json_doc[UpstreamSettingsKeys::upstreamPort];
+    if(json_doc.containsKey(UpstreamSettingsKeys::deviceID)) strcpy(deviceID, json_doc[UpstreamSettingsKeys::deviceID]);
+
+}
+
+/**
+ * \brief Process a single setting key/value pair
+ *
+ * \param kv - The parsed JsonPair of the setting
+ */
+void UpstreamSettings::processSettingKeypair(JsonPair kv) {
+  if (kv.key() == UpstreamSettingsKeys::upstreamHost) {
+    strcpy(upstreamHost, kv.value().as<const char *>());
+  } else if (kv.key() == UpstreamSettingsKeys::upstreamPort) {
+    upstreamPort = kv.value().as<uint16_t>();
+  } else if (kv.key() == UpstreamSettingsKeys::deviceID) {
+    strcpy(deviceID, kv.value().as<const char *>());
+  }
+}

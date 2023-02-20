@@ -203,7 +203,7 @@ public:
 /** @} */
 
 /**
- * \brief PID Control constants
+ * \brief Extended (non-stock-BrewPi) hardware settings
  */
 class ExtendedSettings : public JSONSaveable {
 public:
@@ -223,5 +223,29 @@ public:
      * \brief Filename used when reading/writing data to flash
      */
     static constexpr auto filename = "/extendedSettings.json";
+private:
+};
+
+/**
+ * \brief REST Interface settings
+ */
+class UpstreamSettings : public JSONSaveable {
+public:
+    UpstreamSettings();
+
+    char upstreamHost[64];  // Hostname (or IP address) of the upstream server
+    uint16_t upstreamPort;  // Port of the upstream server (defaults to 80)
+    char deviceID[64];      // UUID of this device, as assigned by upstream server
+
+    void toJson(DynamicJsonDocument &doc);
+    void storeToSpiffs();
+    void loadFromSpiffs();
+    void setDefaults();
+    void processSettingKeypair(JsonPair kv);
+
+    /**
+     * \brief Filename used when reading/writing data to flash
+     */
+    static constexpr auto filename = "/upstreamSettings.json";
 private:
 };
