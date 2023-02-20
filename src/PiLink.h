@@ -28,9 +28,8 @@
 #include "DeviceNameManager.h"
 #include "Logger.h"
 #include "PiStream.h"
-#include "TempControl.h"
-#include "TemperatureFormats.h"
 #include <stdarg.h>
+#include "JsonMessages.h"
 
 class DeviceConfig;
 
@@ -70,30 +69,9 @@ public:
    * \param fridgeAnnotation - Annotation for the beer
    */
   void printTemperatures(const char *beerAnnotation, const char *fridgeAnnotation) {
-    StaticJsonDocument<1024> doc;
-
-    doc["BeerTemp"] = tempToDouble(tempControl.getBeerTemp(), Config::TempFormat::tempDecimals);
-    doc["BeerSet"] = tempToDouble(tempControl.getBeerSetting(), Config::TempFormat::tempDecimals);
-
-    doc["BeerAnn"] = beerAnnotation;
-
-    doc["FridgeTemp"] = tempToDouble(tempControl.getFridgeTemp(), Config::TempFormat::tempDecimals);
-    doc["FridgeSet"] = tempToDouble(tempControl.getFridgeSetting(), Config::TempFormat::tempDecimals);
-
-    doc["FridgeAnn"] = fridgeAnnotation;
-
-    if (tempControl.ambientSensor->isConnected()) {
-      doc["RoomTemp"] = tempToDouble(tempControl.getRoomTemp(), Config::TempFormat::tempDecimals);
-    } else {
-      doc["RoomTemp"] = "";
-    }
-
-    doc["State"] = tempControl.getState();
-
-#if BREWPI_SIMULATE
-    doc["Time"] = ticks.millis() / 1000;
-#endif
-
+    // StaticJsonDocument<1024> doc;
+    DynamicJsonDocument doc(1024);
+    printTemperaturesJson(doc, beerAnnotation, fridgeAnnotation);
     this->sendJsonMessage('T', doc);
   }
 };

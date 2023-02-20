@@ -308,9 +308,9 @@ public:
 		return isDoorOpen() ? DOOR_OPEN : getState();
 	}
 
-  TEMP_CONTROL_METHOD void getControlVariablesDoc(JsonDocument& doc);
-  TEMP_CONTROL_METHOD void getControlConstantsDoc(JsonDocument& doc);
-  TEMP_CONTROL_METHOD void getControlSettingsDoc(JsonDocument& doc);
+  TEMP_CONTROL_METHOD void getControlVariablesDoc(DynamicJsonDocument& doc);
+  TEMP_CONTROL_METHOD void getControlConstantsDoc(DynamicJsonDocument& doc);
+  TEMP_CONTROL_METHOD void getControlSettingsDoc(DynamicJsonDocument& doc);
 
 private:
 	TEMP_CONTROL_METHOD void increaseEstimator(temperature * estimator, temperature error);

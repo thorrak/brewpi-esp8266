@@ -735,7 +735,7 @@ bool TempControl::stateIsHeating(){
  *
  * \param doc - Reference to JsonDocument to populate
  */
-void TempControl::getControlVariablesDoc(JsonDocument& doc) {
+void TempControl::getControlVariablesDoc(DynamicJsonDocument& doc) {
   doc["beerDiff"] = tempDiffToDouble(cv.beerDiff, Config::TempFormat::tempDiffDecimals);
   doc["diffIntegral"] = tempDiffToDouble(cv.diffIntegral, Config::TempFormat::tempDiffDecimals);
   doc["beerSlope"] = tempDiffToDouble(cv.beerSlope, Config::TempFormat::tempDiffDecimals);
@@ -756,7 +756,7 @@ void TempControl::getControlVariablesDoc(JsonDocument& doc) {
  *
  * \param doc - Reference to JsonDocument to populate
  */
-void TempControl::getControlConstantsDoc(JsonDocument& doc) {
+void TempControl::getControlConstantsDoc(DynamicJsonDocument& doc) {
   doc["tempFormat"] = String(cc.tempFormat);
 
   doc["tempSetMin"] = tempToDouble(cc.tempSettingMin, Config::TempFormat::tempDecimals);
@@ -791,7 +791,7 @@ void TempControl::getControlConstantsDoc(JsonDocument& doc) {
  *
  * \param doc - Reference to JsonDocument to populate
  */
-void TempControl::getControlSettingsDoc(JsonDocument& doc) {
+void TempControl::getControlSettingsDoc(DynamicJsonDocument& doc) {
   doc["mode"] = String(cs.mode);
   doc["beerSet"] = tempToDouble(cs.beerSetting, Config::TempFormat::tempDecimals);
   doc["fridgeSet"] = tempToDouble(cs.fridgeSetting, Config::TempFormat::tempDecimals);

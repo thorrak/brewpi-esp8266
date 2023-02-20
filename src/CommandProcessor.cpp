@@ -29,6 +29,7 @@
 #include "TempControl.h"
 #include "Version.h"
 #include <ArduinoJson.h>
+#include "JsonMessages.h"
 #include "JsonKeys.h"
 
 #if defined(ESP8266)
@@ -214,15 +215,7 @@ void CommandProcessor::versionInfo() {
   // s shield type
   // y: simulator
   // b: board
-
-  doc["v"] = Config::Version::release;
-  doc["n"] = Config::Version::git_rev;
-  doc["c"] = Config::Version::git_tag;
-  doc["s"] = BREWPI_STATIC_CONFIG;
-  doc["y"] = BREWPI_SIMULATE;
-  doc["b"] = String(BREWPI_BOARD);
-  doc["l"] = BREWPI_LOG_MESSAGES_VERSION;
-
+  versionInfoJson(doc);  // add version info to json
   piLink.sendJsonMessage('N', doc);
 }
 
@@ -321,13 +314,7 @@ void CommandProcessor::toggleBacklight() { ::toggleBacklight = !::toggleBackligh
  */
 void CommandProcessor::getLcdContent() {
   DynamicJsonDocument doc(256);
-  JsonArray rootArray = doc.to<JsonArray>();
-  char stringBuffer[Config::Lcd::columns + 2];
-
-  for (uint8_t i = 0; i < Config::Lcd::lines; i++) {
-    display.getLine(i, stringBuffer);
-    rootArray.add(stringBuffer);
-  }
+  getLcdContentJson(doc);
   piLink.sendJsonMessage('L', doc);
 }
 

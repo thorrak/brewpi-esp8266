@@ -1,6 +1,7 @@
 #include <ArduinoJson.h>
 #include "DeviceManager.h"
 #include "EepromStructs.h"
+#include "ESPEepromAccess.h"
 #include "JsonKeys.h"
 #include "PiLink.h"
 
