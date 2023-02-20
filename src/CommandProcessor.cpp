@@ -452,7 +452,7 @@ void CommandProcessor::sendControlSettings() {
  */
 void CommandProcessor::sendExtendedSettings() {
   DynamicJsonDocument doc(256);
-  doc = extendedSettings.toJson();
+  extendedSettings.toJson(doc);
   piLink.sendJsonMessage('X', doc);
 }
 

@@ -226,6 +226,7 @@ public:
 private:
 };
 
+
 /**
  * \brief REST Interface settings
  */
@@ -233,7 +234,7 @@ class UpstreamSettings : public JSONSaveable {
 public:
     UpstreamSettings();
 
-    char upstreamHost[64];  // Hostname (or IP address) of the upstream server
+    char upstreamHost[128];  // Hostname (or IP address) of the upstream server
     uint16_t upstreamPort;  // Port of the upstream server (defaults to 80)
     char deviceID[64];      // UUID of this device, as assigned by upstream server
 

@@ -361,9 +361,9 @@ void UpstreamSettings::setDefaults() {
  */
 void UpstreamSettings::toJson(DynamicJsonDocument &doc) {
     // Load the settings into the JSON Doc
-    doc[UpstreamSettings::upstreamHost] = upstreamHost;
-    doc[UpstreamSettings::upstreamPort] = upstreamPort;
-    doc[UpstreamSettings::deviceID] = deviceID;
+    doc[UpstreamSettingsKeys::upstreamHost] = upstreamHost;
+    doc[UpstreamSettingsKeys::upstreamPort] = upstreamPort;
+    doc[UpstreamSettingsKeys::deviceID] = deviceID;
 }
 
 void UpstreamSettings::storeToSpiffs() {
@@ -378,12 +378,12 @@ void UpstreamSettings::loadFromSpiffs() {
     setDefaults();
 
     DynamicJsonDocument json_doc(256);
-    json_doc = readJsonFromFile(ExtendedSettings::filename);
+    json_doc = readJsonFromFile(UpstreamSettings::filename);
 
     // Load the constants from the JSON Doc
-    if(json_doc.containsKey(UpstreamSettingsKeys::upstreamHost)) strcpy(upstreamHost, json_doc[UpstreamSettingsKeys::upstreamHost]);
+    if(json_doc.containsKey(UpstreamSettingsKeys::upstreamHost)) strlcpy(upstreamHost, json_doc[UpstreamSettingsKeys::upstreamHost], 128);
     if(json_doc.containsKey(UpstreamSettingsKeys::upstreamPort)) upstreamPort = json_doc[UpstreamSettingsKeys::upstreamPort];
-    if(json_doc.containsKey(UpstreamSettingsKeys::deviceID)) strcpy(deviceID, json_doc[UpstreamSettingsKeys::deviceID]);
+    if(json_doc.containsKey(UpstreamSettingsKeys::deviceID)) strlcpy(deviceID, json_doc[UpstreamSettingsKeys::deviceID], 64);
 
 }
 
@@ -394,10 +394,10 @@ void UpstreamSettings::loadFromSpiffs() {
  */
 void UpstreamSettings::processSettingKeypair(JsonPair kv) {
   if (kv.key() == UpstreamSettingsKeys::upstreamHost) {
-    strcpy(upstreamHost, kv.value().as<const char *>());
+    strlcpy(upstreamHost, kv.value().as<const char *>(), 128);
   } else if (kv.key() == UpstreamSettingsKeys::upstreamPort) {
     upstreamPort = kv.value().as<uint16_t>();
   } else if (kv.key() == UpstreamSettingsKeys::deviceID) {
-    strcpy(deviceID, kv.value().as<const char *>());
+    strlcpy(deviceID, kv.value().as<const char *>(), 64);
   }
 }
