@@ -139,8 +139,8 @@ void ControlConstants::toJson(DynamicJsonDocument &doc) {
     doc[ControlConstantsKeys::lightHeater] = lightAsHeater;
     doc[ControlConstantsKeys::rotaryHalfSteps] = rotaryHalfSteps;
     doc[ControlConstantsKeys::pidMax] = pidMax;
-    doc[ControlConstantsKeys::tempFormat] = tempFormat;
-    doc[ControlConstantsKeys::tempFormat].is<char>();
+    char formatStr[2] = {tempFormat, 0};
+    doc[ControlConstantsKeys::tempFormat] = formatStr;
 }
 
 void ControlConstants::storeToSpiffs() {
@@ -192,7 +192,7 @@ void ControlConstants::loadFromSpiffs() {
     lightAsHeater = json_doc[ControlConstantsKeys::lightHeater] | lightAsHeater;
     rotaryHalfSteps = json_doc[ControlConstantsKeys::rotaryHalfSteps] | rotaryHalfSteps;
     if(json_doc.containsKey(ControlConstantsKeys::pidMax)) pidMax = json_doc[ControlConstantsKeys::pidMax];
-    tempFormat = json_doc[ControlConstantsKeys::tempFormat] | tempFormat;
+    tempFormat = json_doc[ControlConstantsKeys::tempFormat].as<unsigned char>() | tempFormat;
 }
 
 
@@ -227,8 +227,9 @@ void ControlSettings::toJson(DynamicJsonDocument &doc) {
     doc[ControlSettingsKeys::fridge] = fridgeSetting;
     doc[ControlSettingsKeys::heatEst] = heatEstimator;
     doc[ControlSettingsKeys::coolEst] = coolEstimator;
-    doc[ControlSettingsKeys::mode] = mode;
-    doc[ControlSettingsKeys::mode].is<char>();
+
+    char modeStr[2] = {mode, 0};
+    doc[ControlSettingsKeys::mode] = modeStr;
 }
 
 
@@ -254,7 +255,7 @@ void ControlSettings::loadFromSpiffs() {
     if(json_doc.containsKey(ControlSettingsKeys::heatEst)) heatEstimator = json_doc[ControlSettingsKeys::heatEst];
     if(json_doc.containsKey(ControlSettingsKeys::coolEst)) coolEstimator = json_doc[ControlSettingsKeys::coolEst];
 
-    mode = json_doc[ControlSettingsKeys::mode] | mode;
+    mode = json_doc[ControlSettingsKeys::mode].as<unsigned char>() | mode;
 }
 
 
