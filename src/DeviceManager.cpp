@@ -791,9 +791,10 @@ inline void DeviceManager::readTempSensorValue(DeviceConfig::Hardware hw, char* 
  *
  * Used from the various enumerate* methods.
  */
-void DeviceManager::handleEnumeratedDevice(DeviceConfig& config, EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc)
+void DeviceManager::handleEnumeratedDevice(DeviceConfig config_in, EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc)
 {
 	DeviceOutput out;
+	DeviceConfig config = config_in;
 
 	if (h.function && !isAssignable(deviceType(DeviceFunction(h.function)), config.deviceHardware))
 		return; // device not applicable for required function
