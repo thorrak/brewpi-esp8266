@@ -30,10 +30,11 @@ EepromManager eepromManager;
 ESPEepromAccess eepromAccess;
 ExtendedSettings extendedSettings;
 UpstreamSettings upstreamSettings;
-DeviceConfig cached_devices[Config::EepromFormat::MAX_DEVICES];
+
 
 EepromManager::EepromManager()
 {
+	cache_loaded = false;
 	// eepromSizeCheck();
 }
 
@@ -93,14 +94,18 @@ bool EepromManager::applySettings()
 }
 
 void EepromManager::loadDevicesToCache() {
-	for (uint8_t index = 0; index<Config::EepromFormat::MAX_DEVICES; index++)
-	{	
+	for (uint8_t index = 0; index<Config::EepromFormat::MAX_DEVICES; index++) {	
 		cached_devices[index].loadFromSpiffs(index);
 	}
+	cache_loaded = true;
 }
 
 DeviceConfig EepromManager::fetchDevice(uint8_t deviceIndex)
 {
+	if (!cache_loaded) {
+		loadDevicesToCache();
+	}
+
 	if(deviceIndex<Config::EepromFormat::MAX_DEVICES) {
 		// Always fetch the device from the cache when called
 		return cached_devices[deviceIndex];

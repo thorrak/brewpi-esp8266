@@ -44,12 +44,11 @@ public:
 	/**
 	 * Applies the settings from the eeprom
 	 */
-	static bool applySettings();
+	bool applySettings();
 
-	void loadDevicesToCache();
 
-	static DeviceConfig fetchDevice(uint8_t deviceIndex);
-	static void storeDevice(DeviceConfig& config, uint8_t deviceIndex);
+	DeviceConfig fetchDevice(uint8_t deviceIndex);
+	void storeDevice(DeviceConfig& config, uint8_t deviceIndex);
 	
 	static uint8_t saveDefaultDevices();
 
@@ -57,6 +56,12 @@ public:
 	static String fetchmDNSName();
 	static void savemDNSName(String mdns_id);
 #endif
+
+
+private:
+	bool cache_loaded = false;
+	void loadDevicesToCache();
+	DeviceConfig cached_devices[Config::EepromFormat::MAX_DEVICES];
 
 };
 
