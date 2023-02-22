@@ -162,7 +162,6 @@ public:
 	uint8_t chamber;		//!< Chamber assignment. 0 means no chamber. 1 is the first chamber.
 	uint8_t beer;				//!< Beer assignment.  0 means no beer, 1 is the first beer
 
-  bool cached;        // Used internally to determine if the device cache has been loaded from the FS
 
 	DeviceFunction deviceFunction;				// The function of the device to configure
 	DeviceHardware deviceHardware;				// flag to indicate the runtime type of device

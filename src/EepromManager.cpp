@@ -108,7 +108,6 @@ void EepromManager::loadDevicesToCache() {
 	for (uint8_t index = 0; index<Config::EepromFormat::MAX_DEVICES; index++)
 	{	
 		cached_devices[index].loadFromSpiffs(index);
-		cached_devices[index].cached = true;
 	}
 }
 
@@ -127,14 +126,12 @@ DeviceConfig EepromManager::fetchDevice(uint8_t deviceIndex)
 }	
 
 
-bool EepromManager::storeDevice(DeviceConfig& config, uint8_t deviceIndex)
+void EepromManager::storeDevice(DeviceConfig& config, uint8_t deviceIndex)
 {
-	bool ok = (hasSettings() && deviceIndex<Config::EepromFormat::MAX_DEVICES);
-	if (ok) {
+	if (deviceIndex<Config::EepromFormat::MAX_DEVICES) {
 		config.storeToSpiffs(deviceIndex);
-		cached_devices[deviceIndex].cached = false;
+		cached_devices[deviceIndex].loadFromSpiffs(deviceIndex);
 	}
-	return ok;
 }
 
 

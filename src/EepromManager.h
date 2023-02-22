@@ -54,7 +54,7 @@ public:
 	void loadDevicesToCache();
 
 	static DeviceConfig fetchDevice(uint8_t deviceIndex);
-	static bool storeDevice(DeviceConfig& config, uint8_t deviceIndex);
+	static void storeDevice(DeviceConfig& config, uint8_t deviceIndex);
 	
 	static uint8_t saveDefaultDevices();
 
