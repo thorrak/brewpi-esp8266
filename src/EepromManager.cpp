@@ -38,11 +38,6 @@ EepromManager::EepromManager()
 }
 
 
-bool EepromManager::hasSettings()
-{
-	return eepromAccess.hasSettings();
-}
-
 bool EepromManager::initializeEeprom()
 {
 	// clear all eeprom
@@ -74,29 +69,22 @@ uint8_t EepromManager::saveDefaultDevices()
 
 bool EepromManager::applySettings()
 {
-    if (!hasSettings()) {
-        return false;  // TODO - This is where the EEPROM reset code should be called.
-    }
 
 	// start from a clean state		
 	deviceManager.setupUnconfiguredDevices();
 		
-	logDebug("Applying settings");
-
 	// load the one chamber and one beer for now
 	TempControl::loadConstants();
 	TempControl::loadSettings();
 	
-	logDebug("Applied settings");
 	
-	
-	DeviceConfig deviceConfig;
 	for (uint8_t index = 0; index<Config::EepromFormat::MAX_DEVICES; index++)
 	{	
-		deviceConfig = fetchDevice(index);
-		if (deviceManager.isDeviceValid(deviceConfig, deviceConfig, index))
+		DeviceConfig deviceConfig = fetchDevice(index);
+		if (deviceManager.isDeviceValid(deviceConfig, deviceConfig, index)) {
 			deviceManager.installDevice(deviceConfig);
-		else {
+		} else {
+			// The loaded device is not valid, so we need to reset it to defaults
 			deviceConfig.setDefaults();
 			eepromManager.storeDevice(deviceConfig, index);
 		}			

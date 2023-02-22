@@ -49,9 +49,6 @@ private:
     }
 
 public:
-    static bool hasSettings() {
-        return doesFileExist(ControlSettings::filename);
-    }
 
     static void zapData() {
         // This gets a bit tricky -- we can't just do FS.format because that would wipe out the mDNS name

@@ -40,11 +40,6 @@ public:
 	 * beer/fridge temp sensor, and heating,cooling actuators and door switch.
 	 */
 	static bool initializeEeprom();
-	
-	/**
-	 * Determines if this eeprom has settings.
-	 */
-	static bool hasSettings();
 
 	/**
 	 * Applies the settings from the eeprom
