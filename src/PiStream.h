@@ -229,11 +229,6 @@ public:
    * \param doc - Reference to JsonDocument that should be sent
    */
   void sendSingleItemJsonMessage(const char prefix, JsonDocument &doc) {
-    if (prefix) {
-      print(prefix);
-      print(':');
-    }
-
     // Pull the device object from the document array and promote it to be root
     DynamicJsonDocument shallowDoc(doc.capacity());
 
@@ -241,8 +236,7 @@ public:
       shallowDoc[kvp.key()] = kvp.value();
     }
 
-    serializeJson(shallowDoc, stream);
-    printNewLine();
+    sendJsonMessage(prefix, shallowDoc);
   }
 
   /**
