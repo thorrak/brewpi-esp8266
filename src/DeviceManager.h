@@ -240,11 +240,11 @@ struct DeviceDefinition {
  */
 struct EnumerateHardware
 {
-	int8_t hardware;	//<! Restrict the types of devices requested
-	int8_t pin;				//<! Pin to search
-	int8_t values;		//<! Fetch values for the devices.
-	int8_t unused;		//<! 0 don't care about unused state, 1 unused only.
-	int8_t function;	//<! Restrict to devices that can be used with this function
+	int8_t hardware = -1;	//<! Restrict the types of devices requested
+	int8_t pin = -1;		//<! Pin to search
+	int8_t values = 0;		//<! Fetch values for the devices.
+	int8_t unused = 0;		//<! 0 don't care about unused state, 1 unused only.
+	int8_t function = 0;	//<! Restrict to devices that can be used with this function
 };
 
 /**
@@ -332,12 +332,14 @@ public:
 
 	static bool isDeviceValid(DeviceConfig& config, DeviceConfig& original, int8_t deviceIndex);
 
-	static void enumerateHardware(JsonDocument& doc);
+	static void enumerateHardware(DynamicJsonDocument& doc, EnumerateHardware spec);
+	static void enumerateHardware(DynamicJsonDocument& doc);
+	static void readJsonIntoHardwareSpec(EnumerateHardware&);
 
 	static bool enumDevice(DeviceDisplay& dd, DeviceConfig& dc, uint8_t idx);
 
 	static void listDevices(JsonDocument& doc);
-  static void rawDeviceValues(JsonDocument& doc);
+	static void rawDeviceValues(JsonDocument& doc);
 
 private:
 	static void enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc);
@@ -357,7 +359,7 @@ private:
 
   static void readJsonIntoDeviceDef(DeviceDefinition&);
   static void readJsonIntoDeviceDisplay(DeviceDisplay&);
-  static void readJsonIntoHardwareSpec(EnumerateHardware&);
+
 
 	static void* createDevice(DeviceConfig& config, DeviceType dc);
 	static void* createOneWireGPIO(DeviceConfig& config, DeviceType dt);

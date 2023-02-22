@@ -273,7 +273,11 @@ void CommandProcessor::listHardware() {
 #else
   DynamicJsonDocument doc(8192);
 #endif
-  deviceManager.enumerateHardware(doc);
+
+  EnumerateHardware spec;
+  deviceManager.readJsonIntoHardwareSpec(spec);  // This reads JSON off the wire into an EnumerateHardware object
+
+  deviceManager.enumerateHardware(doc, spec);
   piLink.sendJsonMessage('h', doc);
 }
 

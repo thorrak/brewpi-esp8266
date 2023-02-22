@@ -1008,23 +1008,14 @@ void DeviceManager::enumerateTplinkDevices(EnumerateHardware& h, EnumDevicesCall
 #endif
 
 /**
- * \brief Read hardware spec from stream and output matching devices
+ * \brief Output devices matching hardware spec passed in
  */
-void DeviceManager::enumerateHardware(JsonDocument& doc)
+void DeviceManager::enumerateHardware(DynamicJsonDocument& doc, EnumerateHardware spec)
 {
-	EnumerateHardware spec;
-	// set up defaults
-	spec.unused = 0;			// list all devices
-	spec.values = 0;			// don't list values
-	spec.pin = -1;				// any pin
-	spec.hardware = -1;		// any hardware
-	spec.function = 0;		// no function restriction
-
-  readJsonIntoHardwareSpec(spec);
 	DeviceOutput out;
 
-  // Initialize the document as an array
-  doc.to<JsonArray>();
+	// Initialize the document as an array
+	doc.to<JsonArray>();
 
 	if (spec.hardware==-1 || isOneWire(DeviceHardware(spec.hardware))) {
 		enumerateOneWireDevices(spec, outputEnumeratedDevices, out, &doc);
@@ -1034,11 +1025,11 @@ void DeviceManager::enumerateHardware(JsonDocument& doc)
 	}
 #ifdef HAS_BLUETOOTH
 	if (spec.hardware==-1 || spec.hardware==DEVICE_HARDWARE_BLUETOOTH_INKBIRD) {
-		spec.values = 1;  // TODO - Remove this
+		// spec.values = 1;  // TODO - Remove this
 		enumerateInkbirdDevices(spec, outputEnumeratedDevices, out, &doc);
 	}
 	if (spec.hardware==-1 || spec.hardware==DEVICE_HARDWARE_BLUETOOTH_TILT) {
-		spec.values = 1;  // TODO - Remove this
+		// spec.values = 1;  // TODO - Remove this
 		enumerateTiltDevices(spec, outputEnumeratedDevices, out, &doc);
 	}
 #endif
@@ -1049,6 +1040,15 @@ void DeviceManager::enumerateHardware(JsonDocument& doc)
 	}
 #endif
 
+}
+
+/**
+ * \brief Output devices matching default hardware spec (all devices, no values)
+ */
+void DeviceManager::enumerateHardware(DynamicJsonDocument& doc)
+{
+	EnumerateHardware spec;
+	enumerateHardware(doc, spec);
 }
 
 /**
