@@ -343,18 +343,18 @@ public:
 	static void rawDeviceValues(JsonDocument& doc);
 
 private:
-	static void enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc);
-	static void enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc);
+	static void enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc);
+	static void enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc);
 #ifdef HAS_BLUETOOTH
-	static void enumerateInkbirdDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc);
-	static void enumerateTiltDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc);
+	static void enumerateInkbirdDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc);
+	static void enumerateTiltDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc);
 #endif
 #ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
-	static void enumerateTplinkDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc);
+	static void enumerateTplinkDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc);
 #endif
 
 	static void outputEnumeratedDevices(DeviceConfig* config, void* pv, JsonDocument* doc);
-	static void handleEnumeratedDevice(DeviceConfig& config, EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& out, JsonDocument* doc);
+	static void handleEnumeratedDevice(DeviceConfig& config, EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc);
 	static void readTempSensorValue(DeviceConfig::Hardware hw, char* out);
 	static void outputRawDeviceValue(DeviceConfig* config, void* pv, JsonDocument* doc);
 

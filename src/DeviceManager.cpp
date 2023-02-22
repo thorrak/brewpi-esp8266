@@ -791,8 +791,10 @@ inline void DeviceManager::readTempSensorValue(DeviceConfig::Hardware hw, char* 
  *
  * Used from the various enumerate* methods.
  */
-void DeviceManager::handleEnumeratedDevice(DeviceConfig& config, EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& out, JsonDocument* doc)
+void DeviceManager::handleEnumeratedDevice(DeviceConfig& config, EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc)
 {
+	DeviceOutput out;
+
 	if (h.function && !isAssignable(deviceType(DeviceFunction(h.function)), config.deviceHardware))
 		return; // device not applicable for required function
 
@@ -838,7 +840,7 @@ void DeviceManager::handleEnumeratedDevice(DeviceConfig& config, EnumerateHardwa
  *
  * Pin devices are those that are attached directly to a pin, not on a bus like OneWire
  */
-void DeviceManager::enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc)
+void DeviceManager::enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc)
 {
 	DeviceConfig config;
 	config.deviceHardware = DEVICE_HARDWARE_PIN;
@@ -850,14 +852,14 @@ void DeviceManager::enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallbac
 			continue;
 		config.hw.pinNr = pin;
 		config.hw.invert = true; // make inverted default, because shiels have transistor on them
-		handleEnumeratedDevice(config, h, callback, output, doc);
+		handleEnumeratedDevice(config, h, callback, doc);
 	}
 
 	for (uint8_t count=0; (pin=deviceManager.enumerateSensorPins(count))>=0; count++) {
 		if (h.pin!=-1 && h.pin!=pin)
 			continue;
 		config.hw.pinNr = pin;
-		handleEnumeratedDevice(config, h, callback, output, doc);
+		handleEnumeratedDevice(config, h, callback, doc);
 	}
 }
 
@@ -870,7 +872,7 @@ void DeviceManager::enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallbac
  * \param output -
  * \param doc - JsonDocument to populate
  */
-void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc)
+void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc)
 {
 #if !BREWPI_SIMULATE
 	int8_t pin;
@@ -905,7 +907,7 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 						// enumerate each pin separately
 						for (uint8_t i=0; i<2; i++) {
 							config.hw.pio = i;
-							handleEnumeratedDevice(config, h, callback, output, doc);
+							handleEnumeratedDevice(config, h, callback, doc);
 						}
 						break;
 		#endif
@@ -914,15 +916,15 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 						{	// check that device is not parasite powered
 							DallasTemperature sensor(wire);
 							if(initConnection(sensor, config.hw.address)){
-								handleEnumeratedDevice(config, h, callback, output, doc);
+								handleEnumeratedDevice(config, h, callback, doc);
 							}
 						}
 		#else
-						handleEnumeratedDevice(config, h, callback, output, doc);
+						handleEnumeratedDevice(config, h, callback, doc);
 		#endif
 						break;
 					default:
-						handleEnumeratedDevice(config, h, callback, output, doc);
+						handleEnumeratedDevice(config, h, callback, doc);
 				}
 			}
 		}
@@ -940,7 +942,7 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
  * \param output -
  * \param doc - JsonDocument to populate
  */
-void DeviceManager::enumerateInkbirdDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc)
+void DeviceManager::enumerateInkbirdDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc)
 {
 	DeviceConfig config;
 	config.hw.pinNr = 0;  			// 0 for wireless devices
@@ -949,7 +951,7 @@ void DeviceManager::enumerateInkbirdDevices(EnumerateHardware& h, EnumDevicesCal
 
 	for(inkbird & ib : lInkbirds) {
 		config.hw.btAddress = ib.deviceAddress;
-		handleEnumeratedDevice(config, h, callback, output, doc);
+		handleEnumeratedDevice(config, h, callback, doc);
     }
 }
 
@@ -961,7 +963,7 @@ void DeviceManager::enumerateInkbirdDevices(EnumerateHardware& h, EnumDevicesCal
  * \param output -
  * \param doc - JsonDocument to populate
  */
-void DeviceManager::enumerateTiltDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc)
+void DeviceManager::enumerateTiltDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc)
 {
 	DeviceConfig config;
 	config.hw.pinNr = 0;  			// 0 for wireless devices
@@ -970,7 +972,7 @@ void DeviceManager::enumerateTiltDevices(EnumerateHardware& h, EnumDevicesCallba
 
 	for(tilt & th : lTilts) {
 		config.hw.btAddress = th.deviceAddress;
-		handleEnumeratedDevice(config, h, callback, output, doc);
+		handleEnumeratedDevice(config, h, callback, doc);
     }
 }
 #endif
@@ -984,7 +986,7 @@ void DeviceManager::enumerateTiltDevices(EnumerateHardware& h, EnumDevicesCallba
  * \param output -
  * \param doc - JsonDocument to populate
  */
-void DeviceManager::enumerateTplinkDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output, JsonDocument* doc)
+void DeviceManager::enumerateTplinkDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc)
 {
 	DeviceConfig config;
 	config.hw.pinNr = 0;  			// 0 for wireless devices
@@ -994,7 +996,7 @@ void DeviceManager::enumerateTplinkDevices(EnumerateHardware& h, EnumDevicesCall
 	for(TPLinkPlug & tp : tp_link_scanner.lTPLinkPlugs) {
 		strcpy(config.hw.tplink_mac, tp.device_mac);
 		strcpy(config.hw.tplink_child_id, tp.child_id);
-		handleEnumeratedDevice(config, h, callback, output, doc);
+		handleEnumeratedDevice(config, h, callback, doc);
     }
 }
 #endif
@@ -1004,29 +1006,28 @@ void DeviceManager::enumerateTplinkDevices(EnumerateHardware& h, EnumDevicesCall
  */
 void DeviceManager::enumerateHardware(DynamicJsonDocument& doc, EnumerateHardware spec)
 {
-	DeviceOutput out;
 
 	// Initialize the document as an array
 	doc.to<JsonArray>();
 
 	if (spec.hardware==-1 || isOneWire(DeviceHardware(spec.hardware))) {
-		enumerateOneWireDevices(spec, outputEnumeratedDevices, out, &doc);
+		enumerateOneWireDevices(spec, outputEnumeratedDevices, &doc);
 	}
 	if (spec.hardware==-1 || isDigitalPin(DeviceHardware(spec.hardware))) {
-		enumeratePinDevices(spec, outputEnumeratedDevices, out, &doc);
+		enumeratePinDevices(spec, outputEnumeratedDevices, &doc);
 	}
 #ifdef HAS_BLUETOOTH
 	if (spec.hardware==-1 || spec.hardware==DEVICE_HARDWARE_BLUETOOTH_INKBIRD) {
-		enumerateInkbirdDevices(spec, outputEnumeratedDevices, out, &doc);
+		enumerateInkbirdDevices(spec, outputEnumeratedDevices, &doc);
 	}
 	if (spec.hardware==-1 || spec.hardware==DEVICE_HARDWARE_BLUETOOTH_TILT) {
-		enumerateTiltDevices(spec, outputEnumeratedDevices, out, &doc);
+		enumerateTiltDevices(spec, outputEnumeratedDevices, &doc);
 	}
 #endif
 
 #ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
 	if (spec.hardware==-1 || spec.hardware==DEVICE_HARDWARE_TPLINK_SWITCH) {
-		enumerateTplinkDevices(spec, outputEnumeratedDevices, out, &doc);
+		enumerateTplinkDevices(spec, outputEnumeratedDevices, &doc);
 	}
 #endif
 
@@ -1168,13 +1169,11 @@ void DeviceManager::rawDeviceValues(JsonDocument& doc) {
 	spec.hardware = -1;		// any hardware
 	spec.function = 0;		// no function restriction
 
-	DeviceOutput out;
-
-	enumerateOneWireDevices(spec, outputRawDeviceValue, out, &doc);
+	enumerateOneWireDevices(spec, outputRawDeviceValue, &doc);
 #ifdef HAS_BLUETOOTH
 	spec.values = 1;  // Costs nothing for non-Onewire temp sensors
-	enumerateInkbirdDevices(spec, outputRawDeviceValue, out, &doc);
-	enumerateTiltDevices(spec, outputRawDeviceValue, out, &doc);
+	enumerateInkbirdDevices(spec, outputRawDeviceValue, &doc);
+	enumerateTiltDevices(spec, outputRawDeviceValue, &doc);
 #endif
 }
 
