@@ -116,6 +116,7 @@ void setup()
     FILESYSTEM.begin();
   #endif
 
+  eepromManager.loadDevicesToCache();  // Saves us hundreds of SPIFFS operations later
   extendedSettings.loadFromSpiffs();
   upstreamSettings.loadFromSpiffs();
   display.init();

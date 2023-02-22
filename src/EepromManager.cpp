@@ -104,19 +104,26 @@ bool EepromManager::applySettings()
 	return true;
 }
 
+void EepromManager::loadDevicesToCache() {
+	for (uint8_t index = 0; index<Config::EepromFormat::MAX_DEVICES; index++)
+	{	
+		cached_devices[index].loadFromSpiffs(index);
+		cached_devices[index].cached = true;
+	}
+}
+
 DeviceConfig EepromManager::fetchDevice(uint8_t deviceIndex)
 {
-	DeviceConfig config;
-	bool ok = (hasSettings() && deviceIndex<Config::EepromFormat::MAX_DEVICES);
-	if (ok) {
-		if(!cached_devices[deviceIndex].cached) {
-			cached_devices[deviceIndex].loadFromSpiffs(deviceIndex);
-			cached_devices[deviceIndex].cached = true;
-		}
+	if(deviceIndex<Config::EepromFormat::MAX_DEVICES) {
+		// Always fetch the device from the cache when called
 		return cached_devices[deviceIndex];
+	} else {
+		// This shouldn't ever get called, but sticking it here just in case
+		DeviceConfig config;
+		config.setDefaults();
+		return config;
 	}
-		// eepromAccess.readDeviceDefinition(config, deviceIndex, sizeof(DeviceConfig));
-	return config;
+	// eepromAccess.readDeviceDefinition(config, deviceIndex, sizeof(DeviceConfig));
 }	
 
 
