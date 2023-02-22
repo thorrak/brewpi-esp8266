@@ -54,6 +54,7 @@ private:
   static void listHardware();
   static void resetWiFi();
   static void wifiInfo();
+  static void parseDeviceDefinition();
 
   // LCD
   static void toggleBacklight();

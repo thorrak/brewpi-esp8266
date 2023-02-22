@@ -76,10 +76,6 @@ OneWire DeviceManager::fridgeSensorBus(fridgeSensorPin);
 #endif
 #endif
 
-/**
- * \brief Memory required for a DeviceDefinition JSON document
- */
-constexpr auto deviceDefinitionJsonSize = 512;
 
 OneWire* DeviceManager::oneWireBus(uint8_t pin) {
 #if !BREWPI_SIMULATE
@@ -349,13 +345,13 @@ void DeviceManager::installDevice(DeviceConfig& config)
 
 
 /**
- * \brief Read incoming JSON and populate a DeviceDefinition
+ * \brief Parse JSON doc and populate a DeviceDefinition
  *
- * \param dev - DeviceDefinition to populate
+ * \param doc - JSON document containing DeviceDefinition parameters
+ * @return populated DeviceDefinition
  */
-void DeviceManager::readJsonIntoDeviceDef(DeviceDefinition& dev) {
-  StaticJsonDocument<deviceDefinitionJsonSize> doc;
-  piLink.receiveJsonMessage(doc);
+DeviceDefinition DeviceManager::readJsonIntoDeviceDef(DynamicJsonDocument& doc) {
+  DeviceDefinition dev;
 
   JsonVariant hardware = doc[DeviceDefinitionKeys::hardware];
   if(!hardware.isNull())
@@ -417,7 +413,7 @@ void DeviceManager::readJsonIntoDeviceDef(DeviceDefinition& dev) {
   if(!function.isNull())
     dev.deviceFunction = function.as<uint8_t>();
 
-	dev.deactivate = false;  // TODO - Actually check if deactivate is set
+  dev.deactivate = false;
 
   JsonVariant pin = doc[DeviceDefinitionKeys::pin];
   if(!pin.isNull())
@@ -426,6 +422,8 @@ void DeviceManager::readJsonIntoDeviceDef(DeviceDefinition& dev) {
   JsonVariant invert = doc[DeviceDefinitionKeys::invert];
   if(!invert.isNull())
     dev.invert = pin.as<uint8_t>();
+
+  return dev;
 }
 
 /**
@@ -465,17 +463,19 @@ void assignIfSet(int8_t value, uint8_t* target) {
  * Only changes that result in a valid device, with no conflicts with other
  * devices are allowed.
  */
-void DeviceManager::parseDeviceDefinition()
+DeviceConfig DeviceManager::updateDeviceDefinition(DeviceDefinition dev)
 {
-	DeviceDefinition dev;
+	// save the original device so we can revert
+	DeviceConfig target;
+	DeviceConfig original;
 
-	readJsonIntoDeviceDef(dev);
 
 	if (!inRangeInt8(dev.id, 0, Config::EepromFormat::MAX_DEVICES))	{
 		// no device id given, or it's out of range, can't do anything else.
 		// piLink.print_fmt("Out of range: %d", dev.id);
 		// piLink.printNewLine();
-		return;
+		original.setDefaults();  // This may create some issues, but it's better than returning a null pointer
+		return original;
 	}
 
   if(Config::forceDeviceDefaults) {
@@ -488,10 +488,6 @@ void DeviceManager::parseDeviceDefinition()
     else
       dev.beer = 0;
   }
-
-	// save the original device so we can revert
-	DeviceConfig target;
-	DeviceConfig original;
 
 	// Fetch either the saved device (or an empty one if a saved one doesn't exist) 
 	original = eepromManager.fetchDevice(dev.id);
@@ -545,23 +541,19 @@ void DeviceManager::parseDeviceDefinition()
 	}
 
 	bool valid = isDeviceValid(target, original, dev.id);
-	DeviceConfig* print = &original;
 	if (valid) {
-		print = &target;
 		// remove the device associated with the previous function
 		uninstallDevice(original);
 		// also remove any existing device for the new function, since install overwrites any existing definition.
 		uninstallDevice(target);
 		installDevice(target);
 		eepromManager.storeDevice(target, dev.id);
+		return target;
 	}
 	else {
 		logError(ERROR_DEVICE_DEFINITION_UPDATE_SPEC_INVALID);
+		return original;
 	}
-
-  StaticJsonDocument<deviceDefinitionJsonSize> doc;
-  serializeJsonDevice(doc, dev.id, *print, "");
-  piLink.sendSingleItemJsonMessage('U', doc);
 }
 
 /**
@@ -1025,11 +1017,9 @@ void DeviceManager::enumerateHardware(DynamicJsonDocument& doc, EnumerateHardwar
 	}
 #ifdef HAS_BLUETOOTH
 	if (spec.hardware==-1 || spec.hardware==DEVICE_HARDWARE_BLUETOOTH_INKBIRD) {
-		// spec.values = 1;  // TODO - Remove this
 		enumerateInkbirdDevices(spec, outputEnumeratedDevices, out, &doc);
 	}
 	if (spec.hardware==-1 || spec.hardware==DEVICE_HARDWARE_BLUETOOTH_TILT) {
-		// spec.values = 1;  // TODO - Remove this
 		enumerateTiltDevices(spec, outputEnumeratedDevices, out, &doc);
 	}
 #endif

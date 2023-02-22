@@ -327,7 +327,7 @@ public:
 
 	static void uninstallDevice(DeviceConfig& config);
 
-	static void parseDeviceDefinition();
+	static DeviceConfig updateDeviceDefinition(DeviceDefinition dev);
 	static void serializeJsonDevice(JsonDocument&, device_slot_t slot, DeviceConfig& config, const char* value);
 
 	static bool isDeviceValid(DeviceConfig& config, DeviceConfig& original, int8_t deviceIndex);
@@ -335,6 +335,7 @@ public:
 	static void enumerateHardware(DynamicJsonDocument& doc, EnumerateHardware spec);
 	static void enumerateHardware(DynamicJsonDocument& doc);
 	static void readJsonIntoHardwareSpec(EnumerateHardware&);
+	static DeviceDefinition readJsonIntoDeviceDef(DynamicJsonDocument& doc);
 
 	static bool enumDevice(DeviceDisplay& dd, DeviceConfig& dc, uint8_t idx);
 
@@ -357,9 +358,7 @@ private:
 	static void readTempSensorValue(DeviceConfig::Hardware hw, char* out);
 	static void outputRawDeviceValue(DeviceConfig* config, void* pv, JsonDocument* doc);
 
-  static void readJsonIntoDeviceDef(DeviceDefinition&);
-  static void readJsonIntoDeviceDisplay(DeviceDisplay&);
-
+  	static void readJsonIntoDeviceDisplay(DeviceDisplay&);
 
 	static void* createDevice(DeviceConfig& config, DeviceType dc);
 	static void* createOneWireGPIO(DeviceConfig& config, DeviceType dt);

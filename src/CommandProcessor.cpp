@@ -137,7 +137,7 @@ void CommandProcessor::receiveCommand() {
       break;
 
     case 'U': // update device
-      deviceManager.parseDeviceDefinition();
+      parseDeviceDefinition();
       break;
 
     case 'v': // Control variables requested
@@ -279,6 +279,25 @@ void CommandProcessor::listHardware() {
 
   deviceManager.enumerateHardware(doc, spec);
   piLink.sendJsonMessage('h', doc);
+}
+
+/**
+ * \brief Process incoming device definition (configuration).
+ *
+ * \ingroup commands
+ */
+void CommandProcessor::parseDeviceDefinition() {
+  DeviceDefinition dev;
+  DynamicJsonDocument doc(512);
+
+	piLink.receiveJsonMessage(doc);                                   // Read the JSON off the line from the Pi
+  dev = DeviceManager::readJsonIntoDeviceDef(doc);                  // Parse the JSON into a DeviceDefinition object
+  DeviceConfig print = deviceManager.updateDeviceDefinition(dev);   // Save the device definition (if valid)
+
+  // Send the updated device definition back to the Pi
+  doc.clear();  // Clear the document and reserialize
+  DeviceManager::serializeJsonDevice(doc, dev.id, print, "");
+  piLink.sendSingleItemJsonMessage('U', doc);
 }
 
 /**
