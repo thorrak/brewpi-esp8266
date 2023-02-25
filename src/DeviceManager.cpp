@@ -350,24 +350,16 @@ void DeviceManager::installDevice(DeviceConfig& config)
  * \param doc - JSON document containing DeviceDefinition parameters
  * @return populated DeviceDefinition
  */
-DeviceDefinition DeviceManager::readJsonIntoDeviceDef(DynamicJsonDocument& doc) {
-  DeviceDefinition dev;
+DeviceDefinition DeviceManager::readJsonIntoDeviceDef(const DynamicJsonDocument& doc) {
+	DeviceDefinition dev;
 
-  JsonVariant hardware = doc[DeviceDefinitionKeys::hardware];
-  if(!hardware.isNull())
-    dev.deviceHardware = hardware.as<uint8_t>();
+	if(doc[DeviceDefinitionKeys::hardware].is<uint8_t>()) {
+		dev.deviceHardware = doc[DeviceDefinitionKeys::hardware].as<uint8_t>();
+	}
 
-	// piLink.print("Parsed Hardware Type: ");
-	// piLink.print(doc[DeviceDefinitionKeys::hardware].as<const char *>());
-	// piLink.printNewLine();
+	const char* address = doc[DeviceDefinitionKeys::address].as<const char *>();
 
-  const char* address = doc[DeviceDefinitionKeys::address];
-
-	// piLink.print("Parsed Address: ");
-	// piLink.print(address);
-	// piLink.printNewLine();
-
-  if(address) {
+	if(address) {
 	  switch(dev.deviceHardware) {
 		case DEVICE_HARDWARE_ONEWIRE_TEMP:
 			parseBytes(dev.address, address, 8);
@@ -389,39 +381,32 @@ DeviceDefinition DeviceManager::readJsonIntoDeviceDef(DynamicJsonDocument& doc) 
 	  }
   }
 
-  JsonVariant calibration = doc[DeviceDefinitionKeys::calibrateadjust];
-  if(calibration) {
-    dev.calibrationAdjust = fixed4_4(stringToTempDiff(calibration.as<const char *>()) >> (TEMP_FIXED_POINT_BITS - calibrationOffsetPrecision));
-  } 
-//   else {
-// 	  dev.calibrationAdjust = 0;
-//   }
+	// TODO - Check if this works, as we expect to be passed a string (but could instead be passed a number)
+	if(doc.containsKey(DeviceDefinitionKeys::calibrateadjust)) {
+		dev.calibrationAdjust = fixed4_4(stringToTempDiff(doc[DeviceDefinitionKeys::calibrateadjust].as<const char *>()) >> (TEMP_FIXED_POINT_BITS - calibrationOffsetPrecision));
+	}
 
-  JsonVariant id = doc[DeviceDefinitionKeys::index];
-  if(!id.isNull())
-    dev.id = id.as<uint8_t>();
 
-  JsonVariant chamber = doc[DeviceDefinitionKeys::chamber];
-  if(!chamber.isNull())
-    dev.chamber = chamber.as<uint8_t>();
+	// dev.id defaults to -1, so if this fails, the device won't get processed by deviceManager.updateDeviceDefinition
+	if(doc.containsKey(DeviceDefinitionKeys::index) && doc[DeviceDefinitionKeys::index].is<uint8_t>())
+		dev.id = doc[DeviceDefinitionKeys::index].as<uint8_t>();
 
-  JsonVariant beer = doc[DeviceDefinitionKeys::beer];
-  if(!beer.isNull())
-    dev.beer = beer.as<uint8_t>();
+	if(doc.containsKey(DeviceDefinitionKeys::chamber) && doc[DeviceDefinitionKeys::chamber].is<uint8_t>())
+		dev.chamber = doc[DeviceDefinitionKeys::chamber].as<uint8_t>();
 
-  JsonVariant function = doc[DeviceDefinitionKeys::function];
-  if(!function.isNull())
-    dev.deviceFunction = function.as<uint8_t>();
+	if(doc.containsKey(DeviceDefinitionKeys::beer) && doc[DeviceDefinitionKeys::beer].is<uint8_t>())
+		dev.beer = doc[DeviceDefinitionKeys::beer].as<uint8_t>();
 
-  dev.deactivate = false;
+	if(doc.containsKey(DeviceDefinitionKeys::function) && doc[DeviceDefinitionKeys::function].is<uint8_t>())
+		dev.deviceFunction = doc[DeviceDefinitionKeys::function].as<uint8_t>();
 
-  JsonVariant pin = doc[DeviceDefinitionKeys::pin];
-  if(!pin.isNull())
-    dev.pinNr = pin.as<uint8_t>();
+	dev.deactivate = false;
 
-  JsonVariant invert = doc[DeviceDefinitionKeys::invert];
-  if(!invert.isNull())
-    dev.invert = pin.as<uint8_t>();
+	if(doc.containsKey(DeviceDefinitionKeys::pin) && doc[DeviceDefinitionKeys::pin].is<uint8_t>())
+		dev.pinNr = doc[DeviceDefinitionKeys::pin].as<uint8_t>();
+
+	if(doc.containsKey(DeviceDefinitionKeys::invert) && doc[DeviceDefinitionKeys::invert].is<uint8_t>())
+		dev.invert = doc[DeviceDefinitionKeys::invert].as<uint8_t>();
 
   return dev;
 }
@@ -507,9 +492,7 @@ DeviceConfig DeviceManager::updateDeviceDefinition(DeviceDefinition dev)
 #endif
 	// The following may no longer work for 2413 sensors
 	if (dev.deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP
-#ifdef HAS_BLUETOOTH
 		|| dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD || dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT 
-#endif
 		)
 		target.hw.calibration = dev.calibrationAdjust;
 
@@ -534,11 +517,8 @@ DeviceConfig DeviceManager::updateDeviceDefinition(DeviceDefinition dev)
 	target.hw.deactivate = (bool) dev.deactivate;
 
 	// setting function to none clears all other fields.
-	if (target.deviceFunction==DEVICE_NONE) {
-		// piLink.print("Function set to NONE");
-		// piLink.printNewLine();
+	if (target.deviceFunction==DEVICE_NONE)
 		target.setDefaults();
-	}
 
 	bool valid = isDeviceValid(target, original, dev.id);
 	if (valid) {

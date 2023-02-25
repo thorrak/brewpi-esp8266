@@ -32,7 +32,7 @@ httpServer http_server;
 
 // Settings Page Handlers
 
-uint8_t processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
+uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool triggerUpstreamUpdate) {
     uint8_t failCount = 0;
     bool saveSettings = false;
 
@@ -143,9 +143,8 @@ uint8_t processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUp
 }
 
 
-uint8_t processDeviceUpdateJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
-    uint8_t failCount = 0;
-    bool saveSettings = false;
+uint8_t processDeviceUpdateJson(const DynamicJsonDocument& json, bool triggerUpstreamUpdate) {
+    DeviceDefinition dev;
 
     // Check for universally required keys
     if(!json.containsKey(DeviceDefinitionKeys::chamber) || !json.containsKey(DeviceDefinitionKeys::beer) || 
@@ -154,114 +153,33 @@ uint8_t processDeviceUpdateJson(const JsonDocument& json, bool triggerUpstreamUp
        !json.containsKey(DeviceDefinitionKeys::deactivated)) {
 
         Log.warning(F("Invalid device definition received - missing required keys.\r\n"));
-        failCount++;
+        return 1;
     }
 
 
-    // Upstream Host
-    if(json.containsKey(UpstreamSettingsKeys::upstreamHost)) {
-        if (strlen(json[UpstreamSettingsKeys::upstreamHost]) <= 0) {
-            // The user unset the upstream host - Clear it from memory
-            upstreamSettings.upstreamHost[0] = '\0';
-            Log.notice(F("Settings update, [upstreamHost]: unset.\r\n"));
-        } else if (strlen(json[UpstreamSettingsKeys::upstreamHost]) >= 128 ) {
-            Log.warning(F("Settings update error, [upstreamHost]:(%s) not valid.\r\n"), json[UpstreamSettingsKeys::upstreamHost].as<const char*>());
-            failCount++;
-        } else {
-            // Valid - Update
-            if(strcmp(json[UpstreamSettingsKeys::upstreamHost], upstreamSettings.upstreamHost) != 0) {
-                strlcpy(upstreamSettings.upstreamHost, json[UpstreamSettingsKeys::upstreamHost].as<const char*>(), 128);
-                Log.notice(F("Settings update, [upstreamHost]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::upstreamHost].as<const char*>());
-                saveSettings = true;
+	  switch(json[DeviceDefinitionKeys::hardware].as<uint8_t>()) {
+		case DEVICE_HARDWARE_ONEWIRE_TEMP:
+		case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
+		case DEVICE_HARDWARE_BLUETOOTH_TILT:
+            if(!json.containsKey(DeviceDefinitionKeys::address)) {
+                Log.warning(F("Invalid device definition received - missing required keys.\r\n"));
+                return 1;
             }
-        }
-    }
-
-    // Upstream Port
-    if(json.containsKey(UpstreamSettingsKeys::upstreamPort)) {
-        if(json[UpstreamSettingsKeys::upstreamPort].is<uint16_t>()) {
-            if((json[UpstreamSettingsKeys::upstreamPort] < 0) || (json[UpstreamSettingsKeys::upstreamPort] > 65535)) {
-                Log.warning(F("Invalid [upstreamPort]:(%u) received.\r\n"), json[UpstreamSettingsKeys::upstreamPort]);
-                failCount++;
-            } else {
-                //Valid - Update
-                upstreamSettings.upstreamPort = json[UpstreamSettingsKeys::upstreamPort];
-                Log.notice(F("Settings update, [upstreamPort]:(%d) applied.\r\n"), json[UpstreamSettingsKeys::upstreamHost].as<uint16_t>());
-                saveSettings = true;
+			break;
+		case DEVICE_HARDWARE_TPLINK_SWITCH:
+            if(!json.containsKey(DeviceDefinitionKeys::address) || !json.containsKey(DeviceDefinitionKeys::child_id)) {
+                Log.warning(F("Invalid device definition received - missing required keys.\r\n"));
+                return 1;
             }
-        } else {
-            Log.warning(F("Invalid [upstreamPort]:(%s) received (wrong type).\r\n"), json[UpstreamSettingsKeys::upstreamPort]);
-            failCount++;
-        }
-    }
+			break;
+		default:
+			break;
+	  }
 
-    // Device ID
-    // NOTE - We're not allowing the device ID to be changed via the API for now. Instead, it has to be reset with the upstream
-    // if(json.containsKey(UpstreamSettingsKeys::deviceID)) {
-    //     if (strlen(json[UpstreamSettingsKeys::deviceID]) <= 0) {
-    //         // The user unset the upstream host - Clear it from memory
-    //         upstreamSettings.deviceID[0] = '\0';
-    //         Log.notice(F("Settings update, [deviceID]: unset.\r\n"));
-    //     } else if (strlen(json[UpstreamSettingsKeys::deviceID]) >= 128 ) {
-    //         Log.warning(F("Settings update error, [deviceID]:(%s) not valid.\r\n"), json[UpstreamSettingsKeys::deviceID].as<const char*>());
-    //         failCount++;
-    //     } else {
-    //         if(strcmp(json[UpstreamSettingsKeys::deviceID], upstreamSettings.deviceID) != 0) {
-    //             strlcpy(upstreamSettings.deviceID, json[UpstreamSettingsKeys::deviceID].as<const char*>(), 64);
-    //             Log.notice(F("Settings update, [deviceID]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::deviceID].as<const char*>());
-    //             saveSettings = true;
-    //         }
-    //     }
-    // }
-
-
-    // Device ID Reset
-    if(json.containsKey("resetDeviceID")) {
-        if(json["resetDeviceID"].is<bool>()) {
-            if(json["resetDeviceID"]) {
-                // The user wants to reset the device ID
-                Log.notice(F("Settings update, [resetDeviceID]: true.\r\n"));
-                upstreamSettings.deviceID[0] = '\0';
-                saveSettings = true;
-            }
-        } else {
-            Log.warning(F("Invalid [resetDeviceID]:(%s) received (wrong type).\r\n"), json["resetDeviceID"]);
-            failCount++;
-        }
-    }
-
-
-    // //////  Generic Settings
-    // // mDNS ID
-    // if(json.containsKey("mdnsID")) {
-    //     // Set hostname
-    //     LCBUrl url;
-    //     if (!url.isValidLabel(json["mdnsID"])) {
-    //         Log.warning(F("Settings update error, [mdnsID]:(%s) not valid.\r\n"), json["mdnsID"]);
-    //         failCount++;
-    //     } else {
-    //         if (strcmp(config.mdnsID, json["mdnsID"].as<const char*>()) != 0) {
-    //             hostnamechanged = true;
-    //             strlcpy(config.mdnsID, json["mdnsID"].as<const char*>(), 32);
-    //             Log.notice(F("Settings update, [mdnsID]:(%s) applied.\r\n"), json["mdnsID"].as<const char*>());
-    //         } else {
-    //             Log.notice(F("Settings update, [mdnsID]:(%s) NOT applied - no change.\r\n"), json["mdnsID"].as<const char*>());
-    //         }
-
-    //     }
-    // }
-
-
-    // Save
-    if (failCount) {
-        Log.error(F("Error: Invalid upstream configuration.\r\n"));
-    } else {
-        if(saveSettings == true) {
-            // TODO - Force upstream cascade/send
-            upstreamSettings.storeToSpiffs();
-        }
-    }
-    return failCount;
+    dev = DeviceManager::readJsonIntoDeviceDef(json);                  // Parse the JSON into a DeviceDefinition object
+    DeviceConfig print = deviceManager.updateDeviceDefinition(dev);   // Save the device definition (if valid)
+    // TODO - Trigger upstream update
+    return 0;
 }
 
 
@@ -562,7 +480,7 @@ void httpServer::setJsonPages() {
 }
 
 
-void httpServer::processJsonRequest(const char* uri, uint8_t (*handler)(const JsonDocument& json, bool triggerUpstreamUpdate)) {
+void httpServer::processJsonRequest(const char* uri, uint8_t (*handler)(const DynamicJsonDocument& json, bool triggerUpstreamUpdate)) {
     // Handler for configuration options
     char message[200] = "";
     uint8_t errors = 0;
@@ -588,7 +506,7 @@ void httpServer::processJsonRequest(const char* uri, uint8_t (*handler)(const Js
     }
 
     serializeJson(response, message);
-    web_server->send(400, "application/json", message);
+    web_server->send(status_code, "application/json", message);
     
 }
 
@@ -599,6 +517,9 @@ void httpServer::setJsonHandlers() {
         processJsonRequest("/api/upstream/", &processUpstreamConfigUpdateJson);
     });
 
+    web_server->on("/api/devices/", HTTP_PUT, [&]() {
+        processJsonRequest("/api/devices/", &processDeviceUpdateJson);
+    });
 
     // AsyncCallbackJsonWebHandler* processAction = new AsyncCallbackJsonWebHandler("/api/action/", [](AsyncWebServerRequest *request, JsonVariant const &json) {
     //     // TODO - Adapt this to use the new processJsonRequest function

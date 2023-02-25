@@ -335,7 +335,7 @@ public:
 	static void enumerateHardware(DynamicJsonDocument& doc, EnumerateHardware spec);
 	static void enumerateHardware(DynamicJsonDocument& doc);
 	static void readJsonIntoHardwareSpec(EnumerateHardware&);
-	static DeviceDefinition readJsonIntoDeviceDef(DynamicJsonDocument& doc);
+	static DeviceDefinition readJsonIntoDeviceDef(const DynamicJsonDocument& doc);
 
 	static bool enumDevice(DeviceDisplay& dd, DeviceConfig& dc, uint8_t idx);
 

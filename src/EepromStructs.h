@@ -141,14 +141,9 @@ enum DeviceHardware {
 	DEVICE_HARDWARE_ONEWIRE_2413 = 3,	//<! A onewire 2-channel PIO input or output.
 #endif
 // Skipping 4, as that is used in "modern" brewpi
-#ifdef HAS_BLUETOOTH
   DEVICE_HARDWARE_BLUETOOTH_INKBIRD = 5,
   DEVICE_HARDWARE_BLUETOOTH_TILT = 6,
-#endif
-#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
   DEVICE_HARDWARE_TPLINK_SWITCH = 7,
-#endif
-
 };
 
 

@@ -28,7 +28,7 @@ private:
     void uptime();
     void heap();
     void genericServeJson(void(*jsonFunc)(DynamicJsonDocument&));
-    void processJsonRequest(const char* uri, uint8_t (*handler)(const JsonDocument& json, bool triggerUpstreamUpdate));
+    void processJsonRequest(const char* uri, uint8_t (*handler)(const DynamicJsonDocument& json, bool triggerUpstreamUpdate));
     void serveExtendedSettings();
     void serveUpstreamSettings();
     void reset_reason();
