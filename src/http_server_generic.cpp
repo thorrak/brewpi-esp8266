@@ -53,7 +53,7 @@ bool httpServer::exists(String path){
 }
 
 bool httpServer::handleFileRead(String path) {
-  Serial.println("handleFileRead: " + path);
+  // Serial.println("handleFileRead: " + path);
   if (path.endsWith("/")) {
     path += "index.htm";
   }
