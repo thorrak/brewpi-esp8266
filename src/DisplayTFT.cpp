@@ -184,7 +184,7 @@ void LcdDisplay::printTemperature(temperature temp, uint8_t font_size){
     tft.setTextSize(font_size);
 
     if (temp==INVALID_TEMP) {
-        tft.print(" --.-");
+        tft.print("  --.-");
         return;
     }
 
