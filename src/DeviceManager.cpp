@@ -31,6 +31,7 @@
 #include <ArduinoJson.h>
 #include "JsonKeys.h"
 #include "NumberFormats.h"
+#include <ArduinoLog.h>
 
 
 #include <DallasTempNG.h>  // Instead of DallasTemperature.h
@@ -165,11 +166,20 @@ void* DeviceManager::createDevice(DeviceConfig& config, DeviceType dt)
 			return new InkbirdTempSensor(config.hw.btAddress, config.hw.calibration);
 		case DEVICE_HARDWARE_BLUETOOTH_TILT:
 			return new TiltTempSensor(config.hw.btAddress, config.hw.calibration);
+#else
+		case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
+		case DEVICE_HARDWARE_BLUETOOTH_TILT:
+		Log.error(F("Bluetooth not supported"));
+			return nullptr;
 #endif
 
 #ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
 		case DEVICE_HARDWARE_TPLINK_SWITCH:
 			return new TPLinkActuator(config.hw.tplink_mac, config.hw.tplink_child_id);
+#else
+		case DEVICE_HARDWARE_TPLINK_SWITCH:
+		Log.error(F("TPLink not supported"));
+			return nullptr;
 #endif
 
 	}
