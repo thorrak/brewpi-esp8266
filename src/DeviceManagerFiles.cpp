@@ -68,7 +68,7 @@ void DeviceConfig::toJson(DynamicJsonDocument &doc) {
         ) {
 		char buf[17];
         constexpr auto calibrationOffsetPrecision = 4;
-		tempDiffToString(buf, temperature(hw.calibration)<<(TEMP_FIXED_POINT_BITS - calibrationOffsetPrecision), 3, 8);
+		tempDiffToString(buf, temperature(hw.calibration<<(TEMP_FIXED_POINT_BITS - calibrationOffsetPrecision)), 3, 8);
     	doc[DeviceDefinitionKeys::calibrateadjust] = buf;
 	}
 
