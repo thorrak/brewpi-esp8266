@@ -142,5 +142,5 @@ namespace UpstreamSettingsKeys {
 constexpr auto upstreamHost = "upstreamHost";
 constexpr auto upstreamPort = "upstreamPort";
 constexpr auto deviceID = "deviceID";
-}; // namespace ExtendedSettingsKeys
+}; // namespace UpstreamSettingsKeys
 

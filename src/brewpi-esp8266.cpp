@@ -30,6 +30,7 @@
 #include "PromServer.h"
 #include "wireless/BTScanner.h"
 #include "tplink/TPLinkScanner.h"
+#include "http_server.h"
 
 #if BREWPI_SIMULATE
 #include "Simulator.h"
@@ -80,7 +81,7 @@ void printMem() {
     const uint8_t frag = 100 - (max * 100) / free;
     sprintf(buf, "Free Heap: %d, Largest contiguous block: %d, Frag: %d%%\r\n", free, max, frag );
     // PiLink.print(F(), free, max, frag);
-    piLink.print(buf);
+    Serial.print(buf);
 }
 #endif
 
@@ -116,12 +117,11 @@ void setup()
     FILESYSTEM.begin();
   #endif
 
-  eepromManager.loadDevicesToCache();  // Saves us hundreds of SPIFFS operations later
   extendedSettings.loadFromSpiffs();
   upstreamSettings.loadFromSpiffs();
   display.init();
 
-    initialize_wifi();
+  initialize_wifi();
 
 #if BREWPI_BUZZER
 	buzzer.init();
@@ -164,6 +164,10 @@ void setup()
 	display.clear();
 	display.printStationaryText();
 	display.printState();
+
+#ifdef ENABLE_HTTP_INTERFACE
+  http_server.init();     // Initialize the web server
+#endif
 
   if(Config::Prometheus::enable())
     promServer.setup();
