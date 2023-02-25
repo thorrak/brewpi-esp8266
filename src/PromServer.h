@@ -1,4 +1,5 @@
 #pragma once
+#ifdef ENABLE_PROMETHEUS_SERVER
 #include "Brewpi.h"
 #include "TemperatureFormats.h"
 #include "Ticks.h"
@@ -81,3 +82,4 @@ private:
 };
 
 extern PromServer promServer;
+#endif // ENABLE_PROMETHEUS_SERVER

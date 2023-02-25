@@ -169,8 +169,10 @@ void setup()
   http_server.init();     // Initialize the web server
 #endif
 
+#ifdef ENABLE_PROMETHEUS_SERVER
   if(Config::Prometheus::enable())
     promServer.setup();
+#endif
 
 //	rotaryEncoder.init();
 

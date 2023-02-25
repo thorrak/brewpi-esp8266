@@ -23,7 +23,7 @@
 #include "Brewpi.h"
 #include "Display.h"
 #include "PiLink.h"
-#include "PromServer.h"
+#include "PromServer.h"  // Only used if ENABLE_PROMETHEUS_SERVER is defined
 #include "SettingLoader.h"
 #include "SettingsManager.h"
 #include "TempControl.h"
@@ -457,8 +457,10 @@ void CommandProcessor::setDeviceNames() {
 
   // The probe names are used in the prometheus output, so changing the
   // name should invalidate the cache.
+#ifdef ENABLE_PROMETHEUS_SERVER
   if (Config::Prometheus::enable())
     promServer.invalidateCache();
+#endif
 }
 
 /**

@@ -1,3 +1,5 @@
+#ifdef ENABLE_PROMETHEUS_SERVER
+
 #include "Config.h"
 
 #include "DeviceManager.h"
@@ -184,3 +186,4 @@ String PromServer::probeValues() {
 }
 
 PromServer promServer;
+#endif // ENABLE_PROMETHEUS_SERVER
