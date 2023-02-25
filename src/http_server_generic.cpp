@@ -1,3 +1,5 @@
+#ifdef ENABLE_HTTP_INTERFACE
+
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include "ESPEepromAccess.h"
@@ -75,3 +77,5 @@ void httpServer::redirect(const String& url){
     web_server->send(302);
     return;
 }
+
+#endif // ENABLE_HTTP_INTERFACE
