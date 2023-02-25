@@ -212,7 +212,7 @@ struct DeviceDisplay {
  * \brief Hardware device definition.
  */
 struct DeviceDefinition {
-	int8_t id=0;
+	int8_t id=-1;
 	int8_t chamber=0;
 	int8_t beer=0;
 	int8_t deviceFunction=0;
