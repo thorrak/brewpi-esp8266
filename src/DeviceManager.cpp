@@ -391,11 +391,16 @@ DeviceDefinition DeviceManager::readJsonIntoDeviceDef(const DynamicJsonDocument&
 	  }
   }
 
-	// TODO - Check if this works, as we expect to be passed a string (but could instead be passed a number)
 	if(doc.containsKey(DeviceDefinitionKeys::calibrateadjust)) {
-		dev.calibrationAdjust = fixed4_4(stringToTempDiff(doc[DeviceDefinitionKeys::calibrateadjust].as<const char *>()) >> (TEMP_FIXED_POINT_BITS - calibrationOffsetPrecision));
+		char buff[10];
+		temperature tempDiff;
+		if(doc[DeviceDefinitionKeys::calibrateadjust].is<double>()) {
+			dtostrf(doc[DeviceDefinitionKeys::calibrateadjust].as<double>(), 4, 6, buff);
+			tempDiff = stringToTempDiff(buff);
+		} else if(doc[DeviceDefinitionKeys::calibrateadjust].is<const char *>())
+			tempDiff = stringToTempDiff(doc[DeviceDefinitionKeys::calibrateadjust].as<const char *>());
+		dev.calibrationAdjust = fixed4_4(tempDiff >> (TEMP_FIXED_POINT_BITS - calibrationOffsetPrecision));
 	}
-
 
 	// dev.id defaults to -1, so if this fails, the device won't get processed by deviceManager.updateDeviceDefinition
 	if(doc.containsKey(DeviceDefinitionKeys::index) && doc[DeviceDefinitionKeys::index].is<uint8_t>())
