@@ -63,7 +63,7 @@ temperature InkbirdTempSensor::readAndConstrainTemp()
     // const uint8_t shift = TEMP_FIXED_POINT_BITS - sensorPrecision; // difference in precision between DS18B20 format and temperature adt
     // temp = constrainTemp(temp+calibrationOffset+(C_OFFSET>>shift), ((int) MIN_TEMP)>>shift, ((int) MAX_TEMP)>>shift)<<shift;
     // TODO - Determine if I need to add/subtract C_OFFSET
-    temperature temp = constrainTemp(ib->getTempFixedPoint(), MIN_TEMP, MAX_TEMP);
+    temperature temp = constrainTemp(ib->getTempFixedPoint() + (calibrationOffset<<(TEMP_FIXED_POINT_BITS - TEMP_CALIBRATION_OFFSET_PRECISION)), MIN_TEMP, MAX_TEMP);
     return temp;
 }
 #endif

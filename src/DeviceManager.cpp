@@ -58,8 +58,6 @@
 #endif
 
 
-constexpr auto calibrationOffsetPrecision = 4;
-
 /*
  * Defaults for sensors, actuators and temperature sensors when not defined in the eeprom.
  */
@@ -399,7 +397,7 @@ DeviceDefinition DeviceManager::readJsonIntoDeviceDef(const DynamicJsonDocument&
 			tempDiff = stringToTempDiff(buff);
 		} else if(doc[DeviceDefinitionKeys::calibrateadjust].is<const char *>())
 			tempDiff = stringToTempDiff(doc[DeviceDefinitionKeys::calibrateadjust].as<const char *>());
-		dev.calibrationAdjust = fixed4_4(tempDiff >> (TEMP_FIXED_POINT_BITS - calibrationOffsetPrecision));
+		dev.calibrationAdjust = fixed4_4(tempDiff >> (TEMP_FIXED_POINT_BITS - TEMP_CALIBRATION_OFFSET_PRECISION));
 	}
 
 	// dev.id defaults to -1, so if this fails, the device won't get processed by deviceManager.updateDeviceDefinition

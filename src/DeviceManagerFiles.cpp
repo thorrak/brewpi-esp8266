@@ -67,8 +67,7 @@ void DeviceConfig::toJson(DynamicJsonDocument &doc) {
 #endif
         ) {
 		char buf[17];
-        constexpr auto calibrationOffsetPrecision = 4;
-		tempDiffToString(buf, temperature(hw.calibration<<(TEMP_FIXED_POINT_BITS - calibrationOffsetPrecision)), 3, 8);
+		tempDiffToString(buf, temperature(hw.calibration<<(TEMP_FIXED_POINT_BITS - TEMP_CALIBRATION_OFFSET_PRECISION)), 3, 8);
     	doc[DeviceDefinitionKeys::calibrateadjust] = buf;
 	}
 
@@ -122,8 +121,7 @@ void DeviceConfig::fromJson(DynamicJsonDocument json_doc) {
     }
 
 	if (json_doc.containsKey(DeviceDefinitionKeys::calibrateadjust) && json_doc[DeviceDefinitionKeys::calibrateadjust].is<const char *>()) {
-        constexpr auto calibrationOffsetPrecision = 4;
-        hw.calibration = fixed4_4(stringToTempDiff(json_doc[DeviceDefinitionKeys::calibrateadjust].as<const char *>()) >> (TEMP_FIXED_POINT_BITS - calibrationOffsetPrecision));
+        hw.calibration = fixed4_4(stringToTempDiff(json_doc[DeviceDefinitionKeys::calibrateadjust].as<const char *>()) >> (TEMP_FIXED_POINT_BITS - TEMP_CALIBRATION_OFFSET_PRECISION));
 	}
 
     // {

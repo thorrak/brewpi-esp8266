@@ -117,6 +117,7 @@ typedef fixed23_9 long_temperature; //!< Long temperature representation
 typedef fixed7_25 temperature_precise; //!< Precise temperature representation
 
 #define TEMP_FIXED_POINT_BITS (9)
+#define TEMP_CALIBRATION_OFFSET_PRECISION (4)
 #define TEMP_FIXED_POINT_SCALE (1<<TEMP_FIXED_POINT_BITS)
 #define TEMP_FIXED_POINT_MASK (TEMP_FIXED_POINT_SCALE-1)
 #define TEMP_PRECISE_EXTRA_FRACTION_BITS 16
