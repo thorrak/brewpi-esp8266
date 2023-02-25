@@ -139,7 +139,9 @@ void ControlConstants::toJson(DynamicJsonDocument &doc) {
     doc[ControlConstantsKeys::lightHeater] = lightAsHeater;
     doc[ControlConstantsKeys::rotaryHalfSteps] = rotaryHalfSteps;
     doc[ControlConstantsKeys::pidMax] = pidMax;
-    char formatStr[2] = {tempFormat, 0};
+    char formatStr[2];
+    formatStr[0] = tempFormat;
+    formatStr[1] = '\0';
     doc[ControlConstantsKeys::tempFormat] = formatStr;
 }
 
@@ -192,7 +194,13 @@ void ControlConstants::loadFromSpiffs() {
     lightAsHeater = json_doc[ControlConstantsKeys::lightHeater] | lightAsHeater;
     rotaryHalfSteps = json_doc[ControlConstantsKeys::rotaryHalfSteps] | rotaryHalfSteps;
     if(json_doc.containsKey(ControlConstantsKeys::pidMax)) pidMax = json_doc[ControlConstantsKeys::pidMax];
-    tempFormat = json_doc[ControlConstantsKeys::tempFormat].as<unsigned char>() | tempFormat;
+
+    if(json_doc.containsKey(ControlConstantsKeys::tempFormat)) {
+        // This gets a bit strange due to the 6.20 changes to ArduinoJson
+        char buf[2];
+        strlcpy(buf, json_doc[ControlConstantsKeys::tempFormat].as<const char *>(), 2);
+        tempFormat = buf[0];
+    }
 }
 
 
@@ -228,7 +236,9 @@ void ControlSettings::toJson(DynamicJsonDocument &doc) {
     doc[ControlSettingsKeys::heatEst] = heatEstimator;
     doc[ControlSettingsKeys::coolEst] = coolEstimator;
 
-    char modeStr[2] = {mode, 0};
+    char modeStr[2];
+    modeStr[0] = mode;
+    modeStr[1] = '\0';
     doc[ControlSettingsKeys::mode] = modeStr;
 }
 
@@ -255,7 +265,12 @@ void ControlSettings::loadFromSpiffs() {
     if(json_doc.containsKey(ControlSettingsKeys::heatEst)) heatEstimator = json_doc[ControlSettingsKeys::heatEst];
     if(json_doc.containsKey(ControlSettingsKeys::coolEst)) coolEstimator = json_doc[ControlSettingsKeys::coolEst];
 
-    mode = json_doc[ControlSettingsKeys::mode].as<unsigned char>() | mode;
+    if(json_doc.containsKey(ControlSettingsKeys::mode)) {
+        // This gets a bit strange due to the 6.20 changes to ArduinoJson
+        char buf[2];
+        strlcpy(buf, json_doc[ControlSettingsKeys::mode].as<const char *>(), 2);
+        mode = buf[0];
+    }
 }
 
 
