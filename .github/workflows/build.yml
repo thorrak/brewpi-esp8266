@@ -72,7 +72,7 @@ jobs:
       run: |
         cp .pio/build/${{ matrix.pio_env }}/spiffs.bin bin/${{ matrix.pio_env }}_spiffs.bin
 
-    - name: Copy Spiffs
+    - name: Copy LittleFS
       continue-on-error: true
       run: |
         cp .pio/build/${{ matrix.pio_env }}/littlefs.bin bin/${{ matrix.pio_env }}_littlefs.bin
