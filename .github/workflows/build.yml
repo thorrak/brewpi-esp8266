@@ -49,21 +49,23 @@ jobs:
     - name: Build firmware
       run: |
         pio run -e ${{ matrix.pio_env }}
+        pio run -e ${{ matrix.pio_env }} --target buildfs
+      # sh ./copy_bins.sh
 
     - name: Copy firmware
       continue-on-error: true
       run: |
-        cp .pio/build/${{ matrix.pio_env }}/spiffs.bin bin/${{ matrix.pio_env }}_spiffs.bin
+        cp .pio/build/${{ matrix.pio_env }}/firmware.bin bin/${{ matrix.pio_env }}_firmware.bin
 
     - name: Copy partitions
       continue-on-error: true
       run: |
-        cp .pio/build/${{ matrix.pio_env }}/spiffs.bin bin/${{ matrix.pio_env }}_spiffs.bin
+        cp .pio/build/${{ matrix.pio_env }}/partitions.bin bin/${{ matrix.pio_env }}_partitions.bin
 
-    - name: Build filesystem
-      run: |
-        pio run -e ${{ matrix.pio_env }} --target buildfs
-      # sh ./copy_bins.sh
+    # - name: Build filesystem
+    #   run: |
+    #     pio run -e ${{ matrix.pio_env }} --target buildfs
+    #   # sh ./copy_bins.sh
 
     - name: Copy Spiffs
       continue-on-error: true
