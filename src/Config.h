@@ -474,12 +474,7 @@ namespace Config {
     /**
      * \brief Maximum number of device slots
      */
-#if defined(HAS_BLUETOOTH) || defined(EXTERN_SENSOR_ACTUATOR_SUPPORT)
-    // Need more device slots if we have bluetooth or external actuator support
-    static const int8_t MAX_DEVICES = 64;
-#else
-    static const int8_t MAX_DEVICES = 16;
-#endif
+    static const int8_t MAX_DEVICES = 20;
   };
 
   /**
