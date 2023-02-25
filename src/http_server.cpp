@@ -5,15 +5,10 @@
 #include <ArduinoJson.h>
 // #define LCBURL_MDNS
 // #include <LCBUrl.h>
-#include <WiFi.h>
-#include <WiFiClient.h>
-#include <AsyncTCP.h>
-#include <ESPAsyncWebServer.h>
+// #include <WiFi.h>
+// #include <WiFiClient.h>
 
-#if FILESYSTEM == SPIFFS
-#include <SPIFFS.h>
-#endif
-
+#include "ESPEepromAccess.h"  // Defines FILESYSTEM (and includes the approprite headers)
 
 #include "uptime.h"
 // #include "version.h"
@@ -25,20 +20,14 @@
 #include "http_server.h"
 #include "TempControl.h"
 // #include "sendData.h"
-
-#include "AsyncJson.h"
 // #include "serialhandler.h"
-
 #include "JsonMessages.h"
-#include "ESPEepromAccess.h"
 #include "DeviceManager.h"
-
 #include "JsonKeys.h"
 
 
 httpServer http_server;
 
-AsyncWebServer web_server(WEB_SERVER_PORT);
 
 
 // Settings Page Handlers
@@ -390,32 +379,32 @@ uint8_t processDeviceUpdateJson(const JsonDocument& json, bool triggerUpstreamUp
 
 //-----------------------------------------------------------------------------------------
 
-void genericServeJson(AsyncWebServerRequest *request, void(*jsonFunc)(DynamicJsonDocument&)) {
+void httpServer::genericServeJson(void(*jsonFunc)(DynamicJsonDocument&)) {
+    String serializedJson;  // Use String here to prevent stack overflow
     DynamicJsonDocument doc(8192);
     jsonFunc(doc);
-    char serializedJson[8192];
     serializeJson(doc, serializedJson);
     doc.clear();
-    request->send(200, "application/json", serializedJson);
+    web_server->send(200, "application/json", serializedJson);
 }
 
 // There may be a way to combine the following using virtual functions, but I'm not going to worry about that for now
-void serveExtendedSettings(AsyncWebServerRequest *request) {
+void httpServer::serveExtendedSettings() {
     DynamicJsonDocument doc(2048);
     extendedSettings.toJson(doc);
     char serializedJson[2048];
     serializeJson(doc, serializedJson);
     doc.clear();
-    request->send(200, "application/json", serializedJson);
+    web_server->send(200, "application/json", serializedJson);
 }
 
-void serveUpstreamSettings(AsyncWebServerRequest *request) {
+void httpServer::serveUpstreamSettings() {
     DynamicJsonDocument doc(1024);
     upstreamSettings.toJson(doc);
     char serializedJson[2048];
     serializeJson(doc, serializedJson);
     doc.clear();
-    request->send(200, "application/json", serializedJson);
+    web_server->send(200, "application/json", serializedJson);
 }
 
 
@@ -438,11 +427,11 @@ void serveUpstreamSettings(AsyncWebServerRequest *request) {
 //     char output[96];
 //     serializeJson(doc, output);
 
-//     request->send(200, "application/json", output);
+//     web_server->send(200, "application/json", output);
 // }
 
 
-void uptime(AsyncWebServerRequest *request) {
+void httpServer::uptime() {
     Log.verbose(F("Serving uptime.\r\n"));
     StaticJsonDocument<96> doc;
 
@@ -455,11 +444,11 @@ void uptime(AsyncWebServerRequest *request) {
     char output[96];
     serializeJson(doc, output);
 
-    request->send(200, "application/json", output);
+    web_server->send(200, "application/json", output);
 }
 
 
-void heap(AsyncWebServerRequest *request) {
+void httpServer::heap() {
     Log.verbose(F("Serving heap information.\r\n"));
     StaticJsonDocument<48> doc;
 
@@ -474,11 +463,11 @@ void heap(AsyncWebServerRequest *request) {
     char output[48];
     serializeJson(doc, output);
 
-    request->send(200, "application/json", output);
+    web_server->send(200, "application/json", output);
 }
 
 
-void reset_reason(AsyncWebServerRequest *request) {
+void httpServer::reset_reason() {
     Log.verbose(F("Serving reset reason.\r\n"));
     StaticJsonDocument<128> doc;
 
@@ -490,124 +479,125 @@ void reset_reason(AsyncWebServerRequest *request) {
     char output[128];
     serializeJson(doc, output);
 
-    request->send(200, "application/json", output);
+    web_server->send(200, "application/json", output);
 }
 
 
-void setStaticPages() {
+void httpServer::setStaticPages() {
     // Static page handlers - Vue
-    web_server.serveStatic("/", FILESYSTEM, "/").setDefaultFile("index.html").setCacheControl("max-age=600");
-    web_server.serveStatic("/index.html", FILESYSTEM, "/").setDefaultFile("index.html").setCacheControl("max-age=600");
+    web_server->serveStatic("/", FILESYSTEM, "/index.html", "max-age=600");
+    web_server->serveStatic("/index.html", FILESYSTEM, "/index.html", "max-age=600");
 
     // Vue routes
-    // web_server.serveStatic("/config/", FILESYSTEM, "/").setDefaultFile("index.html").setCacheControl("max-age=600");
-    // web_server.serveStatic("/about/", FILESYSTEM, "/").setDefaultFile("index.html").setCacheControl("max-age=600");
-    // web_server.serveStatic("/help/", FILESYSTEM, "/").setDefaultFile("index.html").setCacheControl("max-age=600");
+    web_server->serveStatic("/upstream/", FILESYSTEM, "/index.html", "max-age=600");
+    web_server->serveStatic("/devices/", FILESYSTEM, "/index.html", "max-age=600");
+    web_server->serveStatic("/about/", FILESYSTEM, "/index.html", "max-age=600");
 
     // Legacy static page handlers
-    web_server.serveStatic("/404/", FILESYSTEM, "/").setDefaultFile("404.htm").setCacheControl("max-age=600");
+    web_server->serveStatic("/404/", FILESYSTEM, "/404.html", "max-age=600");
 }
 
 
-void setJsonPages() {
+void httpServer::setJsonPages() {
     // Controller Version Stats
-    web_server.on("/api/version/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        genericServeJson(request, &versionInfoJson);
+    web_server->on("/api/version/", HTTP_GET, [&]() {
+        genericServeJson(&versionInfoJson);
     });
 
     // Controller Legacy LCD Output
-    web_server.on("/api/lcd/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        genericServeJson(request, &getLcdContentJson);
+    web_server->on("/api/lcd/", HTTP_GET, [&]() {
+        genericServeJson(&getLcdContentJson);
     });
 
     // Controller Temps (logging format)
-    web_server.on("/api/temps/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        genericServeJson(request, &printTemperaturesJson);
+    web_server->on("/api/temps/", HTTP_GET, [&]() {
+        genericServeJson(&printTemperaturesJson);
     });
 
     // Temp Control Settings (cs)
-    web_server.on("/api/cs/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        genericServeJson(request, &tempControl.getControlSettingsDoc);
+    web_server->on("/api/cs/", HTTP_GET, [&]() {
+        genericServeJson(&tempControl.getControlSettingsDoc);
     });
 
     // Temp Control Constants (cc)
-    web_server.on("/api/cc/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        genericServeJson(request, &tempControl.getControlConstantsDoc);
+    web_server->on("/api/cc/", HTTP_GET, [&]() {
+        genericServeJson(&tempControl.getControlConstantsDoc);
     });
 
     // Temp Control Variables (cv)
-    web_server.on("/api/cv/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        genericServeJson(request, &tempControl.getControlVariablesDoc);
+    web_server->on("/api/cv/", HTTP_GET, [&]() {
+        genericServeJson(&tempControl.getControlVariablesDoc);
     });
 
     // Full Temp Control Settings (cs, cc, cv, logging format)
-    web_server.on("/api/all_temp_control/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        genericServeJson(request, &getFullTemperatureControlJson);
+    web_server->on("/api/all_temp_control/", HTTP_GET, [&]() {
+        genericServeJson(&getFullTemperatureControlJson);
     });
 
     // Full Temp Control Settings (cs, cc, cv, logging format)
-    web_server.on("/api/devices/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        genericServeJson(request, &DeviceManager::enumerateHardware);
+    web_server->on("/api/devices/", HTTP_GET, [&]() {
+        genericServeJson(&DeviceManager::enumerateHardware);
     });
 
     // Extended (non-stock-brewpi) Settings
-    web_server.on("/api/extended/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        serveExtendedSettings(request);
+    web_server->on("/api/extended/", HTTP_GET, [&]() {
+        serveExtendedSettings();
     });
 
     // "Upstream" (Fermentrack REST) Settings
-    web_server.on("/api/upstream/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        serveUpstreamSettings(request);
+    web_server->on("/api/upstream/", HTTP_GET, [&]() {
+        serveUpstreamSettings();
     });
 
 
-    web_server.on("/api/uptime/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        uptime(request);
+    web_server->on("/api/uptime/", HTTP_GET, [&]() {
+        uptime();
     });
-    web_server.on("/api/heap/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        heap(request);
+    web_server->on("/api/heap/", HTTP_GET, [&]() {
+        heap();
     });
-    web_server.on("/api/resetreason/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        reset_reason(request);
+    web_server->on("/api/resetreason/", HTTP_GET, [&]() {
+        reset_reason();
     });
 }
 
 
-void processJsonRequest(const char* uri, AsyncWebServerRequest *request, JsonVariant const &json, uint8_t (*handler)(const JsonDocument& json, bool triggerUpstreamUpdate)) {
+void httpServer::processJsonRequest(const char* uri, uint8_t (*handler)(const JsonDocument& json, bool triggerUpstreamUpdate)) {
     // Handler for configuration options
     char message[200] = "";
     uint8_t errors = 0;
+    uint16_t status_code = 200;
     StaticJsonDocument<200> response;
     Log.verbose(F("Processing %s\r\n"), uri);
 
-    StaticJsonDocument<200> data;
-    if (json.is<JsonArray>()) {
-        data = json.as<JsonArray>();
-    } else if (json.is<JsonObject>()) {
-        data = json.as<JsonObject>();
-    }
-
-    errors = handler(data, true);  // Apply the handler to the data (and trigger an upstream update)
-
-    if(errors == 0) {
-        response["message"] = "Update processed successfully";
+    DynamicJsonDocument json(8096);
+    DeserializationError error = deserializeJson(json, web_server->arg("plain"));
+    if (error) {
+        Log.error(F("Error parsing JSON: %s\r\n"), error.c_str());
+        response["message"] = "Unable to parse JSON";
+        status_code = 400;
     } else {
-        response["message"] = "Unable to process update";
+        errors = handler(json, true);  // Apply the handler to the data (and trigger an upstream update)
+
+        if(errors == 0) {
+            response["message"] = "Update processed successfully";
+        } else {
+            response["message"] = "Unable to process update";
+            status_code = 400;
+        }    
     }
-    
+
     serializeJson(response, message);
-    request->send(200, "application/json", message);
+    web_server->send(400, "application/json", message);
+    
 }
 
 
-void setJsonHandlers() {
+void httpServer::setJsonHandlers() {
 
-
-
-    AsyncCallbackJsonWebHandler* upstreamConfig = new AsyncCallbackJsonWebHandler("/api/upstream/", [](AsyncWebServerRequest *request, JsonVariant const &json) {
-        processJsonRequest("/api/upstream/", request, json, &processUpstreamConfigUpdateJson);
+    web_server->on("/api/upstream/", HTTP_PUT, [&]() {
+        processJsonRequest("/api/upstream/", &processUpstreamConfigUpdateJson);
     });
-    web_server.addHandler(upstreamConfig);
 
 
     // AsyncCallbackJsonWebHandler* processAction = new AsyncCallbackJsonWebHandler("/api/action/", [](AsyncWebServerRequest *request, JsonVariant const &json) {
@@ -639,35 +629,41 @@ void setJsonHandlers() {
     //     }
         
     //     serializeJson(response, message);
-    //     request->send(200, "application/json", message);
+    //     web_server->send(200, "application/json", message);
     // });
-    // web_server.addHandler(processAction);
+    // web_server->addHandler(processAction);
 
 }
 
 
 void httpServer::init() {
+    web_server = new WebServer(WEB_SERVER_PORT);
+
     setStaticPages();
     setJsonPages();
     setJsonHandlers();
 
     // File not found handler
-    web_server.onNotFound([](AsyncWebServerRequest *request) {
-        if (request->method() == HTTP_OPTIONS) {
-            request->send(200);
+    web_server->onNotFound([&]() {
+        String pathWithGz = web_server->uri() + ".gz";
+        if (web_server->method() == HTTP_OPTIONS) {
+            web_server->send(200);
+        } else if(exists(web_server->uri()) || exists(pathWithGz)) {
+            // WebServer doesn't automatically serve files, so we need to do that here unless we want to
+            // manually add every single file to setStaticPages(). 
+            handleFileRead(web_server->uri());
         } else {
-            Log.verbose(F("Serving 404 for request to %s.\r\n"), request->url().c_str());
-            request->redirect("/404/");
+            Log.verbose(F("Serving 404 for request to %s.\r\n"), web_server->uri().c_str());
+            redirect("/404/");
         }
     });
 
-    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+    // DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
 
-    web_server.begin();
+    web_server->begin();
     Log.notice(F("HTTP server started. Open: http://%s.local/ to view application.\r\n"), WiFi.getHostname());
 }
 
 
 
 #endif
-

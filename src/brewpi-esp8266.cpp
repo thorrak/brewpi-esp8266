@@ -202,7 +202,7 @@ void brewpiLoop()
 #endif
 
     if (ticks.millis() - lastUpdate >= (1000)) { //update settings every second
-    // printMem();
+    printMem();
 
 		lastUpdate = ticks.millis();
 
@@ -242,6 +242,10 @@ void brewpiLoop()
 
 #ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
   tp_link_scanner.scan_and_refresh();
+#endif
+
+#ifdef ENABLE_HTTP_INTERFACE
+  http_server.web_server->handleClient();
 #endif
 
 #ifdef ESP8266
