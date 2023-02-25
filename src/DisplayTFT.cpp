@@ -517,6 +517,8 @@ std::string getline_temp_string(temperature temp) {
     char tempString[9];
     tempToString(tempString, temp, 1 , 9);
     std::string str(tempString);
+    while(str.length() < 5)
+        str.insert(0, " ");
     return str;
 }
 

@@ -434,7 +434,6 @@ void LcdDisplay::printBluetoothStartup(){
 	lcd.printSpacesToRestOfLine();
 
 	lcd.setCursor(0,1);
-	lcd.print(eepromManager.fetchmDNSName());
 	lcd.print("bluetooth scan");
 	lcd.printSpacesToRestOfLine();
 
