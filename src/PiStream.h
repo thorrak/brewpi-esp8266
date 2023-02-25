@@ -89,7 +89,7 @@ public:
     if(Config::PiLink::bufferPrints) {
       stream.print(out); 
     } else {
-      if((intBuffOn + 1)  < Config::PiLink::intBufferSize()) {
+      if((unsigned)(intBuffOn + 1)  < Config::PiLink::intBufferSize()) {
         intBuff[intBuffOn] = out;
         intBuff[intBuffOn+1] = '\0';
         intBuffOn++;
@@ -106,7 +106,7 @@ public:
       stream.print(out); 
     } else {
       for(uint16_t x = 0; x < strlen(out) ; x++) {
-        if((intBuffOn + 1)  < Config::PiLink::intBufferSize()) {
+        if((unsigned)(intBuffOn + 1)  < Config::PiLink::intBufferSize()) {
           intBuff[intBuffOn] = out[x];
           intBuff[intBuffOn+1] = '\0';
           intBuffOn++;

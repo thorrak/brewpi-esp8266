@@ -189,7 +189,11 @@ void wifi_connect_clients() {
         if (server.hasClient()) {
             // If we show a client as already being disconnected, force a disconnect
             if (serverClient) serverClient.stop();
+#ifdef ESP8266
+            serverClient = server.accept();
+#else
             serverClient = server.available();
+#endif
             serverClient.flush();
         }
     } else {
@@ -198,7 +202,11 @@ void wifi_connect_clients() {
         // we show a client as already being disconnected, force a disconnect
         if (serverClient) {
             serverClient.stop();
+#ifdef ESP8266
+            serverClient = server.accept();
+#else
             serverClient = server.available();
+#endif
             serverClient.flush();
         }
     }
