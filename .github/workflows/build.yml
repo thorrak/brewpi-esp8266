@@ -46,11 +46,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade platformio
 
-    - name: Build all environments
+    - name: Build firmware
       run: |
         pio run -e ${{ matrix.pio_env }}
-        pio run -e ${{ matrix.pio_env }} --target buildfs
-      # sh ./copy_bins.sh
 
     - name: Copy firmware
       continue-on-error: true
@@ -61,6 +59,11 @@ jobs:
       continue-on-error: true
       run: |
         cp .pio/build/${{ matrix.pio_env }}/spiffs.bin bin/${{ matrix.pio_env }}_spiffs.bin
+
+    - name: Build filesystem
+      run: |
+        pio run -e ${{ matrix.pio_env }} --target buildfs
+      # sh ./copy_bins.sh
 
     - name: Copy Spiffs
       continue-on-error: true
