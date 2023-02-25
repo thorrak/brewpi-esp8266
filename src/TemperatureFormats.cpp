@@ -141,7 +141,10 @@ char * fixedPointToString(char * s, long_temperature rawValue, uint8_t numDecima
 		intPart++;
 		fracPart = 0;
 	}
-	mysnprintf_P(&s[1], maxLength-1, fmt,  intPart, fracPart);
+	if(rawValue < 0l)
+		mysnprintf_P(&s[1], maxLength-1, fmt,  intPart, fracPart);
+	else
+		mysnprintf_P(&s[0], maxLength, fmt,  intPart, fracPart);
 	return s;
 }
 
@@ -194,6 +197,7 @@ long_temperature stringToFixedPoint(const char * numberString){
 	fractPtr = strchrnul(numberString, '.'); // returns pointer to the point.
 	
 	intPart = atol(numberString);
+	Serial.printf("Orig String: %s\r\nintPart: %ld\r\n", numberString, intPart);
 	if(fractPtr != 0){
 		// decimal point was found
 		fractPtr++; // add 1 to pointer to skip point
@@ -202,9 +206,11 @@ long_temperature stringToFixedPoint(const char * numberString){
 		fracPart = fracPart << TEMP_FIXED_POINT_BITS; // bits for fraction part
 		while(numDecimals > 0){
 			fracPart = (fracPart + 5) / 10; // divide by 10 rounded
+			Serial.printf("fracPart: %ld\r\n", fracPart);
 			numDecimals--;
 		}
 	}
+	Serial.printf("Final intPart: %ld, fracPart: %ld\r\n", intPart, fracPart);
 	long_temperature absVal = (intPart << TEMP_FIXED_POINT_BITS) + fracPart;
 	return negative ? -absVal:absVal;
 }
