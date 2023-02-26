@@ -390,9 +390,9 @@ DeviceDefinition DeviceManager::readJsonIntoDeviceDef(const DynamicJsonDocument&
   }
 
 	if(doc.containsKey(DeviceDefinitionKeys::calibrateadjust)) {
-		char buff[10];
-		temperature tempDiff;
+		temperature tempDiff = 0;
 		if(doc[DeviceDefinitionKeys::calibrateadjust].is<double>()) {
+			char buff[10];
 			dtostrf(doc[DeviceDefinitionKeys::calibrateadjust].as<double>(), 4, 6, buff);
 			tempDiff = stringToTempDiff(buff);
 		} else if(doc[DeviceDefinitionKeys::calibrateadjust].is<const char *>())
@@ -418,8 +418,12 @@ DeviceDefinition DeviceManager::readJsonIntoDeviceDef(const DynamicJsonDocument&
 	if(doc.containsKey(DeviceDefinitionKeys::pin) && doc[DeviceDefinitionKeys::pin].is<uint8_t>())
 		dev.pinNr = doc[DeviceDefinitionKeys::pin].as<uint8_t>();
 
-	if(doc.containsKey(DeviceDefinitionKeys::invert) && doc[DeviceDefinitionKeys::invert].is<uint8_t>())
-		dev.invert = doc[DeviceDefinitionKeys::invert].as<uint8_t>();
+	if(doc.containsKey(DeviceDefinitionKeys::invert)) {
+		if(doc[DeviceDefinitionKeys::invert].is<bool>())
+			dev.invert = doc[DeviceDefinitionKeys::invert].as<bool>() ? 1 : 0;
+		else if (doc[DeviceDefinitionKeys::invert].is<uint8_t>())
+			dev.invert = doc[DeviceDefinitionKeys::invert].as<uint8_t>();
+	} 
 
   return dev;
 }
