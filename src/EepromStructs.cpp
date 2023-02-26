@@ -195,7 +195,7 @@ void ControlConstants::loadFromSpiffs() {
     rotaryHalfSteps = json_doc[ControlConstantsKeys::rotaryHalfSteps] | rotaryHalfSteps;
     if(json_doc.containsKey(ControlConstantsKeys::pidMax)) pidMax = json_doc[ControlConstantsKeys::pidMax];
 
-    if(json_doc.containsKey(ControlConstantsKeys::tempFormat)) {
+    if(json_doc.containsKey(ControlConstantsKeys::tempFormat) && json_doc[ControlConstantsKeys::tempFormat].is<const char *>()) {
         // This gets a bit strange due to the 6.20 changes to ArduinoJson
         char buf[2];
         strlcpy(buf, json_doc[ControlConstantsKeys::tempFormat].as<const char *>(), 2);
@@ -265,7 +265,7 @@ void ControlSettings::loadFromSpiffs() {
     if(json_doc.containsKey(ControlSettingsKeys::heatEst)) heatEstimator = json_doc[ControlSettingsKeys::heatEst];
     if(json_doc.containsKey(ControlSettingsKeys::coolEst)) coolEstimator = json_doc[ControlSettingsKeys::coolEst];
 
-    if(json_doc.containsKey(ControlSettingsKeys::mode)) {
+    if(json_doc.containsKey(ControlSettingsKeys::mode) && json_doc[ControlSettingsKeys::mode].is<const char *>()) {
         // This gets a bit strange due to the 6.20 changes to ArduinoJson
         char buf[2];
         strlcpy(buf, json_doc[ControlSettingsKeys::mode].as<const char *>(), 2);
