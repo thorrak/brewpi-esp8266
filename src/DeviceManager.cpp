@@ -421,6 +421,8 @@ DeviceDefinition DeviceManager::readJsonIntoDeviceDef(const DynamicJsonDocument&
 	if(doc.containsKey(DeviceDefinitionKeys::invert)) {
 		if(doc[DeviceDefinitionKeys::invert].is<bool>())
 			dev.invert = doc[DeviceDefinitionKeys::invert].as<bool>() ? 1 : 0;
+		else if(doc[DeviceDefinitionKeys::invert].is<const char *>())
+			dev.invert = doc[DeviceDefinitionKeys::invert].as<const char*>()[0] == '1' ? 1 : 0;
 		else if (doc[DeviceDefinitionKeys::invert].is<uint8_t>())
 			dev.invert = doc[DeviceDefinitionKeys::invert].as<uint8_t>();
 	} 
