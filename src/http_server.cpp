@@ -183,6 +183,76 @@ uint8_t processDeviceUpdateJson(const DynamicJsonDocument& json, bool triggerUps
 }
 
 
+uint8_t processUpdateModeJson(const DynamicJsonDocument& json, bool triggerUpstreamUpdate) {
+    uint8_t failCount = 0;
+    bool saveSettings = false;
+
+    // Temperature Control Mode
+    if(json.containsKey(ModeUpdateKeys::mode)) {
+        if (strlen(json[ModeUpdateKeys::mode]) == 1) {
+            char new_mode = json[ModeUpdateKeys::mode].as<const char *>()[0];
+            Serial.printf("New mode: %c\r\n", new_mode);
+            if (new_mode == Modes::fridgeConstant || new_mode == Modes::beerConstant || new_mode == Modes::beerProfile ||
+                new_mode == Modes::off || new_mode == Modes::test) {
+                // Mode is valid - Update
+                if(new_mode != tempControl.getMode()) {
+                    tempControl.setMode(new_mode);
+                    Log.notice(F("Settings update, [mode]:(%c) applied.\r\n"), new_mode);
+                    saveSettings = true;
+                } else {
+                    Log.notice(F("Settings update, [mode]:(%c) NOT applied - no change.\r\n"), new_mode);
+                }
+            } else {
+                Log.warning(F("Settings update error, [mode]:(%c) not valid.\r\n"), new_mode);
+                failCount++;
+            }
+        } else {
+            Log.warning(F("Settings update error, [mode]:(%s) not a valid type.\r\n"), json[ModeUpdateKeys::mode].as<const char*>());
+            failCount++;
+        }
+    }
+
+
+    // Set Point
+    if(json.containsKey(ModeUpdateKeys::setpoint)) {
+        if(tempControl.getMode() != Modes::fridgeConstant && tempControl.getMode() != Modes::beerConstant && tempControl.getMode() != Modes::beerProfile) {
+            Log.info(F("Settings update error, [setpoint]:(%s) current mode (%c) does not take a setpoint.\r\n"), json[ModeUpdateKeys::setpoint].as<const char*>(), tempControl.getMode());
+        } else if(json[ModeUpdateKeys::setpoint].is<double>()) {
+            char modeString[7];
+            snprintf(modeString, 7, "%.1f", json[ModeUpdateKeys::setpoint].as<double>());
+            Serial.printf("New setpoint: %s\r\n", modeString);
+
+            temperature newTemp = stringToTemp(modeString);  // Also constrains the value to the valid range
+
+            if(tempControl.getMode() == Modes::fridgeConstant) {
+                tempControl.setFridgeTemp(newTemp);
+                saveSettings = true;
+            } else if(tempControl.getMode() == Modes::beerConstant || tempControl.getMode() == Modes::beerProfile) {
+                tempControl.setBeerTemp(newTemp);
+                saveSettings = true;
+            } else {
+                Log.error(F("Settings update error, [setpoint]:(%s) current mode (%c) does not take a setpoint (should never be reached).\r\n"), modeString, tempControl.getMode());
+            }
+        } else {
+            Log.warning(F("Invalid [setpoint]:(%s) received (wrong type).\r\n"), json[ModeUpdateKeys::setpoint]);
+            failCount++;
+        }
+    }
+
+
+    // Save
+    if (failCount) {
+        Log.error(F("Error: Invalid upstream configuration.\r\n"));
+    } else {
+        if(saveSettings == true) {
+            // TODO - Force upstream cascade/send
+            upstreamSettings.storeToSpiffs();
+        }
+    }
+    return failCount;
+}
+
+
 // uint8_t processSettingsUpdateJson(const JsonDocument& json) {
 //     uint8_t failCount = 0;
 //     bool hostnamechanged = false;
@@ -520,6 +590,11 @@ void httpServer::setJsonHandlers() {
     web_server->on("/api/devices/", HTTP_PUT, [&]() {
         processJsonRequest("/api/devices/", &processDeviceUpdateJson);
     });
+
+    web_server->on("/api/mode/", HTTP_PUT, [&]() {
+        processJsonRequest("/api/mode/", &processUpdateModeJson);
+    });
+
 
     // AsyncCallbackJsonWebHandler* processAction = new AsyncCallbackJsonWebHandler("/api/action/", [](AsyncWebServerRequest *request, JsonVariant const &json) {
     //     // TODO - Adapt this to use the new processJsonRequest function

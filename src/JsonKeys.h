@@ -144,3 +144,15 @@ constexpr auto upstreamPort = "upstreamPort";
 constexpr auto deviceID = "deviceID";
 }; // namespace UpstreamSettingsKeys
 
+
+
+/**
+ * \brief Strings used for JSON keys
+ * \see processUpdateModeJson
+ */
+namespace ModeUpdateKeys {
+constexpr auto mode = "mode";
+constexpr auto setpoint = "setPoint";
+}; // namespace ModeUpdateKeys
+
+

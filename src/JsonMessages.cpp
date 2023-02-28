@@ -68,18 +68,24 @@ void printTemperaturesJson(DynamicJsonDocument &doc) {
 }
 
 void getFullTemperatureControlJson(DynamicJsonDocument &doc) {
-    DynamicJsonDocument cc(256);
-    DynamicJsonDocument cs(256);
-    DynamicJsonDocument cv(256);
-    DynamicJsonDocument temp(1024);
+  DynamicJsonDocument cc(256);
+  DynamicJsonDocument cs(256);
+  DynamicJsonDocument cv(256);
+  DynamicJsonDocument temp(1024);
 
-    tempControl.getControlConstantsDoc(cc);
-    tempControl.getControlSettingsDoc(cs);
-    tempControl.getControlVariablesDoc(cv);
-    printTemperaturesJson(temp);
+  tempControl.getControlConstantsDoc(cc);
+  tempControl.getControlSettingsDoc(cs);
+  tempControl.getControlVariablesDoc(cv);
+  printTemperaturesJson(temp);
 
-    doc["cc"] = cc;
-    doc["cs"] = cs;
-    doc["cv"] = cv;
-    doc["temp"] = temp;
+  // For this message, we don't want to send any temperature if the sensor is not connected
+  if(!tempControl.beerSensor->isConnected())
+      temp["BeerTemp"] = "";
+  if(!tempControl.fridgeSensor->isConnected())
+      temp["FridgeTemp"] = "";
+
+  doc["cc"] = cc;
+  doc["cs"] = cs;
+  doc["cv"] = cv;
+  doc["temp"] = temp;
 }
