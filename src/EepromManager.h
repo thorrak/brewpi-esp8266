@@ -49,6 +49,7 @@ public:
 
 	DeviceConfig fetchDevice(uint8_t deviceIndex);
 	void storeDevice(DeviceConfig& config, uint8_t deviceIndex);
+	void deleteDeviceWithFunction(DeviceFunction function);
 	
 	static uint8_t saveDefaultDevices();
 

@@ -127,6 +127,19 @@ void EepromManager::storeDevice(DeviceConfig& config, uint8_t deviceIndex)
 	}
 }
 
+void EepromManager::deleteDeviceWithFunction(DeviceFunction deviceFunction)
+{
+	if(deviceFunction == DEVICE_NONE) return; // Deleting a none device is effectively a noop -- just implement it as such here to save cycles
+	
+	for (uint8_t index = 0; index<Config::EepromFormat::MAX_DEVICES; index++) {	
+		DeviceConfig deviceConfig = fetchDevice(index);
+		if (deviceConfig.deviceFunction == deviceFunction) {
+			deviceConfig.setDefaults();
+			storeDevice(deviceConfig, index);
+		}
+	}
+}
+
 
 // Not sure if I should put this in EepromManager or ESPEepromAccess. Oh well.
 // TODO - Make a decision & stick with it

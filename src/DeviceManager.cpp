@@ -262,6 +262,7 @@ void DeviceManager::uninstallDevice(DeviceConfig& config)
 {
 	DeviceType dt = deviceType(config.deviceFunction);
 	void** ppv = deviceTarget(config);
+	bool deviceFound = false;
 	if (ppv==nullptr)
 		return;
 
@@ -276,6 +277,7 @@ void DeviceManager::uninstallDevice(DeviceConfig& config)
 				setSensor(config.deviceFunction, ppv, &defaultTempSensor);
 //				DEBUG_ONLY(logInfoInt(INFO_UNINSTALL_TEMP_SENSOR, config.deviceFunction));
 				delete s;
+				deviceFound = true;
 			}
 			break;
 		case DEVICETYPE_SWITCH_ACTUATOR:
@@ -285,6 +287,7 @@ void DeviceManager::uninstallDevice(DeviceConfig& config)
 					((Actuator*)*ppv)->setActive(false);
 				delete (Actuator*)*ppv;
 				*ppv = &defaultActuator;
+				deviceFound = true;
 			}
 			break;
 		case DEVICETYPE_SWITCH_SENSOR:
@@ -292,9 +295,12 @@ void DeviceManager::uninstallDevice(DeviceConfig& config)
 //				DEBUG_ONLY(logInfoInt(INFO_UNINSTALL_SWITCH_SENSOR, config.deviceFunction));
 				delete (SwitchSensor*)*ppv;
 				*ppv = &defaultSensor;
+				deviceFound = true;
 			}
 			break;
 	}
+	if(deviceFound)
+		eepromManager.deleteDeviceWithFunction(config.deviceFunction);
 }
 
 
