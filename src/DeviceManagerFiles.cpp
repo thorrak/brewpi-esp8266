@@ -27,7 +27,19 @@ void DeviceConfig::toJson(DynamicJsonDocument &doc) {
     doc[DeviceDefinitionKeys::invert] = hw.invert;
     doc[DeviceDefinitionKeys::deactivated] = hw.deactivate;
 
-    if(deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP) {
+    if(deviceHardware == DEVICE_HARDWARE_PIN) {
+        switch(hw.pinNr) {
+            case coolingPin:
+                doc[DeviceDefinitionKeys::alias] = "Cool";
+                break;
+            case heatingPin:
+                doc[DeviceDefinitionKeys::alias] = "Heat";
+                break;
+            case doorPin:
+                doc[DeviceDefinitionKeys::alias] = "Door";
+                break;
+        }
+    } else if(deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP) {
         // copyArray doesn't work here since we don't want a JSON array, we want a string
         // If we ever want to switch to outputting an array, we can do so (but we need to ensure backwards
         // compatibility in brewpi-script)
@@ -61,25 +73,11 @@ void DeviceConfig::toJson(DynamicJsonDocument &doc) {
     }
 #endif
 
-	if (deviceHardware==DEVICE_HARDWARE_ONEWIRE_TEMP 
-#ifdef HAS_BLUETOOTH
-        || deviceHardware==DEVICE_HARDWARE_BLUETOOTH_INKBIRD || deviceHardware==DEVICE_HARDWARE_BLUETOOTH_TILT
-#endif
-        ) {
+	if (deviceHardware==DEVICE_HARDWARE_ONEWIRE_TEMP || deviceHardware==DEVICE_HARDWARE_BLUETOOTH_INKBIRD || deviceHardware==DEVICE_HARDWARE_BLUETOOTH_TILT) {
 		char buf[17];
 		tempDiffToString(buf, temperature(hw.calibration<<(TEMP_FIXED_POINT_BITS - TEMP_CALIBRATION_OFFSET_PRECISION)), 3, 8);
     	doc[DeviceDefinitionKeys::calibrateadjust] = buf;
 	}
-
-
-    // {
-    //     String output;
-    //     serializeJson(doc, output);
-    //     piLink.print("Device toJson: ");
-    //     piLink.print(output);
-    //     piLink.printNewLine();
-    // }
-
 }
 
 
