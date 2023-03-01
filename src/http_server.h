@@ -5,7 +5,13 @@
 
 #define WEB_SERVER_PORT 80
 
+#ifdef ESP8266
+#include <ESP8266WebServer.h>
+#define WEBSERVER_IMPL ESP8266WebServer
+#elif defined(ESP32)
 #include <WebServer.h>
+#define WEBSERVER_IMPL WebServer
+#endif
 
 
 uint8_t processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUpstreamUpdate = true);
@@ -21,7 +27,7 @@ public:
     bool wifi_reset_requested = false;
     bool config_reset_requested = false;
     bool ota_update_requested = false;
-    WebServer *web_server;
+    WEBSERVER_IMPL *web_server;
 
 
 private:
@@ -38,7 +44,7 @@ private:
     void setJsonHandlers();
 
     String getContentType(String filename);
-    bool exists(String path);
+    // bool exists(String path);
     bool handleFileRead(String path);
     void redirect(const String& url);
 

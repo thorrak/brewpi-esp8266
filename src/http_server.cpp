@@ -501,7 +501,11 @@ void httpServer::heap() {
     StaticJsonDocument<48> doc;
 
     const uint32_t free = ESP.getFreeHeap();
+#ifdef ESP32
     const uint32_t max = ESP.getMaxAllocHeap();
+#elif defined(ESP8266)
+    const uint32_t max = ESP.getMaxFreeBlockSize();
+#endif
     const uint8_t frag = 100 - (max * 100) / free;
 
     doc["free"] = free;
@@ -519,10 +523,14 @@ void httpServer::reset_reason() {
     Log.verbose(F("Serving reset reason.\r\n"));
     StaticJsonDocument<128> doc;
 
+#ifdef ESP32
     const int reset = (int)esp_reset_reason();
-
     doc["reason"] = resetReason[reset];
     doc["description"] = resetDescription[reset];
+#elif defined(ESP8266)
+    doc["reason"] = ESP.getResetReason();
+    doc["description"] = "N/A";
+#endif
 
     char output[128];
     serializeJson(doc, output);
@@ -702,7 +710,7 @@ void httpServer::setJsonHandlers() {
 
 
 void httpServer::init() {
-    web_server = new WebServer(WEB_SERVER_PORT);
+    web_server = new WEBSERVER_IMPL(WEB_SERVER_PORT);
 
     setStaticPages();
     setJsonPages();
@@ -713,7 +721,7 @@ void httpServer::init() {
         String pathWithGz = web_server->uri() + ".gz";
         if (web_server->method() == HTTP_OPTIONS) {
             web_server->send(200);
-        } else if(exists(web_server->uri()) || exists(pathWithGz)) {
+        } else if(FILESYSTEM.exists(web_server->uri()) || FILESYSTEM.exists(pathWithGz)) {
             // WebServer doesn't automatically serve files, so we need to do that here unless we want to
             // manually add every single file to setStaticPages(). 
             handleFileRead(web_server->uri());

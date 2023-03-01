@@ -35,9 +35,7 @@ constexpr auto pin = "p";
 constexpr auto invert = "x";
 constexpr auto deactivated = "d";
 constexpr auto address = "a";
-#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
 constexpr auto child_id = "n";
-#endif
 constexpr auto alias = "r";  // EXTERN_SENSOR_ACTUATOR or Bluetooth
 #if BREWPI_DS2413
 constexpr auto pio = "n";

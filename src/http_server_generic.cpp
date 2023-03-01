@@ -42,15 +42,15 @@ String httpServer::getContentType(String filename) {
   return "text/plain";
 }
 
-bool httpServer::exists(String path){
-  bool yes = false;
-  File file = FILESYSTEM.open(path, "r");
-  if(!file.isDirectory()){
-    yes = true;
-  }
-  file.close();
-  return yes;
-}
+// bool httpServer::exists(String path){
+//   bool yes = false;
+//   File file = FILESYSTEM.open(path, "r");
+//   if(!file.isDirectory()){
+//     yes = true;
+//   }
+//   file.close();
+//   return yes;
+// }
 
 bool httpServer::handleFileRead(String path) {
   // Serial.println("handleFileRead: " + path);
@@ -59,8 +59,8 @@ bool httpServer::handleFileRead(String path) {
   }
   String contentType = getContentType(path);
   String pathWithGz = path + ".gz";
-  if (exists(pathWithGz) || exists(path)) {
-    if (exists(pathWithGz)) {
+  if (FILESYSTEM.exists(pathWithGz) || FILESYSTEM.exists(path)) {
+    if (FILESYSTEM.exists(pathWithGz)) {
       path += ".gz";
     }
     File file = FILESYSTEM.open(path, "r");
