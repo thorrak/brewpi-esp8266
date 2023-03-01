@@ -538,9 +538,13 @@ void httpServer::setStaticPages() {
 
     // Vue routes
     web_server->serveStatic("/upstream/", FILESYSTEM, "/index.html", "max-age=600");
+    web_server->serveStatic("/upstream", FILESYSTEM, "/index.html", "max-age=600");
     web_server->serveStatic("/devices/", FILESYSTEM, "/index.html", "max-age=600");
+    web_server->serveStatic("/devices", FILESYSTEM, "/index.html", "max-age=600");
     web_server->serveStatic("/about/", FILESYSTEM, "/index.html", "max-age=600");
+    web_server->serveStatic("/about", FILESYSTEM, "/index.html", "max-age=600");
     web_server->serveStatic("/settings/", FILESYSTEM, "/index.html", "max-age=600");
+    web_server->serveStatic("/settings", FILESYSTEM, "/index.html", "max-age=600");
 
     // Legacy static page handlers
     web_server->serveStatic("/404/", FILESYSTEM, "/404.html", "max-age=600");
