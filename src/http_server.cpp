@@ -149,7 +149,6 @@ uint8_t processDeviceUpdateJson(const DynamicJsonDocument& json, bool triggerUps
     // Check for universally required keys
     if(!json.containsKey(DeviceDefinitionKeys::chamber) || !json.containsKey(DeviceDefinitionKeys::beer) || 
        !json.containsKey(DeviceDefinitionKeys::function) || !json.containsKey(DeviceDefinitionKeys::hardware) ||
-       !json.containsKey(DeviceDefinitionKeys::pin) || !json.containsKey(DeviceDefinitionKeys::invert) ||
        !json.containsKey(DeviceDefinitionKeys::deactivated)) {
 
         Log.warning(F("Invalid device definition received - missing required keys.\r\n"));
@@ -158,6 +157,12 @@ uint8_t processDeviceUpdateJson(const DynamicJsonDocument& json, bool triggerUps
 
 
 	  switch(json[DeviceDefinitionKeys::hardware].as<uint8_t>()) {
+        case DEVICE_HARDWARE_PIN:
+            if(!json.containsKey(DeviceDefinitionKeys::pin) || !json.containsKey(DeviceDefinitionKeys::invert)) {
+                Log.warning(F("Invalid device definition received - missing required keys.\r\n"));
+                return 1;
+            }
+            break;
 		case DEVICE_HARDWARE_ONEWIRE_TEMP:
 		case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
 		case DEVICE_HARDWARE_BLUETOOTH_TILT:
@@ -191,7 +196,6 @@ uint8_t processUpdateModeJson(const DynamicJsonDocument& json, bool triggerUpstr
     if(json.containsKey(ModeUpdateKeys::mode)) {
         if (strlen(json[ModeUpdateKeys::mode]) == 1) {
             char new_mode = json[ModeUpdateKeys::mode].as<const char *>()[0];
-            Serial.printf("New mode: %c\r\n", new_mode);
             if (new_mode == Modes::fridgeConstant || new_mode == Modes::beerConstant || new_mode == Modes::beerProfile ||
                 new_mode == Modes::off || new_mode == Modes::test) {
                 // Mode is valid - Update
@@ -220,7 +224,6 @@ uint8_t processUpdateModeJson(const DynamicJsonDocument& json, bool triggerUpstr
         } else if(json[ModeUpdateKeys::setpoint].is<double>()) {
             char modeString[7];
             snprintf(modeString, 7, "%.1f", json[ModeUpdateKeys::setpoint].as<double>());
-            Serial.printf("New setpoint: %s\r\n", modeString);
 
             temperature newTemp = stringToTemp(modeString);  // Also constrains the value to the valid range
 
@@ -246,7 +249,64 @@ uint8_t processUpdateModeJson(const DynamicJsonDocument& json, bool triggerUpstr
     } else {
         if(saveSettings == true) {
             // TODO - Force upstream cascade/send
-            upstreamSettings.storeToSpiffs();
+            // upstreamSettings.storeToSpiffs();
+        }
+    }
+    return failCount;
+}
+
+
+
+uint8_t processExtendedSettingsJson(const DynamicJsonDocument& json, bool triggerUpstreamUpdate) {
+    uint8_t failCount = 0;
+    bool saveSettings = false;
+
+    // Glycol Mode
+    if(json.containsKey(ExtendedSettingsKeys::glycol)) {
+        if(json[ExtendedSettingsKeys::glycol].is<bool>()) {
+            if(extendedSettings.glycol != json[ExtendedSettingsKeys::glycol].as<bool>()) {
+                extendedSettings.setGlycol(json[ExtendedSettingsKeys::glycol].as<bool>());
+                saveSettings = true;
+            }
+        } else {
+            Log.warning(F("Invalid [glycol]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::glycol]);
+            failCount++;
+        }
+    }
+
+    // Low Delay Mode
+    if(json.containsKey(ExtendedSettingsKeys::lowDelay)) {
+        if(json[ExtendedSettingsKeys::lowDelay].is<bool>()) {
+            if(extendedSettings.lowDelay != json[ExtendedSettingsKeys::lowDelay].as<bool>()) {
+                extendedSettings.setLowDelay(json[ExtendedSettingsKeys::lowDelay].as<bool>());
+                saveSettings = true;
+            }
+        } else {
+            Log.warning(F("Invalid [lowDelay]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::lowDelay]);
+            failCount++;
+        }
+    }
+
+    // Invert TFT Flag
+    if(json.containsKey(ExtendedSettingsKeys::invertTFT)) {
+        if(json[ExtendedSettingsKeys::invertTFT].is<bool>()) {
+            if(extendedSettings.invertTFT != json[ExtendedSettingsKeys::invertTFT].as<bool>()) {
+                extendedSettings.setInvertTFT(json[ExtendedSettingsKeys::invertTFT].as<bool>());
+                saveSettings = true;
+            }
+        } else {
+            Log.warning(F("Invalid [invertTFT]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::invertTFT]);
+            failCount++;
+        }
+    }
+
+    // Save
+    if (failCount) {
+        Log.error(F("Error: Invalid extended settings configuration.\r\n"));
+    } else {
+        if(saveSettings == true) {
+            extendedSettings.storeToSpiffs();
+            // TODO - Force upstream cascade/send
         }
     }
     return failCount;
@@ -480,6 +540,7 @@ void httpServer::setStaticPages() {
     web_server->serveStatic("/upstream/", FILESYSTEM, "/index.html", "max-age=600");
     web_server->serveStatic("/devices/", FILESYSTEM, "/index.html", "max-age=600");
     web_server->serveStatic("/about/", FILESYSTEM, "/index.html", "max-age=600");
+    web_server->serveStatic("/settings/", FILESYSTEM, "/index.html", "max-age=600");
 
     // Legacy static page handlers
     web_server->serveStatic("/404/", FILESYSTEM, "/404.html", "max-age=600");
@@ -593,6 +654,10 @@ void httpServer::setJsonHandlers() {
 
     web_server->on("/api/mode/", HTTP_PUT, [&]() {
         processJsonRequest("/api/mode/", &processUpdateModeJson);
+    });
+
+    web_server->on("/api/extended/", HTTP_PUT, [&]() {
+        processJsonRequest("/api/extended/", &processExtendedSettingsJson);
     });
 
 
