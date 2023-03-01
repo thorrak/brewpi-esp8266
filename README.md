@@ -1,25 +1,62 @@
-# brewpi-esp8266
-An implementation of the BrewPi device code on an ESP8266 (No arduino needed!) /w bonus WiFi support
+# brewpi-esp
+An implementation of the BrewPi firmware on the ESP8266, ESP32, and ESP32-S2 with additional, added features
 
 ## Introduction
-This project seeks to implement the BrewPi firmware onto an ESP8266 controller. It is compatible with both [Fermentrack](http://www.fermentrack.com/) as well as the legacy BrewPi-www software.
+This project ports the BrewPi firmware to the ESP8266, ESP32, and ESP32-S2 controllers. It is compatible with [Fermentrack](http://www.fermentrack.com/) and [BrewPi-Remix](https://www.brewpiremix.com/).
 
 ### Documentation:
-* [Selecting an ESP8266 Board](docs/Selecting%20an%20ESP%20Board.md)  
-* [Full Installation Instructions](docs/INSTALL.md) (including custom brewpi-script)
+* [Selecting your Hardware](docs/Selecting%20an%20ESP%20Board.md)  
+* [Building a "Solder Free" BrewPi](docs/Solder%20Free%20BrewPi.md)  
 * [Installing the Firmware](docs/Installing%20the%20Firmware.md)
-* [Developing/Contributing](docs/DEVELOP.md)
 * [Hardware Information](https://github.com/thorrak/thorrak_hardware/blob/master/BrewPi-ESP8266.md) - PCB files, ordering and BOMs
 
 ## Expected Pinout
+
+### ESP32
+
+There are two versions of the ESP32 firmware - one supporting an LCD2004 I2C display and one supporting a TFT. The pinout is slightly different between the two:
+
+#### Common Pins
+
+* 25 - Heat
+* 26 - Cool
+* 13 - OneWire Data
+* 34 - Door
+
+#### I2C Pins
+
+* 21 - I2C SDA
+* 22 - I2C SCL
+
+#### TFT Pins
+
+* 14 - TFT CS
+* 27 - TFT DC
+* 33 - TFT RST
+* 12 - TS CS
+* 32 - TFT Backlight
+
+### ESP32-S2
+
+* 5 - Heat
+* 7 - Cool
+* 9 - OneWire Data
+* 11 - Door
+* 33 - I2C SDA
+* 35 - I2C SCL
+
+### ESP8266
+
+Although the ESP8266 was the original board chosen for this project, due to reduced support by the manufacturer its use in new builds is not recommended. For existing builds using the LoLin D1 Mini, the LoLin S2 Mini (utilizing the ESP32-S2) is recommended as a pin compatible replacement.
+
 * D0 - Heat
 * D1 - I2C SCL
 * D2 - I2C SDA
-* D3 - Buzzer *(currently unsupported)*
-* D4 - N/C
 * D5 - Cool
 * D6 - OneWire Data
 * D7 - Door (Untested)
+
+
 
 ## Supported Features
 * OneWire Temperature Sensors
@@ -28,6 +65,11 @@ This project seeks to implement the BrewPi firmware onto an ESP8266 controller. 
 * WiFi Soft-AP Configuration
 * OTA (WiFi) connection to BrewPi 
 * I2C LCD (20x4) Screen (/w Address Autodetection)
+* xxx-based 
+* Tilt Hydrometer (as Temp Sensor) (ESP32 only)
+* Inkbird Bluetooth Temp Sensors (ESP32 only)
+* TPLink Kasa WiFi Switches (ESP32 & ESP32-S2 WiFi only)
+* HTTP interface for quick updates
 
 ## Currently Unsupported/Untested
 * Rotary Encoder Support
@@ -46,4 +88,6 @@ Due to the fact that this is an unsupported board, I have had to rewrite a small
 
 Although this firmware works with brewpi-www, it is highly recommended that users use [Fermentrack](http://www.fermentrack.com/) instead as Fermentrack substantially reduces the work required to get an ESP8266-based controller working. Due to recent changes in Raspbian, ongoing testing & support for this firmware is exclusively performed on Fermentrack and future changes may introduce incompatibility with brewpi-www.
 
+## Hardware
 
+I maintain a separate repo with PCB and 3D-printable case designs for all of my projects. The page specific to BrewPi-ESP can be accessed [here](https://github.com/thorrak/thorrak_hardware/blob/master/BrewPi-ESP8266.md). 
