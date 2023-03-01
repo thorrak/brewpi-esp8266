@@ -213,6 +213,10 @@ public:
     void setDefaults();
     void processSettingKeypair(JsonPair kv);
 
+    void setGlycol(bool setting);
+    void setLowDelay(bool setting);
+    void setInvertTFT(bool setting);
+
     /**
      * \brief Filename used when reading/writing data to flash
      */

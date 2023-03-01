@@ -14,6 +14,7 @@
 #include "TempControl.h" // For Modes definition
 #include "JsonKeys.h"
 #include "PiLink.h"
+#include "Display.h"
 
 
 
@@ -304,6 +305,9 @@ void ExtendedSettings::toJson(DynamicJsonDocument &doc) {
     doc[ExtendedSettingsKeys::lowDelay] = lowDelay;
 }
 
+/**
+ * \brief Store extended settings to the filesystem
+ */
 void ExtendedSettings::storeToSpiffs() {
     DynamicJsonDocument doc(256);
 
@@ -312,6 +316,9 @@ void ExtendedSettings::storeToSpiffs() {
     writeJsonToFile(ExtendedSettings::filename, doc);  // Write the json to the file
 }
 
+/**
+ * \brief Load extended settings from the filesystem
+ */
 void ExtendedSettings::loadFromSpiffs() {
     // We start by setting the defaults, as we use them as the alternative to loaded values if the keys don't exist
     setDefaults();
@@ -343,14 +350,54 @@ void ExtendedSettings::processSettingKeypair(JsonPair kv) {
   }
 
   if (kv.key() == ExtendedSettingsKeys::invertTFT) {
-    invertTFT = kv.value().as<bool>();
+    setInvertTFT(kv.value().as<bool>());
   } else if (kv.key() == ExtendedSettingsKeys::glycol) {
-    glycol = kv.value().as<bool>();
+    setGlycol(kv.value().as<bool>());
   } else if (kv.key() == ExtendedSettingsKeys::lowDelay) {
-    lowDelay = kv.value().as<bool>();
+    setLowDelay(kv.value().as<bool>());
   }
 }
 
+/**
+ * \brief Set the glycol mode
+ *
+ * \param setting - The new setting
+ */
+void ExtendedSettings::setGlycol(bool setting) {
+    glycol = setting;
+    if (glycol) {
+        // Glycol mode
+    } else {
+        // Non-glycol mode
+    }
+}
+
+
+/**
+ * \brief Set the low delay mode
+ *
+ * \param setting - The new setting
+ */
+void ExtendedSettings::setLowDelay(bool setting) {
+    lowDelay = setting;
+    if (lowDelay) {
+        // Low delay mode
+    } else {
+        // Normal mode
+    }
+}
+
+/**
+ * \brief Set the TFT inversion mode
+ *
+ * \param setting - The new setting
+ */
+void ExtendedSettings::setInvertTFT(bool setting) {
+    invertTFT = setting;
+    display.init();
+    display.printStationaryText();
+	display.printState();
+}
 
 
 /**
