@@ -365,12 +365,12 @@ void LcdDisplay::printState(){
     } else if(state==COOLING_MIN_TIME){
         tft.print(" time left ");
         printed_chars += 5;
-        time = MIN_COOL_ON_TIME-sinceIdleTime;
+        time = tempControl.getMinCoolOnTime()-sinceIdleTime;
         printed_chars += printTime(time);
     } else if(state==HEATING_MIN_TIME){
         tft.print(" time left ");
         printed_chars += 11;
-        time = MIN_HEAT_ON_TIME-sinceIdleTime;
+        time = tempControl.getMinHeatOnTime()-sinceIdleTime;
         printed_chars += printTime(time);
     } else if(state == WAITING_TO_COOL || state == WAITING_TO_HEAT){
         tft.print(" ");
@@ -620,12 +620,12 @@ void LcdDisplay::getLine(uint8_t lineNumber, char * buffer) {
                 }
                 else if(state==COOLING_MIN_TIME){
                     line += " time left ";
-                    time = MIN_COOL_ON_TIME-sinceIdleTime;
+                    time = tempControl.getMinCoolOnTime()-sinceIdleTime;
                 }
 
                 else if(state==HEATING_MIN_TIME){
                     line += " time left ";
-                    time = MIN_HEAT_ON_TIME-sinceIdleTime;
+                    time = tempControl.getMinHeatOnTime()-sinceIdleTime;
                 }
                 else if(state == WAITING_TO_COOL || state == WAITING_TO_HEAT){
                     line += " ";

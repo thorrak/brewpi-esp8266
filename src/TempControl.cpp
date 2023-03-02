@@ -33,6 +33,7 @@
 #include "RotaryEncoder.h"
 
 TempControl tempControl;
+MinTimes minTimes;
 
 #if TEMP_CONTROL_STATIC
 
@@ -108,6 +109,7 @@ void TempControl::init(){
 	
 	updateTemperatures();
 	reset();
+	minTimes.set_min_times();
 
 	// Do not allow heating/cooling directly after reset.
 	// A failing script + CRON + Arduino uno (which resets on serial connect) could damage the compressor
@@ -279,16 +281,16 @@ void TempControl::updateState(){
 			}
 			resetWaitTime();
 			if(fridgeFast > (cs.fridgeSetting+cc.idleRangeHigh) ){  // fridge temperature is too high			
-				tempControl.updateWaitTime(MIN_SWITCH_TIME, sinceHeating);			
+				tempControl.updateWaitTime(minTimes.MIN_SWITCH_TIME, sinceHeating);			
 				if(cs.mode==Modes::fridgeConstant){
-					tempControl.updateWaitTime(MIN_COOL_OFF_TIME_FRIDGE_CONSTANT, sinceCooling);
+					tempControl.updateWaitTime(minTimes.MIN_COOL_OFF_TIME_FRIDGE_CONSTANT, sinceCooling);
 				}
 				else{
 					if(beerFast < (cs.beerSetting + 16) ){ // If beer is already under target, stay/go to idle. 1/2 sensor bit idle zone
 						state = IDLE; // beer is already colder than setting, stay in or go to idle
 						break;
 					}
-					tempControl.updateWaitTime(MIN_COOL_OFF_TIME, sinceCooling);
+					tempControl.updateWaitTime(minTimes.MIN_COOL_OFF_TIME, sinceCooling);
 				}
 				if(tempControl.cooler != &defaultActuator){
 					if(getWaitTime() > 0){
@@ -300,8 +302,8 @@ void TempControl::updateState(){
 				}
 			}
 			else if(fridgeFast < (cs.fridgeSetting+cc.idleRangeLow)){  // fridge temperature is too low
-				tempControl.updateWaitTime(MIN_SWITCH_TIME, sinceCooling);
-				tempControl.updateWaitTime(MIN_HEAT_OFF_TIME, sinceHeating);
+				tempControl.updateWaitTime(minTimes.MIN_SWITCH_TIME, sinceCooling);
+				tempControl.updateWaitTime(minTimes.MIN_HEAT_OFF_TIME, sinceHeating);
 				if(cs.mode!=Modes::fridgeConstant){
 					if(beerFast > (cs.beerSetting - 16)){ // If beer is already over target, stay/go to idle. 1/2 sensor bit idle zone
 						state = IDLE;  // beer is already warmer than setting, stay in or go to idle
@@ -341,7 +343,7 @@ void TempControl::updateState(){
 			
 			// stop cooling when estimated fridge temp peak lands on target or if beer is already too cold (1/2 sensor bit idle zone)
 			if(cv.estimatedPeak <= cs.fridgeSetting || (cs.mode != Modes::fridgeConstant && beerFast < (cs.beerSetting - 16))){
-				if(sinceIdle > MIN_COOL_ON_TIME){
+				if(sinceIdle > minTimes.MIN_COOL_ON_TIME){
 					cv.negPeakEstimate = cv.estimatedPeak; // remember estimated peak when I switch to IDLE, to adjust estimator later
 					state=IDLE;
 					break;
@@ -363,7 +365,7 @@ void TempControl::updateState(){
 			
 			// stop heating when estimated fridge temp peak lands on target or if beer is already too warm (1/2 sensor bit idle zone)
 			if(cv.estimatedPeak >= cs.fridgeSetting || (cs.mode != Modes::fridgeConstant && beerFast > (cs.beerSetting + 16))){
-				if(sinceIdle > MIN_HEAT_ON_TIME){
+				if(sinceIdle > minTimes.MIN_HEAT_ON_TIME){
 					cv.posPeakEstimate=cv.estimatedPeak; // remember estimated peak when I switch to IDLE, to adjust estimator later
 					state=IDLE;
 					break;
@@ -428,7 +430,7 @@ void TempControl::detectPeaks(){
 			}
 			detected = INFO_POSITIVE_PEAK;
 		}
-		else if(timeSinceHeating() > HEAT_PEAK_DETECT_TIME){
+		else if(timeSinceHeating() > minTimes.HEAT_PEAK_DETECT_TIME){
 			if(fridgeSensor->readFastFiltered() < (cv.posPeakEstimate+cc.heatingTargetLower)){
 				// Idle period almost reaches maximum allowed time for peak detection
 				// This is the heat, then drift up too slow (but in the right direction).
@@ -470,7 +472,7 @@ void TempControl::detectPeaks(){
 			}
 			detected = INFO_NEGATIVE_PEAK;
 		}
-		else if(timeSinceCooling() > COOL_PEAK_DETECT_TIME){
+		else if(timeSinceCooling() > minTimes.COOL_PEAK_DETECT_TIME){
 			if(fridgeSensor->readFastFiltered() > (cv.negPeakEstimate+cc.coolingTargetUpper)){
 				// Idle period almost reaches maximum allowed time for peak detection
 				// This is the cooling, then drift down too slow (but in the right direction).
@@ -797,4 +799,44 @@ void TempControl::getControlSettingsDoc(DynamicJsonDocument& doc) {
   doc["fridgeSet"] = tempToDouble(cs.fridgeSetting, Config::TempFormat::tempDecimals);
   doc["heatEst"] = fixedPointToDouble(cs.heatEstimator, Config::TempFormat::fixedPointDecimals);
   doc["coolEst"] = fixedPointToDouble(cs.coolEstimator, Config::TempFormat::fixedPointDecimals);
+}
+
+
+
+void MinTimes::set_min_times() {
+	if(extendedSettings.lowDelay) {
+		// Low Delay Mode
+		MIN_COOL_OFF_TIME = 60;
+		MIN_HEAT_OFF_TIME = 300;
+		MIN_COOL_ON_TIME = 20;
+		MIN_HEAT_ON_TIME = 180;
+
+		MIN_COOL_OFF_TIME_FRIDGE_CONSTANT= 60;
+		MIN_SWITCH_TIME = 600;
+		COOL_PEAK_DETECT_TIME = 1800;
+		HEAT_PEAK_DETECT_TIME = 900;
+	} else {
+		// Normal Delay
+		MIN_COOL_OFF_TIME = 300;
+		MIN_HEAT_OFF_TIME = 300;
+		MIN_COOL_ON_TIME = 180;
+		MIN_HEAT_ON_TIME = 180;
+
+		MIN_COOL_OFF_TIME_FRIDGE_CONSTANT= 600;
+		MIN_SWITCH_TIME = 600;
+		COOL_PEAK_DETECT_TIME = 1800;
+		HEAT_PEAK_DETECT_TIME = 900;
+	}
+}
+
+// MinTimes::MinTimes() {
+// 	set_min_times();
+// }
+
+uint16_t TempControl::getMinCoolOnTime() {
+	return minTimes.MIN_COOL_ON_TIME;
+}
+
+uint16_t TempControl::getMinHeatOnTime() {
+	return minTimes.MIN_HEAT_ON_TIME;
 }

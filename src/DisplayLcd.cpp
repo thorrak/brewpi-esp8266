@@ -323,11 +323,11 @@ void LcdDisplay::printState(){
 		time = sinceIdleTime;
 	}
 	else if(state==COOLING_MIN_TIME){
-		time = MIN_COOL_ON_TIME-sinceIdleTime;
+		time = TempControl::getMinCoolOnTime()-sinceIdleTime;
 	}
 	
 	else if(state==HEATING_MIN_TIME){
-		time = MIN_HEAT_ON_TIME-sinceIdleTime;
+		time = TempControl::getMinHeatOnTime()-sinceIdleTime;
 	}
 	else if(state == WAITING_TO_COOL || state == WAITING_TO_HEAT){
 		time = tempControl.getWaitTime();

@@ -39,53 +39,6 @@
  * @{
  */
 
-#ifdef TEMP_CONTROL_LOWDELAY
-#warning "Lowdelay mode enabled"
-//! Minimum cooler off time, in seconds. To prevent short cycling the compressor
-const uint16_t MIN_COOL_OFF_TIME = 60;
-//! Minimum heater off time, in seconds. To heat in cycles, not lots of short bursts
-const uint16_t MIN_HEAT_OFF_TIME = 300;
-//! Minimum on time for the cooler.
-const uint16_t MIN_COOL_ON_TIME = 20;
-//! Minimum on time for the heater.
-const uint16_t MIN_HEAT_ON_TIME = 180;
-
-/**
- * Minimum cooler off time, in seconds.  Used when the controller is in Fridge Constant mode.
- * Larger than MIN_COOL_OFF_TIME. No need for very fast cycling.
- */
-const uint16_t MIN_COOL_OFF_TIME_FRIDGE_CONSTANT = 60;
-//! Minimum off time between switching between heating and cooling
-const uint16_t MIN_SWITCH_TIME = 600;
-//! Time allowed for cooling peak detection
-const uint16_t COOL_PEAK_DETECT_TIME = 1800;
-//! Time allowed for heating peak detection
-const uint16_t HEAT_PEAK_DETECT_TIME = 900;
-
-
-#else
-//! Minimum cooler off time, in seconds. To prevent short cycling the compressor
-const uint16_t MIN_COOL_OFF_TIME = 300;
-//! Minimum heater off time, in seconds. To heat in cycles, not lots of short bursts
-const uint16_t MIN_HEAT_OFF_TIME = 300;
-//! Minimum on time for the cooler.
-const uint16_t MIN_COOL_ON_TIME = 180;
-//! Minimum on time for the heater.
-const uint16_t MIN_HEAT_ON_TIME = 180;
-
-/**
- * Minimum cooler off time, in seconds.  Used when the controller is in Fridge Constant mode.
- * Larger than MIN_COOL_OFF_TIME. No need for very fast cycling.
- */
-const uint16_t MIN_COOL_OFF_TIME_FRIDGE_CONSTANT = 600;
-//! Minimum off time between switching between heating and cooling
-const uint16_t MIN_SWITCH_TIME = 600;
-//! Time allowed for cooling peak detection
-const uint16_t COOL_PEAK_DETECT_TIME = 1800;
-//! Time allowed for heating peak detection
-const uint16_t HEAT_PEAK_DETECT_TIME = 900;
-
-#endif
 
 // These two structs are stored in and loaded from EEPROM
 // struct ControlSettings was moved to EepromStructs.h
@@ -103,23 +56,24 @@ struct ControlVariables{
 	temperature posPeak;
 };
 
-// TODO - Use this for something
-// MinTimes is intended as a replacement for the defines above once we start to get glycol support going
-struct MinTimes {
-    const uint16_t MIN_COOL_OFF_TIME;  //! Minimum cooler off time, in seconds. To prevent short cycling the compressor
-    const uint16_t MIN_HEAT_OFF_TIME;  //! Minimum heater off time, in seconds. To heat in cycles, not lots of short bursts
-    const uint16_t MIN_COOL_ON_TIME;  //! Minimum on time for the cooler.
-    const uint16_t MIN_HEAT_ON_TIME;  //! Minimum on time for the heater.
+class MinTimes {
+public:
+	// MinTimes();
+    uint16_t MIN_COOL_OFF_TIME;  //! Minimum cooler off time, in seconds. To prevent short cycling the compressor
+    uint16_t MIN_HEAT_OFF_TIME;  //! Minimum heater off time, in seconds. To heat in cycles, not lots of short bursts
+    uint16_t MIN_COOL_ON_TIME;  //! Minimum on time for the cooler.
+    uint16_t MIN_HEAT_ON_TIME;  //! Minimum on time for the heater.
 
 /**
  * Minimum cooler off time, in seconds.  Used when the controller is in Fridge Constant mode.
  * Larger than MIN_COOL_OFF_TIME. No need for very fast cycling.
  */
-    const uint16_t MIN_COOL_OFF_TIME_FRIDGE_CONSTANT;
-    const uint16_t MIN_SWITCH_TIME;  //! Minimum off time between switching between heating and cooling
-    const uint16_t COOL_PEAK_DETECT_TIME;  //! Time allowed for cooling peak detection
-    const uint16_t HEAT_PEAK_DETECT_TIME;  //! Time allowed for heating peak detection
+    uint16_t MIN_COOL_OFF_TIME_FRIDGE_CONSTANT;
+    uint16_t MIN_SWITCH_TIME;  //! Minimum off time between switching between heating and cooling
+    uint16_t COOL_PEAK_DETECT_TIME;  //! Time allowed for cooling peak detection
+    uint16_t HEAT_PEAK_DETECT_TIME;  //! Time allowed for heating peak detection
 
+	void set_min_times();
 };
 
 // struct ControlConstants was moved to EepromStructs.h
@@ -153,6 +107,11 @@ enum states {
 
 #define TC_STATE_MASK 0x7;	// 3 bits
 
+/**
+ * \def TEMP_CONTROL_FIELD
+ * \brief Compile-time control of making TempControl fields static
+ * \see TEMP_CONTROL_STATIC
+ */
 #if TEMP_CONTROL_STATIC
 #define TEMP_CONTROL_METHOD static
 #define TEMP_CONTROL_FIELD static
@@ -160,17 +119,6 @@ enum states {
 #define TEMP_CONTROL_METHOD
 #define TEMP_CONTROL_FIELD
 #endif
-/**
- * \def TEMP_CONTROL_METHOD
- * \brief Compile-time control of making TempControl methods static
- * \see TEMP_CONTROL_STATIC
- */
-
-/**
- * \def TEMP_CONTROL_FIELD
- * \brief Compile-time control of making TempControl fields static
- * \see TEMP_CONTROL_STATIC
- */
 
 /**
  * \def TEMP_CONTROL_STATIC
@@ -333,11 +281,9 @@ public:
 	TEMP_CONTROL_FIELD ControlSettings cs;
 	TEMP_CONTROL_FIELD ControlVariables cv;
 
-	/**
-   * Defaults for control constants.
-   * Defined in cpp file, copied with memcpy_p
-   */
-	static const ControlConstants ccDefaults;
+	TEMP_CONTROL_FIELD uint16_t getMinCoolOnTime();
+	TEMP_CONTROL_FIELD uint16_t getMinHeatOnTime();
+
 
 private:
 	/**
@@ -362,5 +308,6 @@ private:
 };
 
 extern TempControl tempControl;
+extern MinTimes minTimes;
 
 /** @} */

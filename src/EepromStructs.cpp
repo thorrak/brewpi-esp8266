@@ -365,6 +365,7 @@ void ExtendedSettings::processSettingKeypair(JsonPair kv) {
  */
 void ExtendedSettings::setGlycol(bool setting) {
     glycol = setting;
+    minTimes.set_min_times();
     if (glycol) {
         // Glycol mode
     } else {
@@ -380,11 +381,7 @@ void ExtendedSettings::setGlycol(bool setting) {
  */
 void ExtendedSettings::setLowDelay(bool setting) {
     lowDelay = setting;
-    if (lowDelay) {
-        // Low delay mode
-    } else {
-        // Normal mode
-    }
+    minTimes.set_min_times();
 }
 
 /**
