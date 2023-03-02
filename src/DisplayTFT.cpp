@@ -78,7 +78,7 @@ void LcdDisplay::print_layout() {
     // Print the headers
     tft.setTextSize(HEADER_FONT_SIZE);
     tft.setCursor(FRIDGE_HEADER_START_X, HEADER_START_Y);
-    tft.print((flags & LCD_FLAG_DISPLAY_ROOM) ?  "Room" : "Fridge");
+    tft.print((flags & LCD_FLAG_DISPLAY_ROOM) ?  "Room  " : "Fridge");
 
 
     tft.setTextSize(HEADER_FONT_SIZE);
