@@ -16,7 +16,7 @@ jobs:
       # Ensure that a builder finishes even if another fails
       fail-fast: false
       matrix:
-        pio_env: ['esp32_wifi_tft', 'esp32_wifi_iic', 'esp8266_wifi', 'esp8266_wifi_lowdelay', 'esp8266_serial', 'esp32_s2_wifi', 'esp32_s2_serial']
+        pio_env: ['esp32_wifi_tft', 'esp32_wifi_iic', 'esp8266_wifi', 'esp8266_serial', 'esp32_s2_wifi', 'esp32_s2_serial']
 
     runs-on: ubuntu-latest
 
