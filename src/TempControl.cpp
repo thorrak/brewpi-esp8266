@@ -94,6 +94,8 @@ void TempControl::init(){
 	state=IDLE;
 	cs.mode = Modes::off;
 
+	minTimes.set_min_times();  // Update the min times before we initialize temp control
+
 	cameraLight.setActive(false);
 
 	// this is for cases where the device manager hasn't configured beer/fridge sensor.	
@@ -109,7 +111,6 @@ void TempControl::init(){
 	
 	updateTemperatures();
 	reset();
-	minTimes.set_min_times();
 
 	// Do not allow heating/cooling directly after reset.
 	// A failing script + CRON + Arduino uno (which resets on serial connect) could damage the compressor
