@@ -1,13 +1,15 @@
-# brewpi-esp
+# BrewPi-ESP
 An implementation of the BrewPi firmware on the ESP8266, ESP32, and ESP32-S2 with additional, added features
 
 ## Introduction
-This project ports the BrewPi firmware to the ESP8266, ESP32, and ESP32-S2 controllers. It is compatible with [Fermentrack](http://www.fermentrack.com/) and [BrewPi-Remix](https://www.brewpiremix.com/).
+BrewPi provides a temperature controller which uses PID algorithms to tightly control a fermenting beer's temperature -- meaning that you can in many cases control the temperature of your fermenting beer to within _one tenth of a degree_. It was originally designed by Elco Jacobs, and used an Arduino running the BrewPi firmware to measure temperatures and toggle heating/cooling, paired with a Raspberry Pi to receive & graph temperature changes over time.
+
+This project ports the BrewPi firmware to the ESP8266, ESP32, and ESP32-S2 controllers, eliminating the need for an Arduino. It is compatible with [Fermentrack](http://www.fermentrack.com/) and [BrewPi-Remix](https://www.brewpiremix.com/) - both of which can be installed on a Raspbery Pi to capture/graph temperatures similar to the original project.
 
 ### Documentation:
-* [Selecting your Hardware](docs/Selecting%20an%20ESP%20Board.md)  
-* [Building a "Solder Free" BrewPi](docs/Solder%20Free%20BrewPi.md)  
-* [Installing the Firmware](docs/Installing%20the%20Firmware.md)
+* [Selecting your Hardware](docs/source/Selecting%20an%20ESP%20Board.md)  
+* [Building a "Solder Free" BrewPi](docs/source/Solder%20Free%20BrewPi.md)  
+* [Installing the Firmware](docs/source/Installing%20the%20Firmware.md)
 * [Hardware Information](https://github.com/thorrak/thorrak_hardware/blob/master/BrewPi-ESP8266.md) - PCB files, ordering and BOMs
 
 ## Expected Pinout
