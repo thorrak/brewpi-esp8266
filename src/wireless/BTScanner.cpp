@@ -33,6 +33,7 @@ void load_tilt_from_advert(NimBLEAdvertisedDevice* advertisedDevice);
 /** Handles callbacks when advertisments are received */
 class AdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
     void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
+        bt_scanner.last_detected_device_at = esp_timer_get_time();
         // Inkbird IBS-TH2 (sps) and Inkbird IBS-TH1 (tps)
         if((advertisedDevice->getName().rfind("sps",0) == 0 || advertisedDevice->getName().rfind("tps",0) == 0) && advertisedDevice->getManufacturerData().length() == 9) {
             // Log.verbose(F("Advertised Device: %s \r\n"), advertisedDevice->toString().c_str());
@@ -129,6 +130,7 @@ btScanner::btScanner()
     shouldRun = false;
     m_last_inkbird_purge_at = 0;
     m_last_tilt_purge_at = 0;
+    last_detected_device_at = esp_timer_get_time();
 }
 
 void btScanner::init()
@@ -226,33 +228,33 @@ tilt* btScanner::get_or_create_tilt(const NimBLEAddress devAddress)
 // void btScanner::purge_stale_inkbirds()
 // {
 //     // Check if we've passed the threshhold to purge devices
-//     if(millis() < (1000 * BT_SCANNER_INKBIRD_PURGE_TIME + m_last_inkbird_purge_at))
+//     if(esp_timer_get_time() < (1000 * BT_SCANNER_INKBIRD_PURGE_TIME + m_last_inkbird_purge_at))
 //         return;
 
 //     // We've passed the threshhold. Loop through devices and purge as appropriate
 //     for(inkbird & ib : lInkbirds) {
-//         if(millis() > (ib.m_lastUpdate + (BT_SCANNER_INKBIRD_PURGE_TIME * 1000) ))
+//         if(esp_timer_get_time() > (ib.m_lastUpdate + (BT_SCANNER_INKBIRD_PURGE_TIME * 1000) ))
 //         {
 //             lInkbirds.remove(ib);
 //         }
 //     }
-//     m_last_inkbird_purge_at = millis();
+//     m_last_inkbird_purge_at = esp_timer_get_time();
 // }
 
 // void btScanner::purge_stale_tilts()
 // {
 //     // Check if we've passed the threshhold to purge devices
-//     if(millis() < (1000 * BT_SCANNER_TILT_PURGE_TIME + m_last_tilt_purge_at))
+//     if(esp_timer_get_time() < (1000 * BT_SCANNER_TILT_PURGE_TIME + m_last_tilt_purge_at))
 //         return;
 
 //     // We've passed the threshhold. Loop through devices and purge as appropriate
 //     for(tilt & th : lTilts) {
-//         if(millis() > (ib.m_lastUpdate + (BT_SCANNER_TILT_PURGE_TIME * 1000) ))
+//         if(esp_timer_get_time() > (ib.m_lastUpdate + (BT_SCANNER_TILT_PURGE_TIME * 1000) ))
 //         {
 //             lTilts.remove(ib);
 //         }
 //     }
-//     m_last_tilts_purge_at = millis();
+//     m_last_tilts_purge_at = esp_timer_get_time();
 // }
 
 

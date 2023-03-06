@@ -12,13 +12,13 @@
 #include "TemperatureFormats.h"
 
 
-#define INKBIRD_CONNECTED_TIMEOUT       (30 * 1000)     // Time before the sensor is considered "disconnected" (in ms)
+#define INKBIRD_CONNECTED_TIMEOUT       (30 * 1000 * 1000)     // Time before the sensor is considered "disconnected" (in microseconds)
 
 class inkbird
 {
 public:
     inkbird(const NimBLEAddress devAddress, int16_t temp, uint16_t hum, uint8_t bat, int16_t rssi)
-    :deviceAddress(devAddress), m_lastUpdate(millis()), rawTemp(temp), rawHumidity(hum), battery(bat), hasData(true) {};
+    :deviceAddress(devAddress), m_lastUpdate(esp_timer_get_time()), rawTemp(temp), rawHumidity(hum), battery(bat), hasData(true) {};
 
     inkbird(const NimBLEAddress devAddress)
     :deviceAddress(devAddress), m_lastUpdate(0), rawTemp(0), rawHumidity(0), battery(0), hasData(false) {};
@@ -33,7 +33,7 @@ public:
 
     NimBLEAddress deviceAddress;
 
-    uint32_t m_lastUpdate; // Keep track of when we last updated to detect disconnection
+    uint64_t m_lastUpdate; // Keep track of when we last updated to detect disconnection
 
     bool operator == (const inkbird& dev) const { return deviceAddress == dev.deviceAddress; }
     bool operator != (const inkbird& dev) const { return !operator==(dev); }

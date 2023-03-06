@@ -26,7 +26,7 @@ void tilt::update(TiltColor color_index, uint16_t temp, uint16_t grav, uint8_t i
 
     rawTemp=temp;
     rawGravity=grav;
-    m_lastUpdate = millis();
+    m_lastUpdate = esp_timer_get_time();
     hasData = true;
     color = color_index;
     return;
@@ -44,7 +44,7 @@ uint16_t tilt::getGravity()
 
 bool tilt::isConnected()
 {
-    return millis() <= (m_lastUpdate + TILT_CONNECTED_TIMEOUT) && hasData;
+    return esp_timer_get_time() <= (m_lastUpdate + TILT_CONNECTED_TIMEOUT) && hasData;
 }
 
 TiltColor tilt::uuid_to_color_no(std::string uuid)
