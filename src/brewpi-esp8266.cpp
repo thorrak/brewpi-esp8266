@@ -237,6 +237,10 @@ void brewpiLoop()
   CommandProcessor::receiveCommand();
 
 #ifdef HAS_BLUETOOTH
+if(bt_scanner.scanning_failed()) {
+
+  esp_restart();
+}
   bt_scanner.scan();        // Check/restart scan 
 #endif
 

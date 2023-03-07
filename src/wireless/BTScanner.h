@@ -26,7 +26,7 @@ public:
     void purge_stale_inkbirds();
     void purge_stale_tilts();
 
-    bool scanning_failed() {return (esp_timer_get_time() - last_detected_device_at) > SCAN_FAIL_THRESHHOLD; }
+    bool scanning_failed();
 
     bool shouldRun;
 
