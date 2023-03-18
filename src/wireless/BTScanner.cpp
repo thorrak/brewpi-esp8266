@@ -39,6 +39,8 @@ class AdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
             // Log.verbose(F("Advertised Device: %s \r\n"), advertisedDevice->toString().c_str());
             load_inkbird_from_advert(advertisedDevice);
             return;
+        // } else if(advertisedDevice->getName().rfind("Govee",0) == 0) {
+        //     Serial.printf("Advertised Device: %s \r\n", advertisedDevice->toString().c_str());        
         } else if (advertisedDevice->getManufacturerData().length() >= 24) {  // Tilt
             if (advertisedDevice->getManufacturerData()[0] == 0x4c && advertisedDevice->getManufacturerData()[1] == 0x00 &&
                 advertisedDevice->getManufacturerData()[2] == 0x02 && advertisedDevice->getManufacturerData()[3] == 0x15)
@@ -46,6 +48,8 @@ class AdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
                 load_tilt_from_advert(advertisedDevice);
                 return;
             }
+        // } else if (advertisedDevice->getAddress() == NimBLEAddress("a4:c1:38:a5:f8:5a")) {
+        //     Serial.printf("Advertised Device: %s \r\n", advertisedDevice->toString().c_str());
         }
     };
 };
@@ -260,7 +264,7 @@ tilt* btScanner::get_or_create_tilt(const NimBLEAddress devAddress)
 
 bool btScanner::scanning_failed() {
     uint64_t now=esp_timer_get_time();
-    if (now - last_detected_device_at > SCAN_FAIL_THRESHHOLD) {
+    if (now > last_detected_device_at && now - last_detected_device_at > SCAN_FAIL_THRESHHOLD) {
         //Serial.printf("Scanning failed - now is %llu, last detected device at %llu\r\n", now, last_detected_device_at);
         return true;
     }

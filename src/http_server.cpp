@@ -312,6 +312,151 @@ uint8_t processExtendedSettingsJson(const DynamicJsonDocument& json, bool trigge
     return failCount;
 }
 
+uint8_t processMinTimesJson(const DynamicJsonDocument& json, bool triggerUpstreamUpdate) {
+    uint8_t failCount = 0;
+    bool saveSettings = false;
+
+    // SETTINGS_CHOICE
+    if(json.containsKey(MinTimesKeys::SETTINGS_CHOICE)) {
+        if(json[MinTimesKeys::SETTINGS_CHOICE].is<uint8_t>()) {
+            // Validate that it's valid and different
+            if(minTimes.settings_choice != json[MinTimesKeys::SETTINGS_CHOICE].as<uint8_t>() && json[MinTimesKeys::SETTINGS_CHOICE].as<uint8_t>() <= MIN_TIMES_CUSTOM) {
+                minTimes.settings_choice = (MinTimesSettingsChoice) json[MinTimesKeys::SETTINGS_CHOICE].as<uint8_t>();
+                saveSettings = true;
+            }
+        } else {
+            Log.warning(F("Invalid [SETTINGS_CHOICE]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::SETTINGS_CHOICE]);
+            failCount++;
+        }
+    }
+
+
+    if(minTimes.settings_choice == MIN_TIMES_CUSTOM) {
+        // We only care about the other keys if we're in custom mode -- otherwise the call to setDefaults below will overwrite them
+
+        // MIN_COOL_OFF_TIME
+        if(json.containsKey(MinTimesKeys::MIN_COOL_OFF_TIME)) {
+            if(json[MinTimesKeys::MIN_COOL_OFF_TIME].is<uint16_t>()) {
+                if(minTimes.MIN_COOL_OFF_TIME != json[MinTimesKeys::MIN_COOL_OFF_TIME].as<uint16_t>()) {
+                    minTimes.MIN_COOL_OFF_TIME = json[MinTimesKeys::MIN_COOL_OFF_TIME].as<uint16_t>();
+                    saveSettings = true;
+                }
+            } else {
+                Log.warning(F("Invalid [MIN_COOL_OFF_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::MIN_COOL_OFF_TIME]);
+                failCount++;
+            }
+        }
+
+
+        // MIN_HEAT_OFF_TIME
+        if(json.containsKey(MinTimesKeys::MIN_HEAT_OFF_TIME)) {
+            if(json[MinTimesKeys::MIN_HEAT_OFF_TIME].is<uint16_t>()) {
+                if(minTimes.MIN_HEAT_OFF_TIME != json[MinTimesKeys::MIN_HEAT_OFF_TIME].as<uint16_t>()) {
+                    minTimes.MIN_HEAT_OFF_TIME = json[MinTimesKeys::MIN_HEAT_OFF_TIME].as<uint16_t>();
+                    saveSettings = true;
+                }
+            } else {
+                Log.warning(F("Invalid [MIN_HEAT_OFF_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::MIN_HEAT_OFF_TIME]);
+                failCount++;
+            }
+        }
+
+        // MIN_COOL_ON_TIME
+        if(json.containsKey(MinTimesKeys::MIN_COOL_ON_TIME)) {
+            if(json[MinTimesKeys::MIN_COOL_ON_TIME].is<uint16_t>()) {
+                if(minTimes.MIN_COOL_ON_TIME != json[MinTimesKeys::MIN_COOL_ON_TIME].as<uint16_t>()) {
+                    minTimes.MIN_COOL_ON_TIME = json[MinTimesKeys::MIN_COOL_ON_TIME].as<uint16_t>();
+                    saveSettings = true;
+                }
+            } else {
+                Log.warning(F("Invalid [MIN_COOL_ON_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::MIN_COOL_ON_TIME]);
+                failCount++;
+            }
+        }
+
+        // MIN_HEAT_ON_TIME
+        if(json.containsKey(MinTimesKeys::MIN_HEAT_ON_TIME)) {
+            if(json[MinTimesKeys::MIN_HEAT_ON_TIME].is<uint16_t>()) {
+                if(minTimes.MIN_HEAT_ON_TIME != json[MinTimesKeys::MIN_HEAT_ON_TIME].as<uint16_t>()) {
+                    minTimes.MIN_HEAT_ON_TIME = json[MinTimesKeys::MIN_HEAT_ON_TIME].as<uint16_t>();
+                    saveSettings = true;
+                }
+            } else {
+                Log.warning(F("Invalid [MIN_HEAT_ON_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::MIN_HEAT_ON_TIME]);
+                failCount++;
+            }
+        }
+
+
+        // MIN_COOL_OFF_TIME_FRIDGE_CONSTANT
+        if(json.containsKey(MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT)) {
+            if(json[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT].is<uint16_t>()) {
+                if(minTimes.MIN_COOL_OFF_TIME_FRIDGE_CONSTANT != json[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT].as<uint16_t>()) {
+                    minTimes.MIN_COOL_OFF_TIME_FRIDGE_CONSTANT = json[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT].as<uint16_t>();
+                    saveSettings = true;
+                }
+            } else {
+                Log.warning(F("Invalid [MIN_COOL_OFF_TIME_FRIDGE_CONSTANT]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT]);
+                failCount++;
+            }
+        }
+
+        // MIN_SWITCH_TIME
+        if(json.containsKey(MinTimesKeys::MIN_SWITCH_TIME)) {
+            if(json[MinTimesKeys::MIN_SWITCH_TIME].is<uint16_t>()) {
+                if(minTimes.MIN_SWITCH_TIME != json[MinTimesKeys::MIN_SWITCH_TIME].as<uint16_t>()) {
+                    minTimes.MIN_SWITCH_TIME = json[MinTimesKeys::MIN_SWITCH_TIME].as<uint16_t>();
+                    saveSettings = true;
+                }
+            } else {
+                Log.warning(F("Invalid [MIN_SWITCH_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::MIN_SWITCH_TIME]);
+                failCount++;
+            }
+        }
+
+        // COOL_PEAK_DETECT_TIME
+        if(json.containsKey(MinTimesKeys::COOL_PEAK_DETECT_TIME)) {
+            if(json[MinTimesKeys::COOL_PEAK_DETECT_TIME].is<uint16_t>()) {
+                if(minTimes.COOL_PEAK_DETECT_TIME != json[MinTimesKeys::COOL_PEAK_DETECT_TIME].as<uint16_t>()) {
+                    minTimes.COOL_PEAK_DETECT_TIME = json[MinTimesKeys::COOL_PEAK_DETECT_TIME].as<uint16_t>();
+                    saveSettings = true;
+                }
+            } else {
+                Log.warning(F("Invalid [COOL_PEAK_DETECT_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::COOL_PEAK_DETECT_TIME]);
+                failCount++;
+            }
+        }
+
+
+        // HEAT_PEAK_DETECT_TIME
+        if(json.containsKey(MinTimesKeys::HEAT_PEAK_DETECT_TIME)) {
+            if(json[MinTimesKeys::HEAT_PEAK_DETECT_TIME].is<uint16_t>()) {
+                if(minTimes.HEAT_PEAK_DETECT_TIME != json[MinTimesKeys::HEAT_PEAK_DETECT_TIME].as<uint16_t>()) {
+                    minTimes.HEAT_PEAK_DETECT_TIME = json[MinTimesKeys::HEAT_PEAK_DETECT_TIME].as<uint16_t>();
+                    saveSettings = true;
+                }
+            } else {
+                Log.warning(F("Invalid [HEAT_PEAK_DETECT_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::HEAT_PEAK_DETECT_TIME]);
+                failCount++;
+            }
+        }
+    }
+
+
+
+    // Save
+    if (failCount) {
+        Log.error(F("Error: Invalid extended settings configuration.\r\n"));
+    } else {
+        if(saveSettings == true) {
+            minTimes.setDefaults(); // This will set defaults if defaults/lowdelay mode is set -- otherwise its a noop for custom mode
+            minTimes.storeToSpiffs();
+            // TODO - Force upstream cascade/send
+        }
+    }
+    return failCount;
+}
+
 
 // uint8_t processSettingsUpdateJson(const JsonDocument& json) {
 //     uint8_t failCount = 0;
@@ -449,6 +594,15 @@ void httpServer::serveExtendedSettings() {
 void httpServer::serveUpstreamSettings() {
     DynamicJsonDocument doc(1024);
     upstreamSettings.toJson(doc);
+    char serializedJson[2048];
+    serializeJson(doc, serializedJson);
+    doc.clear();
+    web_server->send(200, "application/json", serializedJson);
+}
+
+void httpServer::serveMinTimes() {
+    DynamicJsonDocument doc(1024);
+    minTimes.toJson(doc);
     char serializedJson[2048];
     serializeJson(doc, serializedJson);
     doc.clear();
@@ -610,6 +764,11 @@ void httpServer::setJsonPages() {
         serveUpstreamSettings();
     });
 
+    // Minimum On/Off Times
+    web_server->on("/api/mintimes/", HTTP_GET, [&]() {
+        serveMinTimes();
+    });
+
 
     web_server->on("/api/uptime/", HTTP_GET, [&]() {
         uptime();
@@ -670,6 +829,10 @@ void httpServer::setJsonHandlers() {
 
     web_server->on("/api/extended/", HTTP_PUT, [&]() {
         processJsonRequest("/api/extended/", &processExtendedSettingsJson);
+    });
+
+    web_server->on("/api/mintimes/", HTTP_PUT, [&]() {
+        processJsonRequest("/api/mintimes/", &processMinTimesJson);
     });
 
 

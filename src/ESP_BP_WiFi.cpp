@@ -40,7 +40,7 @@ void saveConfigCallback() {
 
 void apCallback(WiFiManager *myWiFiManager) {
     // Callback to display the WiFi LCD notification and set bandwidth
-    DisplayType::printWiFiStartup();
+    display.printWiFiStartup();
 #ifdef ESP32
     esp_wifi_set_bandwidth(WIFI_IF_AP, WIFI_BW_HT20);  // Set the bandwidth of ESP32 interface 
 #endif
@@ -176,7 +176,7 @@ void display_connect_info_and_create_callback() {
     // This doesn't work for ESP32, unfortunately.
     stationConnectedHandler = WiFi.onSoftAPModeStationConnected(&onStationConnected);
 #endif
-    DisplayType::printWiFi();  // Print the WiFi info (mDNS name & IP address)
+    display.printWiFi();  // Print the WiFi info (mDNS name & IP address)
     delay(5000);
 }
 
