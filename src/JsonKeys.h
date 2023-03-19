@@ -128,7 +128,7 @@ namespace ExtendedSettingsKeys {
 constexpr auto eepromReset = "confirmReset";
 constexpr auto invertTFT = "invertTFT";
 constexpr auto glycol = "glycol";
-constexpr auto lowDelay = "lowDelay";
+constexpr auto largeTFT = "largeTFT";
 }; // namespace ExtendedSettingsKeys
 
 

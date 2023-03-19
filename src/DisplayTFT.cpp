@@ -45,12 +45,6 @@
 //#include <XPT2046_Touchscreen.h>
 
 
-uint8_t LcdDisplay::stateOnDisplay;
-uint8_t LcdDisplay::flags;
-
-Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC, TFT_RST);
-
-
 bool toggleBacklight;
 
 
@@ -63,39 +57,49 @@ bool toggleBacklight;
 #endif
 
 
+LcdDisplay::LcdDisplay() {
+    // Initialize the display device -- we can reinitialize later if needed
+    tft = new Adafruit_ILI9341(TFT_CS, TFT_DC, TFT_RST);
+    // We can't do much more as this object gets created at boot
+}
+
+LcdDisplay::~LcdDisplay() {
+    delete tft;
+}
+
 
 void LcdDisplay::print_layout() {
 
     // Print the lines for the basic layout
-    tft.drawLine(0, BEER_NAME_LINE_Y, 320, BEER_NAME_LINE_Y, ILI9341_WHITE);  // Bar beneath beer name/set points
-    tft.drawLine(0, ACTUAL_SET_LINE_Y, 320, ACTUAL_SET_LINE_Y, ILI9341_DARKGREY);  // Bar between set/measured points
-    tft.drawLine(0, MIDDLE_BAR_Y_END, 320, MIDDLE_BAR_Y_END, ILI9341_WHITE);  // Bar beneath set/measured points
-    tft.drawLine(MIDDLE_BAR_X, BEER_NAME_LINE_Y, MIDDLE_BAR_X, MIDDLE_BAR_Y_END, ILI9341_WHITE);  // Middle bar
+    tft->drawLine(0, BEER_NAME_LINE_Y, 320, BEER_NAME_LINE_Y, ILI9341_WHITE);  // Bar beneath beer name/set points
+    tft->drawLine(0, ACTUAL_SET_LINE_Y, 320, ACTUAL_SET_LINE_Y, ILI9341_DARKGREY);  // Bar between set/measured points
+    tft->drawLine(0, MIDDLE_BAR_Y_END, 320, MIDDLE_BAR_Y_END, ILI9341_WHITE);  // Bar beneath set/measured points
+    tft->drawLine(MIDDLE_BAR_X, BEER_NAME_LINE_Y, MIDDLE_BAR_X, MIDDLE_BAR_Y_END, ILI9341_WHITE);  // Middle bar
 
-    tft.drawLine(GRAVITY_LINE_X, GRAVITY_LINE_START_Y, GRAVITY_LINE_X, 240, ILI9341_WHITE);  // Gravity bar
+    tft->drawLine(GRAVITY_LINE_X, GRAVITY_LINE_START_Y, GRAVITY_LINE_X, 240, ILI9341_WHITE);  // Gravity bar
 
 
     // Print the headers
-    tft.setTextSize(HEADER_FONT_SIZE);
-    tft.setCursor(FRIDGE_HEADER_START_X, HEADER_START_Y);
-    tft.print((flags & LCD_FLAG_DISPLAY_ROOM) ?  "Room  " : "Fridge");
+    tft->setTextSize(HEADER_FONT_SIZE);
+    tft->setCursor(FRIDGE_HEADER_START_X, HEADER_START_Y);
+    tft->print((flags & LCD_FLAG_DISPLAY_ROOM) ?  "Room  " : "Fridge");
 
 
-    tft.setTextSize(HEADER_FONT_SIZE);
-    tft.setCursor(BEER_HEADER_START_X, HEADER_START_Y);
-    tft.print("Beer");
+    tft->setTextSize(HEADER_FONT_SIZE);
+    tft->setCursor(BEER_HEADER_START_X, HEADER_START_Y);
+    tft->print("Beer");
 
-    tft.setTextSize(SET_HEADER_FONT_SIZE);
-    tft.setCursor(FRIDGE_SET_HEADER_START_X, SET_HEADER_START_Y);
-    tft.print("Set");
-    tft.setTextSize(SET_HEADER_FONT_SIZE);
-    tft.setCursor(BEER_SET_HEADER_START_X, SET_HEADER_START_Y);
-    tft.print("Set");
+    tft->setTextSize(SET_HEADER_FONT_SIZE);
+    tft->setCursor(FRIDGE_SET_HEADER_START_X, SET_HEADER_START_Y);
+    tft->print("Set");
+    tft->setTextSize(SET_HEADER_FONT_SIZE);
+    tft->setCursor(BEER_SET_HEADER_START_X, SET_HEADER_START_Y);
+    tft->print("Set");
 
     // Print the "Now Fermenting" mesage
-    tft.setTextSize(BEER_NAME_FONT_SIZE);
-    tft.setCursor(BEER_NAME_START_X, BEER_NAME_START_Y);
-//    tft.print("Current Beer: Belgian Beer Series - The Saisoning");
+    tft->setTextSize(BEER_NAME_FONT_SIZE);
+    tft->setCursor(BEER_NAME_START_X, BEER_NAME_START_Y);
+//    tft->print("Current Beer: Belgian Beer Series - The Saisoning");
 
 }
 
@@ -104,13 +108,13 @@ void LcdDisplay::init(){
     stateOnDisplay = 0xFF; // set to unknown state to force update
     flags = LCD_FLAG_ALTERNATE_ROOM;  // TODO - Test with a room sensor to see what happens
 
-    tft.begin();
+    tft->begin();
     if (extendedSettings.invertTFT)
-        tft.setRotation(3);
+        tft->setRotation(3);
     else
-        tft.setRotation(1);
-    tft.fillScreen(ILI9341_BLACK);
-    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+        tft->setRotation(1);
+    tft->fillScreen(ILI9341_BLACK);
+    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
 
 #if defined(TFT_BACKLIGHT)
     pinMode(TFT_BACKLIGHT, OUTPUT);
@@ -171,20 +175,20 @@ void LcdDisplay::printFridgeSet(){
 }
 
 void LcdDisplay::printTemperatureAt(uint8_t x, uint8_t y, uint8_t font_size, temperature temp){
-    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-    //tft.setTextSize(font_size);
+    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    //tft->setTextSize(font_size);
     //clearForText(x, y, ILI9341_BLACK, font_size, 4);  // TODO - Determine if I want this to be 4 or 5 characters
 
-    tft.setCursor(x,y);
+    tft->setCursor(x,y);
     printTemperature(temp, font_size);
 }
 
 
 void LcdDisplay::printTemperature(temperature temp, uint8_t font_size){
-    tft.setTextSize(font_size);
+    tft->setTextSize(font_size);
 
     if (temp==INVALID_TEMP) {
-        tft.print("  --.-");
+        tft->print("  --.-");
         return;
     }
 
@@ -209,7 +213,7 @@ void LcdDisplay::printTemperature(temperature temp, uint8_t font_size){
             break;
     }
 
-    tft.print(tempBuf);
+    tft->print(tempBuf);
 }
 
 //print the stationary text on the lcd.
@@ -218,53 +222,53 @@ void LcdDisplay::printStationaryText(){
 }
 
 void LcdDisplay::printMode(){
-    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-    tft.setTextSize(MODE_FONT_SIZE);
+    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft->setTextSize(MODE_FONT_SIZE);
     clearForText(MODE_START_X, MODE_START_Y, ILI9341_BLACK, MODE_FONT_SIZE, 21);
 
-    tft.setCursor(MODE_START_X, MODE_START_Y);
-    tft.print("Mode: ");
+    tft->setCursor(MODE_START_X, MODE_START_Y);
+    tft->print("Mode: ");
 
     switch(tempControl.getMode()){
         case Modes::fridgeConstant:
-            tft.print("Fridge Constant");
+            tft->print("Fridge Constant");
             break;
         case Modes::beerConstant:
-            tft.print("Beer Constant");
+            tft->print("Beer Constant");
             break;
         case Modes::beerProfile:
-            tft.print("Beer Profile");
+            tft->print("Beer Profile");
             break;
         case Modes::off:
-            tft.print("Off");
+            tft->print("Off");
             break;
         case Modes::test:
-            tft.print("** Testing **");
+            tft->print("** Testing **");
             break;
         default:
-            tft.print("Invalid Mode");
+            tft->print("Invalid Mode");
             break;
     }
 }
 
 void LcdDisplay::printIPAddressInfo(){
-    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-    tft.setTextSize(IP_ADDRESS_FONT_SIZE);
+    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft->setTextSize(IP_ADDRESS_FONT_SIZE);
     clearForText(IP_ADDRESS_START_X, IP_ADDRESS_START_Y, ILI9341_BLACK, MODE_FONT_SIZE, 21);
 
-    tft.setCursor(IP_ADDRESS_START_X, IP_ADDRESS_START_Y);
-    tft.print("IP Address: ");
+    tft->setCursor(IP_ADDRESS_START_X, IP_ADDRESS_START_Y);
+    tft->print("IP Address: ");
 
     if(WiFi.isConnected()) {
-        tft.print(WiFi.localIP());
+        tft->print(WiFi.localIP());
     } else {
-        tft.print("Disconnected");
+        tft->print("Disconnected");
     }
 
 }
 
 
-uint8_t printTime(uint16_t time) {
+uint8_t LcdDisplay::printTime(uint16_t time) {
     if(time == UINT16_MAX)
         return 0;
 
@@ -279,14 +283,14 @@ uint8_t printTime(uint16_t time) {
         stringLength = stringLength-2;
     }
 //        printAt(20-stringLength, 3, printString);
-    tft.print(printString);
+    tft->print(printString);
     return stringLength;
 
 #else
 #warning "This has not been tested"
     int stringLength = sprintf_P(timeString, STR_FMT_U, (unsigned int)time);
     printAt(20-stringLength, 3, timeString);
-    tft.print(timeString);
+    tft->print(timeString);
     return stringLength;
 #endif
 }
@@ -297,83 +301,83 @@ void LcdDisplay::printState(){
     uint8_t state = tempControl.getDisplayState();
     uint8_t printed_chars = 8;
 
-    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-    tft.setTextSize(STATUS_FONT_SIZE);
+    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft->setTextSize(STATUS_FONT_SIZE);
 
-    tft.setCursor(STATUS_START_X, STATUS_START_Y);
-    tft.print("Status: ");
+    tft->setCursor(STATUS_START_X, STATUS_START_Y);
+    tft->print("Status: ");
 
     // For the TFT, always reprint the state text
     switch (state){
         case IDLE:
-            tft.print("Idling");
+            tft->print("Idling");
             printed_chars += 6;
             break;
         case WAITING_TO_COOL:
-            tft.print("Waiting to cool");
+            tft->print("Waiting to cool");
             printed_chars += 15;
             break;
         case WAITING_TO_HEAT:
-            tft.print("Waiting to heat");
+            tft->print("Waiting to heat");
             printed_chars += 15;
             break;
         case WAITING_FOR_PEAK_DETECT:
-            tft.print("Waiting for peak");
+            tft->print("Waiting for peak");
             printed_chars += 16;
             break;
         case COOLING:
-            tft.print("Cooling");
+            tft->print("Cooling");
             printed_chars += 7;
             break;
         case HEATING:
-            tft.print("Heating");
+            tft->print("Heating");
             printed_chars += 7;
             break;
         case COOLING_MIN_TIME:
-            tft.print("Cooling");
+            tft->print("Cooling");
             printed_chars += 7;
             break;
         case HEATING_MIN_TIME:
-            tft.print("Heating");
+            tft->print("Heating");
             printed_chars += 7;
             break;
         case DOOR_OPEN:
-            tft.print("Door open");
+            tft->print("Door open");
             printed_chars += 9;
             break;
         case STATE_OFF:
-            tft.print("Off");
+            tft->print("Off");
             printed_chars += 3;
             break;
         default:
-            tft.print("Unknown status!");
+            tft->print("Unknown status!");
             printed_chars += 15;
             break;
     }
 
     uint16_t sinceIdleTime = tempControl.timeSinceIdle();
     if(state==IDLE){
-        tft.print(" for ");
+        tft->print(" for ");
         printed_chars += 15;
         time = 	min(tempControl.timeSinceCooling(), tempControl.timeSinceHeating());
         printed_chars += printTime(time);
     } else if(state==COOLING || state==HEATING){
-        tft.print(" for ");
+        tft->print(" for ");
         printed_chars += 5;
         time = sinceIdleTime;
         printed_chars += printTime(time);
     } else if(state==COOLING_MIN_TIME){
-        tft.print(" time left ");
+        tft->print(" time left ");
         printed_chars += 5;
         time = tempControl.getMinCoolOnTime()-sinceIdleTime;
         printed_chars += printTime(time);
     } else if(state==HEATING_MIN_TIME){
-        tft.print(" time left ");
+        tft->print(" time left ");
         printed_chars += 11;
         time = tempControl.getMinHeatOnTime()-sinceIdleTime;
         printed_chars += printTime(time);
     } else if(state == WAITING_TO_COOL || state == WAITING_TO_HEAT){
-        tft.print(" ");
+        tft->print(" ");
         printed_chars += 1;
         time = tempControl.getWaitTime();
         printed_chars += printTime(time);
@@ -382,7 +386,7 @@ void LcdDisplay::printState(){
     // Because of the way we're updating the display, we need to clear out everything to the right of the status
     // string
     for (int i = printed_chars; i < 33; ++i) {
-        tft.print(" ");
+        tft->print(" ");
     }
 
 }
@@ -392,55 +396,55 @@ void LcdDisplay::printState(){
 void LcdDisplay::printWiFi(){
     clear();
 
-    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-    tft.setTextSize(WIFI_FONT_SIZE);
+    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft->setTextSize(WIFI_FONT_SIZE);
 
-    tft.setCursor(0, 0);
+    tft->setCursor(0, 0);
 
-    tft.println("mDNS Name: ");
-    tft.print(eepromManager.fetchmDNSName());
-    tft.println(".local");
+    tft->println("mDNS Name: ");
+    tft->print(eepromManager.fetchmDNSName());
+    tft->println(".local");
 
-    tft.println(" ");
+    tft->println(" ");
 
-    tft.println("IP Address: ");
+    tft->println("IP Address: ");
 
-    tft.println(WiFi.localIP());
+    tft->println(WiFi.localIP());
 }
 
 void LcdDisplay::printWiFiStartup(){
     clear();
 
-    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-    tft.setTextSize(WIFI_FONT_SIZE);
+    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft->setTextSize(WIFI_FONT_SIZE);
 
-    tft.setCursor(0, 0);
+    tft->setCursor(0, 0);
 
-    tft.println("Using a phone, laptop, or ");
-    tft.println("other device connect to ");
-    tft.println("the following WiFi network");
-    tft.println("to configure this BrewPi");
-    tft.println("controller:");
-    tft.println("");
+    tft->println("Using a phone, laptop, or ");
+    tft->println("other device connect to ");
+    tft->println("the following WiFi network");
+    tft->println("to configure this BrewPi");
+    tft->println("controller:");
+    tft->println("");
 
-    tft.print("AP Name: ");
-    tft.println(WIFI_SETUP_AP_NAME);
+    tft->print("AP Name: ");
+    tft->println(WIFI_SETUP_AP_NAME);
 
-    tft.print("AP Pass: ");
-    tft.println(WIFI_SETUP_AP_PASS);
+    tft->print("AP Pass: ");
+    tft->println(WIFI_SETUP_AP_PASS);
 }
 
 void LcdDisplay::printWiFiConnect(){
     clear();
 
-    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-    tft.setTextSize(WIFI_FONT_SIZE);
+    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft->setTextSize(WIFI_FONT_SIZE);
 
-    tft.setCursor(0, 0);
+    tft->setCursor(0, 0);
 
-    tft.println("Attempting to connect to ");
-    tft.println("WiFi. This may take up to ");
-    tft.println("one minute.");
+    tft->println("Attempting to connect to ");
+    tft->println("WiFi. This may take up to ");
+    tft->println("one minute.");
 }
 
 #endif
@@ -451,27 +455,27 @@ void LcdDisplay::printBluetoothStartup(){
 
     clear();
 
-    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-    tft.setTextSize(WIFI_FONT_SIZE);
+    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft->setTextSize(WIFI_FONT_SIZE);
 
-    tft.setCursor(0, 0);
+    tft->setCursor(0, 0);
 
-    tft.println("Searching for Bluetooth");
-    tft.println("devices. ");
-    tft.println("");
-    tft.println("This scan will take about");
-    tft.println("15 seconds. Booting will");
-    tft.println("continue once complete.");
+    tft->println("Searching for Bluetooth");
+    tft->println("devices. ");
+    tft->println("");
+    tft->println("This scan will take about");
+    tft->println("15 seconds. Booting will");
+    tft->println("continue once complete.");
 }
 
 void LcdDisplay::printGravity(){
-    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-    tft.setTextSize(GRAVITY_HEADER_FONT_SIZE);
+    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft->setTextSize(GRAVITY_HEADER_FONT_SIZE);
     clearForText(GRAVITY_START_X, GRAVITY_HEADER_START_Y, ILI9341_BLACK, GRAVITY_HEADER_FONT_SIZE, 7);
     clearForText(GRAVITY_START_X, GRAVITY_START_Y, ILI9341_BLACK, GRAVITY_HEADER_FONT_SIZE, 5);
 
-    tft.setCursor(GRAVITY_START_X, GRAVITY_HEADER_START_Y);
-    tft.print("Gravity");
+    tft->setCursor(GRAVITY_START_X, GRAVITY_HEADER_START_Y);
+    tft->print("Gravity");
 
 
     // Print the Gravity
@@ -481,22 +485,22 @@ void LcdDisplay::printGravity(){
 
     char grav_text[6];
     snprintf(grav_text, 6, "%05.3f", grav);
-    tft.setTextSize(GRAVITY_FONT_SIZE);
-    tft.setCursor(GRAVITY_START_X, GRAVITY_START_Y);
-    tft.print(grav_text);
+    tft->setTextSize(GRAVITY_FONT_SIZE);
+    tft->setCursor(GRAVITY_START_X, GRAVITY_START_Y);
+    tft->print(grav_text);
 }
 #endif
 
 
 void LcdDisplay::clear() {
-    tft.fillScreen(ILI9341_BLACK);
+    tft->fillScreen(ILI9341_BLACK);
 }
 
 void LcdDisplay::clearForText(uint8_t start_x, uint8_t start_y, uint16_t color, uint8_t font_size, uint8_t characters) {
 //    uint8_t width = (font_size * characters * 5) + (font_size * (characters-1) * 4);
 //    uint8_t height = font_size * 7;
 
-//    tft.fillRect(start_x, start_y, width, height, color);
+//    tft->fillRect(start_x, start_y, width, height, color);
 }
 
 

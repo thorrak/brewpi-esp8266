@@ -94,7 +94,7 @@ void TempControl::init(){
 	state=IDLE;
 	cs.mode = Modes::off;
 
-	minTimes.set_min_times();  // Update the min times before we initialize temp control
+	minTimes.setDefaults();  // Update the min times before we initialize temp control
 
 	cameraLight.setActive(false);
 
@@ -804,8 +804,24 @@ void TempControl::getControlSettingsDoc(DynamicJsonDocument& doc) {
 
 
 
-void MinTimes::set_min_times() {
-	if(extendedSettings.lowDelay) {
+MinTimes::MinTimes() {
+	settings_choice = MIN_TIMES_DEFAULT;
+	setDefaults();
+}
+
+void MinTimes::setDefaults() {
+	if(settings_choice == MIN_TIMES_DEFAULT) {
+		// Normal Delay
+		MIN_COOL_OFF_TIME = 300;
+		MIN_HEAT_OFF_TIME = 300;
+		MIN_COOL_ON_TIME = 180;
+		MIN_HEAT_ON_TIME = 180;
+
+		MIN_COOL_OFF_TIME_FRIDGE_CONSTANT= 600;
+		MIN_SWITCH_TIME = 600;
+		COOL_PEAK_DETECT_TIME = 1800;
+		HEAT_PEAK_DETECT_TIME = 900;
+	} else if(settings_choice == MIN_TIMES_LOW_DELAY) {
 		// Low Delay Mode
 		MIN_COOL_OFF_TIME = 60;
 		MIN_HEAT_OFF_TIME = 300;
@@ -817,22 +833,9 @@ void MinTimes::set_min_times() {
 		COOL_PEAK_DETECT_TIME = 1800;
 		HEAT_PEAK_DETECT_TIME = 900;
 	} else {
-		// Normal Delay
-		MIN_COOL_OFF_TIME = 300;
-		MIN_HEAT_OFF_TIME = 300;
-		MIN_COOL_ON_TIME = 180;
-		MIN_HEAT_ON_TIME = 180;
-
-		MIN_COOL_OFF_TIME_FRIDGE_CONSTANT= 600;
-		MIN_SWITCH_TIME = 600;
-		COOL_PEAK_DETECT_TIME = 1800;
-		HEAT_PEAK_DETECT_TIME = 900;
+		// Custom Delay -- Effectively a noop, as the defaults are set  when the json gets loaded
 	}
 }
-
-// MinTimes::MinTimes() {
-// 	set_min_times();
-// }
 
 uint16_t TempControl::getMinCoolOnTime() {
 	return minTimes.MIN_COOL_ON_TIME;
@@ -840,4 +843,58 @@ uint16_t TempControl::getMinCoolOnTime() {
 
 uint16_t TempControl::getMinHeatOnTime() {
 	return minTimes.MIN_HEAT_ON_TIME;
+}
+
+
+/**
+ * \brief Store min times to the filesystem
+ */
+void MinTimes::storeToSpiffs() {
+    DynamicJsonDocument doc(512);
+
+    toJson(doc);
+
+    writeJsonToFile(MinTimes::filename, doc);  // Write the json to the file
+}
+
+void MinTimes::loadFromSpiffs() {
+    // We start by setting the defaults, as we use them as the alternative to loaded values if the keys don't exist
+    setDefaults();
+
+    DynamicJsonDocument json_doc(2048);
+    json_doc = readJsonFromFile(MinTimes::filename);
+
+	// Load the settings "default" choice from the JSON doc
+	if(json_doc.containsKey(MinTimesKeys::SETTINGS_CHOICE)) settings_choice = json_doc[MinTimesKeys::SETTINGS_CHOICE];
+
+    // Load the constants from the JSON Doc
+    if(json_doc.containsKey(MinTimesKeys::MIN_COOL_OFF_TIME)) MIN_COOL_OFF_TIME = json_doc[MinTimesKeys::MIN_COOL_OFF_TIME];
+    if(json_doc.containsKey(MinTimesKeys::MIN_HEAT_OFF_TIME)) MIN_HEAT_OFF_TIME = json_doc[MinTimesKeys::MIN_HEAT_OFF_TIME];
+	if(json_doc.containsKey(MinTimesKeys::MIN_COOL_ON_TIME)) MIN_COOL_ON_TIME = json_doc[MinTimesKeys::MIN_COOL_ON_TIME];
+	if(json_doc.containsKey(MinTimesKeys::MIN_HEAT_ON_TIME)) MIN_HEAT_ON_TIME = json_doc[MinTimesKeys::MIN_HEAT_ON_TIME];
+	
+	if(json_doc.containsKey(MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT)) MIN_COOL_OFF_TIME_FRIDGE_CONSTANT = json_doc[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT];
+	if(json_doc.containsKey(MinTimesKeys::MIN_SWITCH_TIME)) MIN_SWITCH_TIME = json_doc[MinTimesKeys::MIN_SWITCH_TIME];
+	if(json_doc.containsKey(MinTimesKeys::COOL_PEAK_DETECT_TIME)) COOL_PEAK_DETECT_TIME = json_doc[MinTimesKeys::COOL_PEAK_DETECT_TIME];
+	if(json_doc.containsKey(MinTimesKeys::HEAT_PEAK_DETECT_TIME)) HEAT_PEAK_DETECT_TIME = json_doc[MinTimesKeys::HEAT_PEAK_DETECT_TIME];
+}
+
+
+
+/**
+ * \brief Serialize min times to JSON
+ */
+void MinTimes::toJson(DynamicJsonDocument &doc) {
+    // Load the constants into the JSON Doc
+	doc[MinTimesKeys::SETTINGS_CHOICE] = settings_choice;
+
+    doc[MinTimesKeys::MIN_COOL_OFF_TIME] = MIN_COOL_OFF_TIME;
+    doc[MinTimesKeys::MIN_HEAT_OFF_TIME] = MIN_HEAT_OFF_TIME;
+	doc[MinTimesKeys::MIN_COOL_ON_TIME] = MIN_COOL_ON_TIME;
+	doc[MinTimesKeys::MIN_HEAT_ON_TIME] = MIN_HEAT_ON_TIME;
+
+	doc[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT] = MIN_COOL_OFF_TIME_FRIDGE_CONSTANT;
+	doc[MinTimesKeys::MIN_SWITCH_TIME] = MIN_SWITCH_TIME;
+	doc[MinTimesKeys::COOL_PEAK_DETECT_TIME] = COOL_PEAK_DETECT_TIME;
+	doc[MinTimesKeys::HEAT_PEAK_DETECT_TIME] = HEAT_PEAK_DETECT_TIME;
 }

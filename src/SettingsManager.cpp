@@ -33,6 +33,7 @@ void SettingsManager::loadSettings()
 	{
 		TempControl::loadDefaultSettings();
 		TempControl::loadDefaultConstants();
+		minTimes.setDefaults();
 		
 		deviceManager.setupUnconfiguredDevices();
 

@@ -5,12 +5,12 @@
 #ifndef LEGACY_PLATFORMIO_DISPLAYTFT_H
 #define LEGACY_PLATFORMIO_DISPLAYTFT_H
 
+#ifdef BREWPI_TFT
 
 #include "Brewpi.h"
 #include "DisplayBase.h"
 
-#ifdef BREWPI_TFT
-
+#include "Adafruit_ILI9341.h"
 
 
 /************** Alignment Markers ****************/
@@ -92,85 +92,91 @@
 
 
 
-class LcdDisplay DISPLAY_SUPERCLASS
+class LcdDisplay
 {
-        public:
-        // initializes the lcd display
-        DISPLAY_METHOD void init();
+public:
+    LcdDisplay();
+    ~LcdDisplay();
+    // initializes the lcd display
+    void init();
 
-        DISPLAY_METHOD void printAll()
-        {
-        //     printStationaryText();
-            printState();
-            printAllTemperatures();
-            printMode();
-            printIPAddressInfo();
+    void printAll()
+    {
+    //     printStationaryText();
+    printState();
+    printAllTemperatures();
+    printMode();
+    printIPAddressInfo();
 #ifdef HAS_BLUETOOTH
-                // printGravity();
+    // printGravity();
 #endif
-        }
+    }
 
-        // print all temperatures on the LCD
-        DISPLAY_METHOD void printAllTemperatures();
+    // print all temperatures on the LCD
+    void printAllTemperatures();
 
-        // print the stationary text on the lcd.
-        DISPLAY_METHOD void printStationaryText();
-        DISPLAY_METHOD void print_layout();  // TFT-only replacement for printStationaryText
+    // print the stationary text on the lcd.
+    void printStationaryText();
+    void print_layout();  // TFT-only replacement for printStationaryText
 
-        // print mode on the right location on the first line, after Mode:
-        DISPLAY_METHOD void printMode();
-        DISPLAY_METHOD void printIPAddressInfo();
+    // print mode on the right location on the first line, after Mode:
+    void printMode();
+    void printIPAddressInfo();
 
-        DISPLAY_METHOD void setDisplayFlags(uint8_t newFlags);
-        DISPLAY_METHOD uint8_t getDisplayFlags() { return flags; };
+    void setDisplayFlags(uint8_t newFlags);
+    uint8_t getDisplayFlags() { return flags; };
 
-        // print beer temperature at the right place on the display
-        DISPLAY_METHOD void printBeerTemp();
+    // print beer temperature at the right place on the display
+    void printBeerTemp();
 
-        // print beer temperature setting at the right place on the display
-        DISPLAY_METHOD void printBeerSet();
+    // print beer temperature setting at the right place on the display
+    void printBeerSet();
 
-        // print fridge temperature at the right place on the display
-        DISPLAY_METHOD void printFridgeTemp();
+    // print fridge temperature at the right place on the display
+    void printFridgeTemp();
 
-        // print fridge temperature setting at the right place on the display
-        DISPLAY_METHOD void printFridgeSet();
+    // print fridge temperature setting at the right place on the display
+    void printFridgeSet();
 
-        // print the current state on the last line of the LCD
-        DISPLAY_METHOD void printState();
+    // print the current state on the last line of the LCD
+    void printState();
 
-        DISPLAY_METHOD void getLine(uint8_t lineNumber, char * buffer);
+    void getLine(uint8_t lineNumber, char * buffer);
 //
-//        DISPLAY_METHOD void setBufferOnly(bool bufferOnly)
-//        {
-//            lcd.setBufferOnly(bufferOnly);
-//        }
+//    void setBufferOnly(bool bufferOnly)
+//    {
+//    lcd.setBufferOnly(bufferOnly);
+//    }
 
-//        DISPLAY_METHOD void resetBacklightTimer() { lcd.resetBacklightTimer(); }
-//        DISPLAY_METHOD void updateBacklight() { lcd.updateBacklight(); }
+//    void resetBacklightTimer() { lcd.resetBacklightTimer(); }
+//    void updateBacklight() { lcd.updateBacklight(); }
 
-        // print a temperature
-        DISPLAY_METHOD void printTemperature(temperature temp, uint8_t font_size);
-        DISPLAY_METHOD void printTemperatureAt(uint8_t x, uint8_t y, uint8_t font_size, temperature temp);
+    // print a temperature
+    void printTemperature(temperature temp, uint8_t font_size);
+    void printTemperatureAt(uint8_t x, uint8_t y, uint8_t font_size, temperature temp);
 
 #ifdef ESP8266_WiFi
-        DISPLAY_METHOD void printWiFi();
-        DISPLAY_METHOD void printWiFiStartup();
-	DISPLAY_METHOD void printWiFiConnect();
+    void printWiFi();
+    void printWiFiStartup();
+    void printWiFiConnect();
 #endif
 
 #ifdef HAS_BLUETOOTH
-        DISPLAY_METHOD void printBluetoothStartup();
-        DISPLAY_METHOD void printGravity();
+    void printBluetoothStartup();
+    void printGravity();
 #endif
 
-        DISPLAY_METHOD void clear();
-        DISPLAY_METHOD void clearForText(uint8_t start_x, uint8_t start_y, uint16_t color, uint8_t font_size, uint8_t characters);
+    void clear();
+    void clearForText(uint8_t start_x, uint8_t start_y, uint16_t color, uint8_t font_size, uint8_t characters);
 
 
-        private:
-        DISPLAY_FIELD uint8_t stateOnDisplay;
-        DISPLAY_FIELD uint8_t flags;
+private:
+    Adafruit_ILI9341 *tft;
+
+    uint8_t stateOnDisplay;
+    uint8_t flags;
+
+    uint8_t printTime(uint16_t time);
 };
 
 

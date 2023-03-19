@@ -55,7 +55,7 @@ namespace TiltColorNames {
 };
 
 
-#define TILT_CONNECTED_TIMEOUT       (90 * 1000)     // Time before the sensor is considered "disconnected" (in ms)
+#define TILT_CONNECTED_TIMEOUT       (90 * 1000 * 1000)     // Time before the sensor is considered "disconnected" (in microseconds)
 
 class tilt
 {
@@ -86,7 +86,7 @@ public:
 
     NimBLEAddress deviceAddress;
     TiltColor color;
-    uint32_t m_lastUpdate; // Keep track of when we last updated to detect disconnection
+    uint64_t m_lastUpdate; // Keep track of when we last updated to detect disconnection
     uint8_t battery_weeks;  // Weeks since the last battery change (if receives_battery is true)
     bool receives_battery;  // Tracks if this tilt sends battery life
     bool tilt_pro;  // Tracks if this tilt is "high resolution" or not (ie. is a Tilt Pro)

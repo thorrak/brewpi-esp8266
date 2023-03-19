@@ -168,6 +168,7 @@
 #define TFT_RST 33 //for D32 Pro
 #define TS_CS  12 //for D32 Pro
 #define TFT_BACKLIGHT 32
+#define BREWPI_MENU 0
 #endif
 
 //
