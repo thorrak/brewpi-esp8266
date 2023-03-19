@@ -275,14 +275,14 @@ uint8_t processExtendedSettingsJson(const DynamicJsonDocument& json, bool trigge
     }
 
     // Low Delay Mode
-    if(json.containsKey(ExtendedSettingsKeys::lowDelay)) {
-        if(json[ExtendedSettingsKeys::lowDelay].is<bool>()) {
-            if(extendedSettings.lowDelay != json[ExtendedSettingsKeys::lowDelay].as<bool>()) {
-                extendedSettings.setLowDelay(json[ExtendedSettingsKeys::lowDelay].as<bool>());
+    if(json.containsKey(ExtendedSettingsKeys::largeTFT)) {
+        if(json[ExtendedSettingsKeys::largeTFT].is<bool>()) {
+            if(extendedSettings.largeTFT != json[ExtendedSettingsKeys::largeTFT].as<bool>()) {
+                extendedSettings.setLargeTFT(json[ExtendedSettingsKeys::largeTFT].as<bool>());
                 saveSettings = true;
             }
         } else {
-            Log.warning(F("Invalid [lowDelay]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::lowDelay]);
+            Log.warning(F("Invalid [largeTFT]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::largeTFT]);
             failCount++;
         }
     }

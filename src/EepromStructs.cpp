@@ -291,7 +291,7 @@ ExtendedSettings::ExtendedSettings() {
 void ExtendedSettings::setDefaults() {
     invertTFT = false;
     glycol = false;
-    lowDelay = false;
+    largeTFT = false;
 }
 
 
@@ -302,7 +302,7 @@ void ExtendedSettings::toJson(DynamicJsonDocument &doc) {
     // Load the settings into the JSON Doc
     doc[ExtendedSettingsKeys::invertTFT] = invertTFT;
     doc[ExtendedSettingsKeys::glycol] = glycol;
-    doc[ExtendedSettingsKeys::lowDelay] = lowDelay;
+    doc[ExtendedSettingsKeys::largeTFT] = largeTFT;
 }
 
 /**
@@ -329,7 +329,7 @@ void ExtendedSettings::loadFromSpiffs() {
     // Load the constants from the JSON Doc
     if(json_doc.containsKey(ExtendedSettingsKeys::invertTFT)) invertTFT = json_doc[ExtendedSettingsKeys::invertTFT];
     if(json_doc.containsKey(ExtendedSettingsKeys::glycol)) glycol = json_doc[ExtendedSettingsKeys::glycol];
-    if(json_doc.containsKey(ExtendedSettingsKeys::lowDelay)) lowDelay = json_doc[ExtendedSettingsKeys::lowDelay];
+    if(json_doc.containsKey(ExtendedSettingsKeys::largeTFT)) largeTFT = json_doc[ExtendedSettingsKeys::largeTFT];
 
 }
 
@@ -353,8 +353,8 @@ void ExtendedSettings::processSettingKeypair(JsonPair kv) {
     setInvertTFT(kv.value().as<bool>());
   } else if (kv.key() == ExtendedSettingsKeys::glycol) {
     setGlycol(kv.value().as<bool>());
-  } else if (kv.key() == ExtendedSettingsKeys::lowDelay) {
-    setLowDelay(kv.value().as<bool>());
+  } else if (kv.key() == ExtendedSettingsKeys::largeTFT) {
+    setLargeTFT(kv.value().as<bool>());
   }
 }
 
@@ -375,13 +375,15 @@ void ExtendedSettings::setGlycol(bool setting) {
 
 
 /**
- * \brief Set the low delay mode
+ * \brief Set the large TFT mode
  *
  * \param setting - The new setting
  */
-void ExtendedSettings::setLowDelay(bool setting) {
-    lowDelay = setting;
-    minTimes.setDefaults();
+void ExtendedSettings::setLargeTFT(bool setting) {
+    largeTFT = setting;
+    display.init();
+    display.printStationaryText();
+    display.printState();
 }
 
 /**
