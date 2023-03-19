@@ -37,6 +37,7 @@ private:
     void processJsonRequest(const char* uri, uint8_t (*handler)(const DynamicJsonDocument& json, bool triggerUpstreamUpdate));
     void serveExtendedSettings();
     void serveUpstreamSettings();
+    void serveMinTimes();
     void reset_reason();
 
     void setStaticPages();
