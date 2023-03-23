@@ -45,12 +45,9 @@ class DigitalPinActuator ACTUATOR_BASE_CLASS_DECL
 		pinMode(pin, OUTPUT);
 	}
 	
-	inline ACTUATOR_METHOD void setActive(bool active) {
-        this->active = active;
-        if((active && !invert) || (!active && invert)) digitalWrite(pin, HIGH);
-        else digitalWrite(pin, LOW);
-        // The xor originally used isn't working on this branch. Very strange, as none of the other code has changed.
-//        digitalWrite(pin, active^invert ? HIGH : LOW);
+	inline ACTUATOR_METHOD void setActive(bool active_setting) {
+        this->active = active_setting;
+       digitalWrite(pin, active_setting^invert ? HIGH : LOW);
 	}
 	
 	bool isActive() { return active; }
