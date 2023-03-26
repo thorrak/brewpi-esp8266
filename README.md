@@ -8,6 +8,7 @@ This project ports the BrewPi firmware to the ESP8266, ESP32, and ESP32-S2 contr
 * [Selecting your Hardware](docs/Selecting%20an%20ESP%20Board.md)  
 * [Building a "Solder Free" BrewPi](docs/Solder%20Free%20BrewPi.md)  
 * [Installing the Firmware](docs/Installing%20the%20Firmware.md)
+* [Developing/Contributing](docs/DEVELOP.md)
 * [Hardware Information](https://github.com/thorrak/thorrak_hardware/blob/master/BrewPi-ESP8266.md) - PCB files, ordering and BOMs
 
 ## Expected Pinout
@@ -45,6 +46,7 @@ There are two versions of the ESP32 firmware - one supporting an LCD2004 I2C dis
 * 33 - I2C SDA
 * 35 - I2C SCL
 
+
 ### ESP8266
 
 Although the ESP8266 was the original board chosen for this project, due to reduced support by the manufacturer its use in new builds is not recommended. For existing builds using the LoLin D1 Mini, the LoLin S2 Mini (utilizing the ESP32-S2) is recommended as a pin compatible replacement.
@@ -65,9 +67,7 @@ Although the ESP8266 was the original board chosen for this project, due to redu
 * WiFi Soft-AP Configuration
 * OTA (WiFi) connection to BrewPi 
 * I2C LCD (20x4) Screen (/w Address Autodetection)
-* xxx-based 
 * Tilt Hydrometer (as Temp Sensor) (ESP32 only)
-* Inkbird Bluetooth Temp Sensors (ESP32 only)
 * TPLink Kasa WiFi Switches (ESP32 & ESP32-S2 WiFi only)
 * HTTP interface for quick updates
 
