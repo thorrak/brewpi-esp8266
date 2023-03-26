@@ -32,6 +32,8 @@
 #include "tplink/TPLinkScanner.h"
 #include "http_server.h"
 
+#include "rest/rest_send.h"
+
 #if BREWPI_SIMULATE
 #include "Simulator.h"
 #endif
@@ -177,6 +179,7 @@ void setup()
 //	rotaryEncoder.init();
 
 	logDebug("init complete");
+  rest_handler.init();
 }
 
 
@@ -238,7 +241,7 @@ void brewpiLoop()
 
 #ifdef HAS_BLUETOOTH
 if(bt_scanner.scanning_failed()) {
-
+  rest_handler.send_bluetooth_crash_report();
   esp_restart();
 }
   bt_scanner.scan();        // Check/restart scan 
