@@ -19,7 +19,14 @@
  */
 
 #pragma once
+#include <stdint.h>
 
+/**
+ * \file Config.h
+ * \brief Compile time configuration flags
+ *
+ * The values here are used to create local customizations of the values defined in ConfigDefault.h
+ */
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -49,16 +56,18 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////////////////////////////////////
-//
-// Enable the simulator. Real sensors/actuators are replaced with simulated versions. In particular, the values reported by
-// temp sensors are based on a model of the fridge/beer.
-//
-// #ifndef BREWPI_SIMULATE
-// #define BREWPI_SIMULATE 0
-// #endif
-//
-//////////////////////////////////////////////////////////////////////////
+/**
+ * \def BREWPI_SIMULATE
+ * \brief Enable the simulator.
+ * \ingroup simulator
+ *
+ * Real sensors/actuators are replaced with simulated versions. In particular, the values reported by
+ * temp sensors are based on a model of the fridge/beer.
+ */
+//#ifndef BREWPI_SIMULATE
+//#define BREWPI_SIMULATE 0
+//#endif
+
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -126,11 +135,42 @@
 //
 // Enable the LCD display. Without this, a NullDisplay is used
 //
-#ifndef BREWPI_LCD
-#define BREWPI_LCD 1
-#define BREWPI_IIC 1
+//#ifndef BREWPI_LCD
+//#define BREWPI_LCD 1
+//#define BREWPI_IIC 1
+//#define BREWPI_TFT 1  // This DISABLES the LCD support and enables TFT support
+//#define BREWPI_SHIFT_LCD 1
+//#define BACKLIGHT_AUTO_OFF_PERIOD 0 // Disable backlight auto off
+//#endif
+
+// UPDATE - With the ESP32 release, we're now going to configure the LCD type using Platformio build flags.
+// BREWPI_LCD and one of BREWPI_IIC or BREWPI_TFT should be set at compile time. In all cases however we want to set
+// BACKLIGHT_AUTO_OFF_PERIOD to 0 (for now)
+#ifdef BREWPI_LCD
 #define BACKLIGHT_AUTO_OFF_PERIOD 0 // Disable backlight auto off
 #endif
+
+
+
+#ifdef BREWPI_TFT
+
+#ifdef ESP8266
+#error "Unable to use TFT displays with ESP8266 (not enough pins)"
+#endif
+
+#ifndef ESP32
+#error "TFT displays only work with ESP32 devices"
+#endif
+
+// Pin definitions for TFT displays
+#define TFT_CS 14  //for D32 Pro
+#define TFT_DC 27  //for D32 Pro
+#define TFT_RST 33 //for D32 Pro
+#define TS_CS  12 //for D32 Pro
+#define TFT_BACKLIGHT 32
+#define BREWPI_MENU 0
+#endif
+
 //
 //////////////////////////////////////////////////////////////////////////
 
@@ -177,6 +217,15 @@
 //////////////////////////////////////////////////////////////////////////
 
 
+// If a device has bluetooth support, that bluetooth support is specifically for supporting external sensors/relays.
+// Enable external sensors/relays as a result. 
+#ifdef HAS_BLUETOOTH
+#ifndef EXTERN_SENSOR_ACTUATOR_SUPPORT
+#define EXTERN_SENSOR_ACTUATOR_SUPPORT
+#endif
+#endif
+
+
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -184,7 +233,11 @@
 //
 // pins
 
-#define NODEMCU_PIN_A0 17	// Analog 
+#if defined(ESP8266)
+
+#define CONTROLLER_TYPE "ESP8266"  // Used in the announce strings
+
+#define NODEMCU_PIN_A0 17	// Analog
 
 #define NODEMCU_PIN_D0 16	// No interrupt, do not use for rotary encoder
 #define NODEMCU_PIN_D1 5	// Generally used for I2C
@@ -199,11 +252,12 @@
 #define NODEMCU_PIN_D9 3	// Do not use - USB
 #define NODEMCU_PIN_D10 1	// Do not use - USB
 
+/*
+ * This was the old pin configuration (waaaay back in 2016) for ESP8266 boards
+ *
 
-
-/*#define coolingPin NODEMCU_PIN_D3
+ #define coolingPin NODEMCU_PIN_D3
 #define heatingPin NODEMCU_PIN_D4
-
 #define doorPin    NODEMCU_PIN_D5
 #define oneWirePin NODEMCU_PIN_D6  // If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
 */
@@ -214,6 +268,8 @@
 #define oneWirePin NODEMCU_PIN_D6  // If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
 #define doorPin    NODEMCU_PIN_D7
 
+#define IIC_SDA NODEMCU_PIN_D2
+#define IIC_SCL NODEMCU_PIN_D1
 
 
 // Pay attention when changing the pins for the rotary encoder.
@@ -223,31 +279,235 @@
 //#define rotarySwitchPin 0 // INT2
 
 
-#ifdef ESP8266
-// This is now handled in platformio.ini
-//#define ESP8266_WiFi 1			// This disables Serial and enables WiFi support. Comment out for "serial" mode.
-#define FIRMWARE_REVISION "0.11"
+#elif defined(ESP32_STOCK)
+
+#define CONTROLLER_TYPE "ESP32"  // Used in the announce strings
+
+#define heatingPin 25
+#define coolingPin 26
+
+// If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
+#define oneWirePin 13
+#define doorPin    34 // Note - 34 is "input only" and shouldn't be repurposed
+
+#define IIC_SDA 21
+#define IIC_SCL 22
+
+
+// Pay attention when changing the pins for the rotary encoder.
+// They should be connected to external interrupt INT0, INT1 and INT3
+//#define rotaryAPin 19 // INT1?
+//#define rotaryBPin 18 // INT3?
+//#define rotarySwitchPin 23 // INT2?
+
+
+#elif defined(ESP32S2)
+
+#define CONTROLLER_TYPE "ESP32-S2"  // Used in the announce strings
+
+// This matches the physical pin locations used for the ESP8266 so the PCBs can be reused
+#define heatingPin 5
+#define coolingPin 7
+#define oneWirePin 9
+#define doorPin    11
+#define IIC_SDA 33
+#define IIC_SCL 35
+
+// Pay attention when changing the pins for the rotary encoder.
+// They should be connected to external interrupt INT0, INT1 and INT3
+//#define rotaryAPin 19 // INT1?
+//#define rotaryBPin 18 // INT3?
+//#define rotarySwitchPin 23 // INT2?
+
+#elif defined(ESP32C3)
+
+#define CONTROLLER_TYPE "ESP32-C3"  // Used in the announce strings
+
+// This matches the physical pin locations used for the ESP8266 so the PCBs can be reused
+#define heatingPin 1
+#define coolingPin 2
+#define oneWirePin 3
+#define doorPin    4
+#define IIC_SDA 8
+#define IIC_SCL 10
+
+// Pay attention when changing the pins for the rotary encoder.
+// They should be connected to external interrupt INT0, INT1 and INT3
+//#define rotaryAPin 19 // INT1?
+//#define rotaryBPin 18 // INT3?
+//#define rotarySwitchPin 23 // INT2?
+
+
+
+#else
+#error "Undefined pins configuration!"
+
 #endif
 
 
-/*
-// Note - LCD module pins aren't used yet.
-#define DISP_RS 9
-#define DISP_RW 8
-#define DISP_EN 7
-#define DISP_D4 6
-#define DISP_D5 5
-#define DISP_D6 4
-#define DISP_D7 3
-*/
 
-#define IIC_SDA NODEMCU_PIN_D2
-#define IIC_SCL NODEMCU_PIN_D1
+#define FIRMWARE_REVISION "0.15"
+
+#ifdef ESP8266_WiFi
+#define WIFI_SETUP_AP_NAME "BrewPiAP"
+#define WIFI_SETUP_AP_PASS "brewpiesp"  // Must be 8-63 chars
+#endif
+
+
 
 // BREWPI_INVERT_ACTUATORS
 // TODO - Figure out what the hell this actually does
 #define BREWPI_INVERT_ACTUATORS 0
 
-#define BUFFER_PILINK_PRINTS 1
+/**
+ * \brief Configuration parameters
+ */
+namespace Config {
+  /**
+   * \brief PiLink interface configuration
+   */
+  namespace PiLink {
+    /**
+     * \brief Buffer data coming out of PiLink
+     */
+    constexpr bool bufferPrints = false;
 
-#define FORCE_DEVICE_DEFAULTS 1	 // Locks Chamber 1/Beer 1
+    /**
+     * \brief Amount of memory used for Stream buffering.
+     * \see https://github.com/bblanchon/ArduinoStreamUtils#buffering-write-operations
+     */
+    constexpr uint_fast16_t printBufferSize() {
+      return bufferPrints ? 1024 : 0;
+    };
+
+    /**
+     * \brief Speed of serial connection
+     */
+
+#ifdef ESP8266_WiFi
+    constexpr auto serialSpeed = 115200;
+#else
+    constexpr auto serialSpeed = 57600;
+#endif
+
+    /**
+     * \brief Size of buffer used for printf
+     */
+    constexpr auto printfBufferSize = 128;
+
+    /**
+     * \brief Size of buffer used for internal replacement of StreamUtils when not available
+     */
+    constexpr uint_fast16_t intBufferSize() {
+#if defined(HAS_BLUETOOTH) || defined(EXTERN_SENSOR_ACTUATOR_SUPPORT)
+      return bufferPrints ? 0 : 4096;
+#else
+      // Need less space if we don't have bluetooth or external actuator support
+      return bufferPrints ? 0 : 2048;
+#endif
+    };
+
+
+
+
+#ifdef ESP8266_WiFi
+    constexpr bool useWifi = true;
+#else
+    constexpr bool useWifi = false;
+#endif
+  };
+
+
+  /**
+   * \brief LCD configuration
+   */
+  namespace Lcd {
+    /**
+     * \brief Number of text lines
+     */
+    constexpr auto lines = 4;
+
+    /**
+     * \brief Number of text columns
+     */
+    constexpr auto columns = 20;
+  };
+
+
+  /**
+   * \brief Configuration of temperature output
+   */
+  namespace TempFormat {
+    /**
+     * \brief Decimal places for a temperature measurement
+     */
+    constexpr auto tempDecimals = 1;
+
+    /**
+     * \brief Decimal places for a fixed temperature
+     */
+    constexpr auto fixedPointDecimals = 3;
+
+    /**
+     * \brief Decimal places for a temperature difference
+     */
+    constexpr auto tempDiffDecimals = 3;
+
+    /**
+     * \brief Length to use for conversion buffers
+     */
+    constexpr auto bufferLen = 12;
+
+    /**
+     * \brief Maximum length of a temp string
+     */
+    constexpr auto maxLength = 9;
+  };
+
+
+  /**
+   * \brief Maximum values when storing information
+   */
+  namespace EepromFormat {
+    constexpr auto MAX_BEERS = 6;	  // TODO - Change to 1
+    constexpr auto MAX_CHAMBERS = 4;  // TODO - Change to 1
+
+    /**
+     * \brief Maximum number of device slots
+     */
+    static const int8_t MAX_DEVICES = 20;
+  };
+
+  /**
+   * \brief Locks Chamber 1/Beer 1
+   *
+   * Prevents the user from trying to configure probes with other chamber/beer
+   * values.  All probe configurations will have their beer & chamber values
+   * overwritten with 1.
+   */
+  constexpr bool forceDeviceDefaults = true;
+
+  /**
+   * \brief Prometheus configuration
+   */
+  namespace Prometheus {
+    /**
+     * \brief Enable Prometheus instrumentation support
+     *
+     * Only enabled when WiFi is enabled. The feature doesn't make sense when
+     * there is only serial.
+     *
+     * \see PromServer
+     */
+    constexpr bool enable() {
+      // Enable if wifi is enabled
+      return Config::PiLink::useWifi;
+    };
+
+    /**
+     * \brief TCP port to bind Prometheus HTTP service to
+     * \see PromServer
+     */
+    constexpr auto port = 8080;
+  };
+};

@@ -41,7 +41,7 @@ enum errorMessages {
 	MSG(ERROR_OUT_OF_MEMORY_FOR_DEVICE, "*** OUT OF MEMORY for device f=%d", config.deviceFunction),
 
 	// DeviceManager.cpp
-	MSG(ERROR_DEVICE_DEFINITION_UPDATE_SPEC_INVALID, "Device defifination update specification is invalid"),
+	MSG(ERROR_DEVICE_DEFINITION_UPDATE_SPEC_INVALID, "Device definition update specification is invalid"),
 	MSG(ERROR_INVALID_CHAMBER, "Invalid chamber id %d", config.chamber),
 	MSG(ERROR_INVALID_BEER, "Invalid beer id %d", config.beer),
 	MSG(ERROR_INVALID_DEVICE_FUNCTION, "Invalid device function id %d", config.deviceFunction),
@@ -111,5 +111,8 @@ enum infoMessages {
 	MSG(BACK_ON_MAIN_SENSOR, "Back on main sensor instead of backup sensor."),
 
 	// DS2413.cpp
-	MSG(DS2413_CONNECTED, "OneWire actuator (DS2413) connected, address %s", addressString)
+	MSG(DS2413_CONNECTED, "OneWire actuator (DS2413) connected, address %s", addressString),
+
+	// EepromManager.cpp
+	MSG(INFO_UNCONFIRMED_EEPROM_RESET, "Incomplete EEPROM reset command (missing JSON confirmation)")
 }; // END enum infoMessages

@@ -22,12 +22,9 @@
 
 #include "Brewpi.h"
 
-#include "EepromAccess.h"
+#include "ESPEepromAccess.h"
 #include "EepromStructs.h"
 
-
-void fill(int8_t* p, uint8_t size);
-void clear(uint8_t* p, uint8_t size);
 
 class DeviceConfig;
 
@@ -37,42 +34,22 @@ class EepromManager {
 public:		
 		
 	EepromManager();
-	
-	/**
-	 * Write -1 to the entire eeprom, emulating the reset performed by avrdude.
-	 */
-	static void zapEeprom();
-	
+
 	/**
 	 * Prepare the eeprom to accept device definitions. For RevA boards, the eeprom is populated with devices for
 	 * beer/fridge temp sensor, and heating,cooling actuators and door switch.
 	 */
-	static void initializeEeprom();
-	
-	/**
-	 * Determines if this eeprom has settings.
-	 */
-	static bool hasSettings();
+	static bool initializeEeprom();
 
 	/**
 	 * Applies the settings from the eeprom
 	 */
-	static bool applySettings();
-		
-	static void dumpEeprom(Print& stream, uint16_t offset);
+	bool applySettings();
 
-	/**
-	 * Save the chamber constants and beer settings to eeprom for the currently active chamber.
-	 */
-	static void storeTempConstantsAndSettings();
 
-	/**
-	 * Save just the beer temp settings.
-	 */
-	static void storeTempSettings();
-
-	static bool fetchDevice(DeviceConfig& config, int8_t deviceIndex);
-	static bool storeDevice(const DeviceConfig& config, int8_t deviceIndex);
+	DeviceConfig fetchDevice(uint8_t deviceIndex);
+	void storeDevice(DeviceConfig& config, uint8_t deviceIndex);
+	void deleteDeviceWithFunction(DeviceFunction function);
 	
 	static uint8_t saveDefaultDevices();
 
@@ -81,33 +58,15 @@ public:
 	static void savemDNSName(String mdns_id);
 #endif
 
+
+private:
+	bool cache_loaded = false;
+	void loadDevicesToCache();
+	DeviceConfig cached_devices[Config::EepromFormat::MAX_DEVICES];
+
 };
 
-class EepromStream 
-{
-	eptr_t pv;
-	
-/*	void writeByte(uint8_t value) {
-		eepromAccess.writeByte(pv++, value);				
-	}*/
-	// TODO - Clean this up
-/*	void writeBlock(void* source, uint16_t size)
-	{
-		eepromAccess.writeBlock(pv, source, size);
-		pv += size;
-	}*/
-	// Breaking this out into three functions so that we can have better control
-	void writeControlSettings(ControlSettings& source, uint16_t size) {
-		eepromAccess.writeControlSettings(pv, source, size);
-	}
-
-	void writeControlConstants(ControlConstants& source, uint16_t size) {
-		eepromAccess.writeControlConstants(pv, source, size);
-	}
-
-/*	void writeDeviceDefinition(const DeviceConfig& source, uint16_t size) {
-		eepromAccess.writeDeviceDefinition(pv, source, size);
-	}*/
-};
 
 extern EepromManager eepromManager;
+extern ExtendedSettings extendedSettings;
+extern UpstreamSettings upstreamSettings;

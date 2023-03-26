@@ -3,17 +3,17 @@
  * Copyright 2013 BrewPi/Elco Jacobs.
  *
  * This file is part of BrewPi.
- * 
+ *
  * BrewPi is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * BrewPi is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -27,18 +27,34 @@
 #include "TempSensorDisconnected.h"
 #include "TempSensorExternal.h"
 #include "PiLink.h"
-#include "EepromFormat.h"
+#include "DeviceNameManager.h"
+#include <ArduinoJson.h>
+#include "JsonKeys.h"
+#include "NumberFormats.h"
+#include <ArduinoLog.h>
 
-#define CALIBRATION_OFFSET_PRECISION (4)
 
-#ifdef ARDUINO
+#include <DallasTempNG.h>  // Instead of DallasTemperature.h
+
 #include "OneWireTempSensor.h"
+
+#ifdef BREWPI_DS2413
 #include "OneWireActuator.h"
 #include "DS2413.h"
-#include <OneWire.h>
-#include "DallasTemperature.h"
+#endif
+
 #include "ActuatorArduinoPin.h"
 #include "SensorArduinoPin.h"
+
+#ifdef HAS_BLUETOOTH
+#include "InkbirdTempSensor.h"
+#include "TiltTempSensor.h"
+#include "wireless/BTScanner.h"
+#endif
+
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+#include "tplink/TPLinkScanner.h"
+#include "ActuatorTPLink.h"
 #endif
 
 
@@ -64,37 +80,41 @@ OneWire* DeviceManager::oneWireBus(uint8_t pin) {
 #if !BREWPI_SIMULATE
 #ifdef oneWirePin
 	if (pin == oneWirePin)
-		return &primaryOneWireBus; 
+		return &primaryOneWireBus;
 #else
 	if (pin==beerSensorPin)
 		return &beerSensorBus;
 	if (pin==fridgeSensorPin)
 		return &fridgeSensorBus;
-#endif		
 #endif
-	return NULL;
+#endif
+	return nullptr;
 }
 
-bool DeviceManager::firstDeviceOutput;
 
+/**
+ * Check if a given BasicTempSensor is the default temp sensor
+ *
+ * @param sensor - Pointer to the sensor to check
+ * @returns true if the provided sensor is the default, otherwise false.
+ */
 bool DeviceManager::isDefaultTempSensor(BasicTempSensor* sensor) {
 	return sensor==&defaultTempSensor;
 }
 
 /**
  * Sets devices to their unconfigured states. Each device is initialized to a static no-op instance.
- * This method is idempotent, and is called each time the eeprom is reset. 
+ * This method is idempotent, and is called each time the eeprom is reset.
  */
 void DeviceManager::setupUnconfiguredDevices()
-{	
+{
 	// right now, uninstall doesn't care about chamber/beer distinction.
 	// but this will need to match beer/function when multiferment is available
-	DeviceConfig cfg;	
-	cfg.chamber = 1; cfg.beer = 1;		
+	DeviceConfig cfg;
 	for (uint8_t i=0; i<DEVICE_MAX; i++) {
 		cfg.deviceFunction = DeviceFunction(i);
 		uninstallDevice(cfg);
-	}			
+	}
 }
 
 
@@ -109,17 +129,17 @@ void* DeviceManager::createDevice(DeviceConfig& config, DeviceType dt)
 		case DEVICE_HARDWARE_PIN:
 			if (dt==DEVICETYPE_SWITCH_SENSOR)
 			#if BREWPI_SIMULATE
-				return new ValueSensor<bool>(false);		
+				return new ValueSensor<bool>(false);
 			#else
 				return new DigitalPinSensor(config.hw.pinNr, config.hw.invert);
-			#endif				
+			#endif
 			else
 #if BREWPI_SIMULATE
 				return new ValueActuator();
-#else                            
+#else
 				// use hardware actuators even for simulator
 				return new DigitalPinActuator(config.hw.pinNr, config.hw.invert);
-#endif		
+#endif
 		case DEVICE_HARDWARE_ONEWIRE_TEMP:
 		#if BREWPI_SIMULATE
 			return new ExternalTempSensor(false);// initially disconnected, so init doesn't populate the filters with the default value of 0.0
@@ -137,23 +157,49 @@ void* DeviceManager::createDevice(DeviceConfig& config, DeviceType dt)
 		#else
 			return new OneWireActuator(oneWireBus(config.hw.pinNr), config.hw.address, config.hw.pio, config.hw.invert);
 		#endif
-#endif			
+#endif
+
+#ifdef HAS_BLUETOOTH
+		case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
+			return new InkbirdTempSensor(config.hw.btAddress, config.hw.calibration);
+		case DEVICE_HARDWARE_BLUETOOTH_TILT:
+			return new TiltTempSensor(config.hw.btAddress, config.hw.calibration);
+#else
+		case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
+		case DEVICE_HARDWARE_BLUETOOTH_TILT:
+		Log.error(F("Bluetooth not supported"));
+			return nullptr;
+#endif
+
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+		case DEVICE_HARDWARE_TPLINK_SWITCH:
+			return new TPLinkActuator(config.hw.tplink_mac, config.hw.tplink_child_id);
+#else
+		case DEVICE_HARDWARE_TPLINK_SWITCH:
+		Log.error(F("TPLink not supported"));
+			return nullptr;
+#endif
+
 	}
-	return NULL;
+	return nullptr;
 }
 
 /**
- * Returns the pointer to where the device pointer resides. This can be used to delete the current device and install a new one. 
- * For Temperature sensors, the returned pointer points to a TempSensor*. The basic device can be fetched by calling
- * TempSensor::getSensor().
+ * Returns the pointer to where the device pointer resides.
+ *
+ * This can be used to delete the current device and install a new one.  For
+ * Temperature sensors, the returned pointer points to a TempSensor*. The basic
+ * device can be fetched by calling TempSensor::getSensor().
+ *
+ * @param config
  */
 inline void** deviceTarget(DeviceConfig& config)
 {
 	// for multichamber, will write directly to the multi-chamber managed storage.
-	// later...	
+	// later...
 	if (config.chamber>1 || config.beer>1)
-		return NULL;
-	
+		return nullptr;
+
 	void** ppv;
 	switch (config.deviceFunction) {
 	case DEVICE_CHAMBER_ROOM_TEMP:
@@ -176,13 +222,13 @@ inline void** deviceTarget(DeviceConfig& config)
 		break;
 	case DEVICE_CHAMBER_FAN:
 		ppv = (void**)&tempControl.fan;
-		break;		
-	
+		break;
+
 	case DEVICE_BEER_TEMP:
 		ppv = (void**)&tempControl.beerSensor;
 		break;
 	default:
-		ppv = NULL;
+		ppv = nullptr;
 	}
 	return ppv;
 }
@@ -199,25 +245,27 @@ inline BasicTempSensor& unwrapSensor(DeviceFunction f, void* pv) {
 }
 
 inline void setSensor(DeviceFunction f, void** ppv, BasicTempSensor* sensor) {
-	if (isBasicSensor(f)) 
+	if (isBasicSensor(f))
 		*ppv = sensor;
 	else
 		((TempSensor*)*ppv)->setSensor(sensor);
 }
 
+
 /**
  * Removes an installed device.
- * /param config The device to remove. The fields that are used are
+ *
+ * @param config - The device to remove. The fields that are used are
  *		chamber, beer, hardware and function.
  */
-
 void DeviceManager::uninstallDevice(DeviceConfig& config)
 {
 	DeviceType dt = deviceType(config.deviceFunction);
-	void** ppv = deviceTarget(config);	
-	if (ppv==NULL)
+	void** ppv = deviceTarget(config);
+	bool deviceFound = false;
+	if (ppv==nullptr)
 		return;
-	
+
 	BasicTempSensor* s;
 	switch(dt) {
 		case DEVICETYPE_NONE:
@@ -229,13 +277,17 @@ void DeviceManager::uninstallDevice(DeviceConfig& config)
 				setSensor(config.deviceFunction, ppv, &defaultTempSensor);
 //				DEBUG_ONLY(logInfoInt(INFO_UNINSTALL_TEMP_SENSOR, config.deviceFunction));
 				delete s;
+				deviceFound = true;
 			}
 			break;
 		case DEVICETYPE_SWITCH_ACTUATOR:
 			if (*ppv!=&defaultActuator) {
 //				DEBUG_ONLY(logInfoInt(INFO_UNINSTALL_ACTUATOR, config.deviceFunction));
+				if(((Actuator*)*ppv)->isActive())
+					((Actuator*)*ppv)->setActive(false);
 				delete (Actuator*)*ppv;
 				*ppv = &defaultActuator;
+				deviceFound = true;
 			}
 			break;
 		case DEVICETYPE_SWITCH_SENSOR:
@@ -243,21 +295,28 @@ void DeviceManager::uninstallDevice(DeviceConfig& config)
 //				DEBUG_ONLY(logInfoInt(INFO_UNINSTALL_SWITCH_SENSOR, config.deviceFunction));
 				delete (SwitchSensor*)*ppv;
 				*ppv = &defaultSensor;
+				deviceFound = true;
 			}
 			break;
-	}		
+	}
+	if(deviceFound)
+		eepromManager.deleteDeviceWithFunction(config.deviceFunction);
 }
 
+
 /**
- * Creates and installs a device in the current chamber. 
+ * Creates and installs a device in the current chamber.
+ *
+ * @param config
+ * @return true if a device was installed. false if the config is not complete.
  */
 void DeviceManager::installDevice(DeviceConfig& config)
-{	
+{
 	DeviceType dt = deviceType(config.deviceFunction);
 	void** ppv = deviceTarget(config);
-	if (ppv==NULL || config.hw.deactivate)
+	if (ppv==nullptr || config.hw.deactivate)
 		return;
-		
+
 	BasicTempSensor* s;
 	TempSensor* ts;
 	switch(dt) {
@@ -267,213 +326,267 @@ void DeviceManager::installDevice(DeviceConfig& config)
 			DEBUG_ONLY(logInfoInt(INFO_INSTALL_TEMP_SENSOR, config.deviceFunction));
 			// sensor may be wrapped in a TempSensor class, or may stand alone.
 			s = (BasicTempSensor*)createDevice(config, dt);
-			if (*ppv==NULL){
+			if (*ppv==nullptr){
 				logErrorInt(ERROR_OUT_OF_MEMORY_FOR_DEVICE, config.deviceFunction);
 			}
 			if (isBasicSensor(config.deviceFunction)) {
 				s->init();
-				*ppv = s;				
-			}
-			else {
+				*ppv = s;
+			} else {
 				ts = ((TempSensor*)*ppv);
 				ts->setSensor(s);
 				ts->init();
 			}
 #if BREWPI_SIMULATE
 			((ExternalTempSensor*)s)->setConnected(true);	// now connect the sensor after init is called
-#endif			
+#endif
 			break;
 		case DEVICETYPE_SWITCH_ACTUATOR:
 		case DEVICETYPE_SWITCH_SENSOR:
 			DEBUG_ONLY(logInfoInt(INFO_INSTALL_DEVICE, config.deviceFunction));
 			*ppv = createDevice(config, dt);
 #if (BREWPI_DEBUG > 0)
-			if (*ppv==NULL)
+			if (*ppv==nullptr)
 				logErrorInt(ERROR_OUT_OF_MEMORY_FOR_DEVICE, config.deviceFunction);
-#endif			
-			break;
-	}	
-}	
-
-struct DeviceDefinition {
-	int8_t id;
-	int8_t chamber;
-	int8_t beer;
-	int8_t deviceFunction;
-	int8_t deviceHardware;
-	int8_t pinNr;
-	int8_t invert;	
-	int8_t pio;
-	int8_t deactivate;
-	int8_t calibrationAdjust;
-	DeviceAddress address;
-		
-	/**
-	 * Lists the first letter of the key name for each attribute.
-	 */
-	static const char ORDER[12];
-};
-
-// the special cases are placed at the end. All others should map directly to an int8_t via atoi().
-const char DeviceDefinition::ORDER[12] = "icbfhpxndja";
-
-const char DEVICE_ATTRIB_INDEX = 'i';
-const char DEVICE_ATTRIB_CHAMBER = 'c';
-const char DEVICE_ATTRIB_BEER = 'b';
-const char DEVICE_ATTRIB_FUNCTION = 'f';
-const char DEVICE_ATTRIB_HARDWARE = 'h';
-const char DEVICE_ATTRIB_PIN = 'p';
-const char DEVICE_ATTRIB_INVERT = 'x';
-const char DEVICE_ATTRIB_DEACTIVATED = 'd';
-const char DEVICE_ATTRIB_ADDRESS = 'a';
-#if BREWPI_DS2413
-const char DEVICE_ATTRIB_PIO = 'n';
 #endif
-const char DEVICE_ATTRIB_CALIBRATEADJUST = 'j';	// value to add to temp sensors to bring to correct temperature
-
-const char DEVICE_ATTRIB_VALUE = 'v';		// print current values
-const char DEVICE_ATTRIB_WRITE = 'w';		// write value to device
-
-const char DEVICE_ATTRIB_TYPE = 't';
-
-
-void handleDeviceDefinition(const char* key, const char* val, void* pv)
-{
-	DeviceDefinition* def = (DeviceDefinition*) pv;
-//	logDebug("deviceDef %s:%s", key, val);
-	
-	// the characters are listed in the same order as the DeviceDefinition struct.
-	int8_t idx = indexOf(DeviceDefinition::ORDER, key[0]);
-	if (key[0]==DEVICE_ATTRIB_ADDRESS)
-		parseBytes(def->address, val, 8);
-	else if (key[0]==DEVICE_ATTRIB_CALIBRATEADJUST) {
-		def->calibrationAdjust = fixed4_4(stringToTempDiff(val)>>(TEMP_FIXED_POINT_BITS-CALIBRATION_OFFSET_PRECISION));
-	}		
-	else if (idx>=0) 
-		((uint8_t*)def)[idx] = (uint8_t)atol(val);
+			break;
+	}
 }
 
+
+// the special cases are placed at the end. All others should map directly to an int8_t via atoi().
+// const char DeviceDefinition::ORDER[12] = "icbfhpxndja";
+
+
+/**
+ * \brief Parse JSON doc and populate a DeviceDefinition
+ *
+ * \param doc - JSON document containing DeviceDefinition parameters
+ * @return populated DeviceDefinition
+ */
+DeviceDefinition DeviceManager::readJsonIntoDeviceDef(const DynamicJsonDocument& doc) {
+	DeviceDefinition dev;
+
+	if(doc[DeviceDefinitionKeys::hardware].is<uint8_t>()) {
+		dev.deviceHardware = doc[DeviceDefinitionKeys::hardware].as<uint8_t>();
+	}
+
+	const char* address = doc[DeviceDefinitionKeys::address].as<const char *>();
+
+	if(address) {
+	  switch(dev.deviceHardware) {
+		case DEVICE_HARDWARE_ONEWIRE_TEMP:
+			parseBytes(dev.address, address, 8);
+			break;
+#ifdef HAS_BLUETOOTH
+		case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
+		case DEVICE_HARDWARE_BLUETOOTH_TILT:
+			dev.btAddress = NimBLEAddress(doc[DeviceDefinitionKeys::address].as<std::string>());
+			break;
+#endif
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+		case DEVICE_HARDWARE_TPLINK_SWITCH:
+			snprintf(dev.tplink_mac, 18, "%s", doc[DeviceDefinitionKeys::address].as<const char *>());
+			snprintf(dev.tplink_child_id, 3, "%s", doc[DeviceDefinitionKeys::child_id].as<const char *>());
+			break;
+#endif
+		default:
+			break;
+	  }
+  }
+
+	if(doc.containsKey(DeviceDefinitionKeys::calibrateadjust)) {
+		temperature tempDiff = 0;
+		if(doc[DeviceDefinitionKeys::calibrateadjust].is<double>()) {
+			char buff[10];
+			dtostrf(doc[DeviceDefinitionKeys::calibrateadjust].as<double>(), 4, 6, buff);
+			tempDiff = stringToTempDiff(buff);
+		} else if(doc[DeviceDefinitionKeys::calibrateadjust].is<const char *>())
+			tempDiff = stringToTempDiff(doc[DeviceDefinitionKeys::calibrateadjust].as<const char *>());
+		dev.calibrationAdjust = fixed4_4(tempDiff >> (TEMP_FIXED_POINT_BITS - TEMP_CALIBRATION_OFFSET_PRECISION));
+	}
+
+	// dev.id defaults to -1, so if this fails, the device won't get processed by deviceManager.updateDeviceDefinition
+	if(doc.containsKey(DeviceDefinitionKeys::index) && doc[DeviceDefinitionKeys::index].is<uint8_t>())
+		dev.id = doc[DeviceDefinitionKeys::index].as<uint8_t>();
+
+	if(doc.containsKey(DeviceDefinitionKeys::chamber) && doc[DeviceDefinitionKeys::chamber].is<uint8_t>())
+		dev.chamber = doc[DeviceDefinitionKeys::chamber].as<uint8_t>();
+
+	if(doc.containsKey(DeviceDefinitionKeys::beer) && doc[DeviceDefinitionKeys::beer].is<uint8_t>())
+		dev.beer = doc[DeviceDefinitionKeys::beer].as<uint8_t>();
+
+	if(doc.containsKey(DeviceDefinitionKeys::function) && doc[DeviceDefinitionKeys::function].is<uint8_t>())
+		dev.deviceFunction = doc[DeviceDefinitionKeys::function].as<uint8_t>();
+
+	dev.deactivate = false;
+
+	if(doc.containsKey(DeviceDefinitionKeys::pin) && doc[DeviceDefinitionKeys::pin].is<uint8_t>())
+		dev.pinNr = doc[DeviceDefinitionKeys::pin].as<uint8_t>();
+
+	if(doc.containsKey(DeviceDefinitionKeys::invert)) {
+		if(doc[DeviceDefinitionKeys::invert].is<bool>())
+			dev.invert = doc[DeviceDefinitionKeys::invert].as<bool>() ? 1 : 0;
+		else if(doc[DeviceDefinitionKeys::invert].is<const char *>())
+			dev.invert = doc[DeviceDefinitionKeys::invert].as<const char*>()[0] == '1' ? 1 : 0;
+		else if (doc[DeviceDefinitionKeys::invert].is<uint8_t>())
+			dev.invert = doc[DeviceDefinitionKeys::invert].as<uint8_t>();
+	} 
+
+  return dev;
+}
+
+/**
+ * \brief Check if value is within a range
+ * \param val - Value to check
+ * \param min - Lower bound
+ * \param max - Upper bound
+ */
 bool inRangeUInt8(uint8_t val, uint8_t min, int8_t max) {
 	return min<=val && val<=max;
 }
 
+/**
+ * \brief Check if value is within a range
+ * \param val - Value to check
+ * \param min - Lower bound
+ * \param max - Upper bound
+ */
 bool inRangeInt8(int8_t val, int8_t min, int8_t max) {
 	return min<=val && val<=max;
 }
 
+
+/**
+ * \brief Set target to value if value is set
+ * \param value - Source value
+ * \param target - Variable to set, if value is set
+ */
 void assignIfSet(int8_t value, uint8_t* target) {
 	if (value>=0)
 		*target = (uint8_t)value;
 }
 
 /**
- * Updates the device definition. Only changes that result in a valid device, with no conflicts with other devices
- * are allowed. 
+ * \brief Safely updates the device definition.
+ *
+ * Only changes that result in a valid device, with no conflicts with other
+ * devices are allowed.
  */
-void DeviceManager::parseDeviceDefinition()
-{	
-	static DeviceDefinition dev;
-	fill((int8_t*)&dev, sizeof(dev));
-	
-	piLink.parseJson(&handleDeviceDefinition, &dev);
-	
-	if (!inRangeInt8(dev.id, 0, MAX_DEVICE_SLOT))			// no device id given, or it's out of range, can't do anything else.
-		return;
-
-#ifdef FORCE_DEVICE_DEFAULTS
-	// If FORCE_DEVICE_DEFAULTS is set, overwrite the chamber/beer number to prevent user error.
-	dev.chamber = 1;
-	if (dev.deviceFunction >= 9 && dev.deviceFunction <= 15)
-		dev.beer = 1;
-	else
-		dev.beer = 0;
-#endif
-	
+DeviceConfig DeviceManager::updateDeviceDefinition(DeviceDefinition dev)
+{
 	// save the original device so we can revert
 	DeviceConfig target;
 	DeviceConfig original;
-	
-	// todo - should ideally check if the eeprom is correctly initialized.
-	eepromManager.fetchDevice(original, dev.id);
-	memcpy(&target, &original, sizeof(target));
-
-//	piLink.print("Dev Chamber: %d, Dev Beer: %d, Dev Function: %d, Dev Hardware: %d, Dev PinNr: %d\r\n", dev.chamber, dev.beer, dev.deviceFunction, dev.deviceHardware, dev.pinNr);
-//	piLink.print("target Chamber: %d, target Beer: %d, target Function: %d, target Hardware: %d, target PinNr: %d\r\n", target.chamber,
-//		target.beer, target.deviceFunction, target.deviceHardware, target.hw.pinNr);
 
 
-	assignIfSet(dev.chamber, &target.chamber);
-	assignIfSet(dev.beer, &target.beer);
-	assignIfSet(dev.deviceFunction, (uint8_t*)&target.deviceFunction);
-	assignIfSet(dev.deviceHardware, (uint8_t*)&target.deviceHardware);
-	assignIfSet(dev.pinNr, &target.hw.pinNr);
-	
-		
-#if BREWPI_DS2413	
-	assignIfSet(dev.pio, &target.hw.pio);
-#endif		
-	
-	if (dev.calibrationAdjust!=-1)		// since this is a union, it also handles pio for 2413 sensors
+	if (!inRangeInt8(dev.id, 0, Config::EepromFormat::MAX_DEVICES))	{
+		// no device id given, or it's out of range, can't do anything else.
+		// piLink.print_fmt("Out of range: %d", dev.id);
+		// piLink.printNewLine();
+		original.setDefaults();  // This may create some issues, but it's better than returning a null pointer
+		return original;
+	}
+
+  if(Config::forceDeviceDefaults) {
+    // Overwrite the chamber/beer number to prevent user error.
+    dev.chamber = 1;
+
+    // Check if device function is beer specific
+    if (dev.deviceFunction >= DEVICE_BEER_FIRST && dev.deviceFunction < DEVICE_MAX)
+      dev.beer = 1;
+    else
+      dev.beer = 0;
+  }
+
+	// Fetch either the saved device (or an empty one if a saved one doesn't exist) 
+	original = eepromManager.fetchDevice(dev.id);
+	target = original;
+
+
+	target.chamber = dev.chamber;
+	target.beer = dev.beer;
+	target.deviceFunction = (DeviceFunction) dev.deviceFunction;
+	target.deviceHardware = (DeviceHardware) dev.deviceHardware;
+	target.hw.pinNr = dev.pinNr;
+
+
+#if BREWPI_DS2413
+	target.hw.pio = dev.pio;
+#error The above/following code may no longer work for 2413 sensors. Check on this if this is enabled!
+#endif
+	// The following may no longer work for 2413 sensors
+	if (dev.deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP
+		|| dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD || dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT 
+		)
 		target.hw.calibration = dev.calibrationAdjust;
 
-	assignIfSet(dev.invert, (uint8_t*)&target.hw.invert);
-		
-	if (dev.address[0] != 0xFF) {// first byte is family identifier. I don't have a complete list, but so far 0xFF is not used.
+	target.hw.invert = (bool) dev.invert;
+
+
+#ifdef HAS_BLUETOOTH
+	if(dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD || dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT) {
+		target.hw.btAddress = dev.btAddress;
+	} else
+#endif
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+	if(dev.deviceHardware == DEVICE_HARDWARE_TPLINK_SWITCH) {
+		snprintf(target.hw.tplink_mac, 18, "%s", dev.tplink_mac);
+		snprintf(target.hw.tplink_child_id, 3, "%s", dev.tplink_child_id);
+	} else
+#endif
+	if (dev.address[0] != 0xFF && dev.deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP) { // first byte is family identifier. I don't have a complete list, but so far 0xFF is not used.
 		memcpy(target.hw.address, dev.address, 8);
 	}
-	assignIfSet(dev.deactivate, (uint8_t*)&target.hw.deactivate);
-	
+
+	target.hw.deactivate = (bool) dev.deactivate;
+
 	// setting function to none clears all other fields.
-	if (target.deviceFunction==DEVICE_NONE) {
-		piLink.print("Function set to NONE\r\n");
-		clear((uint8_t*)&target, sizeof(target));
-	}
-	
+	if (target.deviceFunction==DEVICE_NONE)
+		target.setDefaults();
+
 	bool valid = isDeviceValid(target, original, dev.id);
-	DeviceConfig* print = &original;
-	if (valid) {		
-		print = &target;
+	if (valid) {
 		// remove the device associated with the previous function
 		uninstallDevice(original);
 		// also remove any existing device for the new function, since install overwrites any existing definition.
 		uninstallDevice(target);
-		installDevice(target);		
-		eepromManager.storeDevice(target, dev.id);		
-	}	
+		installDevice(target);
+		eepromManager.storeDevice(target, dev.id);
+		return target;
+	}
 	else {
 		logError(ERROR_DEVICE_DEFINITION_UPDATE_SPEC_INVALID);
+		return original;
 	}
-	piLink.printResponse('U');
-	deviceManager.beginDeviceOutput();
-	deviceManager.printDevice(dev.id, *print, NULL);
-	piLink.printNewLine();
 }
 
 /**
  * Determines if a given device definition is valid.
- * chamber/beer must be within bounds
- * device function must match the chamber/beer spec, and must not already be defined for the same chamber/beer combination
- * device hardware type must be applicable with the device function
- * pinNr must be unique for digital pin devices?
- * pinNr must be a valid OneWire bus for one wire devices.
- * for onewire temp devices, address must be unique.
- * for onewire ds2413 devices, address+pio must be unique.
+ *
+ * Validity is defiend by:
+ * - Chamber & beer must be within bounds
+ * - Device function must match the chamber/beer spec, and must not already be defined for the same chamber/beer combination - Not Implemented
+ * - Device hardware type must be applicable with the device function
+ * - pinNr must be unique for digital pin devices - Not Implemented
+ * - pinNr must be a valid OneWire bus for one wire devices.
+ * - For OneWire temp devices, address must be unique. - Not Implemented
+ * - For OneWire DS2413 devices, address+pio must be unique. - Not Implemented
  */
 bool DeviceManager::isDeviceValid(DeviceConfig& config, DeviceConfig& original, int8_t deviceIndex)
 {
-#if 1
 	/* Implemented checks to ensure the system will not crash when supplied with invalid data.
 	   More refined checks that may cause confusing results are not yet implemented. See todo below. */
-	
+
 	/* chamber and beer within range.*/
-	if (!inRangeUInt8(config.chamber, 0, EepromFormat::MAX_CHAMBERS))
+	if (!inRangeUInt8(config.chamber, 0, Config::EepromFormat::MAX_CHAMBERS))
 	{
 		logErrorInt(ERROR_INVALID_CHAMBER, config.chamber);
 		return false;
 	}
 
 	/* 0 is allowed - represents a chamber device not assigned to a specific beer */
-	if (!inRangeUInt8(config.beer, 0, ChamberBlock::MAX_BEERS))
+	if (!inRangeUInt8(config.beer, 0, Config::EepromFormat::MAX_BEERS))
 	{
 		logErrorInt(ERROR_INVALID_BEER, config.beer);
 		return false;
@@ -486,164 +599,100 @@ bool DeviceManager::isDeviceValid(DeviceConfig& config, DeviceConfig& original, 
 	}
 
 	DeviceOwner owner = deviceOwner(config.deviceFunction);
-	if (!((owner==DEVICE_OWNER_BEER && config.beer) || (owner==DEVICE_OWNER_CHAMBER && config.chamber) 
-		|| (owner==DEVICE_OWNER_NONE && !config.beer && !config.chamber))) 
+	if (!((owner==DEVICE_OWNER_BEER && config.beer) || (owner==DEVICE_OWNER_CHAMBER && config.chamber)
+		|| (owner==DEVICE_OWNER_NONE && !config.beer && !config.chamber)))
 	{
-		logErrorIntIntInt(ERROR_INVALID_DEVICE_CONFIG_OWNER, owner, config.beer, config.chamber);	
+		logErrorIntIntInt(ERROR_INVALID_DEVICE_CONFIG_OWNER, owner, config.beer, config.chamber);
 		return false;
 	}
-		
+
 	// todo - find device at another index with the same chamber/beer/function spec.
-	// with duplicate function defined for the same beer, that they will both try to create/delete the device in the target location. 
-	// The highest id will win.	
+	// with duplicate function defined for the same beer, that they will both try to create/delete the device in the target location.
+	// The highest id will win.
 	DeviceType dt = deviceType(config.deviceFunction);
 	if (!isAssignable(dt, config.deviceHardware)) {
 		logErrorIntInt(ERROR_CANNOT_ASSIGN_TO_HARDWARE, dt, config.deviceHardware);
 		return false;
 	}
-			
+
 	// todo - check pinNr uniqueness for direct digital I/O devices?
-	
+
 	/* pinNr for a onewire device must be a valid bus. While this won't cause a crash, it's a good idea to validate this. */
-	if (isOneWire(config.deviceHardware)) {	
+	if (isOneWire(config.deviceHardware)) {
 		if (!oneWireBus(config.hw.pinNr)) {
 			logErrorInt(ERROR_NOT_ONEWIRE_BUS, config.hw.pinNr);
 			return false;
 		}
 	}
 	else {		// regular pin device
-		// todo - could verify that the pin nr corresponds to enumActuatorPins/enumSensorPins		
+		// todo - could verify that the pin nr corresponds to enumActuatorPins/enumSensorPins
 	}
-	
-#endif
-	// todo - for onewire temp, ensure address is unique	
+
+	// todo - for onewire temp, ensure address is unique
 	// todo - for onewire 2413 check address+pio nr is unique
 	return true;
-}	
-
-void printAttrib(Print& p, char c, int8_t val, bool first=false) 
-{		
-	if (!first)
-        	p.print(',');
-
-	char tempString[32]; // resulting string limited to 128 chars
-	sprintf_P(tempString, PSTR("\"%c\":%d"), c, val);
-	p.print(tempString);
 }
 
-// I really want to buffer stuff rather than printing directly to the serial stream
-void appendAttrib(String& str, char c, int8_t val, bool first = false)
-{
-	if (!first)
-		str += ",";
 
-	char tempString[32]; // resulting string limited to 128 chars
-	sprintf_P(tempString, PSTR("\"%c\":%d"), c, val);
-	str += tempString;
-}
-
+/**
+ * Check if DeviceHardware definition is for a device which is "invertable"
+ *
+ * @param hw - DeviceHardware definition
+ */
 inline bool hasInvert(DeviceHardware hw)
 {
 	return hw==DEVICE_HARDWARE_PIN
-#if BREWPI_DS2413	
-	|| hw==DEVICE_HARDWARE_ONEWIRE_2413 
-#endif	
+#if BREWPI_DS2413
+	|| hw==DEVICE_HARDWARE_ONEWIRE_2413
+#endif
 	;
 }
 
+
+/**
+ * \brief Check if DeviceHardware definition is for a OneWire device
+ *
+ * \param hw - DeviceHardware definition
+ */
 inline bool hasOnewire(DeviceHardware hw)
 {
-	return 
+	return
 #if BREWPI_DS2413
-	hw==DEVICE_HARDWARE_ONEWIRE_2413 || 
-#endif	
+	hw==DEVICE_HARDWARE_ONEWIRE_2413 ||
+#endif
 	hw==DEVICE_HARDWARE_ONEWIRE_TEMP;
 }
 
-void DeviceManager::printDevice(device_slot_t slot, DeviceConfig& config, const char* value)
-{	
-	String deviceString;
-	char buf[17];
 
-	DeviceType dt = deviceType(config.deviceFunction);
-	if (!firstDeviceOutput) {
-		// p.print('\n');
-//		p.print(',');
-		deviceString = ",";
-	} else {
-		deviceString = "";
-	}
-	firstDeviceOutput = false;
-	deviceString += "{";
+/**
+ * \brief Add device information to a JsonDocument
+ *
+ * Used for outputting device information
+ */
+void DeviceManager::serializeJsonDevice(JsonDocument& doc, device_slot_t slot, DeviceConfig& config, const char* value) {
+	DynamicJsonDocument deviceObj(1024);
+	config.toJson(deviceObj);
 
+	if(strlen(value) > 0)
+		deviceObj[DeviceDefinitionKeys::value] = value;  // NOTE - value must be char*, not const char* or ArduinoJson will not copy the value - just link it
 
-	appendAttrib(deviceString, DEVICE_ATTRIB_INDEX, slot, true);
-	appendAttrib(deviceString, DEVICE_ATTRIB_TYPE, dt);
-	
-	appendAttrib(deviceString, DEVICE_ATTRIB_CHAMBER, config.chamber);
-	appendAttrib(deviceString, DEVICE_ATTRIB_BEER, config.beer);
-	appendAttrib(deviceString, DEVICE_ATTRIB_FUNCTION, config.deviceFunction);
-	appendAttrib(deviceString, DEVICE_ATTRIB_HARDWARE, config.deviceHardware);
-	appendAttrib(deviceString, DEVICE_ATTRIB_DEACTIVATED, config.hw.deactivate);
-	appendAttrib(deviceString, DEVICE_ATTRIB_PIN, config.hw.pinNr);
-	if (value && *value) {
-		deviceString += ",\"v\":";
-		deviceString += value;
-	}
-	if (hasInvert(config.deviceHardware))	
-		appendAttrib(deviceString, DEVICE_ATTRIB_INVERT, config.hw.invert);
-	
-	if (hasOnewire(config.deviceHardware)) {
-		deviceString += ",\"a\":\"";
-		printBytes(config.hw.address, 8, buf);
-		deviceString += buf;
-		deviceString += '"';
-	}	
-#if BREWPI_DS2413		
-	if (config.deviceHardware==DEVICE_HARDWARE_ONEWIRE_2413) {
-		appendAttrib(deviceString, DEVICE_ATTRIB_PIO, config.hw.pio);
-	}
-#endif	
-	if (config.deviceHardware==DEVICE_HARDWARE_ONEWIRE_TEMP) {
-		tempDiffToString(buf, temperature(config.hw.calibration)<<(TEMP_FIXED_POINT_BITS-CALIBRATION_OFFSET_PRECISION), 3, 8);
-		deviceString += ",\"j\":";
-		deviceString += buf;
-	}
-	deviceString += '}';
+	deviceObj[DeviceDefinitionKeys::index] = slot;
 
-	piLink.print_P(deviceString.c_str());
-}	
-	
-bool DeviceManager::allDevices(DeviceConfig& config, uint8_t deviceIndex)
-{	
-	return eepromManager.fetchDevice(config, deviceIndex);
-}	
-
-void parseBytes(uint8_t* data, const char* s, uint8_t len) {
-	char c;
-	while ((c=*s++)) {
-		uint8_t d = (c>='A' ? c-'A'+10 : c-'0')<<4;
-		c = *s++;
-		d |= (c>='A' ? c-'A'+10 : c-'0');
-		*data++ = d;
-	}
+	doc.add(deviceObj);
+	return;
 }
 
-void printBytes(uint8_t* data, uint8_t len, char* buf) // prints 8-bit data in hex
-{
-	for (int i=0; i<len; i++) {
-		uint8_t b = (data[i] >> 4) & 0x0f;
-		*buf++ = (b>9 ? b-10+'A' : b+'0');
-		b = data[i] & 0x0f;
-		*buf++ = (b>9 ? b-10+'A' : b+'0');
-	}
-	*buf = 0;
-}
 
-void DeviceManager::OutputEnumeratedDevices(DeviceConfig* config, void* pv)
+
+/**
+ * \brief EnumDevicesCallback function that adds the device to a JsonDocument
+ *
+ * \see serializeJsonDevice
+ */
+void DeviceManager::outputEnumeratedDevices(DeviceConfig* config, void* pv, JsonDocument* doc)
 {
 	DeviceOutput* out = (DeviceOutput*)pv;
-	printDevice(out->slot, *config, out->value);
+  serializeJsonDevice(*doc, out->slot, *config, out->value);
 }
 
 bool DeviceManager::enumDevice(DeviceDisplay& dd, DeviceConfig& dc, uint8_t idx)
@@ -654,26 +703,10 @@ bool DeviceManager::enumDevice(DeviceDisplay& dd, DeviceConfig& dc, uint8_t idx)
 		return (dd.id==idx);						// enumerate only the specific device requested
 }
 
-struct EnumerateHardware
-{
-	int8_t hardware;		// restrict the types of devices requested
-	int8_t pin;				// pin to search
-	int8_t values;			// fetch values for the devices.
-	int8_t unused;			// 0 don't care about unused state, 1 unused only.
-	int8_t function;		// restrict to devices that can be used with this function
-};
 
-void handleHardwareSpec(const char* key, const char* val, void* pv)
-{
-	EnumerateHardware* h = (EnumerateHardware*)pv;
-//	logDebug("hardwareSpec %s:%s", key, val);
-	
-	int8_t idx = indexOf("hpvuf", key[0]);
-	if (idx>=0) {
-		*((int8_t*)h+idx) = atol(val);
-	}			
-}
-
+/**
+ * \brief Compare device addresses
+ */
 inline bool matchAddress(uint8_t* detected, uint8_t* configured, uint8_t count) {
 	if (!configured[0])
 		return true;
@@ -685,26 +718,45 @@ inline bool matchAddress(uint8_t* detected, uint8_t* configured, uint8_t count) 
 }
 
 /**
- * Find a device based on it's location.
+ * \brief Find a device based on it's location.
  * A device's location is:
- *   pinNr  for simple digital pin devices
- *   pinNr+address for one-wire devices
- *   pinNr+address+pio for 2413
+ *   - pinNr  for simple digital pin devices
+ *   - pinNr+address for one-wire devices
+ *   - pinNr+address+pio for 2413
+ *   - btAddress for bluetooth devices (Tilt/Inkbird)
+ *   - tplink_mac+tplink_child_id for tplink devices
  */
 device_slot_t findHardwareDevice(DeviceConfig& find)
 {
 	DeviceConfig config;
-	for (device_slot_t slot= 0; deviceManager.allDevices(config, slot); slot++) {
+	for (device_slot_t slot= 0; slot<Config::EepromFormat::MAX_DEVICES ; slot++) {
+		config = eepromManager.fetchDevice(slot);
+
 		if (find.deviceHardware==config.deviceHardware) {
 			bool match = true;
 			switch (find.deviceHardware) {
+#ifdef HAS_BLUETOOTH
+				case DEVICE_HARDWARE_BLUETOOTH_TILT:
+				case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
+					match &= find.hw.btAddress == config.hw.btAddress;
+					break;
+#endif
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+				case DEVICE_HARDWARE_TPLINK_SWITCH:
+					if (strcmp(find.hw.tplink_mac, config.hw.tplink_mac) == 0 && strcmp(find.hw.tplink_child_id, config.hw.tplink_child_id) == 0)
+						match &= true;
+					else
+						match &= false;
+					break;
+#endif
+
 #if BREWPI_DS2413
 				case DEVICE_HARDWARE_ONEWIRE_2413:
-					match &= find.hw.pio==config.hw.pio;					
+					match &= find.hw.pio==config.hw.pio;
 					// fall through
-#endif					
+#endif
 				case DEVICE_HARDWARE_ONEWIRE_TEMP:
-					match &= matchAddress(find.hw.address, config.hw.address, 8);					
+					match &= matchAddress(find.hw.address, config.hw.address, 8);
 					// fall through
 				case DEVICE_HARDWARE_PIN:
 					match &= find.hw.pinNr==config.hw.pinNr;
@@ -718,6 +770,12 @@ device_slot_t findHardwareDevice(DeviceConfig& find)
 	return INVALID_SLOT;
 }
 
+
+/**
+ * \brief Read a temp sensor device and convert the value into a string.
+ *
+ * **Warning:** the read value does not include any calibration offset.
+ */
 inline void DeviceManager::readTempSensorValue(DeviceConfig::Hardware hw, char* out)
 {
 #if !BREWPI_SIMULATE
@@ -729,79 +787,108 @@ inline void DeviceManager::readTempSensorValue(DeviceConfig::Hardware hw, char* 
 	tempToString(out, temp, 3, 9);
 #else
 	strcpy_P(out, PSTR("0.00"));
-#endif	
+#endif
 }
 
-void DeviceManager::handleEnumeratedDevice(DeviceConfig& config, EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& out)
+
+/**
+ * \brief Process a found hardware device
+ *
+ * Used from the various enumerate* methods.
+ */
+void DeviceManager::handleEnumeratedDevice(DeviceConfig config_in, EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc)
 {
-	if (h.function && !isAssignable(deviceType(DeviceFunction(h.function)), config.deviceHardware)) 
+	DeviceOutput out;
+	DeviceConfig config = config_in;
+
+	if (h.function && !isAssignable(deviceType(DeviceFunction(h.function)), config.deviceHardware))
 		return; // device not applicable for required function
-		
-//	logDebug("Handling device");
+
 	out.slot = findHardwareDevice(config);
 	DEBUG_ONLY(logInfoInt(INFO_MATCHING_DEVICE, out.slot));
-		
+
 	if (isDefinedSlot(out.slot)) {
 		if (h.unused)	// only list unused devices, and this one is already used
 			return;
 		// display the actual matched value
-		deviceManager.allDevices(config, out.slot);
+		config = eepromManager.fetchDevice(out.slot);
 	}
-	
+
 	out.value[0] = 0;
 	if (h.values) {
-//		logDebug("Fetching device value");
 		switch (config.deviceHardware) {
 			case DEVICE_HARDWARE_ONEWIRE_TEMP:
 				readTempSensorValue(config.hw, out.value);
 				break;
-			// unassigned pins could be input or output so we can't determine any other details from here.
-			// values can be read once the pin has been assigned a function
+#if HAS_BLUETOOTH
+			case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
+				tempToString(out.value, bt_scanner.get_inkbird(config.hw.btAddress)->getTempFixedPoint(), 3, 9);
+				break;
+			case DEVICE_HARDWARE_BLUETOOTH_TILT:
+				tempToString(out.value, bt_scanner.get_tilt(config.hw.btAddress)->getTempFixedPoint(), 3, 9);
+				break;
+#endif
+
+      // unassigned pins could be input or output so we can't determine any
+      // other details from here.  values can be read once the pin has been
+      // assigned a function
 			default:
-				break;							
+				break;
 		}
-	}	
-//	logDebug("Passing device to callback");
-	callback(&config, &out);
+	}
+
+	callback(&config, &out, doc);
 }
 
-void DeviceManager::enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output) 
+
+/**
+ * \brief Enumerate the "pin" devices.
+ *
+ * Pin devices are those that are attached directly to a pin, not on a bus like OneWire
+ */
+void DeviceManager::enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc)
 {
 	DeviceConfig config;
-	clear((uint8_t*)&config, sizeof(config));
 	config.deviceHardware = DEVICE_HARDWARE_PIN;
 	config.chamber = 1; // chamber 1 is default
-	
-	int8_t pin;	
+
+	int8_t pin;
 	for (uint8_t count=0; (pin=deviceManager.enumerateActuatorPins(count))>=0; count++) {
 		if (h.pin!=-1 && h.pin!=pin)
 			continue;
 		config.hw.pinNr = pin;
 		config.hw.invert = true; // make inverted default, because shiels have transistor on them
-		handleEnumeratedDevice(config, h, callback, output);
-	}	
-	
+		handleEnumeratedDevice(config, h, callback, doc);
+	}
+
 	for (uint8_t count=0; (pin=deviceManager.enumerateSensorPins(count))>=0; count++) {
 		if (h.pin!=-1 && h.pin!=pin)
 			continue;
 		config.hw.pinNr = pin;
-		handleEnumeratedDevice(config, h, callback, output);
-	}	
+		handleEnumeratedDevice(config, h, callback, doc);
+	}
 }
 
-void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, DeviceOutput& output)
-{		
+
+/**
+ * \brief Enumerate all OneWire devices
+ *
+ * \param h - Hardware spec, used to filter sensors
+ * \param callback - Callback function, called for every found hardware device
+ * \param output -
+ * \param doc - JsonDocument to populate
+ */
+void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc)
+{
 #if !BREWPI_SIMULATE
-	int8_t pin;	
+	int8_t pin;
 	for (uint8_t count=0; (pin=deviceManager.enumOneWirePins(count))>=0; count++) {
 		DeviceConfig config;
-		clear((uint8_t*)&config, sizeof(config));
 		if (h.pin!=-1 && h.pin!=pin)
 			continue;
 		config.hw.pinNr = pin;
 		config.chamber = 1; // chamber 1 is default
-//		logDebug("Enumerating one-wire devices on pin %d", pin);
-		OneWire* wire = oneWireBus(pin);	
+		OneWire* wire = oneWireBus(pin);
 		if (wire!=NULL) {
 			wire->reset_search();
 			while (wire->search(config.hw.address)) {
@@ -811,10 +898,10 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 					case DS2413_FAMILY_ID:
 						config.deviceHardware = DEVICE_HARDWARE_ONEWIRE_2413;
 						break;
-		#endif				
-					case DS18B20MODEL:
+		#endif
+					case 0x28:  // DS18B20MODEL
 						config.deviceHardware = DEVICE_HARDWARE_ONEWIRE_TEMP;
-						break;				
+						break;
 					default:
 						config.deviceHardware = DEVICE_HARDWARE_NONE;
 				}
@@ -826,7 +913,7 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 						// enumerate each pin separately
 						for (uint8_t i=0; i<2; i++) {
 							config.hw.pio = i;
-							handleEnumeratedDevice(config, h, callback, output);
+							handleEnumeratedDevice(config, h, callback, doc);
 						}
 						break;
 		#endif
@@ -834,67 +921,193 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 		#if !ONEWIRE_PARASITE_SUPPORT
 						{	// check that device is not parasite powered
 							DallasTemperature sensor(wire);
-							if(sensor.initConnection(config.hw.address)){
-								handleEnumeratedDevice(config, h, callback, output);
+							if(initConnection(sensor, config.hw.address)){
+								handleEnumeratedDevice(config, h, callback, doc);
 							}
 						}
 		#else
-						handleEnumeratedDevice(config, h, callback, output);
+						handleEnumeratedDevice(config, h, callback, doc);
 		#endif
 						break;
 					default:
-						handleEnumeratedDevice(config, h, callback, output);	
+						handleEnumeratedDevice(config, h, callback, doc);
 				}
 			}
 		}
 	}
-#endif	
+#endif
 }
 
-void DeviceManager::enumerateHardware()
+
+#ifdef HAS_BLUETOOTH
+/**
+ * \brief Enumerate all Inkbird devices
+ *
+ * \param h - Hardware spec, used to filter sensors
+ * \param callback - Callback function, called for every found hardware device
+ * \param output -
+ * \param doc - JsonDocument to populate
+ */
+void DeviceManager::enumerateInkbirdDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc)
 {
-	EnumerateHardware spec;
-	// set up defaults
-	spec.unused = 0;			// list all devices
-	spec.values = 0;			// don't list values
-	spec.pin = -1;				// any pin
-	spec.hardware = -1;			// any hardware
-	spec.function = 0;			// no function restriction
-	
-	piLink.parseJson(handleHardwareSpec, &spec);	
-	DeviceOutput out;
+	DeviceConfig config;
+	config.hw.pinNr = 0;  			// 0 for wireless devices
+	config.chamber = 1; 			// chamber 1 is default
+	config.deviceHardware = DEVICE_HARDWARE_BLUETOOTH_INKBIRD;
 
+	for(inkbird & ib : lInkbirds) {
+		config.hw.btAddress = ib.deviceAddress;
+		handleEnumeratedDevice(config, h, callback, doc);
+    }
+}
 
-//	logDebug("Enumerating Hardware");
-	firstDeviceOutput = true;
+/**
+ * \brief Enumerate all Tilt devices
+ *
+ * \param h - Hardware spec, used to filter sensors
+ * \param callback - Callback function, called for every found hardware device
+ * \param output -
+ * \param doc - JsonDocument to populate
+ */
+void DeviceManager::enumerateTiltDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc)
+{
+	DeviceConfig config;
+	config.hw.pinNr = 0;  			// 0 for wireless devices
+	config.chamber = 1; 			// chamber 1 is default
+	config.deviceHardware = DEVICE_HARDWARE_BLUETOOTH_TILT;
+
+	for(tilt & th : lTilts) {
+		config.hw.btAddress = th.deviceAddress;
+		handleEnumeratedDevice(config, h, callback, doc);
+    }
+}
+#endif
+
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+/**
+ * \brief Enumerate all TPLink Kasa Smart Plug devices
+ *
+ * \param h - Hardware spec, used to filter sensors
+ * \param callback - Callback function, called for every found hardware device
+ * \param output -
+ * \param doc - JsonDocument to populate
+ */
+void DeviceManager::enumerateTplinkDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc)
+{
+	DeviceConfig config;
+	config.hw.pinNr = 0;  			// 0 for wireless devices
+	config.chamber = 1; 			// chamber 1 is default
+	config.deviceHardware = DEVICE_HARDWARE_TPLINK_SWITCH;
+
+	for(TPLinkPlug & tp : tp_link_scanner.lTPLinkPlugs) {
+		strcpy(config.hw.tplink_mac, tp.device_mac);
+		strcpy(config.hw.tplink_child_id, tp.child_id);
+		handleEnumeratedDevice(config, h, callback, doc);
+    }
+}
+#endif
+
+/**
+ * \brief Output devices matching hardware spec passed in
+ */
+void DeviceManager::enumerateHardware(DynamicJsonDocument& doc, EnumerateHardware spec)
+{
+
+	// Initialize the document as an array
+	doc.to<JsonArray>();
+
 	if (spec.hardware==-1 || isOneWire(DeviceHardware(spec.hardware))) {
-		enumerateOneWireDevices(spec, OutputEnumeratedDevices, out);
+		enumerateOneWireDevices(spec, outputEnumeratedDevices, &doc);
 	}
 	if (spec.hardware==-1 || isDigitalPin(DeviceHardware(spec.hardware))) {
-		enumeratePinDevices(spec, OutputEnumeratedDevices, out);
+		enumeratePinDevices(spec, outputEnumeratedDevices, &doc);
 	}
-	
-//	logDebug("Enumerating Hardware Complete");
+#ifdef HAS_BLUETOOTH
+	if (spec.hardware==-1 || spec.hardware==DEVICE_HARDWARE_BLUETOOTH_INKBIRD) {
+		enumerateInkbirdDevices(spec, outputEnumeratedDevices, &doc);
+	}
+	if (spec.hardware==-1 || spec.hardware==DEVICE_HARDWARE_BLUETOOTH_TILT) {
+		enumerateTiltDevices(spec, outputEnumeratedDevices, &doc);
+	}
+#endif
+
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+	if (spec.hardware==-1 || spec.hardware==DEVICE_HARDWARE_TPLINK_SWITCH) {
+		enumerateTplinkDevices(spec, outputEnumeratedDevices, &doc);
+	}
+#endif
+
 }
 
-
-void HandleDeviceDisplay(const char* key, const char* val, void* pv)
+/**
+ * \brief Output devices matching default hardware spec (all devices, no values)
+ */
+void DeviceManager::enumerateHardware(DynamicJsonDocument& doc)
 {
-	DeviceDisplay& dd = *(DeviceDisplay*)pv;
-	//logDeveloper("DeviceDisplay %s:%s"), key, val);
-	
-	int8_t idx = indexOf("irwe", key[0]);
-	if (idx>=0) {
-		*((int8_t*)&dd+idx) = atol(val);
-	}	
+	EnumerateHardware spec;
+	enumerateHardware(doc, spec);
 }
+
+/**
+ * \brief Parse JSON into a DeviceDisplay struct
+ */
+void DeviceManager::readJsonIntoDeviceDisplay(DeviceDisplay& dev) {
+  StaticJsonDocument<128> doc;
+  piLink.receiveJsonMessage(doc);
+
+  JsonVariant id = doc[DeviceDisplayKeys::index];
+  if(!id.isNull())
+    dev.id = id.as<int8_t>();
+
+  JsonVariant value = doc[DeviceDisplayKeys::value];
+  if(!value.isNull())
+    dev.value = value.as<int8_t>();
+
+  JsonVariant write = doc[DeviceDisplayKeys::write];
+  if(!write.isNull())
+    dev.write = write.as<int8_t>();
+
+  JsonVariant empty = doc[DeviceDisplayKeys::empty];
+  if(!empty.isNull())
+    dev.empty = empty.as<int8_t>();
+}
+
+
+/**
+ * \brief Parse JSON into an EnumerateHardware struct
+ */
+void DeviceManager::readJsonIntoHardwareSpec(EnumerateHardware& hw) {
+  StaticJsonDocument<128> doc;
+  piLink.receiveJsonMessage(doc);
+
+  JsonVariant hardware = doc[EnumerateHardwareKeys::hardware];
+  if(!hardware.isNull())
+    hw.hardware = hardware.as<int8_t>();
+
+  JsonVariant pin = doc[EnumerateHardwareKeys::pin];
+  if(!pin.isNull())
+    hw.pin = pin.as<int8_t>();
+
+  JsonVariant values = doc[EnumerateHardwareKeys::values];
+  if(!values.isNull())
+    hw.values = values.as<int8_t>();
+
+  JsonVariant unused = doc[EnumerateHardwareKeys::unused];
+  if(!unused.isNull())
+    hw.unused = unused.as<int8_t>();
+
+  JsonVariant function = doc[EnumerateHardwareKeys::function];
+  if(!function.isNull())
+    hw.function = function.as<int8_t>();
+}
+
 
 void UpdateDeviceState(DeviceDisplay& dd, DeviceConfig& dc, char* val)
 {
 	DeviceType dt = deviceType(dc.deviceFunction);
 	if (dt==DEVICETYPE_NONE)
 		return;
-		
+
 	void** ppv = deviceTarget(dc);
 	if (ppv==NULL)
 		return;
@@ -903,54 +1116,127 @@ void UpdateDeviceState(DeviceDisplay& dd, DeviceConfig& dc, char* val)
 		// write value to a specific device. For now, only actuators are relevant targets
 		DEBUG_ONLY(logInfoInt(INFO_SETTING_ACTIVATOR_STATE, dd.write!=0));
 		((Actuator*)*ppv)->setActive(dd.write!=0);
-	}
-	else if (dd.value==1) {		// read values 
+	} else if (dd.value==1) {		// read values
 		if (dt==DEVICETYPE_SWITCH_SENSOR) {
 			sprintf_P(val, STR_FMT_U, (unsigned int) ((SwitchSensor*)*ppv)->sense()!=0); // cheaper than itoa, because it overlaps with vsnprintf
-		}
-		else if (dt==DEVICETYPE_TEMP_SENSOR) {
+		} else if (dt==DEVICETYPE_TEMP_SENSOR) {
 			BasicTempSensor& s = unwrapSensor(dc.deviceFunction, *ppv);
 			temperature temp = s.read();
 			tempToString(val, temp, 3, 9);
-		}
-		else if (dt==DEVICETYPE_SWITCH_ACTUATOR) {
-			sprintf_P(val, STR_FMT_U, (unsigned int) ((Actuator*)*ppv)->isActive()!=0);			
+		} else if (dt==DEVICETYPE_SWITCH_ACTUATOR) {
+			sprintf_P(val, STR_FMT_U, (unsigned int) ((Actuator*)*ppv)->isActive()!=0);
 		}
 	}
 }
 
-void DeviceManager::listDevices() {
+/**
+ * \brief Print list of hardware devices
+ * \param doc - JsonDocument to add results to
+ */
+void DeviceManager::listDevices(JsonDocument& doc) {
 	DeviceConfig dc;
 	DeviceDisplay dd;
-	fill((int8_t*)&dd, sizeof(dd));
-	dd.empty = 0;
-	piLink.parseJson(HandleDeviceDisplay, (void*)&dd);
+
+  readJsonIntoDeviceDisplay(dd);
+    doc.to<JsonArray>();
+
 	if (dd.id==-2) {
 		if (dd.write>=0)
 			tempControl.cameraLight.setActive(dd.write!=0);
+
 		return;
 	}
-	deviceManager.beginDeviceOutput();
-	for (device_slot_t idx=0; deviceManager.allDevices(dc, idx); idx++) {
+
+	for (device_slot_t idx=0; idx<Config::EepromFormat::MAX_DEVICES; idx++) {
+		dc = eepromManager.fetchDevice(idx);
 		if (deviceManager.enumDevice(dd, dc, idx))
 		{
 			char val[10];
 			val[0] = 0;
 			UpdateDeviceState(dd, dc, val);
-			deviceManager.printDevice(idx, dc, val);			
+			deviceManager.serializeJsonDevice(doc, idx, dc, val);
 		}
-	}	
+	}
 }
+
+
+/**
+ * \brief Print the raw temp readings from all temp sensors.
+ *
+ * Allows logging temps that aren't part of the control logic.
+ * \param doc - JsonDocument to add results to
+ */
+void DeviceManager::rawDeviceValues(JsonDocument& doc) {
+	EnumerateHardware spec;
+	// set up defaults
+	spec.unused = 0;			// list all devices
+	spec.values = 0;			// don't list values
+	spec.pin = -1;				// any pin
+	spec.hardware = -1;		// any hardware
+	spec.function = 0;		// no function restriction
+
+	enumerateOneWireDevices(spec, outputRawDeviceValue, &doc);
+#ifdef HAS_BLUETOOTH
+	spec.values = 1;  // Costs nothing for non-Onewire temp sensors
+	enumerateInkbirdDevices(spec, outputRawDeviceValue, &doc);
+	enumerateTiltDevices(spec, outputRawDeviceValue, &doc);
+#endif
+}
+
+
+/**
+ * \brief Print the sensor's information & current reading.
+ */
+void DeviceManager::outputRawDeviceValue(DeviceConfig* config, void* pv, JsonDocument* doc)
+{
+  if(config->deviceHardware == DeviceHardware::DEVICE_HARDWARE_ONEWIRE_TEMP) {
+    // Read the temp
+    char str_temp[10];
+    DeviceManager::readTempSensorValue(config->hw, str_temp);
+
+    // Pretty-print the address
+    char devName[17];
+    printBytes(config->hw.address, 8, devName);
+
+    String humanName = DeviceNameManager::getDeviceName(devName);
+
+    JsonObject deviceObj = doc->createNestedObject();
+    deviceObj["device"] = devName;
+    deviceObj["value"] = str_temp;
+    deviceObj["name"] = humanName;
+  }
+
+#ifdef HAS_BLUETOOTH
+  if(config->deviceHardware == DeviceHardware::DEVICE_HARDWARE_BLUETOOTH_INKBIRD || 
+  	config->deviceHardware == DeviceHardware::DEVICE_HARDWARE_BLUETOOTH_TILT) {
+    // Read the temp
+    char str_temp[10];
+
+	if(config->deviceHardware == DeviceHardware::DEVICE_HARDWARE_BLUETOOTH_INKBIRD)
+		tempToString(str_temp, bt_scanner.get_inkbird(config->hw.btAddress)->getTempFixedPoint(), 3, 9);
+	else if(config->deviceHardware == DeviceHardware::DEVICE_HARDWARE_BLUETOOTH_TILT)
+		tempToString(str_temp, bt_scanner.get_tilt(config->hw.btAddress)->getTempFixedPoint(), 3, 9);
+
+    // Pretty-print the address
+    String humanName = DeviceNameManager::getDeviceName(config->hw.btAddress.toString().c_str());
+
+    JsonObject deviceObj = doc->createNestedObject();
+    deviceObj["device"] = config->hw.btAddress.toString();
+    deviceObj["value"] = str_temp;
+    deviceObj["name"] = humanName;
+  }
+#endif
+}
+
 
 /**
  * Determines the class of device for the given DeviceID.
  */
-
 DeviceType deviceType(DeviceFunction id) {
 	switch (id) {
 	case DEVICE_CHAMBER_DOOR:
 		return DEVICETYPE_SWITCH_SENSOR;
-		
+
 	case DEVICE_CHAMBER_HEAT:
 	case DEVICE_CHAMBER_COOL:
 	case DEVICE_CHAMBER_LIGHT:
@@ -958,16 +1244,16 @@ DeviceType deviceType(DeviceFunction id) {
 	case DEVICE_BEER_HEAT:
 	case DEVICE_BEER_COOL:
 		return DEVICETYPE_SWITCH_ACTUATOR;
-		
+
 	case DEVICE_CHAMBER_TEMP:
 	case DEVICE_CHAMBER_ROOM_TEMP:
 	case DEVICE_BEER_TEMP:
 	case DEVICE_BEER_TEMP2:
 		return DEVICETYPE_TEMP_SENSOR;
-		
-	default: 
+
+	default:
 		return DEVICETYPE_NONE;
 	}
-}	
+}
 
 DeviceManager deviceManager;

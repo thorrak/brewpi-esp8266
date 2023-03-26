@@ -22,10 +22,14 @@
 #include "PiLink.h"
 #include "Ticks.h"
 
+
+/**
+ * \brief Initialize temp sensor
+ */
 void TempSensor::init()
-{				
+{
 	logDebug("tempsensor::init - begin %d", failedReadCount);
-	if (_sensor && _sensor->init() && (failedReadCount<0 || failedReadCount>60)) {		
+	if (_sensor && _sensor->init() && (failedReadCount<0 || failedReadCount>60)) {
 		temperature temp = _sensor->read();
 		if (temp!=TEMP_SENSOR_DISCONNECTED) {
 			logDebug("initializing filters with value %d", temp);
@@ -38,11 +42,15 @@ void TempSensor::init()
 	}
 }
 
+/**
+ * \brief Read the sensor and update the filters
+ */
 void TempSensor::update()
-{	
+{
 	temperature temp;
-	if (!_sensor || (temp=_sensor->read())==TEMP_SENSOR_DISCONNECTED) {		
-		failedReadCount++;		
+	if (!_sensor || (temp=_sensor->read())==TEMP_SENSOR_DISCONNECTED) {
+		if(failedReadCount >= 0)
+			failedReadCount++;
 		failedReadCount = min(failedReadCount,int8_t(127));	// limit
 		return;
 	}
@@ -74,36 +82,81 @@ void TempSensor::update()
 	}
 }
 
-temperature TempSensor::readFastFiltered(void){
+/**
+ * \brief Read the sensor value after processing through the fast filter
+ */
+temperature TempSensor::readFastFiltered(){
 	return fastFilter.readOutput(); //return most recent unfiltered value
 }
 
-temperature TempSensor::readSlope(void){
-	// return slope per hour. 
+/**
+ * \brief Read the sensor value after processing through the slow filter
+ */
+temperature TempSensor::readSlowFiltered(){
+  return slowFilter.readOutput(); //return most recent unfiltered value
+}
+
+/**
+ * \brief Read the sensor value after processing through the slope filter
+ */
+temperature TempSensor::readSlope(){
+	// return slope per hour.
 	temperature_precise doublePrecision = slopeFilter.readOutputDoublePrecision();
 	return doublePrecision>>16; // shift to single precision
 }
 
-temperature TempSensor::detectPosPeak(void){
+
+/**
+ * \brief Detect the positive peak
+ *
+ * Uses the detectPosPeak() method of the slow filter
+ */
+temperature TempSensor::detectPosPeak(){
 	return slowFilter.detectPosPeak();
 }
-	
-temperature TempSensor::detectNegPeak(void){
+
+
+/**
+ * \brief Detect the negative peak
+ *
+ * Uses the detectNegPeak() method of the slow filter
+ */
+temperature TempSensor::detectNegPeak(){
 	return slowFilter.detectNegPeak();
 }
-	
+
+/**
+ * \brief Set the b coefficients on the fast filter
+ *
+ * @param b - New coefficient value
+ */
 void TempSensor::setFastFilterCoefficients(uint8_t b){
 	fastFilter.setCoefficients(b);
 }
-	
+
+
+/**
+ * \brief Set the b coefficients on the slow filter
+ *
+ * @param b - New coefficient value
+ */
 void TempSensor::setSlowFilterCoefficients(uint8_t b){
 	slowFilter.setCoefficients(b);
 }
 
+
+/**
+ * \brief Set the b coefficients on the slope filter
+ *
+ * @param b - New coefficient value
+ */
 void TempSensor::setSlopeFilterCoefficients(uint8_t b){
 	slopeFilter.setCoefficients(b);
 }
 
+/**
+ * \brief Get wrapped sensor
+ */
 BasicTempSensor& TempSensor::sensor() {
 	return *_sensor;
 }

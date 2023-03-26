@@ -2,7 +2,8 @@
 CMakeListsPrivate.txt
 .piolibdeps
 .idea/
-cmake-build-debug/
+cmake-build*/
+
 
 CMakeCache.txt
 CMakeFiles
@@ -17,3 +18,14 @@ CTestTestfile.cmake
 
 /.vscode
 /.pio
+
+.DS_Store
+
+bin/esp8266_wifi.bin
+bin/esp8266_serial.bin
+bin/esp32_wifi_tft.bin
+
+apidocs/
+*.sw?
+
+src/Version.h

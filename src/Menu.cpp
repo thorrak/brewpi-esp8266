@@ -83,7 +83,9 @@ bool blinkLoop(
 }
 
 void clearSettingText() {
+#ifndef BREWPI_TFT
 	display.printAt_P(0, rotaryEncoder.read(), STR_6SPACES);
+#endif
 }
 
 void settingChanged() {} // no -op - the only change is to update the display which happens already
@@ -95,20 +97,20 @@ void settingSelected() {
 			return;
 		case 1:
 			// switch to beer constant, because beer setting will be set through display
-			tempControl.setMode(MODE_BEER_CONSTANT);
+			tempControl.setMode(Modes::beerConstant);
 			display.printMode();
 			menu.pickBeerSetting();
 			return;
 		case 2:
 			// switch to fridge constant, because fridge setting will be set through display
-			tempControl.setMode(MODE_FRIDGE_CONSTANT);
+			tempControl.setMode(Modes::fridgeConstant);
 			display.printMode();
 			menu.pickFridgeSetting();
 			return;
 	}	
 }
 
-void Menu::pickSettingToChangeLoop(void) {
+void Menu::pickSettingToChangeLoop() {
 	rotaryEncoder.setRange(0, 0, 2); // mode setting, beer temp, fridge temp
 	blinkLoop(
 		settingChanged,
@@ -124,34 +126,28 @@ void changedMode() {
 }
 
 void clearMode() {
+#ifndef BREWPI_TFT
 	display.printAt_P(7, 0, PSTR("             ")); // print 13 spaces
+#endif
 }
 
 void selectMode() {
 	char mode = tempControl.getMode();
-	if(mode ==  MODE_BEER_CONSTANT){
+	if(mode ==  Modes::beerConstant){
 		menu.pickBeerSetting();
 	}
-	else if(mode == MODE_FRIDGE_CONSTANT){
+	else if(mode == Modes::fridgeConstant){
 		menu.pickFridgeSetting();
 	}
-	else if(mode == MODE_BEER_PROFILE){
-#ifdef ESP8266
-		piLink.printTemperaturesJSON("Changed to profile mode in menu.", 0);
-#else
-		piLink.printBeerAnnotation(PSTR("Changed to profile mode in menu."));
-#endif
+	else if(mode == Modes::beerProfile){
+		piLink.printTemperatures("Changed to profile mode in menu.", 0);
 	}
-	else if(mode == MODE_OFF){
-#ifdef ESP8266
-		piLink.printTemperaturesJSON("Temp control turned off in menu.", 0);
-#else
-		piLink.printBeerAnnotation(PSTR("Temp control turned off in menu."));
-#endif
+	else if(mode == Modes::off){
+		piLink.printTemperatures("Temp control turned off in menu.", 0);
 	}	
 }
 
-void Menu::pickMode(void) {	
+void Menu::pickMode() {	
 	char oldSetting = tempControl.getMode();
 	uint8_t startValue=0;
 	const char* LOOKUP = "bfpo";
@@ -163,7 +159,7 @@ void Menu::pickMode(void) {
 }
 
 typedef void (* PrintAnnotation)(const char * annotation, ...);
-typedef void (* DisplayUpdate)(void);
+typedef void (* DisplayUpdate)();
 typedef temperature (* ReadTemp)();
 typedef void (* WriteTemp)(temperature);
 
@@ -184,7 +180,9 @@ void pickTempSetting(ReadTemp readTemp, WriteTemp writeTemp, const char* tempNam
 			lastChangeTime = ticks.seconds();
 			blinkTimer = 0;
 			startVal = tenthsToFixed(rotaryEncoder.read());
+#ifndef BREWPI_TFT
 			display.printTemperatureAt(12, row, startVal);
+#endif
 
 			if( rotaryEncoder.pushed() ){
 				rotaryEncoder.resetPushed();
@@ -196,10 +194,14 @@ void pickTempSetting(ReadTemp readTemp, WriteTemp writeTemp, const char* tempNam
 		}	
 		else{
 			if(blinkTimer == 0){
+#ifndef BREWPI_TFT
 				display.printTemperatureAt(12, row, startVal);
+#endif
 			}
 			if(blinkTimer == 128){
+#ifndef BREWPI_TFT
 				display.printAt_P(12, row, STR_6SPACES); // only 5 needed, but 6 is okay to and lets us re-use the string
+#endif
 			}
 			blinkTimer++;
 			wait.millis(3); // delay for blinking
@@ -208,12 +210,12 @@ void pickTempSetting(ReadTemp readTemp, WriteTemp writeTemp, const char* tempNam
 	// Time Out. Setting is not written
 }
 
-void Menu::pickFridgeSetting(void){
+void Menu::pickFridgeSetting(){
 	// TODO - Fix this
 //	pickTempSetting(tempControl.getFridgeSetting, tempControl.setFridgeTemp, PSTR("Fridge"), piLink.printFridgeAnnotation, 2);
 }
 
-void Menu::pickBeerSetting(void){
+void Menu::pickBeerSetting(){
 	// TODO - Fix This
 //	pickTempSetting(tempControl.getBeerSetting, tempControl.setBeerTemp, PSTR("Beer"), piLink.printBeerAnnotation, 1);
 }

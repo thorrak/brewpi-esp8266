@@ -20,6 +20,19 @@
 
 #pragma once
 
+/**
+ * \file Brewpi.h
+ *
+ * \brief Defines global config for the brewpi project.
+ *
+ * This file is included in every file in the project to ensure conditional
+ * compilation directives are recognized.
+ *
+ * ConfigDefault.h contains the default settings, and produces a standard Hex
+ * file.  To customize the build, users may add settings to Config.h, or define
+ * symbols in the project.
+ */
+
 // have to use two levels of macro expansion to convert a symbol to a string. see http://gcc.gnu.org/onlinedocs/cpp/Stringification.html
 #define stringify(s) _stringifyDo(s)
 #define _stringifyDo(s) #s
@@ -36,29 +49,19 @@
 #define BREWPI_BOARD_MEGA 'm'
 #define BREWPI_BOARD_UNKNOWN '?'
 #define BREWPI_BOARD_ESP8266 'e'
+#define BREWPI_BOARD_ESP32 '3'
+#define BREWPI_BOARD_ESP32C3 'c'
+#define BREWPI_BOARD_ESP32S2 '2'
 
 
-/*
- * Defines global config for the brewpi project. This file is included in every file in the project to ensure conditional
- * compilation directives are recognized.
- * 
- * ConfigDefault.h contains the default settings, and produces a standard Hex file.
- * To customize the build, users may add settings to Config.h, or define symbols in the project.
- */
-
-#ifdef ARDUINO
 #include "Config.h"
-#else
-#include <Config.h>                     // use search path rather than current directory, so that config.h
-#endif
 #include "ConfigDefault.h"
 
 #include <Arduino.h>
 
 #include "Actuator.h"
+#include "Logger.h"
 
-extern ValueActuator alarm;
-#ifdef ESP8266
+extern ValueActuator alarm_actuator;
 extern bool toggleBacklight;  // To allow us to toggle the backlight
-#endif
 

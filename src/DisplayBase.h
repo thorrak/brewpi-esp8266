@@ -23,9 +23,34 @@
 #include "Brewpi.h"
 #include "TemperatureFormats.h"
 
-/* Set to 1 to enable virtual functions and polymorphic display. */
+/**
+ * \addtogroup display
+ * @{
+ */
+
+
+/**
+ * \def DISPLAY_POLYMORPHIC
+ * \brief Control inheritance type of Display
+ *
+ * When true, Display is made virtual and the various hardware specific drivers derive from it.
+ *
+ * \def DISPLAY_METHOD
+ * \brief Compile time switch between `virtual` and `static` methods in Display
+ *
+ * If DISPLAY_POLYMORPHIC is true, the methods in Display are defined as virtual.
+ * \see DISPLAY_POLYMORPHIC
+ *
+ * \def DISPLAY_SUPERCLASS
+ * \brief Compile time value for the superclass for Display drivers
+ *
+ * If DISPLAY_POLYMORPHIC is true, the super class is defined as Display.
+ * Otherwise the superclass is empty.
+ * \see DISPLAY_POLYMORPHIC
+ */
+
 #define DISPLAY_POLYMORPHIC 0
-#if DISPLAY_POLYMORPHIC 
+#if DISPLAY_POLYMORPHIC
 	#define DISPLAY_METHOD virtual
 	#define DISPLAY_METHOD_PURE_VIRTUAL =0
 	#define DISPLAY_FIELD
@@ -36,54 +61,54 @@
 	#define DISPLAY_FIELD	static
 	#define DISPLAY_METHOD_PURE_VIRTUAL {}
 	#define DISPLAY_REF
-	#define DISPLAY_SUPERCLASS 
+	#define DISPLAY_SUPERCLASS
 #endif
 
 #if DISPLAY_POLYMORPHIC
 class Display{
 	public:
-	Display(){};	
+	Display(){};
 	DISPLAY_METHOD ~Display();
-		
+
 	// initializes the lcd display
-	DISPLAY_METHOD void init(void) DISPLAY_METHOD_PURE_VIRTUAL;
-	
+	DISPLAY_METHOD void init() DISPLAY_METHOD_PURE_VIRTUAL;
+
 	DISPLAY_METHOD void printAll() DISPLAY_METHOD_PURE_VIRTUAL;
-			
+
 	// print all temperatures on the LCD
-	DISPLAY_METHOD void printAllTemperatures(void) DISPLAY_METHOD_PURE_VIRTUAL;
-		
+	DISPLAY_METHOD void printAllTemperatures() DISPLAY_METHOD_PURE_VIRTUAL;
+
 
 	// print the stationary text on the lcd.
-	DISPLAY_METHOD void printStationaryText(void) DISPLAY_METHOD_PURE_VIRTUAL;
-	
+	DISPLAY_METHOD void printStationaryText() DISPLAY_METHOD_PURE_VIRTUAL;
+
 	DISPLAY_METHOD void setDisplayFlags(uint8_t newFlags) DISPLAY_METHOD_PURE_VIRTUAL;
 	DISPLAY_METHOD uint8_t getDisplayFlags() DISPLAY_METHOD_PURE_VIRTUAL;
 
 	// print mode on the right location on the first line, after Mode:
-	DISPLAY_METHOD void printMode(void) DISPLAY_METHOD_PURE_VIRTUAL;
+	DISPLAY_METHOD void printMode() DISPLAY_METHOD_PURE_VIRTUAL;
 
 	// print beer temperature at the right place on the display
-	DISPLAY_METHOD void printBeerTemp(void) DISPLAY_METHOD_PURE_VIRTUAL;
+	DISPLAY_METHOD void printBeerTemp() DISPLAY_METHOD_PURE_VIRTUAL;
 
 	// print beer temperature setting at the right place on the display
-	DISPLAY_METHOD void printBeerSet(void) DISPLAY_METHOD_PURE_VIRTUAL;
+	DISPLAY_METHOD void printBeerSet() DISPLAY_METHOD_PURE_VIRTUAL;
 
 	// print fridge temperature at the right place on the display
-	DISPLAY_METHOD void printFridgeTemp(void) DISPLAY_METHOD_PURE_VIRTUAL;
+	DISPLAY_METHOD void printFridgeTemp() DISPLAY_METHOD_PURE_VIRTUAL;
 
 	// print fridge temperature setting at the right place on the display
-	DISPLAY_METHOD void printFridgeSet(void) DISPLAY_METHOD_PURE_VIRTUAL;
+	DISPLAY_METHOD void printFridgeSet() DISPLAY_METHOD_PURE_VIRTUAL;
 
 	// print the current state on the last line of the LCD
-	DISPLAY_METHOD void printState(void) DISPLAY_METHOD_PURE_VIRTUAL;
+	DISPLAY_METHOD void printState() DISPLAY_METHOD_PURE_VIRTUAL;
 
 	DISPLAY_METHOD void printAt_P(int x, int y, const char* text) DISPLAY_METHOD_PURE_VIRTUAL;
 	
 	DISPLAY_METHOD void getLine(uint8_t lineNumber, char * buffer) DISPLAY_METHOD_PURE_VIRTUAL;
 	
 	/*
-	 * When true, print content is not sent to the lcd panel, but only buffered.                                                                      
+	 * When true, print content is not sent to the lcd panel, but only buffered.
 	 */
 	DISPLAY_METHOD void setBufferOnly(bool bufferOnly) DISPLAY_METHOD_PURE_VIRTUAL;
 	
@@ -95,41 +120,46 @@ class Display{
 #endif
 
 
+/**
+ * \brief A dummy display driver
+ *
+ * Used as a default when no other hardware type is defined.
+ */
 class NullDisplay DISPLAY_SUPERCLASS
 {
 public:	
 	// initializes the lcd display
-	DISPLAY_METHOD void init(void){}
+	DISPLAY_METHOD void init(){}
 	
 	DISPLAY_METHOD void printAll() {}
 	
 	// print all temperatures on the LCD
-	DISPLAY_METHOD void printAllTemperatures(void){}
+	DISPLAY_METHOD void printAllTemperatures(){}
 	
 	// print the stationary text on the lcd.
-	DISPLAY_METHOD void printStationaryText(void){}
+	DISPLAY_METHOD void printStationaryText(){}
 
 	// print mode on the right location on the first line, after Mode:
-	DISPLAY_METHOD void printMode(void){}
+	DISPLAY_METHOD void printMode(){}
 
 	DISPLAY_METHOD void setDisplayFlags(uint8_t newFlags){};
 	DISPLAY_METHOD uint8_t getDisplayFlags(){ return 0; };
 		
 
 	// print beer temperature at the right place on the display
-	DISPLAY_METHOD void printBeerTemp(void){}
+	DISPLAY_METHOD void printBeerTemp(){}
 
 	// print beer temperature setting at the right place on the display
-	DISPLAY_METHOD void printBeerSet(void){}
+	DISPLAY_METHOD void printBeerSet(){}
 
 	// print fridge temperature at the right place on the display
-	DISPLAY_METHOD void printFridgeTemp(void){}
+	DISPLAY_METHOD void printFridgeTemp(){}
 
 	// print fridge temperature setting at the right place on the display
-	DISPLAY_METHOD void printFridgeSet(void){}
+	DISPLAY_METHOD void printFridgeSet(){}
 
 	// print the current state on the last line of the LCD
-	DISPLAY_METHOD void printState(void){}
+	DISPLAY_METHOD void printState(){}
 
 	DISPLAY_METHOD void printAt_P(uint8_t x, uint8_t y, const char* text) {}
 		
@@ -146,17 +176,16 @@ public:
 	DISPLAY_METHOD void updateBacklight() { }
 
 };
-		
+
 /**
-	* When set in flags, the current display will show the room temp, rather than beer temp.
-	*/
+ * When set in flags, the current display will show the room temp, rather than beer temp.
+ */
 static const uint8_t LCD_FLAG_DISPLAY_ROOM = 0x01;
 
 /**
-	* When set, the room temp will automatically alternate between beer and room temp.
-	*/
+ * When set, the room temp will automatically alternate between beer and room temp.
+ */
 static const uint8_t LCD_FLAG_ALTERNATE_ROOM = 0x02;
 
 
-	
-	
+/** @} */

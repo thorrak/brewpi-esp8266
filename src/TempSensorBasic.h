@@ -26,21 +26,27 @@
 #define TEMP_SENSOR_DISCONNECTED INVALID_TEMP
 
 
+/**
+ * Temperature sensor base
+ * Pure virtual class.
+ */
 class BasicTempSensor
 {
 public:
 	virtual ~BasicTempSensor() { }
-	
-	virtual bool isConnected(void) = 0;
-	
-	/*
-	 * Attempt to (re-)initialize the sensor. 	 
+
+  /**
+   * Check if sensor is connected
+   */
+	virtual bool isConnected() = 0;
+
+	/**
+	 * Attempt to (re-)initialize the sensor.
 	 */
 	virtual bool init() =0;
 
-	/*
+	/**
 	 * Fetch a new reading from the sensor
 	 */
 	virtual temperature read() = 0;
-	
 };

@@ -76,12 +76,8 @@ void IIClcd::init() {
 
 void IIClcd::init_priv()
 {
-#ifdef ESP8266
 	Wire.begin(IIC_SDA, IIC_SCL);
 	scan_address();
-#else
-	Wire.begin();
-#endif
 	_displayfunction = LCD_4BITMODE | LCD_1LINE | LCD_5x8DOTS;
 	begin(_cols, _rows);
 }
@@ -209,33 +205,33 @@ void IIClcd::blink() {
 }
 
 // These commands scroll the display without changing the RAM
-void IIClcd::scrollDisplayLeft(void) {
+void IIClcd::scrollDisplayLeft() {
 	command(LCD_CURSORSHIFT | LCD_DISPLAYMOVE | LCD_MOVELEFT);
 }
-void IIClcd::scrollDisplayRight(void) {
+void IIClcd::scrollDisplayRight() {
 	command(LCD_CURSORSHIFT | LCD_DISPLAYMOVE | LCD_MOVERIGHT);
 }
 
 // This is for text that flows Left to Right
-void IIClcd::leftToRight(void) {
+void IIClcd::leftToRight() {
 	_displaymode |= LCD_ENTRYLEFT;
 	command(LCD_ENTRYMODESET | _displaymode);
 }
 
 // This is for text that flows Right to Left
-void IIClcd::rightToLeft(void) {
+void IIClcd::rightToLeft() {
 	_displaymode &= ~LCD_ENTRYLEFT;
 	command(LCD_ENTRYMODESET | _displaymode);
 }
 
 // This will 'right justify' text from the cursor
-void IIClcd::autoscroll(void) {
+void IIClcd::autoscroll() {
 	_displaymode |= LCD_ENTRYSHIFTINCREMENT;
 	command(LCD_ENTRYMODESET | _displaymode);
 }
 
 // This will 'left justify' text from the cursor
-void IIClcd::noAutoscroll(void) {
+void IIClcd::noAutoscroll() {
 	_displaymode &= ~LCD_ENTRYSHIFTINCREMENT;
 	command(LCD_ENTRYMODESET | _displaymode);
 }
@@ -251,12 +247,12 @@ void IIClcd::createChar(uint8_t location, uint8_t charmap[]) {
 }
 
 // Turn the (optional) backlight off/on
-void IIClcd::noBacklight(void) {
+void IIClcd::noBacklight() {
 	_backlightval = LCD_NOBACKLIGHT;
 	expanderWrite(0);
 }
 
-void IIClcd::backlight(void) {
+void IIClcd::backlight() {
 	_backlightval = LCD_BACKLIGHT;
 	expanderWrite(0);
 }
@@ -275,7 +271,7 @@ inline size_t IIClcd::write(uint8_t value) {
 	if (!_bufferOnly) {
 		send(value, Rs);
 	}
-	return 0;
+	return 1;
 }
 
 /************ low level data pushing commands **********/
@@ -310,15 +306,15 @@ void IIClcd::pulseEnable(uint8_t _data) {
 }
 
 // This resets the backlight timer and updates the SPI output
-void IIClcd::resetBacklightTimer(void) {
+void IIClcd::resetBacklightTimer() {
 	_backlightTime = ticks.seconds();
 }
 
-void IIClcd::updateBacklight(void) {
+void IIClcd::updateBacklight() {
 	// True = OFF, False = ON
 #if BACKLIGHT_AUTO_OFF_PERIOD > 0 || BREWPI_SIMULATE
 	bool backLightOutput = BREWPI_SIMULATE || ticks.timeSince(_backlightTime) > BACKLIGHT_AUTO_OFF_PERIOD;
-#elif defined(ESP8266)
+#else
 	bool backLightOutput = toggleBacklight;
 #endif
 	if (backLightOutput) {
@@ -339,7 +335,7 @@ void IIClcd::getLine(uint8_t lineNumber, char * buffer) {
 	buffer[_cols] = '\0'; // NULL terminate string
 }
 
-void IIClcd::printSpacesToRestOfLine(void) {
+void IIClcd::printSpacesToRestOfLine() {
 	while (_currpos < _cols) {
 		print(' ');
 	}

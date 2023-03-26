@@ -18,8 +18,10 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if BREWPI_DS2413
 #include "Brewpi.h"
-#include "OneWire.h"
+
+#include <OneWire.h>
 
 #include "DS2413.h"
 
@@ -92,3 +94,4 @@ bool DS2413::accessWrite(uint8_t b, uint8_t maxTries)
 	return ack==ACK_SUCCESS;
 }
 
+#endif

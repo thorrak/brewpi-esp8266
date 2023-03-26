@@ -22,6 +22,9 @@
 #include <limits.h>
 #include <stdint.h>
 
+// If we're using BREWPI_TFT, use that code instead
+#ifndef BREWPI_TFT
+
 #include "Display.h"
 #include "DisplayLcd.h"
 #include "Menu.h"
@@ -30,14 +33,22 @@
 #include "Pins.h"
 
 #ifdef ESP8266_WiFi
+
+#if defined(ESP8266)
 #include <ESP8266WiFi.h>  // For printing the IP address
+#elif defined(ESP32)
+#include <WiFi.h> // For printing the IP address
+#else
+#error "Invalid chipset!"
+#endif
+
 #endif
 
 
 uint8_t LcdDisplay::stateOnDisplay;
 uint8_t LcdDisplay::flags;
 #if defined(BREWPI_IIC)
-LcdDriver LcdDisplay::lcd(0x27, 20, 4);  // NOTE - The address here doesn't get used. Address is autodetected at startup.
+LcdDriver LcdDisplay::lcd(0x27, Config::Lcd::columns, Config::Lcd::lines);  // NOTE - The address here doesn't get used. Address is autodetected at startup.
 #else
 LcdDriver LcdDisplay::lcd;
 #endif
@@ -53,9 +64,7 @@ static const char STR_Wait_to_[] PROGMEM = "Wait to ";
 static const char STR__time_left[] PROGMEM = " time left";
 static const char STR_empty_string[] PROGMEM = "";
 
-#ifdef ESP8266
 bool toggleBacklight;
-#endif
 
 
 #ifndef min
@@ -66,14 +75,17 @@ bool toggleBacklight;
 #define max _max
 #endif
 
-void LcdDisplay::init(void){
-#ifdef ESP8266
+/**
+ * \brief Invalid timestamp
+ */
+constexpr auto invalidTime = UINT16_MAX;
+
+void LcdDisplay::init(){
 	toggleBacklight = false;
-#endif
 	stateOnDisplay = 0xFF; // set to unknown state to force update
 	flags = LCD_FLAG_ALTERNATE_ROOM;
 	lcd.init(); // initialize LCD
-	lcd.begin(20, 4);
+	lcd.begin(Config::Lcd::columns, Config::Lcd::lines);
 	lcd.clear();
 }
 
@@ -81,8 +93,10 @@ void LcdDisplay::init(void){
 #define UINT16_MAX 65535
 #endif
 
-//print all temperatures on the LCD
-void LcdDisplay::printAllTemperatures(void){
+/**
+ * \brief Print all temperatures on the LCD
+ */
+void LcdDisplay::printAllTemperatures(){
 	// alternate between beer and room temp
 	if (flags & LCD_FLAG_ALTERNATE_ROOM) {
 		bool displayRoom = ((ticks.seconds()&0x08)==0) && !BREWPI_SIMULATE && tempControl.ambientSensor->isConnected();
@@ -91,13 +105,19 @@ void LcdDisplay::printAllTemperatures(void){
 			printStationaryText();
 		}
 	}
-	
+
 	printBeerTemp();
 	printBeerSet();
 	printFridgeTemp();
 	printFridgeSet();
 }
 
+/**
+ * \brief Set the display configuration flags
+ *
+ * Updates the display configuration and then forces a redraw.
+ * @param newFlags - New flag values
+ */
 void LcdDisplay::setDisplayFlags(uint8_t newFlags) {
 	flags = newFlags;
 	printStationaryText();
@@ -105,35 +125,63 @@ void LcdDisplay::setDisplayFlags(uint8_t newFlags) {
 }
 
 
-
-void LcdDisplay::printBeerTemp(void){
+/**
+ * Print beer temperature
+ *
+ * @see printTemperatureAt
+ */
+void LcdDisplay::printBeerTemp(){
 	printTemperatureAt(6, 1, tempControl.getBeerTemp());
 }
 
-void LcdDisplay::printBeerSet(void){
-	temperature beerSet = tempControl.getBeerSetting();	
-	printTemperatureAt(12, 1, beerSet);	
+
+/**
+ * Print beer target temperature
+ *
+ * @see printTemperatureAt
+ */
+void LcdDisplay::printBeerSet(){
+	temperature beerSet = tempControl.getBeerSetting();
+	printTemperatureAt(12, 1, beerSet);
 }
 
-void LcdDisplay::printFridgeTemp(void){	
+void LcdDisplay::printFridgeTemp(){
 	printTemperatureAt(6,2, flags & LCD_FLAG_DISPLAY_ROOM ?
 		tempControl.ambientSensor->read() :
 		tempControl.getFridgeTemp());
 }
 
-void LcdDisplay::printFridgeSet(void){	
+void LcdDisplay::printFridgeSet(){	
 	temperature fridgeSet = tempControl.getFridgeSetting();	
 	if(flags & LCD_FLAG_DISPLAY_ROOM) // beer setting is not active
 		fridgeSet = INVALID_TEMP;
 	printTemperatureAt(12, 2, fridgeSet);	
 }
 
+
+/**
+ * \brief Print a temperature at a given coordinate
+ *
+ * @param x - LCD column
+ * @param y - LCD row
+ * @param temp - Temperature
+ *
+ * @see printTemperature
+ */
 void LcdDisplay::printTemperatureAt(uint8_t x, uint8_t y, temperature temp){
 	lcd.setCursor(x,y);
 	printTemperature(temp);
 }
 
 
+/**
+ * \brief Print a temperature
+ *
+ * Invalid temps are drawn as `--.-` as a placeholder.  Valid temps are padded
+ * to 5 chars wide.
+ *
+ * @param temp - Temperature to print
+ */
 void LcdDisplay::printTemperature(temperature temp){
 	if (temp==INVALID_TEMP) {
 		lcd.print_P(PSTR(" --.-"));
@@ -141,27 +189,34 @@ void LcdDisplay::printTemperature(temperature temp){
 	}
 	char tempString[9];
 	tempToString(tempString, temp, 1 , 9);
-	int8_t spacesToWrite = 5 - (int8_t) strlen(tempString); 
+	int8_t spacesToWrite = 5 - (int8_t) strlen(tempString);
 	for(int8_t i = 0; i < spacesToWrite ;i++){
 		lcd.write(' ');
 	}
 	lcd.print(tempString);
 }
 
-//print the stationary text on the lcd.
-void LcdDisplay::printStationaryText(void){
+/**
+ * \brief Print the stationary text on the lcd.
+ */
+void LcdDisplay::printStationaryText(){
 	printAt_P(0, 0, PSTR("Mode"));
 	printAt_P(0, 1, STR_Beer_);
-	printAt_P(0, 2, (flags & LCD_FLAG_DISPLAY_ROOM) ?  PSTR("Room  ") : STR_Fridge_); 
+	printAt_P(0, 2, (flags & LCD_FLAG_DISPLAY_ROOM) ?  PSTR("Room  ") : STR_Fridge_);
 	printDegreeUnit(18, 1);
 	printDegreeUnit(18, 2);
 }
 
-//print degree sign + temp unit
+/**
+ * \brief Print degree sign and temp unit
+ *
+ * @param x - LCD column
+ * @param y - LCD row
+ */
 void LcdDisplay::printDegreeUnit(uint8_t x, uint8_t y){
 	lcd.setCursor(x,y);
 	lcd.write(0b11011111);
-	lcd.write(tempControl.cc.tempFormat);	
+	lcd.write(tempControl.cc.tempFormat);
 }
 
 void LcdDisplay::printAt_P(uint8_t x, uint8_t y, const char* text){
@@ -176,26 +231,26 @@ void LcdDisplay::printAt(uint8_t x, uint8_t y, char* text){
 }
 
 // print mode on the right location on the first line, after "Mode   "
-void LcdDisplay::printMode(void){
+void LcdDisplay::printMode(){
 	lcd.setCursor(7,0);
 	// Factoring prints out of switch has negative effect on code size in this function
 	switch(tempControl.getMode()){
-		case MODE_FRIDGE_CONSTANT:
+    case Modes::fridgeConstant:
 			lcd.print_P(STR_Fridge_);
 			lcd.print_P(STR_Const_);
 			break;
-		case MODE_BEER_CONSTANT:
+    case Modes::beerConstant:
 			lcd.print_P(STR_Beer_);
 			lcd.print_P(STR_Const_);
 			break;
-		case MODE_BEER_PROFILE:
+    case Modes::beerProfile:
 			lcd.print_P(STR_Beer_);
 			lcd.print_P(PSTR("Profile"));
 			break;
-		case MODE_OFF:
+    case Modes::off:
 			lcd.print_P(PSTR("Off"));
 			break;
-		case MODE_TEST:
+    case Modes::test:
 			lcd.print_P(PSTR("** Testing **"));
 			break;
 		default:
@@ -206,8 +261,8 @@ void LcdDisplay::printMode(void){
 }
 
 // print the current state on the last line of the lcd
-void LcdDisplay::printState(void){
-	uint16_t time = UINT16_MAX; // init to max
+void LcdDisplay::printState(){
+	uint16_t time = invalidTime;
 	uint8_t state = tempControl.getDisplayState();
 	if(state != stateOnDisplay){ //only print static text when state has changed
 		stateOnDisplay = state;
@@ -268,16 +323,16 @@ void LcdDisplay::printState(void){
 		time = sinceIdleTime;
 	}
 	else if(state==COOLING_MIN_TIME){
-		time = MIN_COOL_ON_TIME-sinceIdleTime;
+		time = TempControl::getMinCoolOnTime()-sinceIdleTime;
 	}
 	
 	else if(state==HEATING_MIN_TIME){
-		time = MIN_HEAT_ON_TIME-sinceIdleTime;
+		time = TempControl::getMinHeatOnTime()-sinceIdleTime;
 	}
 	else if(state == WAITING_TO_COOL || state == WAITING_TO_HEAT){
 		time = tempControl.getWaitTime();
 	}
-	if(time != UINT_MAX){
+	if(time != invalidTime){
 		char timeString[10];
 #if DISPLAY_TIME_HMS  // 96 bytes more space required. 
 		unsigned int minutes = time/60;		
@@ -299,24 +354,22 @@ void LcdDisplay::printState(void){
 
 #ifdef ESP8266_WiFi
 
-void LcdDisplay::printWiFiStartup(void){
-	String ap_station_name;
+void LcdDisplay::printWiFiStartup(){
 	toggleBacklight = false;  // Assuming we need this
 
 	lcd.setCursor(0,0);
-	// Factoring prints out of switch has negative effect on code size in this function
-	lcd.print("Creating WiFi AP...");
-	lcd.printSpacesToRestOfLine();
 
-	lcd.setCursor(0,1);
 	lcd.print("Connect to this AP:");
 	lcd.printSpacesToRestOfLine();
 
-
-	ap_station_name = "ESP_" + String(ESP.getChipId());
+	lcd.setCursor(0,1);
+	lcd.print("AP Name: ");
+	lcd.print(WIFI_SETUP_AP_NAME);
+	lcd.printSpacesToRestOfLine();
 
 	lcd.setCursor(0,2);
-	lcd.print(ap_station_name);
+	lcd.print("AP Pass: ");
+	lcd.print(WIFI_SETUP_AP_PASS);
 	lcd.printSpacesToRestOfLine();
 
 	lcd.setCursor(0,3);
@@ -326,11 +379,12 @@ void LcdDisplay::printWiFiStartup(void){
 	lcd.updateBacklight();
 }
 
-void LcdDisplay::printWiFi(void){
+
+void LcdDisplay::printWiFi(){
 	toggleBacklight = false;  // Assuming we need this
 
 	lcd.setCursor(0,0);
-	// Factoring prints out of switch has negative effect on code size in this function
+
 	lcd.print("WiFi (mDNS) Name: ");
 	lcd.printSpacesToRestOfLine();
 
@@ -349,32 +403,57 @@ void LcdDisplay::printWiFi(void){
 
 	lcd.updateBacklight();
 }
-#endif
 
-void LcdDisplay::printEEPROMStartup(void){
+void LcdDisplay::printWiFiConnect(){
 	toggleBacklight = false;  // Assuming we need this
 
 	lcd.setCursor(0,0);
 	// Factoring prints out of switch has negative effect on code size in this function
-	lcd.print("Setting up EEPROM...");
+	lcd.print("Connecting to WiFi");
 	lcd.printSpacesToRestOfLine();
 
 	lcd.setCursor(0,1);
-	lcd.print("Please wait. This");
+	lcd.print("Please wait up to");
 	lcd.printSpacesToRestOfLine();
 
 	lcd.setCursor(0,2);
-	lcd.print("can take 5+ minutes");
-	lcd.printSpacesToRestOfLine();
-
-	lcd.setCursor(0,3);
-	lcd.print("for new installs.");
+	lcd.print("60 seconds.");
 	lcd.printSpacesToRestOfLine();
 
 	lcd.updateBacklight();
 }
+#endif
+
+#ifdef HAS_BLUETOOTH
+void LcdDisplay::printBluetoothStartup(){
+	toggleBacklight = false;  // Assuming we need this
+
+	lcd.setCursor(0,0);
+
+	lcd.print("Performing initial");
+	lcd.printSpacesToRestOfLine();
+
+	lcd.setCursor(0,1);
+	lcd.print("bluetooth scan");
+	lcd.printSpacesToRestOfLine();
+
+	lcd.setCursor(0,2);
+	lcd.print(" ");
+	lcd.printSpacesToRestOfLine();
+
+	lcd.setCursor(0,3);
+	lcd.print("Please wait...");
+	lcd.printSpacesToRestOfLine();
+
+	lcd.updateBacklight();
+}
+#endif
 
 
-void LcdDisplay::clear(void) {
+
+void LcdDisplay::clear() {
 	lcd.clear();
 }
+
+
+#endif

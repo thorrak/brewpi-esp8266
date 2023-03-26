@@ -24,7 +24,11 @@
 
 #include "Brewpi.h"
 #include "Actuator.h"
+
+#ifdef BREWPI_DS2413
 #include "DS2413.h"
+#endif
+
 #include "PiLink.h"
 
 /**
@@ -64,7 +68,9 @@ public:
 #endif
 			
 private:
+#ifdef BREWPI_DS2413
 	DS2413 device;
+#endif
 	pio_t pio;
 	bool invert;
 };

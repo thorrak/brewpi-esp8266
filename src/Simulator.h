@@ -26,6 +26,16 @@
 #include "DeviceManager.h"
 
 /**
+ * \defgroup simulator Simulator
+ * \brief Software simulated sensors & actuators for testing
+ *
+ * Enabled by setting the `BREWPI_SIMULATE` macro to 1
+ *
+ * \addtogroup simulator
+ * @{
+ */
+
+/**
  * Thermal mass of air per unit volume, per degree.
  */
 #define VOL_HC_AIR 0.00121			// J/cm^3/K
@@ -57,11 +67,11 @@ struct HeatPotential
 {
 	double temp;
 	double capacity;
-	
+
 	HeatPotential(double t1, double t2)	 {
-		temp = t1; 
+		temp = t1;
 		capacity = t2;
-	}			
+	}
 };
 
 /**
@@ -72,9 +82,18 @@ typedef Sensor<bool>*	PSensor;
 typedef ValueSensor<bool>*	PValueSensor;
 
 
+/**
+ * Sensor simulation
+ *
+ * Uses a model to simulate the temperature changes of beer & fridge during
+ * periods of heating & cooling.
+ */
 class Simulator
 {
-public:	
+public:
+  void printSettings();
+  void parseSettings();
+
 	Simulator(
 				unsigned long _time=0, 
 				unsigned int _fridgeVolume=400, double _fridgeTemp = 20.0, 
@@ -144,13 +163,21 @@ public:
 	
 	/**
 	 * Set the beer temperature.
+   *
+   * @param beerTemp - New beer temperature
 	 */
 	void setBeerTemp(double beerTemp) {
 		this->beerTemp = beerTemp;
 	}
 	
+  /**
+   * Get the beer temperature.
+   */
 	double getBeerTemp() { return beerTemp; }
 
+  /**
+   * Get the beer volume
+   */
 	double getBeerVolume() { return beerVolume; }
 	
 	void setMinRoomTemp(double minRoomTemp) { this->minRoomTemp = minRoomTemp; }
@@ -425,3 +452,4 @@ void HandleSimulatorConfig(const char* key, const char* val, void* pv);
 void simulateLoop();
 
 
+/** @} */

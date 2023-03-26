@@ -20,10 +20,10 @@
 
 #pragma once
 
-#ifdef ARDUINO
+#ifdef BREWPI_DS2413
 
 #include "Brewpi.h"
-#include "OneWire.h"
+#include <OneWire.h>
 #include "PiLink.h"
 
 typedef uint8_t DeviceAddress[8];

@@ -23,8 +23,11 @@
 #include <limits.h>
 #include "TempControl.h"
 
-#ifdef ESP8266
-// Appears this isn't defined in the ESP8266 implementation
+/**
+ * Provide missing strchrnul on ESP8266
+ *
+ * @see https://linux.die.net/man/3/strchrnul
+ */
 char *
 strchrnul(const char *s, int c_in)
 {
@@ -34,30 +37,58 @@ strchrnul(const char *s, int c_in)
 
 	return (char *)s;
 }
-#endif
 
 
 // See header file for details about the temp format used.
 
-// result can have maximum length of : sign + 3 digits integer part + point + 3 digits fraction part + '\0' = 9 bytes;
-// only 1, 2 or 3 decimals allowed.
-// returns pointer to the string
-// long_temperature is used to prevent overflow
-char * tempToString(char * s, long_temperature rawValue, uint8_t numDecimals, uint8_t maxLength){ 
+/**
+ * \brief Format temperature value as C-str
+ *
+ * Result can have maximum length of : sign + 3 digits integer part + point + 3
+ * digits fraction part + '\0' = 9 bytes;
+ * Only 1, 2 or 3 decimal places allowed.
+ *
+ * \param s - Buffer string to write result to
+ * \param rawValue - temperature value
+ * \param numDecimals - Precision to use when converting
+ * \param maxLength - Size of buffer string
+ * \returns pointer to the buffer string
+ */
+char * tempToString(char * s, long_temperature rawValue, uint8_t numDecimals, uint8_t maxLength){
 	if(rawValue == INVALID_TEMP){
-		strcpy_P(s, PSTR("null")); 
+		strcpy_P(s, PSTR("null"));
 		return s;
 	}
 	rawValue = convertFromInternalTemp(rawValue);
 	return fixedPointToString(s, rawValue, numDecimals, maxLength);
 }
 
+
+/**
+ * \brief Format temperature diff value as C-str
+ *
+ * \param s - Buffer string to write result to
+ * \param rawValue - temperature value
+ * \param numDecimals - Precision to use when converting
+ * \param maxLength - Size of buffer string
+ * \returns pointer to the buffer string
+ */
 char * tempDiffToString(char * s, long_temperature rawValue, uint8_t numDecimals, uint8_t maxLength){
 	rawValue = convertFromInternalTempDiff(rawValue);
 	return fixedPointToString(s, rawValue, numDecimals, maxLength);
 }
-	
-char * fixedPointToString(char * s, temperature rawValue, uint8_t numDecimals, uint8_t maxLength){ 
+
+
+/**
+ * \brief Format fixed point value as C-str
+ *
+ * \param s - Buffer string to write result to
+ * \param rawValue - fixed point value
+ * \param numDecimals - Precision to use when converting
+ * \param maxLength - Size of buffer string
+ * \returns pointer to the buffer string
+ */
+char * fixedPointToString(char * s, temperature rawValue, uint8_t numDecimals, uint8_t maxLength){
 	return fixedPointToString(s, long_temperature(rawValue), numDecimals, maxLength);
 }
 
@@ -70,7 +101,17 @@ void mysnprintf_P(char* buf, int len, const char* fmt, ...)
 	va_end (args);
 }
 
-char * fixedPointToString(char * s, long_temperature rawValue, uint8_t numDecimals, uint8_t maxLength){ 
+
+/**
+ * \brief Format fixed point value as C-str
+ *
+ * \param s - Buffer string to write result to
+ * \param rawValue - fixed point value
+ * \param numDecimals - Precision to use when converting
+ * \param maxLength - Size of buffer string
+ * \returns pointer to the buffer string
+ */
+char * fixedPointToString(char * s, long_temperature rawValue, uint8_t numDecimals, uint8_t maxLength){
 	s[0] = ' ';
 	if(rawValue < 0l){
 		s[0] = '-';
@@ -100,22 +141,46 @@ char * fixedPointToString(char * s, long_temperature rawValue, uint8_t numDecima
 		intPart++;
 		fracPart = 0;
 	}
-	mysnprintf_P(&s[1], maxLength-1, fmt,  intPart, fracPart);
+	if(rawValue < 0l)
+		mysnprintf_P(&s[1], maxLength-1, fmt,  intPart, fracPart);
+	else
+		mysnprintf_P(&s[0], maxLength, fmt,  intPart, fracPart);
 	return s;
 }
 
+
+/**
+ * \brief Convert a c-str into a temperature value
+ *
+ * \param numberString - String to convert
+ * \returns converted temperature
+ */
 temperature stringToTemp(const char * numberString){
 	long_temperature rawTemp = stringToFixedPoint(numberString);
 	rawTemp = convertToInternalTemp(rawTemp);
 	return constrainTemp16(rawTemp);
 }
 
+
+/**
+ * \brief Convert a c-str into a temperature diff
+ *
+ * \param numberString - String to convert
+ * \returns converted temperature diff
+ */
 temperature stringToTempDiff(const char * numberString){
 	long_temperature rawTempDiff = stringToFixedPoint(numberString);
 	rawTempDiff = convertToInternalTempDiff(rawTempDiff);
 	return constrainTemp16(rawTempDiff);
 }
 
+
+/**
+ * \brief Convert a c-str into a fixed point
+ *
+ * \param numberString - String to convert
+ * \returns converted fixed point temperature
+ */
 long_temperature stringToFixedPoint(const char * numberString){
 	// receive new temperature as null terminated string: "19.20"
 	long_temperature intPart = 0;
@@ -147,8 +212,16 @@ long_temperature stringToFixedPoint(const char * numberString){
 	return negative ? -absVal:absVal;
 }
 
-// convertToInternalTemp receives the external temp format in fixed point and converts it to the internal format
-// It scales the value for Fahrenheit and adds the offset needed for absolute temperatures. For temperature differences, use no offset.
+/**
+ * Receives the external temp format in fixed point and converts it to the internal format
+ * It scales the value for Fahrenheit and adds the offset needed for absolute
+ * temperatures. For temperature differences, use no offset.
+ *
+ * @param rawTemp - Temperature to convert
+ * @param addOffset - Flag to control if temp offsets are added.  Should be
+ * `true` when working with absolute temps, `false` when working with
+ * differences.
+ */
 long_temperature convertToInternalTempImpl(long_temperature rawTemp, bool addOffset){
 	if(tempControl.cc.tempFormat == 'F'){ // value received is in F, convert to C
 		rawTemp = (rawTemp) * 5 / 9;
@@ -159,7 +232,7 @@ long_temperature convertToInternalTempImpl(long_temperature rawTemp, bool addOff
 	else{
 		if(addOffset){
 			rawTemp += C_OFFSET;
-		}		
+		}
 	}
 	return rawTemp;
 }
@@ -180,23 +253,42 @@ long_temperature convertFromInternalTempImpl(long_temperature rawTemp, bool addO
 	return rawTemp;
 }
 
+/**
+ * \brief Convert a fixed point temperature to decimal value rounded to nearest tenth
+ *
+ * @param temp - Temperature to convert
+ */
 int fixedToTenths(long_temperature temp){
 	temp = convertFromInternalTemp(temp);
 	return (int) ((10 * temp + intToTempDiff(5)/10) / intToTempDiff(1)); // return rounded result in tenth of degrees
 }
 
+
+/**
+ * \brief Convert a decimal value temperature to the internal representation
+ *
+ * \param temp - Temperature to convert
+ */
 temperature tenthsToFixed(int temp){
-	long_temperature fixedPointTemp = convertToInternalTemp(((long_temperature) temp * intToTempDiff(1) + 5) / 10);	
+	long_temperature fixedPointTemp = convertToInternalTemp(((long_temperature) temp * intToTempDiff(1) + 5) / 10);
 	return constrainTemp16(fixedPointTemp);
 }
 
+/**
+ * \brief Constrain a temp within bounds
+ *
+ * @param valLong - Temperature to constrain
+ * @param lower - Lower bound
+ * @param upper - Upper bound
+ * @return The value of `valLong` if it is within the bounds.  `lower` if `valLong` is below, `upper` if `valLong` is above.
+ */
 temperature constrainTemp(long_temperature valLong, temperature lower, temperature upper){
 	temperature val = constrainTemp16(valLong);
-	
+
 	if(val < lower){
 		return lower;
 	}
-	
+
 	if(val > upper){
 		return upper;
 	}
@@ -204,6 +296,14 @@ temperature constrainTemp(long_temperature valLong, temperature lower, temperatu
 }
 
 
+/**
+ * \brief Constrain a temp within bounds of MIN_TEMP and MAX_TEMP
+ *
+ * @param val - Temperature to constrain
+ * @return The value of `val` if it is within the bounds.  `MIN_TEMP` if `val` is below, `MAX_TEMP` if `val` is above.
+ * @see MIN_TEMP
+ * @see MAX_TEMP
+ */
 temperature constrainTemp16(long_temperature val)
 {
 	if(val<MIN_TEMP){
@@ -212,7 +312,7 @@ temperature constrainTemp16(long_temperature val)
 	if(val>MAX_TEMP){
 		return MAX_TEMP;
 	}
-	return val;	
+	return val;
 }
 
 temperature multiplyFactorTemperatureLong(temperature factor, long_temperature b)
@@ -234,4 +334,50 @@ temperature multiplyFactorTemperature(temperature factor, temperature b)
 temperature multiplyFactorTemperatureDiff(temperature factor, temperature b)
 {
 	return constrainTemp16(((long_temperature) factor * (long_temperature) b )>>TEMP_FIXED_POINT_BITS);
+}
+
+
+/**
+ * \brief Convert a temperature to a double.
+ * Used for JSON conversion.
+ *
+ * \param rawTemp - Temperature value to convert
+ * \param numDecimals - Number of decimal places to include
+ * \todo Do a direct conversion instead of going to string
+ */
+double tempToDouble(long_temperature rawTemp, uint8_t numDecimals) {
+  char tempString[Config::TempFormat::bufferLen];
+  String temp(tempToString(tempString, rawTemp, numDecimals, Config::TempFormat::bufferLen));
+  temp.trim();
+  return temp.toDouble();
+}
+
+/**
+ * \brief Convert a temperature difference to a double.
+ * Used for JSON conversion.
+ *
+ * \param rawTempDiff - Temperature difference value to convert
+ * \param numDecimals - Number of decimal places to include
+ * \todo Do a direct conversion instead of going to string
+ */
+double tempDiffToDouble(long_temperature rawTempDiff, uint8_t numDecimals) {
+    char tempString[Config::TempFormat::bufferLen];
+    String temp(tempDiffToString(tempString, rawTempDiff, numDecimals, Config::TempFormat::bufferLen));
+    temp.trim();
+    return temp.toDouble();
+}
+
+/**
+ * \brief Convert a temperature to a double.
+ * Used for JSON conversion.
+ *
+ * \param rawFixedPoint - Fixed point value to convert
+ * \param numDecimals - Number of decimal places to include
+ * \todo Do a direct conversion instead of going to string
+ */
+double fixedPointToDouble(long_temperature rawFixedPoint, uint8_t numDecimals) {
+    char tempString[Config::TempFormat::bufferLen];
+    String temp(fixedPointToString(tempString, rawFixedPoint, numDecimals, Config::TempFormat::bufferLen));
+    temp.trim();
+    return temp.toDouble();
 }

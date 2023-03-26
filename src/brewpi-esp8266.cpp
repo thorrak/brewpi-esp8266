@@ -1,24 +1,13 @@
-// Libraries have to be loaded in the main .ino file per Visual Micro. Load them here.
 
 #ifdef ESP8266
+#include <FS.h>  // Apparently this needs to be first
+#include <LittleFS.h>
+#include <ESP8266mDNS.h>
+#elif defined(ESP32)
 #include <FS.h>  // Apparently this needs to be first
 #endif
 
 #include "Brewpi.h"
-
-#ifdef ESP8266
-#include <ESP8266WiFi.h>		//ESP8266 Core WiFi Library (always included so we can disable the radio for serial)
-
-#ifdef ESP8266_WiFi
-#include <ESP8266mDNS.h>
-#include <DNSServer.h>			//Local DNS Server used for redirecting all requests to the configuration portal
-#include <ESP8266WebServer.h>	//Local WebServer used to serve the configuration portal
-#include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
-#include "Version.h" 			// Used in mDNS announce string
-#endif
-#endif
-
-#include <OneWire.h>
 
 #include <Wire.h>
 
@@ -36,16 +25,43 @@
 #include "Ticks.h"
 #include "Sensor.h"
 #include "SettingsManager.h"
-#include "EepromFormat.h"
+#include "ESP_BP_WiFi.h"
+#include "CommandProcessor.h"
+#include "PromServer.h"
+#include "wireless/BTScanner.h"
+#include "tplink/TPLinkScanner.h"
+#include "http_server.h"
 
 #if BREWPI_SIMULATE
 #include "Simulator.h"
 #endif
 
-// global class objects static and defined in class cpp and h files
+/**
+ * \file brewpi-esp8266.cpp
+ *
+ * \brief Main project entrypoint
+ */
 
+// global class objects static and defined in class cpp and h files
 // instantiate and configure the sensors, actuators and controllers we want to use
 
+
+/*
+ * Create the correct type of PiLink connection for how we're configured.
+ */
+#if defined(ESP8266_WiFi)
+// Just use the serverClient object as it supports all the same functions as Serial
+// extern WiFiClient serverClient;
+PiLink<WiFiClient> piLink(serverClient);
+#else
+// Not using ESP8266 WiFi
+#if defined(ESP32S2)
+// The ESP32-S2 has USB built onto the chip, and uses USBCDC rather than HardwareSerial
+PiLink<USBCDC> piLink(Serial);
+#else
+PiLink<HardwareSerial> piLink(Serial);
+#endif
+#endif
 
 /* Configure the counter and delay timer. The actual type of these will vary depending upon the environment.
 * They are non-virtual to keep code size minimal, so typedefs and preprocessing are used to select the actual compile-time type used. */
@@ -55,152 +71,81 @@ DelayImpl wait = DelayImpl(DELAY_IMPL_CONFIG);
 DisplayType realDisplay;
 DisplayType DISPLAY_REF display = realDisplay;
 
-ValueActuator alarm;
+ValueActuator alarm_actuator;
 
-#ifdef ESP8266_WiFi
-bool shouldSaveConfig = false;
-
-//callback notifying us of the need to save config
-void saveConfigCallback() {
-	Serial.println("Should save config");
-	shouldSaveConfig = true;
+#ifdef ESP32
+void printMem() {
+    char buf[256];
+    const uint32_t free = ESP.getFreeHeap();
+    const uint32_t max = ESP.getMaxAllocHeap();
+    const uint8_t frag = 100 - (max * 100) / free;
+    sprintf(buf, "Free Heap: %d, Largest contiguous block: %d, Frag: %d%%\r\n", free, max, frag );
+    // PiLink.print(F(), free, max, frag);
+    Serial.print(buf);
 }
-
-// Not sure if this is sufficient to test for validity
-bool isValidmDNSName(String mdns_name) {
-	for (std::string::size_type i = 0; i < mdns_name.length(); ++i) {
-		// For now, we're just checking that every character in the string is alphanumeric. May need to add more validation here.
-		if (!isalnum(mdns_name[i]))
-			return false;
-	}
-	return true;
-}
-
-WiFiServer server(23);
-WiFiClient serverClient;
-
-WiFiEventHandler stationConnectedHandler;
-void onStationConnected(const WiFiEventSoftAPModeStationConnected& evt) {
-    server.begin();
-    server.setNoDelay(true);
-}
-
-
 #endif
 
+/**
+ * \brief Restart the board
+ */
 void handleReset()
 {
-	// The asm volatile method doesn't work on ESP8266. Instead, use ESP.restart
-	ESP.restart();
+    // The asm volatile method doesn't work on ESP8266. Instead, use ESP.restart
+    ESP.restart();
 }
 
-
-
+/**
+ * \brief Startup configuration
+ *
+ * - Start up the filesystem
+ * - Initialize the display
+ * - If in simulation mode, bootstrap the simulator
+ * - Start the PiLink connection (either tcp socket or serial, depending on compile time configuration)
+ */
 void setup()
 {
-    // Let's get the display going so that we can provide the user a bit of feedback on what's happening
-    display.init();
-    display.printEEPROMStartup();
-
-    // Before anything else, let's get SPIFFS working. We need to start it up, and then test if the file system was
-    // formatted.
-	SPIFFS.begin();
-
-    if (!SPIFFS.exists("/formatComplete.txt")) {
-        if (!SPIFFS.exists("/mdns.txt")) {
-            // This prevents installations that are being upgraded from v0.10 to v0.11 from having their mdns settings
-            // wiped out
-            SPIFFS.format();
-        }
-        File f = SPIFFS.open("/formatComplete.txt", "w");
-        f.close();
-    }
-
 #ifdef ESP8266_WiFi
-    display.printWiFiStartup();
-	String mdns_id;
-
-	mdns_id = eepromManager.fetchmDNSName();
-//	if(mdns_id.length()<=0)
-//		mdns_id = "ESP" + String(ESP.getChipId());
-
-
-	// If we're going to set up WiFi, let's get to it
-	WiFiManager wifiManager;
-	wifiManager.setConfigPortalTimeout(5*60); // Time out after 5 minutes so that we can keep managing temps 
-	wifiManager.setDebugOutput(FALSE); // In case we have a serial connection to BrewPi
-									   
-	// The main purpose of this is to set a boolean value which will allow us to know we
-	// just saved a new configuration (as opposed to rebooting normally)
-	wifiManager.setSaveConfigCallback(saveConfigCallback);
-
-	// The third parameter we're passing here (mdns_id.c_str()) is the default name that will appear on the form.
-	// It's nice, but it means the user gets no actual prompt for what they're entering. 
-	WiFiManagerParameter custom_mdns_name("mdns", "Device (mDNS) Name", mdns_id.c_str(), 20);
-	wifiManager.addParameter(&custom_mdns_name);
-
-//	wifiManager.autoConnect("ESP-BrewPi-Setup"); // Launch captive portal with static name
-    // Launch captive portal with auto generated name ESP + ChipID
-    if(wifiManager.autoConnect()) {
-        WiFi.softAPdisconnect(true);
-        WiFi.mode(WIFI_AP_STA);
-    } else {
-        // We failed to connect - turn WiFi off
-        WiFi.softAPdisconnect(true);
-        WiFi.mode(WIFI_OFF);
-    }
-
-    // Alright. We're theoretically connected here (or we timed out).
-    // If we connected, then let's save the mDNS name
-    if (shouldSaveConfig) {
-        // If the mDNS name is valid, save it.
-        if (isValidmDNSName(custom_mdns_name.getValue())) {
-            eepromManager.savemDNSName(custom_mdns_name.getValue());
-        } else {
-            // If the mDNS name is invalid, reset the WiFi configuration and restart the ESP8266
-            WiFi.disconnect(true);
-            delay(2000);
-            handleReset();
-        }
-    }
-
-    // Regardless of the above, we need to set the mDNS name and announce it
-	if (!MDNS.begin(mdns_id.c_str())) {
-		// TODO - Do something about it or log it or something
-	}
-#else
-    // Apparently, the WiFi radio is managed by the bootloader, so not including the libraries isn't the same as
-    // disabling WiFi. We'll explicitly disable it if we're running in "serial" mode
-	WiFi.disconnect();
-	WiFi.mode(WIFI_OFF);
+    Serial.begin(Config::PiLink::serialSpeed);
 #endif
 
 
-#if BREWPI_BUZZER	
+    // Before anything else, let's get the filesystem working. We need to start it up, and then test if the file system
+    // was formatted.
+  #ifdef ESP32
+    FILESYSTEM.begin(true);
+  #else
+    FILESYSTEM.begin();
+  #endif
+
+  extendedSettings.loadFromSpiffs();
+  upstreamSettings.loadFromSpiffs();
+  display.init();
+
+  initialize_wifi();
+
+#if BREWPI_BUZZER
 	buzzer.init();
 	buzzer.beep(2, 500);
-#endif	
-
-	piLink.init();
-
-#ifdef ESP8266_WiFi
-	// If we're using WiFi, initialize the bridge
-	server.begin();
-	server.setNoDelay(true);
-	// mDNS will stop responding after awhile unless we query the specific service we want
-	MDNS.addService("brewpi", "tcp", 23);
-	MDNS.addServiceTxt("brewpi", "tcp", "board", "ESP8266");
-	MDNS.addServiceTxt("brewpi", "tcp", "branch", "legacy");
-	MDNS.addServiceTxt("brewpi", "tcp", "version", VERSION_STRING);
-	MDNS.addServiceTxt("brewpi", "tcp", "revision", FIRMWARE_REVISION);
 #endif
 
-	// This code no longer really does anything.
-//    bool initialize = !eepromManager.hasSettings();
-//    if(initialize) {
-//        eepromManager.zapEeprom();  // Writes all the empty files to SPIFFS
-//        logInfo(INFO_EEPROM_INITIALIZED);
-//    }
+
+	piLink.init();  // Initializes either the serial or telnet connection
+
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+  // Initialize UDP and send the initial discovery message
+  // TODO - Test how this reacts when WiFi is not available
+  tp_link_scanner.init();
+  tp_link_scanner.send_discover();
+  delay(200); // This should be very quick
+  tp_link_scanner.process_udp_incoming();
+#endif
+
+#ifdef HAS_BLUETOOTH
+    bt_scanner.init();
+    bt_scanner.scan();
+    display.printBluetoothStartup();  // Alert the user about the startup delay
+    delay(10000);
+#endif
 
 	logDebug("started");
 	tempControl.init();
@@ -211,78 +156,68 @@ void setup()
 	// initialize the filters with the assigned initial temp value
 	tempControl.beerSensor->init();
 	tempControl.fridgeSensor->init();
-#endif	
-
-#ifdef ESP8266_WiFi
-	display.printWiFi();  // Print the WiFi info (mDNS name & IP address)
-    WiFi.setAutoReconnect(true);
-    stationConnectedHandler = WiFi.onSoftAPModeStationConnected(&onStationConnected);
-	delay(8000);
 #endif
+
+	// Once the WiFi and piLink are initialized, we want to display a screen with connection information
+  display_connect_info_and_create_callback();
+
 	display.clear();
 	display.printStationaryText();
 	display.printState();
+
+#ifdef ENABLE_HTTP_INTERFACE
+  http_server.init();     // Initialize the web server
+#endif
+
+#ifdef ENABLE_PROMETHEUS_SERVER
+  if(Config::Prometheus::enable())
+    promServer.setup();
+#endif
 
 //	rotaryEncoder.init();
 
 	logDebug("init complete");
 }
 
-#ifdef ESP8266_WiFi
-	int reconnectPoll = 0;
-	void connectClients() {
 
-    if(WiFi.isConnected()) {
-        if (server.hasClient()) {
-            // If we show a client as already being disconnected, force a disconnect
-            if (serverClient) serverClient.stop();
-            serverClient = server.available();
-            serverClient.flush();
-        }
-    } else {
-        // This might be unnecessary, but let's go ahead and disconnect any "clients" we show as connected given that
-        // WiFi isn't connected
-		// If we show a client as already being disconnected, force a disconnect
-		if (serverClient) {
-			serverClient.stop();
-			serverClient = server.available();
-			serverClient.flush();
-		}
-    }
-}
 
-#endif
-
-void brewpiLoop(void)
+/**
+ * \brief Main execution loop
+ */
+void brewpiLoop()
 {
 	static unsigned long lastUpdate = 0;
-    static unsigned long lastLcdUpdate = 0;
-
 	uint8_t oldState;
+#ifndef BREWPI_TFT  // We don't want to do this for the TFT display
+    static unsigned long lastLcdUpdate = 0;
     if(ticks.millis() - lastLcdUpdate >= (180000)) { //reset lcd every 180 seconds as a workaround for screen scramble
         lastLcdUpdate = ticks.millis();
 
-        display.init();
-        display.printStationaryText();
-        display.printState();
+        DisplayType::init();
+        DisplayType::printStationaryText();
+        DisplayType::printState();
 
         rotaryEncoder.init();
     }
+#endif
 
-    if (ticks.millis() - lastUpdate >= (1000)) { //update settings every second
+  if (ticks.millis() - lastUpdate >= (1000)) { //update settings every second
+    // printMem();
+
 		lastUpdate = ticks.millis();
 
 #if BREWPI_BUZZER
-		buzzer.setActive(alarm.isActive() && !buzzer.isActive());
-#endif			
+		buzzer.setActive(alarm_actuator.isActive() && !buzzer.isActive());
+#endif
 
 		tempControl.updateTemperatures();
 		tempControl.detectPeaks();
 		tempControl.updatePID();
 		oldState = tempControl.getState();
 		tempControl.updateState();
+
 		if (oldState != tempControl.getState()) {
-			piLink.printTemperatures(); // add a data point at every state transition
+          piLink.sendStateNotification();
 		}
 		tempControl.updateOutputs();
 
@@ -294,22 +229,41 @@ void brewpiLoop(void)
 #endif
 
 		// update the lcd for the chamber being displayed
-		display.printState();
-		display.printAllTemperatures();
-		display.printMode();
-		display.updateBacklight();
+    display.printAll();
 	}
 
-	//listen for incoming serial connections while waiting to update
-#ifdef ESP8266_WiFi
-	yield();
-	connectClients();
-	yield();
+	//listen for incoming connections while waiting to update
+  wifi_connect_clients();
+  CommandProcessor::receiveCommand();
+
+#ifdef HAS_BLUETOOTH
+if(bt_scanner.scanning_failed()) {
+
+  esp_restart();
+}
+  bt_scanner.scan();        // Check/restart scan 
 #endif
-	piLink.receive();
+
+#ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
+  tp_link_scanner.scan_and_refresh();
+#endif
+
+#ifdef ENABLE_HTTP_INTERFACE
+  http_server.web_server->handleClient();
+#endif
+
+#ifdef ESP8266
+  MDNS.update();
+#endif
 
 }
 
+
+/**
+ * \brief Main execution loop
+ *
+ * This dispatches to brewpiLoop(), or if we're in simulation mode simulateLoop()
+ */
 void loop() {
 #if BREWPI_SIMULATE
 	simulateLoop();
