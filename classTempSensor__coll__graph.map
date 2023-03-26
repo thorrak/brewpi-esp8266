@@ -1,0 +1,6 @@
+<map id="TempSensor" name="TempSensor">
+<area shape="rect" id="node1" title="General interface for all temperature sensor devices." alt="" coords="62,211,158,236"/>
+<area shape="rect" id="node2" href="$classBasicTempSensor.html" title=" " alt="" coords="5,93,135,119"/>
+<area shape="rect" id="node3" href="$classCascadedFilter.html" title="Implements a filter that consists of multiple second order sections." alt="" coords="159,93,269,119"/>
+<area shape="rect" id="node4" href="$classFixedFilter.html" title=" " alt="" coords="173,5,255,31"/>
+</map>

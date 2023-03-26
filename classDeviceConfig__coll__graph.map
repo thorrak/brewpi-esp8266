@@ -1,0 +1,5 @@
+<map id="DeviceConfig" name="DeviceConfig">
+<area shape="rect" id="node1" title=" " alt="" coords="92,93,191,119"/>
+<area shape="rect" id="node2" href="$classJSONSaveable.html" title="Data that can be persisted as JSON." alt="" coords="5,5,117,31"/>
+<area shape="rect" id="node3" href="$structDeviceConfig_1_1Hardware.html" title=" " alt="" coords="141,5,301,31"/>
+</map>

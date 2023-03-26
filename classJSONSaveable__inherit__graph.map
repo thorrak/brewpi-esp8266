@@ -1,0 +1,9 @@
+<map id="JSONSaveable" name="JSONSaveable">
+<area shape="rect" id="node1" title="Data that can be persisted as JSON." alt="" coords="5,129,117,155"/>
+<area shape="rect" id="node2" href="$classControlConstants.html" title="PID Control constants." alt="" coords="167,5,290,31"/>
+<area shape="rect" id="node3" href="$structControlSettings.html" title=" " alt="" coords="173,55,284,80"/>
+<area shape="rect" id="node4" href="$classDeviceConfig.html" title=" " alt="" coords="179,104,278,129"/>
+<area shape="rect" id="node5" href="$classExtendedSettings.html" title="Extended (non&#45;stock&#45;BrewPi) hardware settings." alt="" coords="167,153,290,179"/>
+<area shape="rect" id="node6" href="$classMinTimes.html" title=" " alt="" coords="189,203,268,228"/>
+<area shape="rect" id="node7" href="$classUpstreamSettings.html" title="REST Interface settings." alt="" coords="165,252,292,277"/>
+</map>

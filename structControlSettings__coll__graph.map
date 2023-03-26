@@ -1,0 +1,4 @@
+<map id="ControlSettings" name="ControlSettings">
+<area shape="rect" id="node1" title=" " alt="" coords="6,79,117,104"/>
+<area shape="rect" id="node2" href="$classJSONSaveable.html" title="Data that can be persisted as JSON." alt="" coords="5,5,117,31"/>
+</map>

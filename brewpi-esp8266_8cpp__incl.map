@@ -1,0 +1,52 @@
+<map id="src/brewpi&#45;esp8266.cpp" name="src/brewpi&#45;esp8266.cpp">
+<area shape="rect" id="node1" title="Main project entrypoint." alt="" coords="1333,5,1491,31"/>
+<area shape="rect" id="node2" href="$Brewpi_8h.html" title="Defines global config for the brewpi project." alt="" coords="831,372,903,397"/>
+<area shape="rect" id="node13" title=" " alt="" coords="63,79,121,104"/>
+<area shape="rect" id="node14" href="$Ticks_8h_source.html" title=" " alt="" coords="284,299,348,324"/>
+<area shape="rect" id="node16" href="$Display_8h.html" title="To use the display, include this file." alt="" coords="553,79,628,104"/>
+<area shape="rect" id="node20" href="$TempControl_8h_source.html" title=" " alt="" coords="1212,152,1319,177"/>
+<area shape="rect" id="node21" href="$TempSensor_8h_source.html" title=" " alt="" coords="1415,225,1521,251"/>
+<area shape="rect" id="node25" href="$Pins_8h_source.html" title=" " alt="" coords="828,225,887,251"/>
+<area shape="rect" id="node26" href="$Sensor_8h_source.html" title=" " alt="" coords="911,225,985,251"/>
+<area shape="rect" id="node31" href="$PiLink_8h_source.html" title=" " alt="" coords="1975,79,2044,104"/>
+<area shape="rect" id="node36" href="$ESP__BP__WiFi_8h.html" title=" " alt="" coords="2150,299,2266,324"/>
+<area shape="rect" id="node38" href="$Menu_8h_source.html" title=" " alt="" coords="2443,299,2507,324"/>
+<area shape="rect" id="node40" href="$RotaryEncoder_8h_source.html" title=" " alt="" coords="629,152,745,177"/>
+<area shape="rect" id="node41" href="$Buzzer_8h_source.html" title=" " alt="" coords="138,299,209,324"/>
+<area shape="rect" id="node42" href="$TempSensorMock_8h_source.html" title=" " alt="" coords="1343,152,1481,177"/>
+<area shape="rect" id="node43" href="$TempSensorExternal_8h_source.html" title=" " alt="" coords="1505,152,1657,177"/>
+<area shape="rect" id="node44" href="$SettingsManager_8h_source.html" title=" " alt="" coords="956,79,1087,104"/>
+<area shape="rect" id="node46" href="$CommandProcessor_8h_source.html" title=" " alt="" coords="2369,152,2519,177"/>
+<area shape="rect" id="node47" href="$PromServer_8h_source.html" title=" " alt="" coords="2469,79,2571,104"/>
+<area shape="rect" id="node48" title=" " alt="" coords="2595,79,2744,104"/>
+<area shape="rect" id="node49" title=" " alt="" coords="2768,79,2925,104"/>
+<area shape="rect" id="node50" href="$http__server_8h_source.html" title=" " alt="" coords="2950,79,3047,104"/>
+<area shape="rect" id="node3" href="$Config_8h.html" title="Compile time configuration flags." alt="" coords="741,519,809,544"/>
+<area shape="rect" id="node5" href="$ConfigDefault_8h.html" title="Compile time configuration flags." alt="" coords="812,445,921,471"/>
+<area shape="rect" id="node6" title=" " alt="" coords="946,445,1022,471"/>
+<area shape="rect" id="node7" href="$Actuator_8h_source.html" title=" " alt="" coords="317,445,398,471"/>
+<area shape="rect" id="node9" href="$Logger_8h_source.html" title=" " alt="" coords="2401,445,2473,471"/>
+<area shape="rect" id="node4" title=" " alt="" coords="743,592,807,617"/>
+<area shape="rect" id="node8" href="$FastDigitalPin_8h_source.html" title=" " alt="" coords="301,519,414,544"/>
+<area shape="rect" id="node10" title=" " alt="" coords="2546,519,2614,544"/>
+<area shape="rect" id="node11" href="$TemperatureFormats_8h.html" title="Temperature value handling." alt="" coords="1422,519,1575,544"/>
+<area shape="rect" id="node12" href="$LogMessages_8h_source.html" title=" " alt="" coords="2380,519,2495,544"/>
+<area shape="rect" id="node15" href="$TicksArduino_8h_source.html" title=" " alt="" coords="239,372,347,397"/>
+<area shape="rect" id="node17" href="$DisplayBase_8h_source.html" title=" " alt="" coords="548,225,652,251"/>
+<area shape="rect" id="node18" href="$DisplayLcd_8h_source.html" title=" " alt="" coords="457,152,553,177"/>
+<area shape="rect" id="node19" href="$SpiLcd_8h_source.html" title=" " alt="" coords="47,225,121,251"/>
+<area shape="rect" id="node27" href="$EepromManager_8h_source.html" title=" " alt="" coords="1111,225,1238,251"/>
+<area shape="rect" id="node28" href="$EepromStructs_8h_source.html" title=" " alt="" coords="1465,299,1583,324"/>
+<area shape="rect" id="node29" title=" " alt="" coords="2073,372,2177,397"/>
+<area shape="rect" id="node30" href="$ActuatorAutoOff_8h_source.html" title=" " alt="" coords="297,225,423,251"/>
+<area shape="rect" id="node22" href="$FilterCascaded_8h_source.html" title=" " alt="" coords="1270,299,1389,324"/>
+<area shape="rect" id="node23" href="$TempSensorBasic_8h_source.html" title=" " alt="" coords="1363,372,1501,397"/>
+<area shape="rect" id="node24" title=" " alt="" coords="1183,299,1246,324"/>
+<area shape="rect" id="node32" title=" " alt="" coords="1941,299,2024,324"/>
+<area shape="rect" id="node33" href="$DeviceManager_8h_source.html" title=" " alt="" coords="964,152,1087,177"/>
+<area shape="rect" id="node34" href="$DeviceNameManager_8h_source.html" title=" " alt="" coords="1709,299,1867,324"/>
+<area shape="rect" id="node35" href="$PiStream_8h_source.html" title=" " alt="" coords="2021,225,2107,251"/>
+<area shape="rect" id="node37" href="$JsonMessages_8h_source.html" title=" " alt="" coords="2248,225,2368,251"/>
+<area shape="rect" id="node39" title=" " alt="" coords="2429,372,2507,397"/>
+<area shape="rect" id="node45" title=" " alt="" coords="871,152,939,177"/>
+</map>

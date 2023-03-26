@@ -1,0 +1,5 @@
+<map id="Actuator" name="Actuator">
+<area shape="rect" id="node1" title=" " alt="" coords="97,5,167,31"/>
+<area shape="rect" id="node2" href="$classAutoOffActuator.html" title=" " alt="" coords="5,79,120,104"/>
+<area shape="rect" id="node3" href="$classTPLinkActuator.html" title=" " alt="" coords="145,79,258,104"/>
+</map>

@@ -1,0 +1,13 @@
+<map id="src/Brewpi.h" name="src/Brewpi.h">
+<area shape="rect" id="node1" title="Defines global config for the brewpi project." alt="" coords="227,5,321,31"/>
+<area shape="rect" id="node2" href="$Config_8h.html" title="Compile time configuration flags." alt="" coords="5,152,73,177"/>
+<area shape="rect" id="node4" href="$ConfigDefault_8h.html" title="Compile time configuration flags." alt="" coords="51,79,161,104"/>
+<area shape="rect" id="node5" title=" " alt="" coords="185,79,261,104"/>
+<area shape="rect" id="node6" href="$Actuator_8h_source.html" title=" " alt="" coords="285,79,367,104"/>
+<area shape="rect" id="node8" href="$Logger_8h_source.html" title=" " alt="" coords="391,79,463,104"/>
+<area shape="rect" id="node3" title=" " alt="" coords="189,225,253,251"/>
+<area shape="rect" id="node7" href="$FastDigitalPin_8h_source.html" title=" " alt="" coords="121,152,235,177"/>
+<area shape="rect" id="node9" title=" " alt="" coords="259,152,327,177"/>
+<area shape="rect" id="node10" href="$TemperatureFormats_8h.html" title="Temperature value handling." alt="" coords="351,152,504,177"/>
+<area shape="rect" id="node11" href="$LogMessages_8h_source.html" title=" " alt="" coords="529,152,643,177"/>
+</map>

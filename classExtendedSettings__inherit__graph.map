@@ -1,0 +1,4 @@
+<map id="ExtendedSettings" name="ExtendedSettings">
+<area shape="rect" id="node1" title="Extended (non&#45;stock&#45;BrewPi) hardware settings." alt="" coords="5,79,128,104"/>
+<area shape="rect" id="node2" href="$classJSONSaveable.html" title="Data that can be persisted as JSON." alt="" coords="11,5,123,31"/>
+</map>

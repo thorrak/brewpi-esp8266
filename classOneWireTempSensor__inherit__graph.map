@@ -1,0 +1,4 @@
+<map id="OneWireTempSensor" name="OneWireTempSensor">
+<area shape="rect" id="node1" title="A OneWire attached temperature sensor." alt="" coords="5,79,152,104"/>
+<area shape="rect" id="node2" href="$classBasicTempSensor.html" title=" " alt="" coords="14,5,143,31"/>
+</map>
