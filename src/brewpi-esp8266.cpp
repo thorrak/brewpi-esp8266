@@ -241,7 +241,10 @@ void brewpiLoop()
 
 #ifdef HAS_BLUETOOTH
 if(bt_scanner.scanning_failed()) {
+#ifdef ENABLE_HTTP_INTERFACE
   rest_handler.send_bluetooth_crash_report();
+  // TODO - Figure out if we want to keep this here
+#endif
   esp_restart();
 }
   bt_scanner.scan();        // Check/restart scan 
@@ -253,6 +256,7 @@ if(bt_scanner.scanning_failed()) {
 
 #ifdef ENABLE_HTTP_INTERFACE
   http_server.web_server->handleClient();
+  rest_handler.process();
 #endif
 
 #ifdef ESP8266

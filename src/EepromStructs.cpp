@@ -415,6 +415,8 @@ void UpstreamSettings::setDefaults() {
     upstreamHost[0] = '\0';
     upstreamPort = 80;
     deviceID[0] = '\0';
+    username[0] = '\0';
+    upstreamRegistrationError = upstreamRegErrorT::NOT_ATTEMPTED_REGISTRATION;
 }
 
 
@@ -426,6 +428,8 @@ void UpstreamSettings::toJson(DynamicJsonDocument &doc) {
     doc[UpstreamSettingsKeys::upstreamHost] = upstreamHost;
     doc[UpstreamSettingsKeys::upstreamPort] = upstreamPort;
     doc[UpstreamSettingsKeys::deviceID] = deviceID;
+    doc[UpstreamSettingsKeys::username] = username;
+    doc[UpstreamSettingsKeys::upstreamRegistrationError] = (uint16_t) upstreamRegistrationError;
 }
 
 void UpstreamSettings::storeToSpiffs() {
@@ -446,6 +450,7 @@ void UpstreamSettings::loadFromSpiffs() {
     if(json_doc.containsKey(UpstreamSettingsKeys::upstreamHost)) strlcpy(upstreamHost, json_doc[UpstreamSettingsKeys::upstreamHost], 128);
     if(json_doc.containsKey(UpstreamSettingsKeys::upstreamPort)) upstreamPort = json_doc[UpstreamSettingsKeys::upstreamPort];
     if(json_doc.containsKey(UpstreamSettingsKeys::deviceID)) strlcpy(deviceID, json_doc[UpstreamSettingsKeys::deviceID], 64);
+    if(json_doc.containsKey(UpstreamSettingsKeys::username)) strlcpy(username, json_doc[UpstreamSettingsKeys::username], 128);
 
 }
 
@@ -461,5 +466,7 @@ void UpstreamSettings::processSettingKeypair(JsonPair kv) {
     upstreamPort = kv.value().as<uint16_t>();
   } else if (kv.key() == UpstreamSettingsKeys::deviceID) {
     strlcpy(deviceID, kv.value().as<const char *>(), 64);
+  } else if (kv.key() == UpstreamSettingsKeys::username) {
+    strlcpy(username, kv.value().as<const char *>(), 128);
   }
 }

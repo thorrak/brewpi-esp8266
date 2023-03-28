@@ -29,6 +29,7 @@ void restHandler::init()
     // Set up timers
     fullConfigTicker.once(45, [](){rest_handler.send_full_config_ticker=true;});
     lcdTicker.once(35, [](){rest_handler.send_lcd_ticker = true;});
+    registerDeviceTicker.once(30, [](){rest_handler.register_device_ticker = true;});
 }
 
 
@@ -41,15 +42,17 @@ void restHandler::get_useragent(char *ua, size_t size) {
 }
 
 
-// bool restHandler::send_data() {
-//     send_to_taplistio(*this);
-//     send_to_mqtt(*this);
-//     return true;
-// }
+void restHandler::process() {
+    // send_full_config();
+    register_device();
+}
 
+sendResult restHandler::send_json_str(String &payload, const char *url, httpMethod method) {
+    String response;
+    return send_json_str(payload, url, response, method);
+}
 
-
-sendResult restHandler::send_json_str(String &payload, const char *url) {
+sendResult restHandler::send_json_str(String &payload, const char *url, String &response, httpMethod method) {
     char auth_header[64];
     char userAgent[128];
     int httpResponseCode;
@@ -90,7 +93,11 @@ sendResult restHandler::send_json_str(String &payload, const char *url) {
                 http.addHeader(F("Content-Type"), F("application/json"));
                 // http.addHeader(F("Authorization"), auth_header);
                 http.setUserAgent(userAgent);
-                httpResponseCode = http.PUT(payload);  // TODO - Technically should be either PUT, POST, or PATCH. Have to figure that out later. 
+
+                // Use whatever method we were passed
+                httpResponseCode = http.sendRequest(httpMethodToString(method), payload);
+
+                response = http.getString();
 
                 if (httpResponseCode < HTTP_CODE_OK || httpResponseCode > HTTP_CODE_NO_CONTENT) {
                     Serial.printf("send_json_str: Send failed (%d): %s. Response:\r\n%s\r\n",
@@ -124,6 +131,14 @@ sendResult restHandler::send_json_str(String &payload, const char *url) {
 }
 
 
+void restHandler::get_url(char *url, size_t size, const char *path) {
+    if(upstreamSettings.upstreamPort == 80) {
+        snprintf(url, size, "http://%s%s", upstreamSettings.upstreamHost, path);
+    } else {
+        snprintf(url, size, "http://%s:%d%s", upstreamSettings.upstreamHost, upstreamSettings.upstreamPort, path);
+    }
+}
+
 
 bool restHandler::send_bluetooth_crash_report() {
     String payload;
@@ -142,20 +157,10 @@ bool restHandler::send_bluetooth_crash_report() {
         serializeJson(doc, payload);
     }
 
-    send_json_str(payload, "http://www.fermentrack.com/api/bluetooth_crash/");
+    send_json_str(payload, "http://www.fermentrack.com/api/bluetooth_crash/", httpMethod::HTTP_POST);
     return true;
     
 }
-
-
-void restHandler::get_url(char *url, size_t size, const char *path) {
-    if(upstreamSettings.upstreamPort == 80) {
-        snprintf(url, size, "http://%s%s", upstreamSettings.upstreamHost, path);
-    } else {
-        snprintf(url, size, "http://%s:%d%s", upstreamSettings.upstreamHost, upstreamSettings.upstreamPort, path);
-    }
-}
-
 
 bool restHandler::send_full_config() {
     const char *url;
@@ -205,9 +210,83 @@ bool restHandler::send_full_config() {
         serializeJson(doc, payload);
     }
 
-    send_json_str(payload, "http://www.fermentrack.com/api/bluetooth_crash/");
+    send_json_str(payload, "http://www.fermentrack.com/api/bluetooth_crash/", httpMethod::HTTP_PUT);
+    fullConfigTicker.once(FULL_CONFIG_PUSH_DELAY, [](){rest_handler.send_full_config_ticker=true;});
     return true;
-    
 }
 
 
+bool restHandler::register_device() {
+    String payload;
+    String response;
+    char url[256];
+
+    // Only send if the semaphore is set - otherwise return
+    if(!register_device_ticker)
+        return false;
+    else
+        register_device_ticker = false;
+
+    registerDeviceTicker.detach();
+
+    // If we've already registered or are missing critical information necessary to register, skip this attempt and reset the timer
+    if(upstreamSettings.upstreamRegistrationError == UpstreamSettings::upstreamRegErrorT::NO_ERROR || strlen(upstreamSettings.username) == 0 
+        || strlen(upstreamSettings.upstreamHost) == 0) {
+
+        registerDeviceTicker.once(REGISTER_DEVICE_DELAY, [](){rest_handler.register_device_ticker = true;});
+        return false;
+    }
+
+    {
+        DynamicJsonDocument doc(1024);
+
+        char guid[20];
+        getGuid(guid);
+
+        char hw_str[2];
+        hw_str[0] = BREWPI_BOARD;
+        hw_str[1] = '\0';
+
+        doc["guid"] = guid;
+        doc["username"] = upstreamSettings.username;
+        doc["hardware"] = hw_str;
+        doc["version"] = FIRMWARE_REVISION;
+
+        // Serialize the JSON document
+        serializeJson(doc, payload);
+    }
+
+    get_url(url, sizeof(url), "/api/brewpi/register/");
+    send_json_str(payload, url, response, httpMethod::HTTP_PUT);
+
+    {
+        DynamicJsonDocument doc(1024);
+        deserializeJson(doc, response);
+
+
+        // response = {'success': True, 
+        // 'message': 'Device registered', 
+        // 'msg_code': 0, 
+        // 'device_id': device.id, 
+        // 'created': created}
+        if(doc.containsKey("success") && doc["success"].as<bool>()) {
+            bool success = doc["success"].as<bool>();
+
+            if(success) {
+                // We successfully set the device ID
+                upstreamSettings.upstreamRegistrationError = UpstreamSettings::upstreamRegErrorT::NO_ERROR;
+                strlcpy(upstreamSettings.deviceID, doc["device_id"].as<const char *>(), sizeof(upstreamSettings.deviceID));
+            } else {
+                // We didn't set the device ID (were unable to register). Set an error code.
+                upstreamSettings.upstreamRegistrationError = (UpstreamSettings::upstreamRegErrorT) doc["msg_code"].as<uint8_t>();
+            }
+	    } else {
+            // Invalid response
+            upstreamSettings.upstreamRegistrationError = UpstreamSettings::upstreamRegErrorT::REGISTRATION_ENDPOINT_ERR;
+        } 
+
+    }
+
+    registerDeviceTicker.once(REGISTER_DEVICE_DELAY, [](){rest_handler.register_device_ticker = true;});
+    return true;
+}

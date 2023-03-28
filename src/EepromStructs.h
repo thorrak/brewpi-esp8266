@@ -230,11 +230,26 @@ private:
  */
 class UpstreamSettings : public JSONSaveable {
 public:
+    enum class upstreamRegErrorT {
+      NO_ERROR,                   // 0
+      NO_GUID,                    // 1
+      NO_USERNAME,                // 2
+      INVALID_USER,               // 3
+      NO_BREWHOUSE_ON_USER,       // 4
+      NO_HARDWARE_TYPE,           // 5
+      NO_FIRMWARE_VERSION,        // 6
+      NOT_ATTEMPTED_REGISTRATION, // 7
+      REGISTRATION_ENDPOINT_ERR,  // 8
+    };
+
     UpstreamSettings();
 
     char upstreamHost[128];  // Hostname (or IP address) of the upstream server
     uint16_t upstreamPort;  // Port of the upstream server (defaults to 80)
+    char username[128];     // Hostname (or IP address) of the upstream server
     char deviceID[64];      // UUID of this device, as assigned by upstream server
+
+    upstreamRegErrorT upstreamRegistrationError;  //<! Error code from last upstream registration attempt
 
     void toJson(DynamicJsonDocument &doc);
     void storeToSpiffs();

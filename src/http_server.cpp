@@ -24,6 +24,7 @@
 #include "JsonMessages.h"
 #include "DeviceManager.h"
 #include "JsonKeys.h"
+#include "rest/rest_send.h"
 
 
 httpServer http_server;
@@ -58,17 +59,17 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
     // Upstream Port
     if(json.containsKey(UpstreamSettingsKeys::upstreamPort)) {
         if(json[UpstreamSettingsKeys::upstreamPort].is<uint16_t>()) {
-            if((json[UpstreamSettingsKeys::upstreamPort] < 0) || (json[UpstreamSettingsKeys::upstreamPort] > 65535)) {
-                Log.warning(F("Invalid [upstreamPort]:(%u) received.\r\n"), json[UpstreamSettingsKeys::upstreamPort]);
+            if((json[UpstreamSettingsKeys::upstreamPort] <= 0) || (json[UpstreamSettingsKeys::upstreamPort] > 65535)) {
+                Serial.printf("Invalid [upstreamPort]:(%u) received.\r\n", json[UpstreamSettingsKeys::upstreamPort]);
                 failCount++;
             } else {
                 //Valid - Update
                 upstreamSettings.upstreamPort = json[UpstreamSettingsKeys::upstreamPort];
-                Log.notice(F("Settings update, [upstreamPort]:(%d) applied.\r\n"), json[UpstreamSettingsKeys::upstreamHost].as<uint16_t>());
+                Serial.printf("Settings update, [upstreamPort]:(%d) applied.\r\n", json[UpstreamSettingsKeys::upstreamPort].as<uint16_t>());
                 saveSettings = true;
             }
         } else {
-            Log.warning(F("Invalid [upstreamPort]:(%s) received (wrong type).\r\n"), json[UpstreamSettingsKeys::upstreamPort]);
+            Serial.printf("Invalid [upstreamPort]:(%s) received (wrong type).\r\n", json[UpstreamSettingsKeys::upstreamPort]);
             failCount++;
         }
     }
@@ -108,26 +109,24 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
         }
     }
 
-
-    // //////  Generic Settings
-    // // mDNS ID
-    // if(json.containsKey("mdnsID")) {
-    //     // Set hostname
-    //     LCBUrl url;
-    //     if (!url.isValidLabel(json["mdnsID"])) {
-    //         Log.warning(F("Settings update error, [mdnsID]:(%s) not valid.\r\n"), json["mdnsID"]);
-    //         failCount++;
-    //     } else {
-    //         if (strcmp(config.mdnsID, json["mdnsID"].as<const char*>()) != 0) {
-    //             hostnamechanged = true;
-    //             strlcpy(config.mdnsID, json["mdnsID"].as<const char*>(), 32);
-    //             Log.notice(F("Settings update, [mdnsID]:(%s) applied.\r\n"), json["mdnsID"].as<const char*>());
-    //         } else {
-    //             Log.notice(F("Settings update, [mdnsID]:(%s) NOT applied - no change.\r\n"), json["mdnsID"].as<const char*>());
-    //         }
-
-    //     }
-    // }
+    // Upstream Username
+    if(json.containsKey(UpstreamSettingsKeys::username)) {
+        if (strlen(json[UpstreamSettingsKeys::username]) <= 0) {
+            // The user unset the upstream host - Clear it from memory
+            upstreamSettings.username[0] = '\0';
+            Log.notice(F("Settings update, [username]: unset.\r\n"));
+        } else if (strlen(json[UpstreamSettingsKeys::username]) >= 128 ) {
+            Log.warning(F("Settings update error, [username]:(%s) not valid.\r\n"), json[UpstreamSettingsKeys::username].as<const char*>());
+            failCount++;
+        } else {
+            // Valid - Update
+            if(strcmp(json[UpstreamSettingsKeys::username], upstreamSettings.username) != 0) {
+                strlcpy(upstreamSettings.username, json[UpstreamSettingsKeys::username].as<const char*>(), 128);
+                Log.notice(F("Settings update, [username]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::username].as<const char*>());
+                saveSettings = true;
+            }
+        }
+    }
 
 
     // Save
@@ -136,7 +135,9 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
     } else {
         if(saveSettings == true) {
             // TODO - Force upstream cascade/send
+            upstreamSettings.upstreamRegistrationError = UpstreamSettings::upstreamRegErrorT::NOT_ATTEMPTED_REGISTRATION;
             upstreamSettings.storeToSpiffs();
+            rest_handler.register_device_ticker = true;
         }
     }
     return failCount;
