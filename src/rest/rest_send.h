@@ -61,6 +61,7 @@ public:
     bool send_bluetooth_crash_report();
     bool send_full_config();
     bool register_device();
+    bool send_lcd();
 
     // Everything below this MAY no longer be in use. Need to check. 
     void process();

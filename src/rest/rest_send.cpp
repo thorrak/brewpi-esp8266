@@ -14,6 +14,8 @@
 #include "EepromManager.h"
 #include "TempControl.h"
 #include "DeviceManager.h"
+#include "JsonMessages.h"
+#include "JsonKeys.h"
 
 
 restHandler rest_handler; // Global data sender
@@ -27,9 +29,9 @@ restHandler::restHandler() {
 void restHandler::init()
 {
     // Set up timers
-    fullConfigTicker.once(45, [](){rest_handler.send_full_config_ticker=true;});
-    lcdTicker.once(35, [](){rest_handler.send_lcd_ticker = true;});
-    registerDeviceTicker.once(30, [](){rest_handler.register_device_ticker = true;});
+    registerDeviceTicker.once(15, [](){rest_handler.register_device_ticker = true;});
+    lcdTicker.once(25, [](){rest_handler.send_lcd_ticker = true;});
+    fullConfigTicker.once(35, [](){rest_handler.send_full_config_ticker=true;});
 }
 
 
@@ -45,6 +47,7 @@ void restHandler::get_useragent(char *ua, size_t size) {
 void restHandler::process() {
     // send_full_config();
     register_device();
+    send_lcd();
 }
 
 sendResult restHandler::send_json_str(String &payload, const char *url, httpMethod method) {
@@ -248,7 +251,7 @@ bool restHandler::register_device() {
         hw_str[1] = '\0';
 
         doc["guid"] = guid;
-        doc["username"] = upstreamSettings.username;
+        doc[UpstreamSettingsKeys::username] = upstreamSettings.username;
         doc["hardware"] = hw_str;
         doc["version"] = FIRMWARE_REVISION;
 
@@ -275,7 +278,7 @@ bool restHandler::register_device() {
             if(success) {
                 // We successfully set the device ID
                 upstreamSettings.upstreamRegistrationError = UpstreamSettings::upstreamRegErrorT::NO_ERROR;
-                strlcpy(upstreamSettings.deviceID, doc["device_id"].as<const char *>(), sizeof(upstreamSettings.deviceID));
+                strlcpy(upstreamSettings.deviceID, doc[UpstreamSettingsKeys::deviceID].as<const char *>(), sizeof(upstreamSettings.deviceID));
             } else {
                 // We didn't set the device ID (were unable to register). Set an error code.
                 upstreamSettings.upstreamRegistrationError = (UpstreamSettings::upstreamRegErrorT) doc["msg_code"].as<uint8_t>();
@@ -288,5 +291,44 @@ bool restHandler::register_device() {
     }
 
     registerDeviceTicker.once(REGISTER_DEVICE_DELAY, [](){rest_handler.register_device_ticker = true;});
+    return true;
+}
+
+
+
+bool restHandler::send_lcd() {
+    String payload;
+    char url[256];
+
+    // Only send if the semaphore is set - otherwise return
+    if(!send_lcd_ticker)
+        return false;
+    else
+        send_lcd_ticker = false;
+
+    lcdTicker.detach();
+
+    if(upstreamSettings.isRegistered() == false) {
+        lcdTicker.once(LCD_PUSH_DELAY, [](){rest_handler.send_lcd_ticker = true;});
+        return false;
+    }
+
+    {
+        DynamicJsonDocument doc(1024);
+        DynamicJsonDocument lcd(512);
+        getLcdContentJson(lcd);
+
+        doc[UpstreamSettingsKeys::deviceID] = upstreamSettings.deviceID;
+        doc[UpstreamSettingsKeys::username] = upstreamSettings.username;
+        doc["lcd"] = lcd;
+
+        // Serialize the JSON document
+        serializeJson(doc, payload);
+    }
+
+    get_url(url, sizeof(url), "/api/brewpi/lcd/");
+    send_json_str(payload, url, httpMethod::HTTP_PUT);
+
+    lcdTicker.once(LCD_PUSH_DELAY, [](){rest_handler.send_lcd_ticker = true;});
     return true;
 }
