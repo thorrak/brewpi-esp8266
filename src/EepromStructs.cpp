@@ -432,6 +432,9 @@ void UpstreamSettings::toJson(DynamicJsonDocument &doc) {
     doc[UpstreamSettingsKeys::upstreamRegistrationError] = (uint16_t) upstreamRegistrationError;
 }
 
+/**
+ * \brief Store extended settings to the filesystem
+ */
 void UpstreamSettings::storeToSpiffs() {
     DynamicJsonDocument doc(256);
     toJson(doc);
@@ -439,6 +442,9 @@ void UpstreamSettings::storeToSpiffs() {
     writeJsonToFile(UpstreamSettings::filename, doc);  // Write the json to the file
 }
 
+/**
+ * \brief Load extended settings from the filesystem
+ */
 void UpstreamSettings::loadFromSpiffs() {
     // We start by setting the defaults, as we use them as the alternative to loaded values if the keys don't exist
     setDefaults();
@@ -469,4 +475,15 @@ void UpstreamSettings::processSettingKeypair(JsonPair kv) {
   } else if (kv.key() == UpstreamSettingsKeys::username) {
     strlcpy(username, kv.value().as<const char *>(), 128);
   }
+}
+
+
+/**
+ * @brief Check if the device is registered with the upstream server
+ * 
+ * @return true - The device is registered
+ * @return false - The device is not registered
+ */
+bool UpstreamSettings::isRegistered() {
+    return (strlen(deviceID) > 0 && strlen(username) > 0);
 }

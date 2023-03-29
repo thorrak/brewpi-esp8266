@@ -257,6 +257,8 @@ public:
     void setDefaults();
     void processSettingKeypair(JsonPair kv);
 
+    bool isRegistered();  //<! Whether or not this device has been registered with the upstream server
+
     /**
      * \brief Filename used when reading/writing data to flash
      */
