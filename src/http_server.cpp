@@ -155,11 +155,10 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
         Log.error(F("Error: Invalid upstream configuration.\r\n"));
     } else {
         if(saveSettings == true) {
-            upstreamSettings.upstreamRegistrationError = UpstreamSettings::upstreamRegErrorT::NOT_ATTEMPTED_REGISTRATION;
             upstreamSettings.storeToSpiffs();
-            
-            rest_handler.register_device_ticker = true;
         }
+        upstreamSettings.upstreamRegistrationError = UpstreamSettings::upstreamRegErrorT::NOT_ATTEMPTED_REGISTRATION;
+        rest_handler.register_device_ticker = true;
     }
     return failCount;
 }
