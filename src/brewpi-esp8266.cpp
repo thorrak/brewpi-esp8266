@@ -54,7 +54,7 @@
 #if defined(ESP8266_WiFi)
 // Just use the serverClient object as it supports all the same functions as Serial
 // extern WiFiClient serverClient;
-PiLink<WiFiClient> piLink(serverClient);
+PiLink<WiFiClientFixed> piLink(serverClient);
 #else
 // Not using ESP8266 WiFi
 #if defined(ESP32S2)

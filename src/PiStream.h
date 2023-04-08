@@ -266,7 +266,7 @@ public:
    * \brief Empty init for all other stream types types
    */
   template <typename U = StreamType>
-  typename std::enable_if<!std::is_same<U, HardwareSerial>::value && !std::is_same<U, WiFiClient>::value>::type
+  typename std::enable_if<!std::is_same<U, HardwareSerial>::value && !std::is_same<U, WiFiClientFixed>::value>::type
   init(){};
 
   /**
@@ -274,7 +274,7 @@ public:
    *
    * \see initWifiServer()
    */
-  template <typename U = StreamType> typename std::enable_if<std::is_same<U, WiFiClient>::value>::type init() {
+  template <typename U = StreamType> typename std::enable_if<std::is_same<U, WiFiClientFixed>::value>::type init() {
     ::initWifiServer();
   };
 
@@ -323,19 +323,19 @@ private:
   // WriteBufferingClient stream;
 
   /**
-   * \brief _bool implementation for non WiFiClient Streams
+   * \brief _bool implementation for non WiFiClientFixed Streams
    */
-  template <typename U = StreamType> typename std::enable_if<!std::is_same<U, WiFiClient>::value, bool>::type _bool() {
+  template <typename U = StreamType> typename std::enable_if<!std::is_same<U, WiFiClientFixed>::value, bool>::type _bool() {
     return bool(stream);
   };
 
   /**
-   * \brief _bool implementation for WiFiClient Streams
+   * \brief _bool implementation for WiFiClientFixed Streams
    *
    * This checks both the bool operator of the underlying Stream and its
    * connected() method
    */
-  template <typename U = StreamType> typename std::enable_if<std::is_same<U, WiFiClient>::value, bool>::type _bool() {
+  template <typename U = StreamType> typename std::enable_if<std::is_same<U, WiFiClientFixed>::value, bool>::type _bool() {
     return bool(stream) && upstream.connected();
   };
 };

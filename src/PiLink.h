@@ -77,7 +77,7 @@ public:
 };
 
 #if defined(ESP32S2)
-extern PiLink<std::conditional<Config::PiLink::useWifi, WiFiClient, USBCDC>::type> piLink;
+extern PiLink<std::conditional<Config::PiLink::useWifi, WiFiClientFixed, USBCDC>::type> piLink;
 #else
-extern PiLink<std::conditional<Config::PiLink::useWifi, WiFiClient, HardwareSerial>::type> piLink;
+extern PiLink<std::conditional<Config::PiLink::useWifi, WiFiClientFixed, HardwareSerial>::type> piLink;
 #endif

@@ -23,8 +23,8 @@
 
 
 bool shouldSaveConfig = false;
-WiFiServer server(23);
-WiFiClient serverClient;
+WiFiServerFixed server(23);
+WiFiClientFixed serverClient;
 
 extern void handleReset();  // Terrible practice. In brewpi-esp8266.cpp.
 

@@ -5,6 +5,7 @@
 #include <WiFiMulti.h>
 #include <WiFiClient.h>
 #include <WiFiClientSecure.h>
+#include "WiFiClientFix.h"
 #include <HTTPClient.h>
 #include <Ticker.h>
 #include <ArduinoJson.hpp>
