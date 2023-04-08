@@ -238,16 +238,18 @@ public:
       NO_BREWHOUSE_ON_USER,       // 4
       NO_HARDWARE_TYPE,           // 5
       NO_FIRMWARE_VERSION,        // 6
-      NOT_ATTEMPTED_REGISTRATION, // 7
-      REGISTRATION_ENDPOINT_ERR,  // 8
+      INVALID_API_KEY,            // 7
+      NOT_ATTEMPTED_REGISTRATION, // 8
+      REGISTRATION_ENDPOINT_ERR,  // 9
     };
 
     UpstreamSettings();
 
     char upstreamHost[128];  // Hostname (or IP address) of the upstream server
-    uint16_t upstreamPort;  // Port of the upstream server (defaults to 80)
-    char username[128];     // Hostname (or IP address) of the upstream server
-    char deviceID[64];      // UUID of this device, as assigned by upstream server
+    uint16_t upstreamPort;   // Port of the upstream server (defaults to 80)
+    char username[128];      // Hostname (or IP address) of the upstream server
+    char deviceID[40];       // UUID of this device, as assigned by upstream server
+    char apiKey[40];         // API key (uuid4 format) for the brewhouse this device is assigned to, as assigned by upstream server 
 
     upstreamRegErrorT upstreamRegistrationError;  //<! Error code from last upstream registration attempt
 

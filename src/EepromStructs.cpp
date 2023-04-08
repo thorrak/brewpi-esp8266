@@ -416,6 +416,7 @@ void UpstreamSettings::setDefaults() {
     upstreamPort = 80;
     deviceID[0] = '\0';
     username[0] = '\0';
+    apiKey[0] = '\0';
     upstreamRegistrationError = upstreamRegErrorT::NOT_ATTEMPTED_REGISTRATION;
 }
 
@@ -429,6 +430,7 @@ void UpstreamSettings::toJson(DynamicJsonDocument &doc) {
     doc[UpstreamSettingsKeys::upstreamPort] = upstreamPort;
     doc[UpstreamSettingsKeys::deviceID] = deviceID;
     doc[UpstreamSettingsKeys::username] = username;
+    doc[UpstreamSettingsKeys::apiKey] = apiKey;
     doc[UpstreamSettingsKeys::upstreamRegistrationError] = (uint16_t) upstreamRegistrationError;
 }
 
@@ -455,8 +457,9 @@ void UpstreamSettings::loadFromSpiffs() {
     // Load the constants from the JSON Doc
     if(json_doc.containsKey(UpstreamSettingsKeys::upstreamHost)) strlcpy(upstreamHost, json_doc[UpstreamSettingsKeys::upstreamHost], 128);
     if(json_doc.containsKey(UpstreamSettingsKeys::upstreamPort)) upstreamPort = json_doc[UpstreamSettingsKeys::upstreamPort];
-    if(json_doc.containsKey(UpstreamSettingsKeys::deviceID)) strlcpy(deviceID, json_doc[UpstreamSettingsKeys::deviceID], 64);
+    if(json_doc.containsKey(UpstreamSettingsKeys::deviceID)) strlcpy(deviceID, json_doc[UpstreamSettingsKeys::deviceID], 40);
     if(json_doc.containsKey(UpstreamSettingsKeys::username)) strlcpy(username, json_doc[UpstreamSettingsKeys::username], 128);
+    if(json_doc.containsKey(UpstreamSettingsKeys::apiKey)) strlcpy(apiKey, json_doc[UpstreamSettingsKeys::apiKey], 40);
 
 }
 
@@ -471,10 +474,13 @@ void UpstreamSettings::processSettingKeypair(JsonPair kv) {
   } else if (kv.key() == UpstreamSettingsKeys::upstreamPort) {
     upstreamPort = kv.value().as<uint16_t>();
   } else if (kv.key() == UpstreamSettingsKeys::deviceID) {
-    strlcpy(deviceID, kv.value().as<const char *>(), 64);
+    strlcpy(deviceID, kv.value().as<const char *>(), 40);
   } else if (kv.key() == UpstreamSettingsKeys::username) {
     strlcpy(username, kv.value().as<const char *>(), 128);
+  } else if (kv.key() == UpstreamSettingsKeys::apiKey) {
+    strlcpy(apiKey, kv.value().as<const char *>(), 40);
   }
+
 }
 
 
@@ -485,5 +491,5 @@ void UpstreamSettings::processSettingKeypair(JsonPair kv) {
  * @return false - The device is not registered
  */
 bool UpstreamSettings::isRegistered() {
-    return (strlen(deviceID) > 0 && strlen(username) > 0);
+    return (upstreamRegistrationError == UpstreamSettings::upstreamRegErrorT::NO_ERROR && strlen(deviceID) > 0 && strlen(apiKey) > 0);
 }

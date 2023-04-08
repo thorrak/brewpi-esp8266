@@ -16,6 +16,13 @@
 #define REGISTER_DEVICE_DELAY       (3 * 60)    // 5 minute delay on reattempting 
 
 
+namespace UpstreamAPIEndpoints {
+    constexpr auto fullConfig = "/api/brewpi/fullconfig/";
+    constexpr auto registerDevice = "/api/brewpi/register/";
+    constexpr auto LCD = "/api/brewpi/lcd/";
+}; // namespace UpstreamAPIEndpoints
+
+
 enum class sendResult {
     success,
     failure,
@@ -60,23 +67,25 @@ public:
     void init();
 
     bool send_bluetooth_crash_report();
-    bool send_full_config();
-    bool register_device();
-    bool send_lcd();
 
     // Everything below this MAY no longer be in use. Need to check. 
     void process();
 
     bool send_lock = false;
 
-    HTTPClient http;
 
 private:
-    void get_url(char *url, size_t size, const char *path);
+
+    bool send_full_config();
+    bool register_device();
+    bool send_lcd();
+
+    bool get_url(char *url, size_t size, const char *path);
     sendResult send_json_str(String &payload, const char *url, httpMethod method);
     sendResult send_json_str(String &payload, const char *url, String &response, httpMethod method);
     void get_useragent(char *ua, size_t size);
 
+    HTTPClient http;
     WiFiClient client;
     WiFiClientSecure secureClient;
 };

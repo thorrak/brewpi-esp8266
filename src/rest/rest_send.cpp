@@ -24,14 +24,15 @@ restHandler rest_handler; // Global data sender
 restHandler::restHandler() {
     bool send_full_config_ticker = false;
     bool send_lcd_ticker = false;
+    bool register_device_ticker = false;
 }
 
 void restHandler::init()
 {
     // Set up timers
-    registerDeviceTicker.once(15, [](){rest_handler.register_device_ticker = true;});
+    registerDeviceTicker.once(5, [](){rest_handler.register_device_ticker = true;});
     lcdTicker.once(25, [](){rest_handler.send_lcd_ticker = true;});
-    fullConfigTicker.once(35, [](){rest_handler.send_full_config_ticker=true;});
+    fullConfigTicker.once(15, [](){rest_handler.send_full_config_ticker=true;});
 }
 
 
@@ -45,7 +46,7 @@ void restHandler::get_useragent(char *ua, size_t size) {
 
 
 void restHandler::process() {
-    // send_full_config();
+    send_full_config();
     register_device();
     send_lcd();
 }
@@ -65,7 +66,6 @@ sendResult restHandler::send_json_str(String &payload, const char *url, String &
 
     if (WiFiClass::status() != WL_CONNECTED) {
         Serial.print(F("send_json_str: Wifi not connected, skipping send.\r\n"));
-        // Log.verbose(F("send_json_str: Wifi not connected, skipping send.\r\n"));
         send_lock = false;
         return sendResult::retry;
     }
@@ -81,7 +81,7 @@ sendResult restHandler::send_json_str(String &payload, const char *url, String &
 
     // TODO - Determine if we can get rid of the call to new
     // WiFiClientSecure *client = new WiFiClientSecure;
-    WiFiClient client;
+    WiFiClientFixed client;
     if(true) {
         // client.setInsecure();
         {
@@ -134,12 +134,21 @@ sendResult restHandler::send_json_str(String &payload, const char *url, String &
 }
 
 
-void restHandler::get_url(char *url, size_t size, const char *path) {
+bool restHandler::get_url(char *url, size_t size, const char *path) {
+    if(strlen(upstreamSettings.upstreamHost) <= 3) {
+        Serial.print(F("get_url: No upstream host configured, should skip send.\r\n"));
+        return false;
+    } else if(upstreamSettings.upstreamPort <= 0 || upstreamSettings.upstreamPort > 65535) {
+        Serial.print(F("get_url: No upstream port configured, should skip send.\r\n"));
+        return false;
+    }
+
     if(upstreamSettings.upstreamPort == 80) {
         snprintf(url, size, "http://%s%s", upstreamSettings.upstreamHost, path);
     } else {
         snprintf(url, size, "http://%s:%d%s", upstreamSettings.upstreamHost, upstreamSettings.upstreamPort, path);
     }
+    return true;
 }
 
 
@@ -166,7 +175,7 @@ bool restHandler::send_bluetooth_crash_report() {
 }
 
 bool restHandler::send_full_config() {
-    const char *url;
+    char url[256] = "";
     String payload;
 
     // Only send if the semaphore is set - otherwise return
@@ -174,6 +183,14 @@ bool restHandler::send_full_config() {
         return false;
     else
         send_full_config_ticker = false;
+
+    fullConfigTicker.detach();
+    fullConfigTicker.once(FULL_CONFIG_PUSH_DELAY, [](){rest_handler.send_full_config_ticker=true;});
+
+    if(!upstreamSettings.isRegistered())
+        return false;  // If we aren't registered, we have nowhere to send the data
+    if(!get_url(url, sizeof(url), UpstreamAPIEndpoints::fullConfig))
+        return false;  // Skip send if the URL is not set
 
     {
 #if !defined(HAS_BLUETOOTH) && !defined(EXTERN_SENSOR_ACTUATOR_SUPPORT)
@@ -186,43 +203,45 @@ bool restHandler::send_full_config() {
         DynamicJsonDocument cs(256);
         DynamicJsonDocument cc(1024);
         DynamicJsonDocument cv(1024);
+        DynamicJsonDocument es(256);
+        DynamicJsonDocument mt(1024);
 
         tempControl.getControlSettingsDoc(cs);
         tempControl.getControlConstantsDoc(cc);
         tempControl.getControlVariablesDoc(cv);
+        extendedSettings.toJson(es);
+        minTimes.toJson(mt);
 
         EnumerateHardware spec;
         spec.values = 0;  // Change if we want to poll values here as well
         deviceManager.enumerateHardware(devices, spec);
 
-
-        char guid[20];
-
-        getGuid(guid);
-
-
         doc["cs"] = cs.as<JsonObject>();
         doc["cc"] = cc.as<JsonObject>();
         doc["cv"] = cv.as<JsonObject>();
+        doc["es"] = es.as<JsonObject>();
+        doc["mt"] = mt.as<JsonObject>();
         doc["devices"] = devices.as<JsonObject>();
 
         doc["uptime"] = esp_timer_get_time();
-        doc["device_id"] = guid;
+
+        doc[UpstreamSettingsKeys::deviceID] = upstreamSettings.deviceID;
+        doc[UpstreamSettingsKeys::apiKey] = upstreamSettings.apiKey;
 
         // Serialize the JSON document
         serializeJson(doc, payload);
     }
-
-    send_json_str(payload, "http://www.fermentrack.com/api/bluetooth_crash/", httpMethod::HTTP_PUT);
-    fullConfigTicker.once(FULL_CONFIG_PUSH_DELAY, [](){rest_handler.send_full_config_ticker=true;});
+    
+    send_json_str(payload, url, httpMethod::HTTP_PUT);
     return true;
 }
 
 
+
 bool restHandler::register_device() {
+    char url[256] = "";
     String payload;
     String response;
-    char url[256];
 
     // Only send if the semaphore is set - otherwise return
     if(!register_device_ticker)
@@ -231,14 +250,13 @@ bool restHandler::register_device() {
         register_device_ticker = false;
 
     registerDeviceTicker.detach();
+    registerDeviceTicker.once(REGISTER_DEVICE_DELAY, [](){rest_handler.register_device_ticker = true;});
 
     // If we've already registered or are missing critical information necessary to register, skip this attempt and reset the timer
-    if(upstreamSettings.upstreamRegistrationError == UpstreamSettings::upstreamRegErrorT::NO_ERROR || strlen(upstreamSettings.username) == 0 
-        || strlen(upstreamSettings.upstreamHost) == 0) {
-
-        registerDeviceTicker.once(REGISTER_DEVICE_DELAY, [](){rest_handler.register_device_ticker = true;});
+    if(upstreamSettings.isRegistered() || strlen(upstreamSettings.username) == 0 || strlen(upstreamSettings.upstreamHost) == 0)
         return false;
-    }
+    if(!get_url(url, sizeof(url), UpstreamAPIEndpoints::registerDevice))
+        return false;   // Skip send if the URL is not set
 
     {
         DynamicJsonDocument doc(1024);
@@ -251,7 +269,10 @@ bool restHandler::register_device() {
         hw_str[1] = '\0';
 
         doc["guid"] = guid;
-        doc[UpstreamSettingsKeys::username] = upstreamSettings.username;
+        if(strlen(upstreamSettings.username) > 0)
+            doc[UpstreamSettingsKeys::username] = upstreamSettings.username;
+        else
+            doc[UpstreamSettingsKeys::apiKey] = upstreamSettings.apiKey;
         doc["hardware"] = hw_str;
         doc["version"] = FIRMWARE_REVISION;
 
@@ -259,7 +280,6 @@ bool restHandler::register_device() {
         serializeJson(doc, payload);
     }
 
-    get_url(url, sizeof(url), "/api/brewpi/register/");
     send_json_str(payload, url, response, httpMethod::HTTP_PUT);
 
     {
@@ -276,9 +296,19 @@ bool restHandler::register_device() {
             bool success = doc["success"].as<bool>();
 
             if(success) {
-                // We successfully set the device ID
+                // We successfully set the device ID & API key
                 upstreamSettings.upstreamRegistrationError = UpstreamSettings::upstreamRegErrorT::NO_ERROR;
                 strlcpy(upstreamSettings.deviceID, doc[UpstreamSettingsKeys::deviceID].as<const char *>(), sizeof(upstreamSettings.deviceID));
+                strlcpy(upstreamSettings.apiKey, doc[UpstreamSettingsKeys::apiKey].as<const char *>(), sizeof(upstreamSettings.apiKey));
+                upstreamSettings.username[0] = '\0';  // Clear the username since we now have the apiKey
+
+                // Store the updated settings
+                upstreamSettings.storeToSpiffs(); 
+
+                // Also, trigger sends
+                send_lcd_ticker = true;
+                send_full_config_ticker = true;
+
             } else {
                 // We didn't set the device ID (were unable to register). Set an error code.
                 upstreamSettings.upstreamRegistrationError = (UpstreamSettings::upstreamRegErrorT) doc["msg_code"].as<uint8_t>();
@@ -290,7 +320,6 @@ bool restHandler::register_device() {
 
     }
 
-    registerDeviceTicker.once(REGISTER_DEVICE_DELAY, [](){rest_handler.register_device_ticker = true;});
     return true;
 }
 
@@ -298,7 +327,7 @@ bool restHandler::register_device() {
 
 bool restHandler::send_lcd() {
     String payload;
-    char url[256];
+    char url[256] = "";
 
     // Only send if the semaphore is set - otherwise return
     if(!send_lcd_ticker)
@@ -307,11 +336,12 @@ bool restHandler::send_lcd() {
         send_lcd_ticker = false;
 
     lcdTicker.detach();
+    lcdTicker.once(LCD_PUSH_DELAY, [](){rest_handler.send_lcd_ticker = true;});
 
-    if(upstreamSettings.isRegistered() == false) {
-        lcdTicker.once(LCD_PUSH_DELAY, [](){rest_handler.send_lcd_ticker = true;});
+    if(upstreamSettings.isRegistered() == false)
         return false;
-    }
+    if(!get_url(url, sizeof(url), UpstreamAPIEndpoints::LCD))
+        return false;
 
     {
         DynamicJsonDocument doc(1024);
@@ -326,9 +356,7 @@ bool restHandler::send_lcd() {
         serializeJson(doc, payload);
     }
 
-    get_url(url, sizeof(url), "/api/brewpi/lcd/");
     send_json_str(payload, url, httpMethod::HTTP_PUT);
 
-    lcdTicker.once(LCD_PUSH_DELAY, [](){rest_handler.send_lcd_ticker = true;});
     return true;
 }

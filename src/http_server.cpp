@@ -36,6 +36,7 @@ httpServer http_server;
 uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool triggerUpstreamUpdate) {
     uint8_t failCount = 0;
     bool saveSettings = false;
+    bool resetUpstream = false;
 
     // Upstream Host
     if(json.containsKey(UpstreamSettingsKeys::upstreamHost)) {
@@ -81,12 +82,12 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
     //         // The user unset the upstream host - Clear it from memory
     //         upstreamSettings.deviceID[0] = '\0';
     //         Log.notice(F("Settings update, [deviceID]: unset.\r\n"));
-    //     } else if (strlen(json[UpstreamSettingsKeys::deviceID]) >= 128 ) {
+    //     } else if (strlen(json[UpstreamSettingsKeys::deviceID]) >= 40 ) {
     //         Log.warning(F("Settings update error, [deviceID]:(%s) not valid.\r\n"), json[UpstreamSettingsKeys::deviceID].as<const char*>());
     //         failCount++;
     //     } else {
     //         if(strcmp(json[UpstreamSettingsKeys::deviceID], upstreamSettings.deviceID) != 0) {
-    //             strlcpy(upstreamSettings.deviceID, json[UpstreamSettingsKeys::deviceID].as<const char*>(), 64);
+    //             strlcpy(upstreamSettings.deviceID, json[UpstreamSettingsKeys::deviceID].as<const char*>(), 40);
     //             Log.notice(F("Settings update, [deviceID]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::deviceID].as<const char*>());
     //             saveSettings = true;
     //         }
@@ -102,6 +103,7 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
                 Log.notice(F("Settings update, [resetDeviceID]: true.\r\n"));
                 upstreamSettings.deviceID[0] = '\0';
                 saveSettings = true;
+                resetUpstream = true;
             }
         } else {
             Log.warning(F("Invalid [resetDeviceID]:(%s) received (wrong type).\r\n"), json["resetDeviceID"]);
@@ -128,15 +130,34 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
         }
     }
 
+    // Upstream API Key
+    if(json.containsKey(UpstreamSettingsKeys::apiKey)) {
+        if (strlen(json[UpstreamSettingsKeys::apiKey]) <= 0) {
+            // The user unset the upstream host - Clear it from memory
+            upstreamSettings.apiKey[0] = '\0';
+            Log.notice(F("Settings update, [apiKey]: unset.\r\n"));
+        } else if (strlen(json[UpstreamSettingsKeys::apiKey]) >= 40 ) {
+            Log.warning(F("Settings update error, [apiKey]:(%s) not valid.\r\n"), json[UpstreamSettingsKeys::apiKey].as<const char*>());
+            failCount++;
+        } else {
+            // Valid - Update
+            if(strcmp(json[UpstreamSettingsKeys::apiKey], upstreamSettings.apiKey) != 0) {
+                strlcpy(upstreamSettings.apiKey, json[UpstreamSettingsKeys::apiKey].as<const char*>(), sizeof(upstreamSettings.apiKey));
+                Log.notice(F("Settings update, [apiKey]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::apiKey].as<const char*>());
+                saveSettings = true;
+            }
+        }
+    }
+
 
     // Save
     if (failCount) {
         Log.error(F("Error: Invalid upstream configuration.\r\n"));
     } else {
         if(saveSettings == true) {
-            // TODO - Force upstream cascade/send
             upstreamSettings.upstreamRegistrationError = UpstreamSettings::upstreamRegErrorT::NOT_ATTEMPTED_REGISTRATION;
             upstreamSettings.storeToSpiffs();
+            
             rest_handler.register_device_ticker = true;
         }
     }
