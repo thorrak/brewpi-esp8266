@@ -150,7 +150,7 @@ void btScanner::init()
     // NOTE - The below probably creates a memory leak with deinit (but deinit is never called in our code).
     pBLEScan->setAdvertisedDeviceCallbacks(new AdvertisedDeviceCallbacks());  // Initialize the callbacks
     pBLEScan->setMaxResults(0);
-    pBLEScan->setActiveScan(false); // Required for some devices - active scan actively queries devices for more info following detection.
+    pBLEScan->setActiveScan(true); // Required for some devices (including Inkbird sensors) - active scan actively queries devices for more info following detection.
     pBLEScan->setInterval(97); // Select prime numbers to reduce risk of frequency beat pattern with ibeacon advertisement interval
     pBLEScan->setWindow(37);   // Set to less or equal setInterval value. Leave reasonable gap to allow WiFi some time.
 }
@@ -265,7 +265,7 @@ tilt* btScanner::get_or_create_tilt(const NimBLEAddress devAddress)
 bool btScanner::scanning_failed() {
     uint64_t now=esp_timer_get_time();
     if (now > last_detected_device_at && now - last_detected_device_at > SCAN_FAIL_THRESHHOLD) {
-        //Serial.printf("Scanning failed - now is %llu, last detected device at %llu\r\n", now, last_detected_device_at);
+        Serial.printf("Scanning failed - now is %llu, last detected device at %llu\r\n", now, last_detected_device_at);
         return true;
     }
     return false;

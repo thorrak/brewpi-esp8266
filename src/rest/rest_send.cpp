@@ -164,6 +164,7 @@ bool restHandler::send_bluetooth_crash_report() {
 
         doc["uptime"] = esp_timer_get_time();
         doc["device_id"] = guid;
+        doc["message"] = "With new WiFiClient flush()";
 
         // Serialize the JSON document
         serializeJson(doc, payload);
