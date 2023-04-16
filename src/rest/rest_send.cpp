@@ -23,15 +23,16 @@ restHandler rest_handler; // Global data sender
 
 restHandler::restHandler() {
     bool send_full_config_ticker = false;
-    bool send_lcd_ticker = false;
+    bool send_status_ticker = false;
     bool register_device_ticker = false;
+    bool messages_pending_on_server = false;
 }
 
 void restHandler::init()
 {
     // Set up timers
     registerDeviceTicker.once(5, [](){rest_handler.register_device_ticker = true;});
-    lcdTicker.once(25, [](){rest_handler.send_lcd_ticker = true;});
+    statusTicker.once(25, [](){rest_handler.send_status_ticker = true;});
     fullConfigTicker.once(15, [](){rest_handler.send_full_config_ticker=true;});
 }
 
@@ -46,9 +47,10 @@ void restHandler::get_useragent(char *ua, size_t size) {
 
 
 void restHandler::process() {
-    send_full_config();
     register_device();
-    send_lcd();
+    send_status();
+    get_messages(false);
+    send_full_config();
 }
 
 sendResult restHandler::send_json_str(String &payload, const char *url, httpMethod method) {
@@ -151,6 +153,14 @@ bool restHandler::get_url(char *url, size_t size, const char *path) {
     return true;
 }
 
+bool restHandler::get_url(char *url, size_t size, const char *path, const char *device_id, const char *api_key) {
+    // Used when we need to send the device ID and API key as part of the URL (HTTP_GET)
+    if(!get_url(url, size, path))
+        return false;
+    snprintf(url, size, "%s?%s=%s&%s=%s", url, UpstreamSettingsKeys::deviceID, device_id, UpstreamSettingsKeys::apiKey, api_key);
+    return true;
+}
+
 
 bool restHandler::send_bluetooth_crash_report() {
     String payload;
@@ -182,10 +192,13 @@ bool restHandler::send_full_config() {
     // Only send if the semaphore is set - otherwise return
     if(!send_full_config_ticker)
         return false;
-    else
-        send_full_config_ticker = false;
 
+    // Force getting messages before sending the full config
+    // We do this here, before setting send_full_config_ticker false, as get_messages() will set it to true if there are config updates.
+    // We can just send them as part of this full config push instead of having to queue up a second
     fullConfigTicker.detach();
+    get_messages(true);
+    send_full_config_ticker = false;
     fullConfigTicker.once(FULL_CONFIG_PUSH_DELAY, [](){rest_handler.send_full_config_ticker=true;});
 
     if(!upstreamSettings.isRegistered())
@@ -253,8 +266,8 @@ bool restHandler::register_device() {
     registerDeviceTicker.detach();
     registerDeviceTicker.once(REGISTER_DEVICE_DELAY, [](){rest_handler.register_device_ticker = true;});
 
-    // If we've already registered or are missing critical information necessary to register, skip this attempt and reset the timer
-    if(upstreamSettings.isRegistered() || strlen(upstreamSettings.username) == 0 || strlen(upstreamSettings.upstreamHost) == 0)
+    // If we've already registered or are missing critical information necessary to register, skip this attempt
+    if(upstreamSettings.isRegistered() || (strlen(upstreamSettings.username) == 0 && strlen(upstreamSettings.apiKey) == 0))
         return false;
     if(!get_url(url, sizeof(url), UpstreamAPIEndpoints::registerDevice))
         return false;   // Skip send if the URL is not set
@@ -307,7 +320,7 @@ bool restHandler::register_device() {
                 upstreamSettings.storeToSpiffs(); 
 
                 // Also, trigger sends
-                send_lcd_ticker = true;
+                send_status_ticker = true;
                 send_full_config_ticker = true;
 
             } else {
@@ -326,38 +339,155 @@ bool restHandler::register_device() {
 
 
 
-bool restHandler::send_lcd() {
+bool restHandler::send_status() {
     String payload;
     char url[256] = "";
+    String response;
 
     // Only send if the semaphore is set - otherwise return
-    if(!send_lcd_ticker)
+    if(!send_status_ticker)
         return false;
     else
-        send_lcd_ticker = false;
+        send_status_ticker = false;
 
-    lcdTicker.detach();
-    lcdTicker.once(LCD_PUSH_DELAY, [](){rest_handler.send_lcd_ticker = true;});
+    statusTicker.detach();
+    statusTicker.once(LCD_PUSH_DELAY, [](){rest_handler.send_status_ticker = true;});
 
     if(upstreamSettings.isRegistered() == false)
         return false;
-    if(!get_url(url, sizeof(url), UpstreamAPIEndpoints::LCD))
+    if(!get_url(url, sizeof(url), UpstreamAPIEndpoints::status))
         return false;
 
     {
-        DynamicJsonDocument doc(1024);
+        DynamicJsonDocument doc(1536);
         DynamicJsonDocument lcd(512);
+        DynamicJsonDocument temps(512);
+
         getLcdContentJson(lcd);
+        printTemperaturesJson(temps);
 
         doc[UpstreamSettingsKeys::deviceID] = upstreamSettings.deviceID;
-        doc[UpstreamSettingsKeys::username] = upstreamSettings.username;
+        doc[UpstreamSettingsKeys::apiKey] = upstreamSettings.apiKey;
         doc["lcd"] = lcd;
+        doc["temps"] = temps;
+        doc["temp_format"] = String(tempControl.cc.tempFormat);
 
         // Serialize the JSON document
         serializeJson(doc, payload);
     }
 
-    send_json_str(payload, url, httpMethod::HTTP_PUT);
+    send_json_str(payload, url, response, httpMethod::HTTP_PUT);
+
+    // Check if we have any messages pending on the server, and set the flag if so
+    {
+        DynamicJsonDocument doc(1024);
+        deserializeJson(doc, response);
+
+        if(doc.containsKey("has_messages") && doc["has_messages"].as<bool>()) {
+            bool has_messages = doc["has_messages"].as<bool>();
+
+            if(has_messages)
+                messages_pending_on_server = true;
+        }
+    }
+
+    return true;
+}
+
+
+
+bool restHandler::get_messages(bool override=false) {
+    String payload = "";
+    char url[256] = "";
+    String response;
+
+    // Only retrieve if we're being forced (via override) or if there are messages on the server
+    if(!messages_pending_on_server && !override)
+        return false;
+
+    // We can't retrieve messages if we're not registered
+    if(upstreamSettings.isRegistered() == false)
+        return false;
+    // Since this endpoint uses get, we have to add the device ID and apiKey to the URL
+    if(!get_url(url, sizeof(url), UpstreamAPIEndpoints::messages, upstreamSettings.deviceID, upstreamSettings.apiKey))
+        return false;
+
+    // {
+    //     DynamicJsonDocument doc(512);
+
+    //     doc[UpstreamSettingsKeys::deviceID] = upstreamSettings.deviceID;
+    //     doc[UpstreamSettingsKeys::apiKey] = upstreamSettings.apiKey;
+
+    //     // Serialize the JSON document
+    //     serializeJson(doc, payload);
+    // }
+
+    send_json_str(payload, url, response, httpMethod::HTTP_GET);
+
+    // Parse any messages that are on the server
+    {
+        DynamicJsonDocument doc(2048);
+        deserializeJson(doc, response);
+
+        if(doc.containsKey("msg_count") && doc["msg_count"].as<uint16_t>()) {
+            uint16_t message_count = doc["msg_count"].as<uint16_t>();
+
+            if(message_count <= 0 || !doc.containsKey("messages")) {
+                messages_pending_on_server = false;
+                return true;  // No messages to parse - exit
+            }
+
+            // We have messages to parse
+            for(const JsonObject& value : doc["messages"].as<JsonArray>()) {
+                // JsonObject obj = value.as<JsonObject>();
+                // Parse all the messages
+                if(value.containsKey("id")) {
+                    Serial.print("id: ");
+                    Serial.print(value["id"].as<uint64_t>());
+                } else {
+                    Serial.print("no id. ");
+                }
+                if(value.containsKey("message_type")) {
+                    Serial.print("message_type: ");
+                    Serial.print(value["message_type"].as<const char*>());
+                } else {
+                    Serial.print("no message_type. ");
+                }
+                Serial.print("\r\n");
+
+                delete_message(value["id"].as<uint64_t>());
+            }
+
+        }
+    }
+
+    messages_pending_on_server = false;  // TODO - Remove once done with testing, as we should only unset this if we have a confirmed message count of 0
+    return true;
+}
+
+bool restHandler::delete_message(const uint64_t message_id) {
+    String payload = "";
+    char url[256] = "";
+    String response;
+
+    // We can't delete messages if we're not registered
+    if(upstreamSettings.isRegistered() == false)
+        return false;
+    if(!get_url(url, sizeof(url), UpstreamAPIEndpoints::messages))
+        return false;
+
+    {
+        DynamicJsonDocument doc(512);
+
+        doc[UpstreamSettingsKeys::deviceID] = upstreamSettings.deviceID;
+        doc[UpstreamSettingsKeys::apiKey] = upstreamSettings.apiKey;
+        doc[UpstreamSettingsKeys::messageID] = message_id;
+
+        // Serialize the JSON document
+        serializeJson(doc, payload);
+    }
+
+    send_json_str(payload, url, response, httpMethod::HTTP_DELETE);
 
     return true;
 }

@@ -143,6 +143,7 @@ constexpr auto deviceID = "deviceID";
 constexpr auto username = "username";
 constexpr auto apiKey = "apiKey";
 constexpr auto upstreamRegistrationError = "upstreamRegistrationError";
+constexpr auto messageID = "messageID";
 }; // namespace UpstreamSettingsKeys
 
 
