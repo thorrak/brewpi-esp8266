@@ -50,6 +50,7 @@ void restHandler::process() {
     register_device();
     send_status();
     get_messages(false);
+    process_messages();
     send_full_config();
 }
 
@@ -426,46 +427,40 @@ bool restHandler::get_messages(bool override=false) {
 
     // Parse any messages that are on the server
     {
-        DynamicJsonDocument doc(2048);
+        DynamicJsonDocument doc(1024);
         deserializeJson(doc, response);
 
-        if(doc.containsKey("msg_count") && doc["msg_count"].as<uint16_t>()) {
-            uint16_t message_count = doc["msg_count"].as<uint16_t>();
-
-            if(message_count <= 0 || !doc.containsKey("messages")) {
-                messages_pending_on_server = false;
-                return true;  // No messages to parse - exit
-            }
-
-            // We have messages to parse
-            for(const JsonObject& value : doc["messages"].as<JsonArray>()) {
-                // JsonObject obj = value.as<JsonObject>();
-                // Parse all the messages
-                if(value.containsKey("id")) {
-                    Serial.print("id: ");
-                    Serial.print(value["id"].as<uint64_t>());
-                } else {
-                    Serial.print("no id. ");
-                }
-                if(value.containsKey("message_type")) {
-                    Serial.print("message_type: ");
-                    Serial.print(value["message_type"].as<const char*>());
-                } else {
-                    Serial.print("no message_type. ");
-                }
-                Serial.print("\r\n");
-
-                delete_message(value["id"].as<uint64_t>());
-            }
-
+        // Process any flags on the server
+        if(doc.containsKey(RestMessagesKeys::messages)) {
+            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::updated_cs) && doc[RestMessagesKeys::messages][RestMessagesKeys::updated_cs].as<bool>())
+                messages.updated_cs = doc[RestMessagesKeys::messages][RestMessagesKeys::updated_cs].as<bool>();
+            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::updated_cc) && doc[RestMessagesKeys::messages][RestMessagesKeys::updated_cc].as<bool>())
+                messages.updated_cc = doc[RestMessagesKeys::messages][RestMessagesKeys::updated_cc].as<bool>();
+            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::updated_mt) && doc[RestMessagesKeys::messages][RestMessagesKeys::updated_mt].as<bool>())
+                messages.updated_mt = doc[RestMessagesKeys::messages][RestMessagesKeys::updated_mt].as<bool>();
+            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::updated_es) && doc[RestMessagesKeys::messages][RestMessagesKeys::updated_es].as<bool>())
+                messages.updated_es = doc[RestMessagesKeys::messages][RestMessagesKeys::updated_es].as<bool>();
+            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::updated_devices) && doc[RestMessagesKeys::messages][RestMessagesKeys::updated_devices].as<bool>())
+                messages.updated_devices = doc[RestMessagesKeys::messages][RestMessagesKeys::updated_devices].as<bool>();
+            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::default_cc) && doc[RestMessagesKeys::messages][RestMessagesKeys::default_cc].as<bool>())
+                messages.default_cc = doc[RestMessagesKeys::messages][RestMessagesKeys::default_cc].as<bool>();
+            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::default_cs) && doc[RestMessagesKeys::messages][RestMessagesKeys::default_cs].as<bool>())
+                messages.default_cs = doc[RestMessagesKeys::messages][RestMessagesKeys::default_cs].as<bool>();
+            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::reset_eeprom) && doc[RestMessagesKeys::messages][RestMessagesKeys::reset_eeprom].as<bool>())
+                messages.reset_eeprom = doc[RestMessagesKeys::messages][RestMessagesKeys::reset_eeprom].as<bool>();
+            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::reset_wifi) && doc[RestMessagesKeys::messages][RestMessagesKeys::reset_wifi].as<bool>())
+                messages.reset_wifi = doc[RestMessagesKeys::messages][RestMessagesKeys::reset_wifi].as<bool>();
+            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::restart_device) && doc[RestMessagesKeys::messages][RestMessagesKeys::restart_device].as<bool>())
+                messages.restart_device = doc[RestMessagesKeys::messages][RestMessagesKeys::restart_device].as<bool>();   
         }
+     
     }
 
     messages_pending_on_server = false;  // TODO - Remove once done with testing, as we should only unset this if we have a confirmed message count of 0
     return true;
 }
 
-bool restHandler::delete_message(const uint64_t message_id) {
+bool restHandler::set_message_processed(const char* message_type_key) {
     String payload = "";
     char url[256] = "";
     String response;
@@ -481,13 +476,37 @@ bool restHandler::delete_message(const uint64_t message_id) {
 
         doc[UpstreamSettingsKeys::deviceID] = upstreamSettings.deviceID;
         doc[UpstreamSettingsKeys::apiKey] = upstreamSettings.apiKey;
-        doc[UpstreamSettingsKeys::messageID] = message_id;
+        doc[message_type_key] = false;
 
         // Serialize the JSON document
         serializeJson(doc, payload);
     }
 
-    send_json_str(payload, url, response, httpMethod::HTTP_DELETE);
+    send_json_str(payload, url, response, httpMethod::HTTP_PATCH);
+
+    // TODO - parse the response and make sure it was successful
 
     return true;
+}
+
+void restHandler::process_messages() {
+
+    if(messages.updated_cs) {
+        // TODO - Update the current settings
+        Serial.println("Message received: updated_cs");
+        set_message_processed(RestMessagesKeys::updated_cs);
+        messages.updated_cs = false;
+    }
+
+    // bool updated_cs = false;
+    // bool updated_cc = false;
+    // bool updated_mt = false;
+    // bool updated_es = false;
+    // bool updated_devices = false;
+    // bool default_cc = false;
+    // bool default_cs = false;
+    // bool reset_eeprom = false;
+    // bool reset_wifi = false;
+    // bool restart_device = false;
+
 }

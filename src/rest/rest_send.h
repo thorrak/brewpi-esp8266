@@ -24,11 +24,49 @@ namespace UpstreamAPIEndpoints {
     constexpr auto messages = "/api/brewpi/device/messages/";
 }; // namespace UpstreamAPIEndpoints
 
+/**
+ * \brief Strings used for JSON keys
+ * \see restMessages
+ */
+namespace RestMessagesKeys {
+constexpr auto messages = "messages";
+constexpr auto updated_cs = "updated_cs";
+constexpr auto updated_cc = "updated_cc";
+constexpr auto updated_mt = "updated_mt";
+constexpr auto updated_es = "updated_es";
+constexpr auto updated_devices = "updated_devices";
+constexpr auto default_cc = "default_cc";
+constexpr auto default_cs = "default_cs";
+constexpr auto reset_eeprom = "reset_eeprom";
+constexpr auto reset_wifi = "reset_wifi";
+constexpr auto restart_device = "restart_device";
+}; // namespace RestMessagesKeys
+
 
 enum class sendResult {
     success,
     failure,
     retry
+};
+
+class restMessages
+{
+public:
+    bool updated_cs = false;
+    bool updated_cc = false;
+    bool updated_mt = false;
+    bool updated_es = false;
+    bool updated_devices = false;
+    bool default_cc = false;
+    bool default_cs = false;
+    bool reset_eeprom = false;
+    bool reset_wifi = false;
+    bool restart_device = false;
+
+    bool requires_processing() {
+        return updated_cs || updated_cc || updated_mt || updated_es || updated_devices || default_cc || default_cs || reset_eeprom || reset_wifi || restart_device;
+    }
+
 };
 
 class restHandler
@@ -89,7 +127,10 @@ private:
     bool send_status();
     bool unregister_device();
     bool get_messages(bool override);
-    bool delete_message(const uint64_t message_id);
+    bool set_message_processed(const char* message_type_key);
+    void process_messages();
+
+    restMessages messages;
 
     bool get_url(char *url, size_t size, const char *path);
     bool get_url(char *url, size_t size, const char *path, const char *device_id, const char *api_key);
