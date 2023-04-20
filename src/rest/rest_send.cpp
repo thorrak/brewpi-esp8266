@@ -489,24 +489,3 @@ bool restHandler::set_message_processed(const char* message_type_key) {
     return true;
 }
 
-void restHandler::process_messages() {
-
-    if(messages.updated_cs) {
-        // TODO - Update the current settings
-        Serial.println("Message received: updated_cs");
-        set_message_processed(RestMessagesKeys::updated_cs);
-        messages.updated_cs = false;
-    }
-
-    // bool updated_cs = false;
-    // bool updated_cc = false;
-    // bool updated_mt = false;
-    // bool updated_es = false;
-    // bool updated_devices = false;
-    // bool default_cc = false;
-    // bool default_cs = false;
-    // bool reset_eeprom = false;
-    // bool reset_wifi = false;
-    // bool restart_device = false;
-
-}

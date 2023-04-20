@@ -128,9 +128,16 @@ private:
     bool unregister_device();
     bool get_messages(bool override);
     bool set_message_processed(const char* message_type_key);
-    void process_messages();
 
+    // Message processing
     restMessages messages;
+    void process_messages();
+    bool reset_eeprom();
+    bool reset_wifi();
+    bool restart_device();
+    bool default_cs();
+    bool default_cc();
+    bool process_updated_settings();
 
     bool get_url(char *url, size_t size, const char *path);
     bool get_url(char *url, size_t size, const char *path, const char *device_id, const char *api_key);
