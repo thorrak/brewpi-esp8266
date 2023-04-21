@@ -48,7 +48,12 @@ void restHandler::process_messages() {
     }
 
 
-
+    // Next, process refresh config request
+    if(messages.refresh_config) {
+        send_full_config_ticker = true;
+        set_message_processed(RestMessagesKeys::refresh_config);
+        messages.refresh_config = false;
+    }
 
     // Process resetting WiFi last, as we will lose the ability to signal that we processed it
     if(messages.reset_wifi) {

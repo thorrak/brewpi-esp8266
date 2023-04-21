@@ -236,7 +236,7 @@ bool restHandler::send_full_config() {
         doc["cv"] = cv.as<JsonObject>();
         doc["es"] = es.as<JsonObject>();
         doc["mt"] = mt.as<JsonObject>();
-        doc["devices"] = devices.as<JsonObject>();
+        doc["devices"] = devices.as<JsonArray>();
 
         doc["uptime"] = esp_timer_get_time();
 
@@ -451,7 +451,9 @@ bool restHandler::get_messages(bool override=false) {
             if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::reset_wifi) && doc[RestMessagesKeys::messages][RestMessagesKeys::reset_wifi].as<bool>())
                 messages.reset_wifi = doc[RestMessagesKeys::messages][RestMessagesKeys::reset_wifi].as<bool>();
             if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::restart_device) && doc[RestMessagesKeys::messages][RestMessagesKeys::restart_device].as<bool>())
-                messages.restart_device = doc[RestMessagesKeys::messages][RestMessagesKeys::restart_device].as<bool>();   
+                messages.restart_device = doc[RestMessagesKeys::messages][RestMessagesKeys::restart_device].as<bool>();
+            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::refresh_config) && doc[RestMessagesKeys::messages][RestMessagesKeys::refresh_config].as<bool>())
+                messages.refresh_config = doc[RestMessagesKeys::messages][RestMessagesKeys::refresh_config].as<bool>();
         }
      
     }

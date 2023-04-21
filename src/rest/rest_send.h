@@ -40,6 +40,7 @@ constexpr auto default_cs = "default_cs";
 constexpr auto reset_eeprom = "reset_eeprom";
 constexpr auto reset_wifi = "reset_wifi";
 constexpr auto restart_device = "restart_device";
+constexpr auto refresh_config = "refresh_config";
 }; // namespace RestMessagesKeys
 
 
@@ -62,9 +63,10 @@ public:
     bool reset_eeprom = false;
     bool reset_wifi = false;
     bool restart_device = false;
+    bool refresh_config = false;
 
     bool requires_processing() {
-        return updated_cs || updated_cc || updated_mt || updated_es || updated_devices || default_cc || default_cs || reset_eeprom || reset_wifi || restart_device;
+        return updated_cs || updated_cc || updated_mt || updated_es || updated_devices || default_cc || default_cs || reset_eeprom || reset_wifi || restart_device || refresh_config;
     }
 
 };
