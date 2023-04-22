@@ -674,7 +674,7 @@ void DeviceManager::serializeJsonDevice(JsonDocument& doc, device_slot_t slot, D
 	config.toJson(deviceObj);
 
 	if(strlen(value) > 0)
-		deviceObj[DeviceDefinitionKeys::value] = String(value);  // NOTE - value must be char*, not const char* or ArduinoJson will not copy the value - just link it
+		deviceObj[DeviceDefinitionKeys::value] = String(value);  // NOTE - value must not be const char* or ArduinoJson will not copy the value - just link it
 
 	deviceObj[DeviceDefinitionKeys::index] = slot;
 

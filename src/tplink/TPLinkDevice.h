@@ -19,6 +19,8 @@ public:
     char device_alias[32];
     char device_id[41];
 
+    TPLinkDevice();
+
 protected:
     TPLinkConnector* tp_link_connector;
     void send_payload(const std::string payload, bool include_size);

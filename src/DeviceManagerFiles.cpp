@@ -55,9 +55,9 @@ void DeviceConfig::toJson(DynamicJsonDocument &doc) {
             tilt *th = bt_scanner.get_tilt(hw.btAddress);
             if(th != nullptr) {
                 // ArduinoJson attempts to deduplicate strings - we explicitly do not want that here
-                char color[20];
-                strcpy(color, th->get_color_string().c_str());
-                doc[DeviceDefinitionKeys::alias] = color;
+                // char color[20];
+                // strcpy(color, th->get_color_string().c_str());
+                doc[DeviceDefinitionKeys::alias] = String(th->get_color_string().c_str());
             }
         }
     }
@@ -69,7 +69,7 @@ void DeviceConfig::toJson(DynamicJsonDocument &doc) {
         doc[DeviceDefinitionKeys::child_id] = hw.tplink_child_id;
         TPLinkPlug *tp = tp_link_scanner.get_tplink_plug(hw.tplink_mac, hw.tplink_child_id);
         if(tp != nullptr)
-            doc[DeviceDefinitionKeys::alias] = tp->device_alias;
+            doc[DeviceDefinitionKeys::alias] = String(tp->device_alias);  // Prevent deduplication
     }
 #endif
 
