@@ -11,10 +11,10 @@
 #include <ArduinoJson.hpp>
 
 
-#define FULL_CONFIG_PUSH_DELAY      (5 * 60)    // 5 minute delay on pushing a "full config" to the endpoint
+#define FULL_CONFIG_PUSH_DELAY      (5 * 60)        // 5 minute delay on pushing a "full config" to the endpoint
 // TODO - Make LCD_PUSH_DELAY configurable
-#define LCD_PUSH_DELAY              (25)        // 25 second delay on pushing LCD data to the endpoint
-#define REGISTER_DEVICE_DELAY       (3 * 60)    // 5 minute delay on reattempting 
+#define LCD_PUSH_DELAY              (25)            // 25 second delay on pushing LCD data to the endpoint
+#define REGISTER_DEVICE_DELAY   LCD_PUSH_DELAY      // 30 second delay on reattempting if unregistered
 
 
 namespace UpstreamAPIEndpoints {
