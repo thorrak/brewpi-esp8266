@@ -43,7 +43,7 @@ void restHandler::process_messages() {
     }
 
     // Next, process updated_cc/cs/mt/devices
-    if(messages.updated_cs || messages.updated_cc || messages.updated_mt) {
+    if(messages.updated_cs || messages.updated_cc || messages.updated_mt || messages.updated_devices) {
         process_updated_settings();
     }
 
@@ -77,10 +77,14 @@ bool restHandler::reset_eeprom() {
     set_message_processed(RestMessagesKeys::reset_eeprom);
 
     // If we reset the EEPROM, we discard any pending messages/updates
-    set_message_processed(RestMessagesKeys::updated_cs);
-    set_message_processed(RestMessagesKeys::updated_cc);
-    set_message_processed(RestMessagesKeys::updated_mt);
-    set_message_processed(RestMessagesKeys::updated_devices);
+    if(messages.updated_cs)
+        set_message_processed(RestMessagesKeys::updated_cs);
+    if(messages.updated_cc)
+        set_message_processed(RestMessagesKeys::updated_cc);
+    if(messages.updated_mt)
+        set_message_processed(RestMessagesKeys::updated_mt);
+    if(messages.updated_devices)
+        set_message_processed(RestMessagesKeys::updated_devices);
 
     messages.updated_cs = false;
     messages.updated_cc = false;
@@ -167,11 +171,11 @@ bool restHandler::process_updated_settings() {
     Serial.printf("Response: %s\r\n", response.c_str());
 
     {
-        DynamicJsonDocument doc(2048);
+        DynamicJsonDocument doc(2048*4);
         DeserializationError error = deserializeJson(doc, response);
 
         if(error) {
-            Serial.print(F("deserializeJson() failed: "));
+            Serial.printf("deserializeJson() failed: %s\r\n", error.c_str());
             return false;
         }
 
@@ -186,7 +190,7 @@ bool restHandler::process_updated_settings() {
             JsonObject root = doc["config"]["cs"].as<JsonObject>();
             load_settings_from_doc(root);
             TempControl::storeSettings();
-
+            set_message_processed(RestMessagesKeys::updated_cs);
         }
 
         if(doc["config"].containsKey("cc") && messages.updated_cc) {
@@ -194,16 +198,46 @@ bool restHandler::process_updated_settings() {
             JsonObject root = doc["config"]["cc"].as<JsonObject>();
             load_settings_from_doc(root);
             TempControl::storeConstants();
-
+            set_message_processed(RestMessagesKeys::updated_cc);
         }
 
+        if(doc["config"].containsKey("devices") && messages.updated_devices) {
+            Serial.println("Updating devices");
+            JsonArray root = doc["config"]["devices"].as<JsonArray>();
+            load_devices_from_array(root);
+            // TempControl::storeConstants();
+            set_message_processed(RestMessagesKeys::updated_devices);
+        }
+
+        if(doc["config"].containsKey("mt") && messages.updated_mt) {
+            Serial.println("Updating minimum times");
+            // TODO - Write this
+            // JsonObject root = doc["config"]["cc"].as<JsonObject>();
+            // load_settings_from_doc(root);
+            set_message_processed(RestMessagesKeys::updated_mt);
+        }
     }
+
+    // We clear the flag locally in every case, so as to not spam the server if something goes wrong
     messages.updated_cs = false;
-    set_message_processed(RestMessagesKeys::updated_cs);
     messages.updated_cc = false;
-    set_message_processed(RestMessagesKeys::updated_cc);
+    messages.updated_devices = false;
     messages.updated_mt = false;
-    set_message_processed(RestMessagesKeys::updated_mt);
 
     return true;
+}
+
+
+void restHandler::load_devices_from_array(JsonArray &root) {
+    // Process
+    for (DynamicJsonDocument kv : root) {
+        Serial.println("Processing device");
+        DeviceDefinition dev;
+        // DynamicJsonDocument doc(512);
+
+        // piLink.receiveJsonMessage(doc);                                   // Read the JSON off the line from the Pi
+        dev = DeviceManager::readJsonIntoDeviceDef(kv);                  // Parse the JSON into a DeviceDefinition object
+        DeviceConfig print = deviceManager.updateDeviceDefinition(dev);   // Save the device definition (if valid)
+        Serial.println("Processed device");
+    }
 }

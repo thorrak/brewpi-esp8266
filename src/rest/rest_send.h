@@ -140,6 +140,7 @@ private:
     bool default_cs();
     bool default_cc();
     bool process_updated_settings();
+    void load_devices_from_array(JsonArray &root);
 
     bool get_url(char *url, size_t size, const char *path);
     bool get_url(char *url, size_t size, const char *path, const char *device_id, const char *api_key);
