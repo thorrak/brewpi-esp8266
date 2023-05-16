@@ -67,7 +67,12 @@ sendResult restHandler::send_json_str(String &payload, const char *url, String &
 
     send_lock = true;
 
+
+#ifdef ESP8266
+    if (WiFi.status() != WL_CONNECTED) {
+#else
     if (WiFiClass::status() != WL_CONNECTED) {
+#endif
         Serial.print(F("send_json_str: Wifi not connected, skipping send.\r\n"));
         send_lock = false;
         return sendResult::retry;
@@ -84,7 +89,11 @@ sendResult restHandler::send_json_str(String &payload, const char *url, String &
 
     // TODO - Determine if we can get rid of the call to new
     // WiFiClientSecure *client = new WiFiClientSecure;
+#ifdef ESP8266
+    WiFiClient client;
+#else
     WiFiClientFixed client;
+#endif
     if(true) {
         // client.setInsecure();
         {
@@ -92,7 +101,9 @@ sendResult restHandler::send_json_str(String &payload, const char *url, String &
             HTTPClient http;
 
             http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
+#ifndef ESP8266
             http.setConnectTimeout(6000);
+#endif
             http.setReuse(false);
 
             if (http.begin(client, url)) {
@@ -173,7 +184,11 @@ bool restHandler::send_bluetooth_crash_report() {
         getGuid(guid);
 
 
+#ifdef ESP8266
+        doc["uptime"] = system_get_time();
+#else
         doc["uptime"] = esp_timer_get_time();
+#endif
         doc["device_id"] = guid;
         doc["message"] = "With new WiFiClient flush()";
 
@@ -238,7 +253,11 @@ bool restHandler::send_full_config() {
         doc["mt"] = mt.as<JsonObject>();
         doc["devices"] = devices.as<JsonArray>();
 
+#ifdef ESP8266
+        doc["uptime"] = system_get_time();
+#else
         doc["uptime"] = esp_timer_get_time();
+#endif
 
         doc[UpstreamSettingsKeys::deviceID] = upstreamSettings.deviceID;
         doc[UpstreamSettingsKeys::apiKey] = upstreamSettings.apiKey;

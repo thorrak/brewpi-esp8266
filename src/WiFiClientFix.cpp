@@ -1,3 +1,4 @@
+#ifndef ESP8266
 #include "WiFiClientFix.h"
 #include <WiFi.h>
 #include <lwip/sockets.h>
@@ -221,3 +222,5 @@ void WiFiClientSecureFixed::flush() {
 	}
 	free(buf);
 }
+#endif
+

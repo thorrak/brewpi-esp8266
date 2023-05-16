@@ -40,10 +40,14 @@ class WiFiServerFixed : public Server {
 
     // _addr(INADDR_ANY) is the same as _addr() ==> 0.0.0.0
     WiFiServerFixed(uint16_t port=80, uint8_t max_clients=4):sockfd(-1),_accepted_sockfd(-1),_addr(),_port(port),_max_clients(max_clients),_listening(false),_noDelay(false) {
+#ifndef ESP8266
       log_v("WiFiServerFixed::WiFiServerFixed(port=%d, ...)", port);
+#endif
     }
     WiFiServerFixed(const IPAddress& addr, uint16_t port=80, uint8_t max_clients=4):sockfd(-1),_accepted_sockfd(-1),_addr(addr),_port(port),_max_clients(max_clients),_listening(false),_noDelay(false) {
+#ifndef ESP8266
       log_v("WiFiServerFixed::WiFiServerFixed(addr=%s, port=%d, ...)", addr.toString().c_str(), port);
+#endif
     }
     ~WiFiServerFixed(){ end();}
     WiFiClientFixed available();

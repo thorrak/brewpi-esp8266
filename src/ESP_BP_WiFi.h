@@ -58,7 +58,14 @@ void initWifiServer();
  */
 void wifi_connection_info(JsonDocument& doc);
 
+#ifndef ESP8266
 extern WiFiServerFixed server;
 extern WiFiClientFixed serverClient;
+#else
+extern WiFiServer server;
+extern WiFiClient serverClient;
+#endif
+
+
 
 /** @} */

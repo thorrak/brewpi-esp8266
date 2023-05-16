@@ -1,3 +1,4 @@
+#ifndef ESP8266
 /*
   Server.cpp - Server class for Raspberry Pi
   Copyright (c) 2016 Hristo Gochkov  All right reserved.
@@ -137,3 +138,4 @@ void WiFiServerFixed::stop(){
   end();
 }
 
+#endif

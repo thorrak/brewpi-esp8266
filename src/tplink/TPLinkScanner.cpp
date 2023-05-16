@@ -3,9 +3,10 @@
 #include <ArduinoJson.h>
 #include "TPLinkScanner.h"
 #include "TPLinkPlug.h"
+
 #include "Config.h"
 #include "EepromStructs.h"
-#include "DeviceManager.h"
+// #include "DeviceManager.h"
 #include "EepromManager.h"
 
 #if defined(ESP8266)
@@ -135,7 +136,7 @@ void TPLinkScanner::send_refresh() {
     DeviceConfig dc;
 
     // We need to check which devices are assigned, and ensure that they are TPLink Switches
-    for (device_slot_t idx=0; idx<Config::EepromFormat::MAX_DEVICES; idx++) {
+    for (int8_t idx=0; idx<Config::EepromFormat::MAX_DEVICES; idx++) {
         dc = eepromManager.fetchDevice(idx);
         if(dc.deviceHardware == DEVICE_HARDWARE_TPLINK_SWITCH) {
             // Run through plugs that are on, clear the timer, and refresh the timer
