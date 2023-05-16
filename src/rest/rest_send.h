@@ -1,12 +1,19 @@
 #pragma once
 
 
+
+#if defined(ESP8266)
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+#elif defined(ESP32)
 #include <WiFi.h>
-#include <WiFiMulti.h>
-#include <WiFiClient.h>
-#include <WiFiClientSecure.h>
 #include "WiFiClientFix.h"
 #include <HTTPClient.h>
+#endif
+
+// #include <WiFiMulti.h>
+#include <WiFiClient.h>
+#include <WiFiClientSecure.h>
 #include <Ticker.h>
 #include <ArduinoJson.hpp>
 
