@@ -38,29 +38,52 @@ void getLcdContentJson(DynamicJsonDocument &doc) {
   }
 }
 
-void printTemperaturesJson(DynamicJsonDocument &doc, const char *beerAnnotation, const char *fridgeAnnotation) {
 
-    doc["BeerTemp"] = tempToDouble(tempControl.getBeerTemp(), Config::TempFormat::tempDecimals);
-    doc["BeerSet"] = tempToDouble(tempControl.getBeerSetting(), Config::TempFormat::tempDecimals);
+void temp_with_null(DynamicJsonDocument &doc, const char* key, bool sensorConnected, temperature temp, bool withNull) {
+  if (sensorConnected) {
+    doc[key] = tempToDouble(temp, Config::TempFormat::tempDecimals);
+  } else {
+    if (withNull) {
+      doc[key] = "";
+    }
+  }
+}
+
+void printTemperaturesJson(DynamicJsonDocument &doc, const char *beerAnnotation, const char *fridgeAnnotation, bool withNulls) {
+
+    temp_with_null(doc, "BeerTemp", tempControl.beerSensor->isConnected(), tempControl.getBeerTemp(), withNulls);
+    // TODO - fix BeerSet to track if we actually have a setpoint
+    temp_with_null(doc, "BeerSet", tempControl.beerSensor->isConnected(), tempControl.getBeerSetting(), withNulls);
+    temp_with_null(doc, "FridgeTemp", tempControl.fridgeSensor->isConnected(), tempControl.getFridgeTemp(), withNulls);
+    // TODO - fix FridgeSet to track if we actually have a setpoint
+    temp_with_null(doc, "FridgeSet", tempControl.fridgeSensor->isConnected(), tempControl.getFridgeSetting(), withNulls);
+    temp_with_null(doc, "RoomTemp", tempControl.ambientSensor->isConnected(), tempControl.getRoomTemp(), true);
+
+    // doc["BeerTemp"] = tempToDouble(tempControl.getBeerTemp(), Config::TempFormat::tempDecimals);
+    // doc["BeerSet"] = tempToDouble(tempControl.getBeerSetting(), Config::TempFormat::tempDecimals);
 
     doc["BeerAnn"] = beerAnnotation;
 
-    doc["FridgeTemp"] = tempToDouble(tempControl.getFridgeTemp(), Config::TempFormat::tempDecimals);
-    doc["FridgeSet"] = tempToDouble(tempControl.getFridgeSetting(), Config::TempFormat::tempDecimals);
+    // doc["FridgeTemp"] = tempToDouble(tempControl.getFridgeTemp(), Config::TempFormat::tempDecimals);
+    // doc["FridgeSet"] = tempToDouble(tempControl.getFridgeSetting(), Config::TempFormat::tempDecimals);
 
     doc["FridgeAnn"] = fridgeAnnotation;
 
-    if (tempControl.ambientSensor->isConnected()) {
-      doc["RoomTemp"] = tempToDouble(tempControl.getRoomTemp(), Config::TempFormat::tempDecimals);
-    } else {
-      doc["RoomTemp"] = "";
-    }
+    // if (tempControl.ambientSensor->isConnected()) {
+    //   doc["RoomTemp"] = tempToDouble(tempControl.getRoomTemp(), Config::TempFormat::tempDecimals);
+    // } else {
+    //   doc["RoomTemp"] = "";
+    // }
 
     doc["State"] = tempControl.getState();
 
 #if BREWPI_SIMULATE
     doc["Time"] = ticks.millis() / 1000;
 #endif
+}
+
+void printTemperaturesJson(DynamicJsonDocument &doc, const char *beerAnnotation, const char *fridgeAnnotation) {
+   printTemperaturesJson(doc, beerAnnotation, fridgeAnnotation, false);
 }
 
 void printTemperaturesJson(DynamicJsonDocument &doc) {

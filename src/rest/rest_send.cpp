@@ -190,7 +190,7 @@ bool restHandler::send_bluetooth_crash_report() {
         doc["uptime"] = esp_timer_get_time();
 #endif
         doc["device_id"] = guid;
-        doc["message"] = "With new WiFiClient flush()";
+        doc["message"] = "With Arduino 2.0.9";
 
         // Serialize the JSON document
         serializeJson(doc, payload);
@@ -384,7 +384,7 @@ bool restHandler::send_status() {
         DynamicJsonDocument temps(512);
 
         getLcdContentJson(lcd);
-        printTemperaturesJson(temps);
+        printTemperaturesJson(temps, "", "", true);
 
         doc[UpstreamSettingsKeys::deviceID] = upstreamSettings.deviceID;
         doc[UpstreamSettingsKeys::apiKey] = upstreamSettings.apiKey;
