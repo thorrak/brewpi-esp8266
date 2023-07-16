@@ -1,7 +1,11 @@
 <map id="BasicTempSensor" name="BasicTempSensor">
-<area shape="rect" id="node1" title=" " alt="" coords="291,5,420,31"/>
-<area shape="rect" id="node2" href="$classDisconnectedTempSensor.html" title=" " alt="" coords="5,79,180,104"/>
-<area shape="rect" id="node3" href="$classExternalTempSensor.html" title=" " alt="" coords="204,79,347,104"/>
-<area shape="rect" id="node4" href="$classMockTempSensor.html" title=" " alt="" coords="371,79,499,104"/>
-<area shape="rect" id="node5" href="$classOneWireTempSensor.html" title="A OneWire attached temperature sensor." alt="" coords="523,79,670,104"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="288,5,417,31"/>
+<area shape="rect" id="Node000002" href="$classDisconnectedTempSensor.html" title=" " alt="" coords="5,79,180,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="295,38,138,81,136,76,294,33"/>
+<area shape="rect" id="Node000003" href="$classExternalTempSensor.html" title=" " alt="" coords="203,79,345,105"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="330,43,289,81,285,77,327,39"/>
+<area shape="rect" id="Node000004" href="$classMockTempSensor.html" title=" " alt="" coords="369,79,496,105"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="379,39,421,77,417,81,375,43"/>
+<area shape="rect" id="Node000005" href="$classOneWireTempSensor.html" title="A OneWire attached temperature sensor." alt="" coords="520,79,665,105"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="408,33,552,76,551,81,406,38"/>
 </map>

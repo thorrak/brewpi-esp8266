@@ -1,7 +1,11 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classBasicTempSensor.html" title=" " alt="" coords="5,80,135,105"/>
-<area shape="rect" id="node2" href="$classDisconnectedTempSensor.html" title=" " alt="" coords="183,5,357,31"/>
-<area shape="rect" id="node3" href="$classExternalTempSensor.html" title=" " alt="" coords="199,55,341,80"/>
-<area shape="rect" id="node4" href="$classMockTempSensor.html" title=" " alt="" coords="206,104,334,129"/>
-<area shape="rect" id="node5" href="$classOneWireTempSensor.html" title="A OneWire attached temperature sensor." alt="" coords="197,153,343,179"/>
+<area shape="rect" id="Node000000" href="$classBasicTempSensor.html" title=" " alt="" coords="5,80,134,106"/>
+<area shape="rect" id="Node000001" href="$classDisconnectedTempSensor.html" title=" " alt="" coords="182,5,356,31"/>
+<area shape="poly" id="edge3_Node000000_Node000001" title=" " alt="" coords="109,71,181,40,214,29,215,34,183,45,111,76"/>
+<area shape="rect" id="Node000002" href="$classExternalTempSensor.html" title=" " alt="" coords="198,55,340,80"/>
+<area shape="poly" id="edge4_Node000000_Node000002" title=" " alt="" coords="148,80,197,74,198,79,149,86"/>
+<area shape="rect" id="Node000003" href="$classMockTempSensor.html" title=" " alt="" coords="205,104,333,130"/>
+<area shape="poly" id="edge5_Node000000_Node000003" title=" " alt="" coords="149,100,205,107,204,112,148,105"/>
+<area shape="rect" id="Node000004" href="$classOneWireTempSensor.html" title="A OneWire attached temperature sensor." alt="" coords="196,153,342,179"/>
+<area shape="poly" id="edge6_Node000000_Node000004" title=" " alt="" coords="112,110,183,140,216,150,214,155,181,145,110,115"/>
 </map>

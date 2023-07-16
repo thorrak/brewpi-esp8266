@@ -15,7 +15,7 @@ var searchData=
   ['devicedefinitionkeys_12',['DeviceDefinitionKeys',['../namespaceDeviceDefinitionKeys.html',1,'']]],
   ['devicedisplay_13',['DeviceDisplay',['../structDeviceDisplay.html',1,'DeviceDisplay'],['../structDeviceDisplay.html#af3ed18c9a77ecdf10cf4ad2b5de9ed22',1,'DeviceDisplay::DeviceDisplay()']]],
   ['devicedisplaykeys_14',['DeviceDisplayKeys',['../namespaceDeviceDisplayKeys.html',1,'']]],
-  ['devicemanager_15',['deviceManager',['../group__hardware.html#ga9194bede2521e116fbafd7bbe97f9dc4',1,'deviceManager():&#160;DeviceManager.cpp'],['../group__hardware.html#ga9194bede2521e116fbafd7bbe97f9dc4',1,'deviceManager():&#160;DeviceManager.cpp']]],
+  ['devicemanager_15',['deviceManager',['../group__hardware.html#ga9194bede2521e116fbafd7bbe97f9dc4',1,'deviceManager:&#160;DeviceManager.cpp'],['../group__hardware.html#ga9194bede2521e116fbafd7bbe97f9dc4',1,'deviceManager:&#160;DeviceManager.cpp']]],
   ['devicemanager_16',['DeviceManager',['../classDeviceManager.html',1,'']]],
   ['devicename_17',['DeviceName',['../structDeviceName.html',1,'']]],
   ['devicenamefilename_18',['deviceNameFilename',['../classDeviceNameManager.html#aa3343382b47653aff6037e89e604ce3b',1,'DeviceNameManager']]],
@@ -34,10 +34,10 @@ var searchData=
   ['display_5fconnect_5finfo_5fand_5fcreate_5fcallback_31',['display_connect_info_and_create_callback',['../group__wifi.html#ga255de38f7385505db2d2a1eebe0b6052',1,'display_connect_info_and_create_callback():&#160;ESP_BP_WiFi.cpp'],['../group__wifi.html#ga255de38f7385505db2d2a1eebe0b6052',1,'display_connect_info_and_create_callback():&#160;ESP_BP_WiFi.cpp']]],
   ['display_5fmethod_32',['DISPLAY_METHOD',['../group__display.html#gafd8774197345dedcac63acdba12f6ef8',1,'DisplayBase.h']]],
   ['display_5fpolymorphic_33',['DISPLAY_POLYMORPHIC',['../group__display.html#ga29dca3610cdcab6ece32b93235f08834',1,'DisplayBase.h']]],
-  ['display_5fsuperclass_34',['DISPLAY_SUPERCLASS',['../classDISPLAY__SUPERCLASS.html',1,'DISPLAY_SUPERCLASS'],['../group__display.html#gaa72323c07bfd074e9b521fae2cc018cd',1,'DISPLAY_SUPERCLASS():&#160;DisplayBase.h']]],
+  ['display_5fsuperclass_34',['DISPLAY_SUPERCLASS',['../classDISPLAY__SUPERCLASS.html',1,'DISPLAY_SUPERCLASS'],['../group__display.html#gaa72323c07bfd074e9b521fae2cc018cd',1,'DISPLAY_SUPERCLASS:&#160;DisplayBase.h']]],
   ['donegpeakdetect_35',['doNegPeakDetect',['../classTempControl.html#a51234dea98012db62c3402fb1b5f286b',1,'TempControl']]],
   ['door_36',['door',['../classTempControl.html#ac22416dce804a655dbe0dc9c34d732a1',1,'TempControl']]],
   ['door_5fopen_37',['DOOR_OPEN',['../group__tempcontrol.html#ggaa19be6305a5a4485e1e70de70ed7d677a11915658ade106027bd75056b907539d',1,'TempControl.h']]],
-  ['dooropen_38',['doorOpen',['../classTempControl.html#a7ccc84322cd6ec783d92cab6c9cd9b08',1,'TempControl::doorOpen()'],['../classSimulator.html#a2ea17531230628744b9fcf73cdc8b759',1,'Simulator::doorOpen()']]],
+  ['dooropen_38',['doorOpen',['../classTempControl.html#a7ccc84322cd6ec783d92cab6c9cd9b08',1,'TempControl::doorOpen'],['../classSimulator.html#a2ea17531230628744b9fcf73cdc8b759',1,'Simulator::doorOpen']]],
   ['dopospeakdetect_39',['doPosPeakDetect',['../classTempControl.html#acf120fc0dfd58c39875208b4125c04c4',1,'TempControl']]]
 ];

@@ -10,7 +10,7 @@ var searchData=
   ['config_7',['Config',['../namespaceConfig.html',1,'']]],
   ['config_2eh_8',['Config.h',['../Config_8h.html',1,'']]],
   ['configdefault_2eh_9',['ConfigDefault.h',['../ConfigDefault_8h.html',1,'']]],
-  ['connected_10',['connected',['../classOneWireTempSensor.html#a308c0fe0feee55629d5d06aab0b53c2c',1,'OneWireTempSensor::connected()'],['../classPiStream.html#aa1ca843b7fb2464bf20bafaf0e439333',1,'PiStream::connected()']]],
+  ['connected_10',['connected',['../classOneWireTempSensor.html#a308c0fe0feee55629d5d06aab0b53c2c',1,'OneWireTempSensor::connected'],['../classPiStream.html#aa1ca843b7fb2464bf20bafaf0e439333',1,'PiStream::connected()']]],
   ['constraintemp_11',['constrainTemp',['../group__temps.html#ga66b9450deff10943e8ae596572fa6c35',1,'constrainTemp(long_temperature val, temperature lower, temperature upper):&#160;TemperatureFormats.cpp'],['../group__temps.html#ga66b9450deff10943e8ae596572fa6c35',1,'constrainTemp(long_temperature valLong, temperature lower, temperature upper):&#160;TemperatureFormats.cpp']]],
   ['constraintemp16_12',['constrainTemp16',['../group__temps.html#ga359ad9e444e0d3d705a4665793093c36',1,'constrainTemp16(long_temperature val):&#160;TemperatureFormats.cpp'],['../group__temps.html#ga359ad9e444e0d3d705a4665793093c36',1,'constrainTemp16(long_temperature val):&#160;TemperatureFormats.cpp']]],
   ['content_13',['content',['../classSpiLcd.html#a5a7c401a1d62e2b7f9ded286b57bbe38',1,'SpiLcd']]],

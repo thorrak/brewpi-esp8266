@@ -1,6 +1,9 @@
 <map id="TempSensor" name="TempSensor">
-<area shape="rect" id="node1" title="General interface for all temperature sensor devices." alt="" coords="62,211,158,236"/>
-<area shape="rect" id="node2" href="$classBasicTempSensor.html" title=" " alt="" coords="5,93,135,119"/>
-<area shape="rect" id="node3" href="$classCascadedFilter.html" title="Implements a filter that consists of multiple second order sections." alt="" coords="159,93,269,119"/>
-<area shape="rect" id="node4" href="$classFixedFilter.html" title=" " alt="" coords="173,5,255,31"/>
+<area shape="rect" id="Node000001" title="General interface for all temperature sensor devices." alt="" coords="62,213,157,238"/>
+<area shape="rect" id="Node000002" href="$classBasicTempSensor.html" title=" " alt="" coords="5,94,134,120"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="81,133,108,211,103,213,76,135"/>
+<area shape="rect" id="Node000003" href="$classCascadedFilter.html" title="Implements a filter that consists of multiple second order sections." alt="" coords="158,94,266,120"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="198,134,153,190,127,214,123,210,149,187,194,130"/>
+<area shape="rect" id="Node000004" href="$classFixedFilter.html" title=" " alt="" coords="172,5,253,31"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="215,46,215,94,210,94,210,46"/>
 </map>

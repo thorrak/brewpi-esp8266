@@ -1,4 +1,5 @@
 <map id="PiStream&lt; StreamType &gt;" name="PiStream&lt; StreamType &gt;">
-<area shape="rect" id="node1" title="Template for abstracting low level Stream interaction details." alt="" coords="5,5,173,31"/>
-<area shape="rect" id="node2" href="$classPiLink.html" title="Interface between brewpi controller and the outside world (Commonly a RaspberryPi,..." alt="" coords="14,79,165,104"/>
+<area shape="rect" id="Node000001" title="Template for abstracting low level Stream interaction details." alt="" coords="5,5,173,31"/>
+<area shape="rect" id="Node000002" href="$classPiLink.html" title="Interface between brewpi controller and the outside world (Commonly a RaspberryPi,..." alt="" coords="14,79,164,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="92,46,92,79,86,79,86,46"/>
 </map>

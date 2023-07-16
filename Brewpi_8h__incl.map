@@ -1,13 +1,25 @@
 <map id="src/Brewpi.h" name="src/Brewpi.h">
-<area shape="rect" id="node1" title="Defines global config for the brewpi project." alt="" coords="227,5,321,31"/>
-<area shape="rect" id="node2" href="$Config_8h.html" title="Compile time configuration flags." alt="" coords="5,152,73,177"/>
-<area shape="rect" id="node4" href="$ConfigDefault_8h.html" title="Compile time configuration flags." alt="" coords="51,79,161,104"/>
-<area shape="rect" id="node5" title=" " alt="" coords="185,79,261,104"/>
-<area shape="rect" id="node6" href="$Actuator_8h_source.html" title=" " alt="" coords="285,79,367,104"/>
-<area shape="rect" id="node8" href="$Logger_8h_source.html" title=" " alt="" coords="391,79,463,104"/>
-<area shape="rect" id="node3" title=" " alt="" coords="189,225,253,251"/>
-<area shape="rect" id="node7" href="$FastDigitalPin_8h_source.html" title=" " alt="" coords="121,152,235,177"/>
-<area shape="rect" id="node9" title=" " alt="" coords="259,152,327,177"/>
-<area shape="rect" id="node10" href="$TemperatureFormats_8h.html" title="Temperature value handling." alt="" coords="351,152,504,177"/>
-<area shape="rect" id="node11" href="$LogMessages_8h_source.html" title=" " alt="" coords="529,152,643,177"/>
+<area shape="rect" id="Node000001" title="Defines global config for the brewpi project." alt="" coords="226,5,319,31"/>
+<area shape="rect" id="Node000002" href="$Config_8h.html" title="Compile time configuration flags." alt="" coords="5,153,73,178"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="226,27,118,46,70,62,52,71,41,81,34,94,32,108,34,138,29,139,26,108,29,92,37,77,49,66,68,57,117,41,225,22"/>
+<area shape="rect" id="Node000004" href="$ConfigDefault_8h.html" title="Compile time configuration flags." alt="" coords="52,79,160,105"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="245,34,148,75,146,70,243,29"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="184,79,259,105"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="266,33,241,68,237,65,262,30"/>
+<area shape="rect" id="Node000006" href="$Actuator_8h_source.html" title=" " alt="" coords="283,79,363,105"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="276,30,300,66,296,69,272,33"/>
+<area shape="rect" id="Node000008" href="$Logger_8h_source.html" title=" " alt="" coords="387,79,459,105"/>
+<area shape="poly" id="edge8_Node000001_Node000008" title=" " alt="" coords="299,29,386,70,383,75,297,34"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="187,226,251,252"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="71,176,176,218,174,223,69,181"/>
+<area shape="poly" id="edge6_Node000006_Node000001" title=" " alt="" coords="319,80,295,44,299,41,324,77"/>
+<area shape="rect" id="Node000007" href="$FastDigitalPin_8h_source.html" title=" " alt="" coords="120,153,233,178"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="299,108,215,148,213,143,297,103"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="256,153,323,178"/>
+<area shape="poly" id="edge9_Node000008_Node000009" title=" " alt="" coords="402,108,326,148,324,143,399,103"/>
+<area shape="rect" id="Node000010" href="$TemperatureFormats_8h.html" title="Temperature value handling." alt="" coords="347,153,499,178"/>
+<area shape="poly" id="edge10_Node000008_Node000010" title=" " alt="" coords="426,105,426,138,420,138,420,105"/>
+<area shape="rect" id="Node000011" href="$LogMessages_8h_source.html" title=" " alt="" coords="524,153,637,178"/>
+<area shape="poly" id="edge12_Node000008_Node000011" title=" " alt="" coords="451,103,541,144,539,149,449,108"/>
+<area shape="poly" id="edge11_Node000010_Node000003" title=" " alt="" coords="389,181,266,224,264,219,388,176"/>
 </map>

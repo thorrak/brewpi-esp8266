@@ -2,7 +2,7 @@ var searchData=
 [
   ['target_0',['target',['../classAutoOffActuator.html#ad5276d01c683cad536e2722109268d9d',1,'AutoOffActuator']]],
   ['temp_5fcontrol_5ffield_1',['TEMP_CONTROL_FIELD',['../group__tempcontrol.html#ga159d9c2aae75a5bbeb531df41911e378',1,'TempControl.h']]],
-  ['temp_5fcontrol_5fstatic_2',['TEMP_CONTROL_STATIC',['../group__tempcontrol.html#ga6f5e06c60b129b973182de3dc67515fc',1,'TempControl.h']]],
+  ['temp_5fcontrol_5fstatic_2',['TEMP_CONTROL_STATIC',['../group__tempcontrol.html#ga6f5e06c60b129b973182de3dc67515fc',1,'ConfigDefault.h']]],
   ['temp_5fint_3',['temp_int',['../group__temps.html#gaef628157e9c71d62a159f8f809aea1c8',1,'TemperatureFormats.h']]],
   ['tempcontrol_4',['TempControl',['../classTempControl.html',1,'']]],
   ['tempdecimals_5',['tempDecimals',['../namespaceConfig_1_1TempFormat.html#a658f3d14683c98b983fc264a0de53af2',1,'Config::TempFormat']]],

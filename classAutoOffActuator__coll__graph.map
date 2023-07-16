@@ -1,4 +1,6 @@
 <map id="AutoOffActuator" name="AutoOffActuator">
-<area shape="rect" id="node1" title=" " alt="" coords="5,93,120,119"/>
-<area shape="rect" id="node2" href="$classActuator.html" title=" " alt="" coords="27,5,98,31"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,94,120,120"/>
+<area shape="rect" id="Node000002" href="$classActuator.html" title=" " alt="" coords="27,5,98,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="63,46,62,70,64,94,59,94,57,70,58,46"/>
+<area shape="poly" id="edge2_Node000001_Node000002" title=" " alt="" coords="65,46,65,94,60,94,60,46"/>
 </map>

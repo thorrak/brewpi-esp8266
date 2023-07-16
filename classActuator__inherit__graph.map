@@ -1,5 +1,7 @@
 <map id="Actuator" name="Actuator">
-<area shape="rect" id="node1" title=" " alt="" coords="97,5,167,31"/>
-<area shape="rect" id="node2" href="$classAutoOffActuator.html" title=" " alt="" coords="5,79,120,104"/>
-<area shape="rect" id="node3" href="$classTPLinkActuator.html" title=" " alt="" coords="145,79,258,104"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="95,5,166,31"/>
+<area shape="rect" id="Node000002" href="$classAutoOffActuator.html" title=" " alt="" coords="5,79,120,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="111,43,76,80,72,77,107,40"/>
+<area shape="rect" id="Node000003" href="$classTPLinkActuator.html" title=" " alt="" coords="144,79,256,105"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="154,40,190,77,186,80,150,43"/>
 </map>

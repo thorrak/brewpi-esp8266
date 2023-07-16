@@ -1,7 +1,11 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" title=" " alt="" coords="5,80,55,105"/>
-<area shape="rect" id="node2" href="$classIIClcd.html" title=" " alt="" coords="125,5,181,31"/>
-<area shape="rect" id="node3" href="$classNullLcdDriver.html" title=" " alt="" coords="103,55,204,80"/>
-<area shape="rect" id="node4" href="$classOLEDFourBit.html" title=" " alt="" coords="104,104,203,129"/>
-<area shape="rect" id="node5" href="$classSpiLcd.html" title="SPI Attached LCD." alt="" coords="122,153,185,179"/>
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,80,54,106"/>
+<area shape="rect" id="Node000001" href="$classIIClcd.html" title=" " alt="" coords="124,5,180,31"/>
+<area shape="poly" id="edge14_Node000000_Node000001" title=" " alt="" coords="58,69,100,40,122,28,125,33,103,44,61,73"/>
+<area shape="rect" id="Node000002" href="$classNullLcdDriver.html" title=" " alt="" coords="102,55,202,80"/>
+<area shape="poly" id="edge15_Node000000_Node000002" title=" " alt="" coords="67,82,101,75,102,81,68,88"/>
+<area shape="rect" id="Node000003" href="$classOLEDFourBit.html" title=" " alt="" coords="103,104,201,130"/>
+<area shape="poly" id="edge16_Node000000_Node000003" title=" " alt="" coords="69,98,103,105,102,110,68,103"/>
+<area shape="rect" id="Node000004" href="$classSpiLcd.html" title="SPI Attached LCD." alt="" coords="121,153,183,179"/>
+<area shape="poly" id="edge17_Node000000_Node000004" title=" " alt="" coords="61,112,103,140,123,151,120,155,100,144,59,117"/>
 </map>
