@@ -9,7 +9,6 @@ CMakeCache.txt
 CMakeFiles
 CMakeScripts
 Testing
-Makefile
 cmake_install.cmake
 install_manifest.txt
 compile_commands.json
@@ -29,3 +28,8 @@ apidocs/
 *.sw?
 
 src/Version.h
+
+# Virtualenv / Sphinx
+/venv
+/docs/venv
+/docs/_build
