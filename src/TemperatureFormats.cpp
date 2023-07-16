@@ -113,9 +113,11 @@ void mysnprintf_P(char* buf, int len, const char* fmt, ...)
  */
 char * fixedPointToString(char * s, long_temperature rawValue, uint8_t numDecimals, uint8_t maxLength){
 	s[0] = ' ';
+	bool negative = false;
 	if(rawValue < 0l){
 		s[0] = '-';
 		rawValue = -rawValue;
+		negative = true;
 	}
 	
 	int intPart = longTempDiffToInt(rawValue); // rawValue is supposed to be without internal offset
@@ -141,7 +143,7 @@ char * fixedPointToString(char * s, long_temperature rawValue, uint8_t numDecima
 		intPart++;
 		fracPart = 0;
 	}
-	if(rawValue < 0l)
+	if(negative)
 		mysnprintf_P(&s[1], maxLength-1, fmt,  intPart, fracPart);
 	else
 		mysnprintf_P(&s[0], maxLength, fmt,  intPart, fracPart);
