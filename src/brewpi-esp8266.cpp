@@ -143,7 +143,7 @@ void setup()
 #ifdef HAS_BLUETOOTH
     bt_scanner.init();
     bt_scanner.scan();
-    DisplayType::printBluetoothStartup();  // Alert the user about the startup delay
+    display.printBluetoothStartup();  // Alert the user about the startup delay
     delay(10000);
 #endif
 
@@ -229,7 +229,7 @@ void brewpiLoop()
 #endif
 
 		// update the lcd for the chamber being displayed
-    DisplayType::printAll();
+    display.printAll();
 	}
 
 	//listen for incoming connections while waiting to update
@@ -237,6 +237,10 @@ void brewpiLoop()
   CommandProcessor::receiveCommand();
 
 #ifdef HAS_BLUETOOTH
+if(bt_scanner.scanning_failed()) {
+
+  esp_restart();
+}
   bt_scanner.scan();        // Check/restart scan 
 #endif
 

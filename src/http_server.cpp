@@ -260,6 +260,7 @@ uint8_t processUpdateModeJson(const DynamicJsonDocument& json, bool triggerUpstr
 uint8_t processExtendedSettingsJson(const DynamicJsonDocument& json, bool triggerUpstreamUpdate) {
     uint8_t failCount = 0;
     bool saveSettings = false;
+    bool saveMinTimes = false; 
 
     // Glycol Mode
     if(json.containsKey(ExtendedSettingsKeys::glycol)) {
@@ -275,14 +276,14 @@ uint8_t processExtendedSettingsJson(const DynamicJsonDocument& json, bool trigge
     }
 
     // Low Delay Mode
-    if(json.containsKey(ExtendedSettingsKeys::lowDelay)) {
-        if(json[ExtendedSettingsKeys::lowDelay].is<bool>()) {
-            if(extendedSettings.lowDelay != json[ExtendedSettingsKeys::lowDelay].as<bool>()) {
-                extendedSettings.setLowDelay(json[ExtendedSettingsKeys::lowDelay].as<bool>());
+    if(json.containsKey(ExtendedSettingsKeys::largeTFT)) {
+        if(json[ExtendedSettingsKeys::largeTFT].is<bool>()) {
+            if(extendedSettings.largeTFT != json[ExtendedSettingsKeys::largeTFT].as<bool>()) {
+                extendedSettings.setLargeTFT(json[ExtendedSettingsKeys::largeTFT].as<bool>());
                 saveSettings = true;
             }
         } else {
-            Log.warning(F("Invalid [lowDelay]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::lowDelay]);
+            Log.warning(F("Invalid [largeTFT]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::largeTFT]);
             failCount++;
         }
     }
@@ -300,12 +301,144 @@ uint8_t processExtendedSettingsJson(const DynamicJsonDocument& json, bool trigge
         }
     }
 
+
+    // SETTINGS_CHOICE
+    if(json.containsKey(MinTimesKeys::SETTINGS_CHOICE)) {
+        if(json[MinTimesKeys::SETTINGS_CHOICE].is<uint8_t>()) {
+            // Validate that it's valid and different
+            if(minTimes.settings_choice != json[MinTimesKeys::SETTINGS_CHOICE].as<uint8_t>() && json[MinTimesKeys::SETTINGS_CHOICE].as<uint8_t>() <= MIN_TIMES_CUSTOM) {
+                minTimes.settings_choice = (MinTimesSettingsChoice) json[MinTimesKeys::SETTINGS_CHOICE].as<uint8_t>();
+                saveMinTimes = true;
+            }
+        } else {
+            Log.warning(F("Invalid [SETTINGS_CHOICE]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::SETTINGS_CHOICE]);
+            failCount++;
+        }
+    }
+
+
+    if(minTimes.settings_choice == MIN_TIMES_CUSTOM) {
+        // We only care about the other keys if we're in custom mode -- otherwise the call to setDefaults below will overwrite them
+
+        // MIN_COOL_OFF_TIME
+        if(json.containsKey(MinTimesKeys::MIN_COOL_OFF_TIME)) {
+            if(json[MinTimesKeys::MIN_COOL_OFF_TIME].is<uint16_t>()) {
+                if(minTimes.MIN_COOL_OFF_TIME != json[MinTimesKeys::MIN_COOL_OFF_TIME].as<uint16_t>()) {
+                    minTimes.MIN_COOL_OFF_TIME = json[MinTimesKeys::MIN_COOL_OFF_TIME].as<uint16_t>();
+                    saveMinTimes = true;
+                }
+            } else {
+                Log.warning(F("Invalid [MIN_COOL_OFF_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::MIN_COOL_OFF_TIME]);
+                failCount++;
+            }
+        }
+
+
+        // MIN_HEAT_OFF_TIME
+        if(json.containsKey(MinTimesKeys::MIN_HEAT_OFF_TIME)) {
+            if(json[MinTimesKeys::MIN_HEAT_OFF_TIME].is<uint16_t>()) {
+                if(minTimes.MIN_HEAT_OFF_TIME != json[MinTimesKeys::MIN_HEAT_OFF_TIME].as<uint16_t>()) {
+                    minTimes.MIN_HEAT_OFF_TIME = json[MinTimesKeys::MIN_HEAT_OFF_TIME].as<uint16_t>();
+                    saveMinTimes = true;
+                }
+            } else {
+                Log.warning(F("Invalid [MIN_HEAT_OFF_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::MIN_HEAT_OFF_TIME]);
+                failCount++;
+            }
+        }
+
+        // MIN_COOL_ON_TIME
+        if(json.containsKey(MinTimesKeys::MIN_COOL_ON_TIME)) {
+            if(json[MinTimesKeys::MIN_COOL_ON_TIME].is<uint16_t>()) {
+                if(minTimes.MIN_COOL_ON_TIME != json[MinTimesKeys::MIN_COOL_ON_TIME].as<uint16_t>()) {
+                    minTimes.MIN_COOL_ON_TIME = json[MinTimesKeys::MIN_COOL_ON_TIME].as<uint16_t>();
+                    saveMinTimes = true;
+                }
+            } else {
+                Log.warning(F("Invalid [MIN_COOL_ON_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::MIN_COOL_ON_TIME]);
+                failCount++;
+            }
+        }
+
+        // MIN_HEAT_ON_TIME
+        if(json.containsKey(MinTimesKeys::MIN_HEAT_ON_TIME)) {
+            if(json[MinTimesKeys::MIN_HEAT_ON_TIME].is<uint16_t>()) {
+                if(minTimes.MIN_HEAT_ON_TIME != json[MinTimesKeys::MIN_HEAT_ON_TIME].as<uint16_t>()) {
+                    minTimes.MIN_HEAT_ON_TIME = json[MinTimesKeys::MIN_HEAT_ON_TIME].as<uint16_t>();
+                    saveMinTimes = true;
+                }
+            } else {
+                Log.warning(F("Invalid [MIN_HEAT_ON_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::MIN_HEAT_ON_TIME]);
+                failCount++;
+            }
+        }
+
+
+        // MIN_COOL_OFF_TIME_FRIDGE_CONSTANT
+        if(json.containsKey(MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT)) {
+            if(json[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT].is<uint16_t>()) {
+                if(minTimes.MIN_COOL_OFF_TIME_FRIDGE_CONSTANT != json[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT].as<uint16_t>()) {
+                    minTimes.MIN_COOL_OFF_TIME_FRIDGE_CONSTANT = json[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT].as<uint16_t>();
+                    saveMinTimes = true;
+                }
+            } else {
+                Log.warning(F("Invalid [MIN_COOL_OFF_TIME_FRIDGE_CONSTANT]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT]);
+                failCount++;
+            }
+        }
+
+        // MIN_SWITCH_TIME
+        if(json.containsKey(MinTimesKeys::MIN_SWITCH_TIME)) {
+            if(json[MinTimesKeys::MIN_SWITCH_TIME].is<uint16_t>()) {
+                if(minTimes.MIN_SWITCH_TIME != json[MinTimesKeys::MIN_SWITCH_TIME].as<uint16_t>()) {
+                    minTimes.MIN_SWITCH_TIME = json[MinTimesKeys::MIN_SWITCH_TIME].as<uint16_t>();
+                    saveMinTimes = true;
+                }
+            } else {
+                Log.warning(F("Invalid [MIN_SWITCH_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::MIN_SWITCH_TIME]);
+                failCount++;
+            }
+        }
+
+        // COOL_PEAK_DETECT_TIME
+        if(json.containsKey(MinTimesKeys::COOL_PEAK_DETECT_TIME)) {
+            if(json[MinTimesKeys::COOL_PEAK_DETECT_TIME].is<uint16_t>()) {
+                if(minTimes.COOL_PEAK_DETECT_TIME != json[MinTimesKeys::COOL_PEAK_DETECT_TIME].as<uint16_t>()) {
+                    minTimes.COOL_PEAK_DETECT_TIME = json[MinTimesKeys::COOL_PEAK_DETECT_TIME].as<uint16_t>();
+                    saveMinTimes = true;
+                }
+            } else {
+                Log.warning(F("Invalid [COOL_PEAK_DETECT_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::COOL_PEAK_DETECT_TIME]);
+                failCount++;
+            }
+        }
+
+
+        // HEAT_PEAK_DETECT_TIME
+        if(json.containsKey(MinTimesKeys::HEAT_PEAK_DETECT_TIME)) {
+            if(json[MinTimesKeys::HEAT_PEAK_DETECT_TIME].is<uint16_t>()) {
+                if(minTimes.HEAT_PEAK_DETECT_TIME != json[MinTimesKeys::HEAT_PEAK_DETECT_TIME].as<uint16_t>()) {
+                    minTimes.HEAT_PEAK_DETECT_TIME = json[MinTimesKeys::HEAT_PEAK_DETECT_TIME].as<uint16_t>();
+                    saveMinTimes = true;
+                }
+            } else {
+                Log.warning(F("Invalid [HEAT_PEAK_DETECT_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::HEAT_PEAK_DETECT_TIME]);
+                failCount++;
+            }
+        }
+    }
+
     // Save
     if (failCount) {
         Log.error(F("Error: Invalid extended settings configuration.\r\n"));
     } else {
         if(saveSettings == true) {
             extendedSettings.storeToSpiffs();
+            // TODO - Force upstream cascade/send
+        }
+        if(saveMinTimes == true) {
+            minTimes.setDefaults(); // This will set defaults if defaults/lowdelay mode is set -- otherwise its a noop for custom mode
+            minTimes.storeToSpiffs();
             // TODO - Force upstream cascade/send
         }
     }
@@ -439,7 +572,15 @@ void httpServer::genericServeJson(void(*jsonFunc)(DynamicJsonDocument&)) {
 // There may be a way to combine the following using virtual functions, but I'm not going to worry about that for now
 void httpServer::serveExtendedSettings() {
     DynamicJsonDocument doc(2048);
-    extendedSettings.toJson(doc);
+    DynamicJsonDocument extended_settings(512);
+    DynamicJsonDocument min_times(512);
+
+    extendedSettings.toJson(extended_settings);
+    minTimes.toJson(min_times);
+
+    doc["extendedSettings"] = extended_settings;
+    doc["minTimes"] = min_times;
+
     char serializedJson[2048];
     serializeJson(doc, serializedJson);
     doc.clear();
@@ -454,8 +595,6 @@ void httpServer::serveUpstreamSettings() {
     doc.clear();
     web_server->send(200, "application/json", serializedJson);
 }
-
-
 
 
 // // About Page Handlers

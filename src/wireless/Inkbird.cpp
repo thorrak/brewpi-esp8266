@@ -9,7 +9,7 @@ void inkbird::update(int16_t temp, uint16_t hum, uint8_t bat, int16_t rssi)
     rawTemp=temp;
     rawHumidity=hum;
     battery=bat;
-    m_lastUpdate = millis();
+    m_lastUpdate = esp_timer_get_time();
     hasData = true;
     return;
 }
@@ -31,7 +31,7 @@ uint8_t inkbird::getBattery()
 
 bool inkbird::isConnected()
 {
-    return millis() <= (m_lastUpdate + INKBIRD_CONNECTED_TIMEOUT) && hasData;
+    return esp_timer_get_time() <= (m_lastUpdate + INKBIRD_CONNECTED_TIMEOUT) && hasData;
 }
 
 long_temperature inkbird::getTempFixedPoint() {

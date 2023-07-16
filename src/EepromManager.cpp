@@ -77,6 +77,7 @@ bool EepromManager::applySettings()
 	// load the one chamber and one beer for now
 	TempControl::loadConstants();
 	TempControl::loadSettings();
+	minTimes.loadFromSpiffs();
 	
 	
 	for (uint8_t index = 0; index<Config::EepromFormat::MAX_DEVICES; index++)

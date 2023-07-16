@@ -204,8 +204,8 @@ public:
     ExtendedSettings();
 
     bool invertTFT;  //<! Whether or not to invert the TFT
+    bool largeTFT;  //<! Whether or not to use a large TFT
     bool glycol;  //<! Whether or not to use glycol mode
-    bool lowDelay;  //<! Whether or not to use lowdelay mode
 
     void toJson(DynamicJsonDocument &doc);
     void storeToSpiffs();
@@ -214,8 +214,8 @@ public:
     void processSettingKeypair(JsonPair kv);
 
     void setGlycol(bool setting);
-    void setLowDelay(bool setting);
     void setInvertTFT(bool setting);
+    void setLargeTFT(bool setting);
 
     /**
      * \brief Filename used when reading/writing data to flash

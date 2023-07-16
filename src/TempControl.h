@@ -56,9 +56,18 @@ struct ControlVariables{
 	temperature posPeak;
 };
 
-class MinTimes {
+enum MinTimesSettingsChoice {
+	MIN_TIMES_DEFAULT,			// 0
+    MIN_TIMES_LOW_DELAY,		// 1
+	MIN_TIMES_CUSTOM			// 2
+};
+
+class MinTimes : public JSONSaveable {
 public:
-	// MinTimes();
+
+	MinTimesSettingsChoice settings_choice;
+	MinTimes();
+
     uint16_t MIN_COOL_OFF_TIME;  //! Minimum cooler off time, in seconds. To prevent short cycling the compressor
     uint16_t MIN_HEAT_OFF_TIME;  //! Minimum heater off time, in seconds. To heat in cycles, not lots of short bursts
     uint16_t MIN_COOL_ON_TIME;  //! Minimum on time for the cooler.
@@ -73,7 +82,32 @@ public:
     uint16_t COOL_PEAK_DETECT_TIME;  //! Time allowed for cooling peak detection
     uint16_t HEAT_PEAK_DETECT_TIME;  //! Time allowed for heating peak detection
 
-	void set_min_times();
+	void toJson(DynamicJsonDocument &doc);
+    void storeToSpiffs();
+    void loadFromSpiffs();
+    void setDefaults();
+
+    /**
+     * \brief Filename used when reading/writing data to flash
+     */
+    static constexpr auto filename = "/customMinTimes.json";
+
+};
+
+/**
+ * \brief Strings used for JSON keys
+ * \see MinTimes
+ */
+namespace MinTimesKeys {
+	constexpr auto SETTINGS_CHOICE = "SETTINGS_CHOICE";
+	constexpr auto MIN_COOL_OFF_TIME = "MIN_COOL_OFF_TIME";
+	constexpr auto MIN_HEAT_OFF_TIME = "MIN_HEAT_OFF_TIME";
+	constexpr auto MIN_COOL_ON_TIME = "MIN_COOL_ON_TIME";
+	constexpr auto MIN_HEAT_ON_TIME = "MIN_HEAT_ON_TIME";
+	constexpr auto MIN_COOL_OFF_TIME_FRIDGE_CONSTANT = "MIN_COOL_OFF_TIME_FRIDGE_CONSTANT";
+	constexpr auto MIN_SWITCH_TIME = "MIN_SWITCH_TIME";
+	constexpr auto COOL_PEAK_DETECT_TIME = "COOL_PEAK_DETECT_TIME";
+	constexpr auto HEAT_PEAK_DETECT_TIME = "HEAT_PEAK_DETECT_TIME";
 };
 
 // struct ControlConstants was moved to EepromStructs.h
