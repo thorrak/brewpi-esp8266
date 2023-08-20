@@ -391,6 +391,7 @@ bool restHandler::send_status() {
         doc["lcd"] = lcd;
         doc["temps"] = temps;
         doc["temp_format"] = String(tempControl.cc.tempFormat);
+        doc["mode"] = String(tempControl.cs.mode);
 
         // Serialize the JSON document
         serializeJson(doc, payload);
