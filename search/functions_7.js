@@ -1,7 +1,7 @@
 var searchData=
 [
   ['getbeersetting_0',['getBeerSetting',['../classTempControl.html#a58d36bf0769ed11db4674049a27fca4b',1,'TempControl']]],
-  ['getbeertemp_1',['getBeerTemp',['../classSimulator.html#afde4e6e4b6e8ec4d4aa10c185ceee826',1,'Simulator::getBeerTemp()'],['../classTempControl.html#af3975234ea3a9214e9e8fb5511ed8c59',1,'TempControl::getBeerTemp()']]],
+  ['getbeertemp_1',['getbeertemp',['../classSimulator.html#afde4e6e4b6e8ec4d4aa10c185ceee826',1,'Simulator::getBeerTemp()'],['../classTempControl.html#af3975234ea3a9214e9e8fb5511ed8c59',1,'TempControl::getBeerTemp()']]],
   ['getbeervolume_2',['getBeerVolume',['../classSimulator.html#aa5c89f0b17200e7bc8248f9605c7264b',1,'Simulator']]],
   ['getcontrolconstantsdoc_3',['getControlConstantsDoc',['../classTempControl.html#a97bfe36abe735a4f7e629f882060f4ef',1,'TempControl']]],
   ['getcontrolsettingsdoc_4',['getControlSettingsDoc',['../classTempControl.html#ae222a158a16d12671b8771081b939ae2',1,'TempControl']]],
