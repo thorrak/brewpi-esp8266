@@ -147,6 +147,9 @@ private:
 	uint16_t _backlightTime;
 	bool _bufferOnly;
 
+	bool _displayFound;  // Needed since writes to a non-existant display can lock I2C bus on ESP32-S2 - see: https://github.com/espressif/arduino-esp32/issues/8480#issuecomment-1708909457
+
+
 	char content[4][21]; // always keep a copy of the display content in this variable
 };
 
