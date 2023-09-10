@@ -238,11 +238,14 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>    uint16_t _backlightTime;</div>
 <div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>    <span class="keywordtype">bool</span> _bufferOnly;</div>
 <div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span> </div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>    <span class="keywordtype">char</span> content[4][21]; <span class="comment">// always keep a copy of the display content in this variable</span></div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>};</div>
-</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>    <span class="keywordtype">bool</span> _displayFound;  <span class="comment">// Needed since writes to a non-existant display can lock I2C bus on ESP32-S2 - see: https://github.com/espressif/arduino-esp32/issues/8480#issuecomment-1708909457</span></div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span> </div>
 <div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span> </div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>    <span class="keywordtype">char</span> content[4][21]; <span class="comment">// always keep a copy of the display content in this variable</span></div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>};</div>
+</div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span> </div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span><span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aBrewpi_8h_html"><div class="ttname"><a href="Brewpi_8h.html">Brewpi.h</a></div><div class="ttdoc">Defines global config for the brewpi project.</div></div>
 <div class="ttc" id="aclassIIClcd_html"><div class="ttname"><a href="classIIClcd.html">IIClcd</a></div><div class="ttdef"><b>Definition</b> IicLcd.h:57</div></div>
 </div><!-- fragment --></div><!-- contents -->
