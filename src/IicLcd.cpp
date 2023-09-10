@@ -50,6 +50,7 @@ IIClcd::IIClcd(uint8_t lcd_Addr, uint8_t lcd_cols, uint8_t lcd_rows)
 	_cols = lcd_cols;
 	_rows = lcd_rows;
 	_backlightval = LCD_NOBACKLIGHT;
+	_displayFound = false;
 }
 
 void IIClcd::scan_address() {
@@ -63,8 +64,13 @@ void IIClcd::scan_address() {
 			_Addr = i;
 			i = 120;
 			delay(1);
+			_displayFound = true;
+			break;
 		}
 	}
+
+	Wire.setClock(1000000);                 // Set the I2C bus rate
+	Wire.setClock(400000);               // Try and reset clock rate
 }
 
 
@@ -175,66 +181,66 @@ void IIClcd::setCursor(uint8_t col, uint8_t row) {
 }
 
 // Turn the display on/off (quickly)
-void IIClcd::noDisplay() {
-	_displaycontrol &= ~LCD_DISPLAYON;
-	command(LCD_DISPLAYCONTROL | _displaycontrol);
-}
+// void IIClcd::noDisplay() {
+// 	_displaycontrol &= ~LCD_DISPLAYON;
+// 	command(LCD_DISPLAYCONTROL | _displaycontrol);
+// }
 void IIClcd::display() {
 	_displaycontrol |= LCD_DISPLAYON;
 	command(LCD_DISPLAYCONTROL | _displaycontrol);
 }
 
-// Turns the underline cursor on/off
-void IIClcd::noCursor() {
-	_displaycontrol &= ~LCD_CURSORON;
-	command(LCD_DISPLAYCONTROL | _displaycontrol);
-}
-void IIClcd::cursor() {
-	_displaycontrol |= LCD_CURSORON;
-	command(LCD_DISPLAYCONTROL | _displaycontrol);
-}
+// // Turns the underline cursor on/off
+// void IIClcd::noCursor() {
+// 	_displaycontrol &= ~LCD_CURSORON;
+// 	command(LCD_DISPLAYCONTROL | _displaycontrol);
+// }
+// void IIClcd::cursor() {
+// 	_displaycontrol |= LCD_CURSORON;
+// 	command(LCD_DISPLAYCONTROL | _displaycontrol);
+// }
 
-// Turn on and off the blinking cursor
-void IIClcd::noBlink() {
-	_displaycontrol &= ~LCD_BLINKON;
-	command(LCD_DISPLAYCONTROL | _displaycontrol);
-}
-void IIClcd::blink() {
-	_displaycontrol |= LCD_BLINKON;
-	command(LCD_DISPLAYCONTROL | _displaycontrol);
-}
+// // Turn on and off the blinking cursor
+// void IIClcd::noBlink() {
+// 	_displaycontrol &= ~LCD_BLINKON;
+// 	command(LCD_DISPLAYCONTROL | _displaycontrol);
+// }
+// void IIClcd::blink() {
+// 	_displaycontrol |= LCD_BLINKON;
+// 	command(LCD_DISPLAYCONTROL | _displaycontrol);
+// }
 
 // These commands scroll the display without changing the RAM
-void IIClcd::scrollDisplayLeft() {
-	command(LCD_CURSORSHIFT | LCD_DISPLAYMOVE | LCD_MOVELEFT);
-}
-void IIClcd::scrollDisplayRight() {
-	command(LCD_CURSORSHIFT | LCD_DISPLAYMOVE | LCD_MOVERIGHT);
-}
+// void IIClcd::scrollDisplayLeft() {
+// 	command(LCD_CURSORSHIFT | LCD_DISPLAYMOVE | LCD_MOVELEFT);
+// }
+// void IIClcd::scrollDisplayRight() {
+// 	command(LCD_CURSORSHIFT | LCD_DISPLAYMOVE | LCD_MOVERIGHT);
+// }
 
-// This is for text that flows Left to Right
-void IIClcd::leftToRight() {
-	_displaymode |= LCD_ENTRYLEFT;
-	command(LCD_ENTRYMODESET | _displaymode);
-}
+// // This is for text that flows Left to Right
+// void IIClcd::leftToRight() {
+// 	_displaymode |= LCD_ENTRYLEFT;
+// 	command(LCD_ENTRYMODESET | _displaymode);
+// }
 
-// This is for text that flows Right to Left
-void IIClcd::rightToLeft() {
-	_displaymode &= ~LCD_ENTRYLEFT;
-	command(LCD_ENTRYMODESET | _displaymode);
-}
+// // This is for text that flows Right to Left
+// void IIClcd::rightToLeft() {
+// 	_displaymode &= ~LCD_ENTRYLEFT;
+// 	command(LCD_ENTRYMODESET | _displaymode);
+// }
 
-// This will 'right justify' text from the cursor
-void IIClcd::autoscroll() {
-	_displaymode |= LCD_ENTRYSHIFTINCREMENT;
-	command(LCD_ENTRYMODESET | _displaymode);
-}
+// // This will 'right justify' text from the cursor
+// void IIClcd::autoscroll() {
+// 	_displaymode |= LCD_ENTRYSHIFTINCREMENT;
+// 	command(LCD_ENTRYMODESET | _displaymode);
+// }
 
-// This will 'left justify' text from the cursor
-void IIClcd::noAutoscroll() {
-	_displaymode &= ~LCD_ENTRYSHIFTINCREMENT;
-	command(LCD_ENTRYMODESET | _displaymode);
-}
+// // This will 'left justify' text from the cursor
+// void IIClcd::noAutoscroll() {
+// 	_displaymode &= ~LCD_ENTRYSHIFTINCREMENT;
+// 	command(LCD_ENTRYMODESET | _displaymode);
+// }
 
 // Allows us to fill the first 8 CGRAM locations
 // with custom characters
@@ -290,11 +296,13 @@ void IIClcd::write4bits(uint8_t value) {
 }
 
 void IIClcd::expanderWrite(uint8_t _data) {
-	uint8_t data = ((uint8_t)(_data) | _backlightval);
-//	twi_writeTo(_Addr, &data, 1, true, true);
-	Wire.beginTransmission(_Addr);
-	Wire.write(data);
-	Wire.endTransmission();
+	if(_displayFound) {
+		uint8_t data = ((uint8_t)(_data) | _backlightval);
+	//	twi_writeTo(_Addr, &data, 1, true, true);
+		Wire.beginTransmission(_Addr);
+		Wire.write(data);
+		Wire.endTransmission();
+	}
 }
 
 void IIClcd::pulseEnable(uint8_t _data) {
