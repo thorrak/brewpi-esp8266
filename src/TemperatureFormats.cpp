@@ -154,14 +154,36 @@ char * fixedPointToString(char * s, long_temperature rawValue, uint8_t numDecima
 /**
  * \brief Convert a c-str into a temperature value
  *
- * \param numberString - String to convert
+ * \param numberString - String to convert (Either with units or in tempControl.cc.tempFormat units)
  * \returns converted temperature
  */
 temperature stringToTemp(const char * numberString){
-	long_temperature rawTemp = stringToFixedPoint(numberString);
-	rawTemp = convertToInternalTemp(rawTemp);
-	return constrainTemp16(rawTemp);
+    char tempBuffer[20];
+    int bufferIdx = 0;
+    // char tempFormat = '\0';
+	char tempFormat = tempControl.cc.tempFormat;
+
+    for (int i = 0; numberString[i] != '\0' && i < 19; i++) {
+        if (numberString[i] == ' ') {
+            tempFormat = numberString[i+1];  // Capture the unit after the space.
+            break;
+        } else {
+            tempBuffer[i] = numberString[i];
+            tempBuffer[i+1] = '\0';
+        }
+    }
+
+    long_temperature rawTemp = stringToFixedPoint(tempBuffer);
+    
+    // if (tempFormat != '\0') {
+        rawTemp = convertToInternalTemp(rawTemp, tempFormat);
+    // } else {
+        // rawTemp = convertToInternalTemp(rawTemp);
+    // }
+
+    return constrainTemp16(rawTemp);
 }
+
 
 
 /**
@@ -215,7 +237,7 @@ long_temperature stringToFixedPoint(const char * numberString){
 }
 
 /**
- * Receives the external temp format in fixed point and converts it to the internal format
+ * Receives the tempFormat temp format in fixed point and converts it to the internal format
  * It scales the value for Fahrenheit and adds the offset needed for absolute
  * temperatures. For temperature differences, use no offset.
  *
@@ -223,9 +245,10 @@ long_temperature stringToFixedPoint(const char * numberString){
  * @param addOffset - Flag to control if temp offsets are added.  Should be
  * `true` when working with absolute temps, `false` when working with
  * differences.
+ * @param tempFormat - The format of the temperature to convert
  */
-long_temperature convertToInternalTempImpl(long_temperature rawTemp, bool addOffset){
-	if(tempControl.cc.tempFormat == 'F'){ // value received is in F, convert to C
+long_temperature convertToInternalTempImpl(long_temperature rawTemp, bool addOffset, char tempFormat){
+	if(tempFormat == 'F'){ // value received is in F, convert to C
 		rawTemp = (rawTemp) * 5 / 9;
 		if(addOffset){
 			rawTemp += F_OFFSET;
@@ -237,6 +260,20 @@ long_temperature convertToInternalTempImpl(long_temperature rawTemp, bool addOff
 		}
 	}
 	return rawTemp;
+}
+
+/**
+ * Receives the external temp format in fixed point and converts it to the internal format
+ * It scales the value for Fahrenheit and adds the offset needed for absolute
+ * temperatures. For temperature differences, use no offset.
+ *
+ * @param rawTemp - Temperature to convert
+ * @param addOffset - Flag to control if temp offsets are added.  Should be
+ * `true` when working with absolute temps, `false` when working with
+ * differences.
+ */
+long_temperature convertToInternalTempImpl(long_temperature rawTemp, bool addOffset){
+	return convertToInternalTempImpl(rawTemp, addOffset, tempControl.cc.tempFormat);
 }
 
 // convertAndConstrain adds an offset, then scales with *9/5 for Fahrenheit. Use it without the offset argument for temperature differences

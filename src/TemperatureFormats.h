@@ -204,6 +204,7 @@ temperature multiplyFactorTemperatureDiff(temperature factor, temperature b);
 
 
 long_temperature convertToInternalTempImpl(long_temperature rawTemp, bool addOffset);
+long_temperature convertToInternalTempImpl(long_temperature rawTemp, bool addOffset, char tempFormat);
 long_temperature convertFromInternalTempImpl(long_temperature rawTemp, bool addOffset);
 
 inline long_temperature convertToInternalTempDiff(long_temperature rawTempDiff) {
@@ -216,6 +217,10 @@ inline long_temperature convertFromInternalTempDiff(long_temperature rawTempDiff
 
 inline long_temperature convertToInternalTemp(long_temperature rawTemp) {
     return convertToInternalTempImpl(rawTemp, true);
+}
+
+inline long_temperature convertToInternalTemp(long_temperature rawTemp, char tempFormat) {
+    return convertToInternalTempImpl(rawTemp, true, tempFormat);
 }
 
 inline long_temperature convertFromInternalTemp(long_temperature rawTemp) {
