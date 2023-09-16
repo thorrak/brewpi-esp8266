@@ -153,7 +153,7 @@ constexpr auto messageID = "messageID";
  * \see processUpdateModeJson
  */
 namespace ModeUpdateKeys {
-constexpr auto mode = "mode";
+constexpr auto mode = "newMode";
 constexpr auto setpoint = "setPoint";
 }; // namespace ModeUpdateKeys
 

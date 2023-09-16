@@ -222,17 +222,17 @@ uint8_t processUpdateModeJson(const DynamicJsonDocument& json, bool triggerUpstr
                 // Mode is valid - Update
                 if(new_mode != tempControl.getMode()) {
                     tempControl.setMode(new_mode);
-                    Log.notice(F("Settings update, [mode]:(%c) applied.\r\n"), new_mode);
+                    Log.notice(F("Settings update, [newMode]:(%c) applied.\r\n"), new_mode);
                     saveSettings = true;
                 } else {
-                    Log.notice(F("Settings update, [mode]:(%c) NOT applied - no change.\r\n"), new_mode);
+                    Log.notice(F("Settings update, [newMode]:(%c) NOT applied - no change.\r\n"), new_mode);
                 }
             } else {
-                Log.warning(F("Settings update error, [mode]:(%c) not valid.\r\n"), new_mode);
+                Log.warning(F("Settings update error, [newMode]:(%c) not valid.\r\n"), new_mode);
                 failCount++;
             }
         } else {
-            Log.warning(F("Settings update error, [mode]:(%s) not a valid type.\r\n"), json[ModeUpdateKeys::mode].as<const char*>());
+            Log.warning(F("Settings update error, [newMode]:(%s) not a valid type.\r\n"), json[ModeUpdateKeys::mode].as<const char*>());
             failCount++;
         }
     }
