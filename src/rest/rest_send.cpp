@@ -16,6 +16,7 @@
 #include "DeviceManager.h"
 #include "JsonMessages.h"
 #include "JsonKeys.h"
+#include "SettingLoader.h"
 
 
 restHandler rest_handler; // Global data sender
@@ -410,6 +411,37 @@ bool restHandler::send_status() {
             if(has_messages)
                 messages_pending_on_server = true;
         }
+
+        if(doc.containsKey("updated_mode") && doc["updated_mode"].as<const char *>()) {
+            char updated_mode = doc["updated_mode"].as<const char *>()[0];
+
+            if (updated_mode == Modes::fridgeConstant || updated_mode == Modes::beerConstant || updated_mode == Modes::beerProfile ||
+                updated_mode == Modes::off || updated_mode == Modes::test) {
+                    // We have a new, valid mode. Update to it.
+                    if(tempControl.cs.mode != updated_mode)
+                        tempControl.setMode(updated_mode);
+            } else {
+                Serial.printf("Invalid mode \"%c\" (0x%02X)\r\n", updated_mode, updated_mode);
+            }
+        }
+
+        if(doc.containsKey("updated_setpoint") && doc["updated_setpoint"].as<const char *>()) {
+            char updated_mode = doc["updated_setpoint"].as<const char *>()[0];
+
+            switch(tempControl.cs.mode) {
+                case Modes::fridgeConstant:
+                    SettingLoader::setFridgeSetting(doc["updated_setpoint"].as<const char *>());
+                    break;
+                case Modes::beerConstant:
+                case Modes::beerProfile:
+                    SettingLoader::setBeerSetting(doc["updated_setpoint"].as<const char *>());
+                    break;
+                default:
+                    break;
+            }
+        }
+
+
     }
 
     return true;

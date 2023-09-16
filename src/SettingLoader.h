@@ -26,8 +26,6 @@
 class SettingLoader {
 public:
   static void processSettingKeypair(JsonPair kv);
-
-private:
   static void setBeerSetting(const char *val);
   static void setFridgeSetting(const char *val);
 };

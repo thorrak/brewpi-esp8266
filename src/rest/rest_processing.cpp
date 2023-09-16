@@ -224,6 +224,8 @@ bool restHandler::process_updated_settings() {
     messages.updated_devices = false;
     messages.updated_mt = false;
 
+    rest_handler.send_full_config_ticker=true;  // We always want to send a full config after processing an update
+
     return true;
 }
 

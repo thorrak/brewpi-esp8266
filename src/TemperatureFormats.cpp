@@ -160,7 +160,6 @@ char * fixedPointToString(char * s, long_temperature rawValue, uint8_t numDecima
 temperature stringToTemp(const char * numberString){
     char tempBuffer[20];
     int bufferIdx = 0;
-    // char tempFormat = '\0';
 	char tempFormat = tempControl.cc.tempFormat;
 
     for (int i = 0; numberString[i] != '\0' && i < 19; i++) {
@@ -173,17 +172,10 @@ temperature stringToTemp(const char * numberString){
         }
     }
 
-    long_temperature rawTemp = stringToFixedPoint(tempBuffer);
-    
-    // if (tempFormat != '\0') {
-        rawTemp = convertToInternalTemp(rawTemp, tempFormat);
-    // } else {
-        // rawTemp = convertToInternalTemp(rawTemp);
-    // }
-
+    long_temperature rawTemp = stringToFixedPoint(tempBuffer);    
+	rawTemp = convertToInternalTemp(rawTemp, tempFormat);
     return constrainTemp16(rawTemp);
 }
-
 
 
 /**
