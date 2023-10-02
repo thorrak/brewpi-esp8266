@@ -12,6 +12,9 @@ This project ports the BrewPi firmware to the ESP8266, ESP32, and ESP32-S2 contr
 * [Installing the Firmware](docs/source/Installing%20the%20Firmware.md)
 * [Hardware Information](https://github.com/thorrak/thorrak_hardware/blob/master/BrewPi-ESP8266.md) - PCB files, ordering and BOMs
 
+## Configuration
+Once you've flashed firmware to your ESP device, you'll need to configure it to connect to your WiFi network.  For that purpose, the firmware creates a WiFi access point named `BrewPiAP`, with a password of `brewpiesp`.  Connect to that access point and, if your device doesn't pull up a configuration page on its own, browse to `http://192.168.4.1`.  Then click on **Configure WiFi,** and configure it to connect to your WiFi network.
+
 ## Expected Pinout
 
 ### ESP32
