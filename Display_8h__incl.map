@@ -1,47 +1,47 @@
 <map id="src/Display.h" name="src/Display.h">
 <area shape="rect" id="Node000001" title="To use the display, include this file." alt="" coords="410,5,506,31"/>
 <area shape="rect" id="Node000002" href="$DisplayBase_8h_source.html" title=" " alt="" coords="452,153,555,178"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="464,31,498,138,493,139,459,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="464,31,497,137,492,138,459,32"/>
 <area shape="rect" id="Node000014" href="$DisplayLcd_8h_source.html" title=" " alt="" coords="368,79,463,105"/>
-<area shape="poly" id="edge16_Node000001_Node000014" title=" " alt="" coords="453,33,432,68,427,65,449,30"/>
+<area shape="poly" id="edge16_Node000001_Node000014" title=" " alt="" coords="453,33,433,67,428,64,449,30"/>
 <area shape="rect" id="Node000003" href="$Brewpi_8h.html" title="Defines global config for the brewpi project." alt="" coords="305,300,376,326"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="497,180,471,215,434,254,377,295,374,290,431,250,467,212,493,177"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="497,180,471,215,434,254,377,294,374,290,431,250,467,212,493,177"/>
 <area shape="rect" id="Node000012" href="$TemperatureFormats_8h.html" title="Temperature value handling." alt="" coords="546,447,698,473"/>
-<area shape="poly" id="edge15_Node000002_Node000012" title=" " alt="" coords="512,178,551,258,599,373,618,433,613,434,594,375,546,261,507,180"/>
+<area shape="poly" id="edge15_Node000002_Node000012" title=" " alt="" coords="512,178,551,258,599,373,618,432,613,434,594,375,546,261,507,180"/>
 <area shape="rect" id="Node000004" href="$Config_8h.html" title="Compile time configuration flags." alt="" coords="90,447,157,473"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="324,328,215,402,155,441,152,437,212,397,321,324"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="324,328,215,402,156,441,153,437,212,397,321,324"/>
 <area shape="rect" id="Node000006" href="$ConfigDefault_8h.html" title="Compile time configuration flags." alt="" coords="476,374,584,399"/>
-<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="374,324,485,366,483,371,372,329"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="374,324,485,365,483,370,372,329"/>
 <area shape="rect" id="Node000007" title=" " alt="" coords="127,374,202,399"/>
 <area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="312,329,209,370,207,365,310,324"/>
 <area shape="rect" id="Node000008" href="$Actuator_8h_source.html" title=" " alt="" coords="276,374,357,399"/>
-<area shape="poly" id="edge7_Node000003_Node000008" title=" " alt="" coords="332,327,319,360,314,358,327,325"/>
+<area shape="poly" id="edge7_Node000003_Node000008" title=" " alt="" coords="332,327,319,359,314,357,327,325"/>
 <area shape="rect" id="Node000010" href="$Logger_8h_source.html" title=" " alt="" coords="381,374,452,399"/>
 <area shape="poly" id="edge10_Node000003_Node000010" title=" " alt="" coords="355,324,395,361,391,365,352,328"/>
 <area shape="rect" id="Node000005" title=" " alt="" coords="92,521,155,547"/>
-<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="126,473,126,506,121,506,121,473"/>
-<area shape="poly" id="edge8_Node000008_Node000003" title=" " alt="" coords="325,372,338,339,343,341,330,374"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="126,473,126,505,121,505,121,473"/>
+<area shape="poly" id="edge8_Node000008_Node000003" title=" " alt="" coords="325,372,338,340,343,342,330,374"/>
 <area shape="rect" id="Node000009" href="$FastDigitalPin_8h_source.html" title=" " alt="" coords="180,447,293,473"/>
-<area shape="poly" id="edge9_Node000008_Node000009" title=" " alt="" coords="305,402,262,439,259,435,301,398"/>
+<area shape="poly" id="edge9_Node000008_Node000009" title=" " alt="" coords="305,402,263,439,259,435,301,398"/>
 <area shape="rect" id="Node000011" title=" " alt="" coords="455,447,522,473"/>
-<area shape="poly" id="edge11_Node000010_Node000011" title=" " alt="" coords="430,398,468,435,464,439,427,401"/>
-<area shape="poly" id="edge12_Node000010_Node000012" title=" " alt="" coords="452,397,574,439,572,445,451,402"/>
+<area shape="poly" id="edge11_Node000010_Node000011" title=" " alt="" coords="430,398,467,434,464,438,427,401"/>
+<area shape="poly" id="edge12_Node000010_Node000012" title=" " alt="" coords="452,397,574,439,572,444,451,402"/>
 <area shape="rect" id="Node000013" href="$LogMessages_8h_source.html" title=" " alt="" coords="317,447,431,473"/>
-<area shape="poly" id="edge14_Node000010_Node000013" title=" " alt="" coords="412,401,391,436,386,433,407,398"/>
-<area shape="poly" id="edge13_Node000012_Node000005" title=" " alt="" coords="545,475,170,529,169,523,545,470"/>
-<area shape="poly" id="edge18_Node000014_Node000002" title=" " alt="" coords="432,103,479,141,475,145,428,107"/>
-<area shape="poly" id="edge17_Node000014_Node000003" title=" " alt="" coords="414,106,352,287,347,286,409,104"/>
+<area shape="poly" id="edge14_Node000010_Node000013" title=" " alt="" coords="412,401,391,435,387,432,407,398"/>
+<area shape="poly" id="edge13_Node000012_Node000005" title=" " alt="" coords="545,475,170,528,170,523,545,470"/>
+<area shape="poly" id="edge18_Node000014_Node000002" title=" " alt="" coords="432,103,478,141,475,145,428,107"/>
+<area shape="poly" id="edge17_Node000014_Node000003" title=" " alt="" coords="414,106,352,287,347,285,409,104"/>
 <area shape="rect" id="Node000015" href="$SpiLcd_8h_source.html" title=" " alt="" coords="178,153,250,178"/>
-<area shape="poly" id="edge19_Node000014_Node000015" title=" " alt="" coords="382,108,262,150,261,145,380,103"/>
-<area shape="poly" id="edge20_Node000015_Node000003" title=" " alt="" coords="252,171,299,189,322,205,340,225,347,239,350,255,349,285,344,285,345,256,342,241,336,228,318,209,297,194,250,176"/>
-<area shape="poly" id="edge22_Node000015_Node000005" title=" " alt="" coords="177,172,143,177,104,187,66,203,33,228,18,247,11,265,9,312,9,388,11,407,17,426,38,460,65,488,93,510,90,514,62,492,33,463,12,428,6,408,3,388,3,311,6,264,13,245,29,224,63,199,102,182,142,172,177,166"/>
+<area shape="poly" id="edge19_Node000014_Node000015" title=" " alt="" coords="382,108,263,150,262,144,380,103"/>
+<area shape="poly" id="edge20_Node000015_Node000003" title=" " alt="" coords="252,171,299,189,322,205,340,225,350,255,349,285,344,285,345,256,336,228,318,209,297,194,250,176"/>
+<area shape="poly" id="edge22_Node000015_Node000005" title=" " alt="" coords="177,172,143,177,104,187,66,203,33,228,18,247,11,265,9,312,9,388,11,407,17,426,37,459,65,488,93,510,89,514,61,492,33,463,12,428,6,408,3,388,3,311,6,264,13,245,29,224,63,199,102,182,142,172,177,166"/>
 <area shape="rect" id="Node000016" href="$BrewpiStrings_8h_source.html" title=" " alt="" coords="214,226,326,252"/>
-<area shape="poly" id="edge21_Node000015_Node000016" title=" " alt="" coords="225,177,253,213,249,216,221,180"/>
+<area shape="poly" id="edge21_Node000015_Node000016" title=" " alt="" coords="225,177,253,212,249,216,221,180"/>
 <area shape="rect" id="Node000017" title=" " alt="" coords="43,226,102,252"/>
-<area shape="poly" id="edge23_Node000015_Node000017" title=" " alt="" coords="191,181,111,222,108,217,189,176"/>
+<area shape="poly" id="edge23_Node000015_Node000017" title=" " alt="" coords="191,181,111,221,109,217,189,176"/>
 <area shape="rect" id="Node000018" href="$Ticks_8h_source.html" title=" " alt="" coords="126,226,190,252"/>
-<area shape="poly" id="edge24_Node000015_Node000018" title=" " alt="" coords="207,180,178,216,174,213,203,177"/>
-<area shape="poly" id="edge25_Node000018_Node000003" title=" " alt="" coords="190,250,297,292,295,297,188,255"/>
+<area shape="poly" id="edge24_Node000015_Node000018" title=" " alt="" coords="207,180,179,216,175,212,203,177"/>
+<area shape="poly" id="edge25_Node000018_Node000003" title=" " alt="" coords="190,250,296,292,295,296,188,255"/>
 <area shape="rect" id="Node000019" href="$TicksArduino_8h_source.html" title=" " alt="" coords="104,300,212,326"/>
-<area shape="poly" id="edge26_Node000018_Node000019" title=" " alt="" coords="161,252,161,285,155,285,155,252"/>
+<area shape="poly" id="edge26_Node000018_Node000019" title=" " alt="" coords="161,252,161,284,155,284,155,252"/>
 </map>

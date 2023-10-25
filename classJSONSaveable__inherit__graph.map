@@ -3,13 +3,13 @@
 <area shape="rect" id="Node000002" href="$classControlConstants.html" title="PID Control constants." alt="" coords="167,5,289,31"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="80,116,117,77,163,40,184,29,187,34,166,44,120,81,84,119"/>
 <area shape="rect" id="Node000003" href="$structControlSettings.html" title=" " alt="" coords="173,55,283,80"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="100,120,164,89,189,78,191,83,166,94,102,125"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="100,119,164,89,189,78,191,83,166,94,102,124"/>
 <area shape="rect" id="Node000004" href="$classDeviceConfig.html" title=" " alt="" coords="179,104,277,130"/>
 <area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="131,129,178,122,179,127,132,134"/>
 <area shape="rect" id="Node000005" href="$classExtendedSettings.html" title="Extended (non&#45;stock&#45;BrewPi) hardware settings." alt="" coords="167,153,289,179"/>
 <area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="132,150,167,155,166,160,131,155"/>
 <area shape="rect" id="Node000006" href="$classMinTimes.html" title=" " alt="" coords="189,203,267,228"/>
-<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="103,160,166,189,191,200,189,204,164,194,100,164"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="103,160,166,189,191,200,189,204,164,194,101,165"/>
 <area shape="rect" id="Node000007" href="$classUpstreamSettings.html" title="REST Interface settings." alt="" coords="165,252,291,278"/>
-<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="84,165,120,202,166,239,187,249,184,254,163,243,117,206,80,168"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="85,165,121,202,166,239,187,249,184,254,163,243,117,206,81,169"/>
 </map>
