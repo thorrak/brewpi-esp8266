@@ -20,3 +20,6 @@ The firmware can also be installed using esptool (which is what BrewFlasher uses
 ## NodeMCU Flasher for Windows (ESP8266-only)
 
 ESP8266 modules can also be flashed using [NodeMCU-PyFlasher](https://github.com/marcelstoer/nodemcu-pyflasher).
+
+# Configuring WiFi
+Once you've flashed firmware to your ESP device, you'll need to configure it to connect to your WiFi network.  For that purpose, the firmware creates a WiFi access point named `BrewPiAP`, with a password of `brewpiesp`.  Connect to that access point and, if your device doesn't pull up a configuration page on its own, browse to `http://192.168.4.1`.  Then click on **Configure WiFi,** and configure it to connect to your WiFi network.
