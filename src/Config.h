@@ -479,11 +479,12 @@ namespace Config {
   };
 
   /**
-   * \brief Locks Chamber 1/Beer 1
+   * \brief Locks Chamber 1/Beer 1, and overrides OneWire pin numbers on sensor assignment
    *
    * Prevents the user from trying to configure probes with other chamber/beer
    * values.  All probe configurations will have their beer & chamber values
-   * overwritten with 1.
+   * overwritten with 1. Also overrides the OneWire pin number on sensor
+   * assignment to match oneWirePin as defined above.
    */
   constexpr bool forceDeviceDefaults = true;
 

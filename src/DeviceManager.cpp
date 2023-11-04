@@ -508,7 +508,16 @@ DeviceConfig DeviceManager::updateDeviceDefinition(DeviceDefinition dev)
 	target.beer = dev.beer;
 	target.deviceFunction = (DeviceFunction) dev.deviceFunction;
 	target.deviceHardware = (DeviceHardware) dev.deviceHardware;
-	target.hw.pinNr = dev.pinNr;
+
+	// If this is a OneWire device, force the pin number if forceDeviceDefaults is selected
+	if(Config::forceDeviceDefaults && (dev.deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP
+#if BREWPI_DS2413
+		|| dev.deviceHardware == DEVICE_HARDWARE_ONEWIRE_2413
+#endif
+		))
+		target.hw.pinNr = oneWirePin;
+	else
+		target.hw.pinNr = dev.pinNr;
 
 
 #if BREWPI_DS2413
