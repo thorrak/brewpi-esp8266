@@ -74,13 +74,13 @@ void TPLinkScanner::process_udp_incoming() {
         if(json_doc.containsKey("system") && json_doc["system"].is<JsonObject>() && json_doc["system"].containsKey("get_sysinfo") && json_doc["system"]["get_sysinfo"].is<JsonObject>()) {
             // This is a response to a scan
             
-            if(!json_doc["system"]["get_sysinfo"].containsKey("mic_type") || !json_doc["system"]["get_sysinfo"].containsKey("type")) {
+            if(!json_doc["system"]["get_sysinfo"].containsKey("mic_type") && !json_doc["system"]["get_sysinfo"].containsKey("type")) {
                 // Recent TP Link devices have a type rather than a mic_type
                 continue;  // Invalid, unable to process
             }
             
             if((json_doc["system"]["get_sysinfo"].containsKey("mic_type") && !json_doc["system"]["get_sysinfo"]["mic_type"].is<const char *>()) || 
-                (!json_doc["system"]["get_sysinfo"].containsKey("type") && !json_doc["system"]["get_sysinfo"]["type"].is<const char *>())) 
+                (json_doc["system"]["get_sysinfo"].containsKey("type") && !json_doc["system"]["get_sysinfo"]["type"].is<const char *>())) 
             {
                 // Recent TP Link devices have a type rather than a mic_type
                 continue;  // Invalid, unable to process
@@ -95,8 +95,8 @@ void TPLinkScanner::process_udp_incoming() {
                 continue;  // Invalid, unable to process
             }
 
-            if((!json_doc["system"]["get_sysinfo"].containsKey("mic_type") && json_doc["system"]["get_sysinfo"]["mic_type"] == "IOT.SMARTPLUGSWITCH") ||
-                (!json_doc["system"]["get_sysinfo"].containsKey("type") && json_doc["system"]["get_sysinfo"]["type"] == "IOT.SMARTPLUGSWITCH")) 
+            if((json_doc["system"]["get_sysinfo"].containsKey("mic_type") && json_doc["system"]["get_sysinfo"]["mic_type"] == "IOT.SMARTPLUGSWITCH") ||
+                (json_doc["system"]["get_sysinfo"].containsKey("type") && json_doc["system"]["get_sysinfo"]["type"] == "IOT.SMARTPLUGSWITCH")) 
             {
                 TPLinkPlug *this_plug;
                 // This is a smart switch - process against the switch list
