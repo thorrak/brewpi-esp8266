@@ -271,6 +271,16 @@ bool restHandler::send_full_config() {
     return true;
 }
 
+bool restHandler::configured_for_fermentrack_rest() {
+    if(upstreamSettings.isRegistered())
+        return true;  // If we're registered, we're obviously configured
+    if(strlen(upstreamSettings.username) == 0 && strlen(upstreamSettings.apiKey) == 0)
+        return false; 
+    if(strlen(upstreamSettings.upstreamHost) <= 3 || (upstreamSettings.upstreamPort <= 0 || upstreamSettings.upstreamPort > 65535))
+        return false;
+
+    return true;  // We have a username/apiKey and a valid host/port, but aren't registered yet. Clearly the user wants to use fermentrack_rest
+}
 
 
 bool restHandler::register_device() {
@@ -418,8 +428,11 @@ bool restHandler::send_status() {
             if (updated_mode == Modes::fridgeConstant || updated_mode == Modes::beerConstant || updated_mode == Modes::beerProfile ||
                 updated_mode == Modes::off || updated_mode == Modes::test) {
                     // We have a new, valid mode. Update to it.
-                    if(tempControl.cs.mode != updated_mode)
+                    if(tempControl.cs.mode != updated_mode) {
+                        Serial.printf("Updating to valid mode \"%c\" (0x%02X)\r\n", updated_mode, updated_mode);
                         tempControl.setMode(updated_mode);
+                        send_status_ticker = true;  // Trigger a send to update the LCD
+                    }
             } else {
                 Serial.printf("Invalid mode \"%c\" (0x%02X)\r\n", updated_mode, updated_mode);
             }
@@ -431,10 +444,13 @@ bool restHandler::send_status() {
             switch(tempControl.cs.mode) {
                 case Modes::fridgeConstant:
                     SettingLoader::setFridgeSetting(doc["updated_setpoint"].as<const char *>());
+                    send_status_ticker = true;  // Trigger a send to update the LCD
                     break;
                 case Modes::beerConstant:
                 case Modes::beerProfile:
                     SettingLoader::setBeerSetting(doc["updated_setpoint"].as<const char *>());
+                    Serial.printf("Received updated setpoint \"%s\"\r\n", doc["updated_setpoint"].as<const char *>());
+                    send_status_ticker = true;  // Trigger a send to update the LCD
                     break;
                 default:
                     break;

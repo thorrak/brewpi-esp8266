@@ -20,6 +20,7 @@
 #include "Version.h" 			// Used in mDNS announce string
 #include "Display.h"
 #include "EepromManager.h"
+#include "rest/rest_send.h"
 
 
 bool shouldSaveConfig = false;
@@ -191,7 +192,14 @@ void wifi_connect_clients() {
 
     yield();
     if(WiFi.isConnected()) {
-        if (server.hasClient()) {
+        // We only accept clients if we do not have a REST target defined
+        if(rest_handler.configured_for_fermentrack_rest()) {
+            // If we show a client as already being disconnected, force a disconnect
+            if (serverClient) {
+                serverClient.stop();
+            }
+        } else if (server.hasClient()) {
+            // We are handling serial connections, and have a client in queue to connect
             // If we show a client as already being disconnected, force a disconnect
             if (serverClient) serverClient.stop();
 #ifdef ESP8266

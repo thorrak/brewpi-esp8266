@@ -118,6 +118,7 @@ public:
 
     restHandler();
     void init();
+    bool configured_for_fermentrack_rest();
 
     bool send_bluetooth_crash_report();
 
