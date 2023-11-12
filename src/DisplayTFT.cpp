@@ -234,19 +234,19 @@ void LcdDisplay::printMode(){
             tft->print("Fridge Constant");
             break;
         case Modes::beerConstant:
-            tft->print("Beer Constant");
+            tft->print("Beer Constant  ");
             break;
         case Modes::beerProfile:
-            tft->print("Beer Profile");
+            tft->print("Beer Profile   ");
             break;
         case Modes::off:
-            tft->print("Off");
+            tft->print("Off            ");
             break;
         case Modes::test:
-            tft->print("** Testing **");
+            tft->print("** Testing **  ");
             break;
         default:
-            tft->print("Invalid Mode");
+            tft->print("Invalid Mode   ");
             break;
     }
 }
