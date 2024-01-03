@@ -43,6 +43,7 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
         if (strlen(json[UpstreamSettingsKeys::upstreamHost]) <= 0) {
             // The user unset the upstream host - Clear it from memory
             upstreamSettings.upstreamHost[0] = '\0';
+            upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
             Log.notice(F("Settings update, [upstreamHost]: unset.\r\n"));
         } else if (strlen(json[UpstreamSettingsKeys::upstreamHost]) >= 128 ) {
             Log.warning(F("Settings update error, [upstreamHost]:(%s) not valid.\r\n"), json[UpstreamSettingsKeys::upstreamHost].as<const char*>());
@@ -51,6 +52,7 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
             // Valid - Update
             if(strcmp(json[UpstreamSettingsKeys::upstreamHost], upstreamSettings.upstreamHost) != 0) {
                 strlcpy(upstreamSettings.upstreamHost, json[UpstreamSettingsKeys::upstreamHost].as<const char*>(), 128);
+                upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
                 Log.notice(F("Settings update, [upstreamHost]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::upstreamHost].as<const char*>());
                 saveSettings = true;
             }
@@ -66,6 +68,7 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
             } else {
                 //Valid - Update
                 upstreamSettings.upstreamPort = json[UpstreamSettingsKeys::upstreamPort];
+                upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
                 Serial.printf("Settings update, [upstreamPort]:(%d) applied.\r\n", json[UpstreamSettingsKeys::upstreamPort].as<uint16_t>());
                 saveSettings = true;
             }
@@ -95,27 +98,12 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
     // }
 
 
-    // Device ID Reset
-    if(json.containsKey("resetDeviceID")) {
-        if(json["resetDeviceID"].is<bool>()) {
-            if(json["resetDeviceID"]) {
-                // The user wants to reset the device ID
-                Log.notice(F("Settings update, [resetDeviceID]: true.\r\n"));
-                upstreamSettings.deviceID[0] = '\0';
-                saveSettings = true;
-                resetUpstream = true;
-            }
-        } else {
-            Log.warning(F("Invalid [resetDeviceID]:(%s) received (wrong type).\r\n"), json["resetDeviceID"]);
-            failCount++;
-        }
-    }
-
     // Upstream Username
     if(json.containsKey(UpstreamSettingsKeys::username)) {
         if (strlen(json[UpstreamSettingsKeys::username]) <= 0) {
             // The user unset the upstream host - Clear it from memory
             upstreamSettings.username[0] = '\0';
+            upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
             Log.notice(F("Settings update, [username]: unset.\r\n"));
         } else if (strlen(json[UpstreamSettingsKeys::username]) >= 128 ) {
             Log.warning(F("Settings update error, [username]:(%s) not valid.\r\n"), json[UpstreamSettingsKeys::username].as<const char*>());
@@ -124,6 +112,7 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
             // Valid - Update
             if(strcmp(json[UpstreamSettingsKeys::username], upstreamSettings.username) != 0) {
                 strlcpy(upstreamSettings.username, json[UpstreamSettingsKeys::username].as<const char*>(), 128);
+                upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
                 Log.notice(F("Settings update, [username]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::username].as<const char*>());
                 saveSettings = true;
             }
@@ -131,10 +120,12 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
     }
 
     // Upstream API Key
+    // NOTE - Unused as of Jan 2024
     if(json.containsKey(UpstreamSettingsKeys::apiKey)) {
         if (strlen(json[UpstreamSettingsKeys::apiKey]) <= 0) {
             // The user unset the upstream host - Clear it from memory
             upstreamSettings.apiKey[0] = '\0';
+            upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
             Log.notice(F("Settings update, [apiKey]: unset.\r\n"));
         } else if (strlen(json[UpstreamSettingsKeys::apiKey]) >= 40 ) {
             Log.warning(F("Settings update error, [apiKey]:(%s) not valid.\r\n"), json[UpstreamSettingsKeys::apiKey].as<const char*>());
@@ -143,6 +134,7 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
             // Valid - Update
             if(strcmp(json[UpstreamSettingsKeys::apiKey], upstreamSettings.apiKey) != 0) {
                 strlcpy(upstreamSettings.apiKey, json[UpstreamSettingsKeys::apiKey].as<const char*>(), sizeof(upstreamSettings.apiKey));
+                upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
                 Log.notice(F("Settings update, [apiKey]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::apiKey].as<const char*>());
                 saveSettings = true;
             }
