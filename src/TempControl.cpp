@@ -167,6 +167,13 @@ void TempControl::updatePID(){
 			cs.fridgeSetting = INVALID_TEMP;
 			return;
 		}
+
+		// If either sensor is not connected, although the reads should still work (since we're reading from filters) we probably
+		// don't want them.
+		if(!beerSensor->isConnected() || !fridgeSensor->isConnected()) {
+			// The question here is if we should reset the PID (or decrement some kind of counter to reset the PID) 
+			return;
+		}
 		
 		// fridge setting is calculated with PID algorithm. Beer temperature error is input to PID
 		cv.beerDiff =  cs.beerSetting - beerSensor->readSlowFiltered();
@@ -225,9 +232,9 @@ void TempControl::updatePID(){
 		newFridgeSetting += cv.i;
 		newFridgeSetting += cv.d;
 		
-		// constrain to tempSettingMin or beerSetting - pidMAx, whichever is lower.
+		// constrain to tempSettingMin or beerSetting - pidMax, whichever is lower.
 		temperature lowerBound = (cs.beerSetting <= cc.tempSettingMin + cc.pidMax) ? cc.tempSettingMin : cs.beerSetting - cc.pidMax;
-		// constrain to tempSettingMax or beerSetting + pidMAx, whichever is higher.
+		// constrain to tempSettingMax or beerSetting + pidMax, whichever is higher.
 		temperature upperBound = (cs.beerSetting >= cc.tempSettingMax - cc.pidMax) ? cc.tempSettingMax : cs.beerSetting + cc.pidMax;
 		
 		cs.fridgeSetting = constrain(constrainTemp16(newFridgeSetting), lowerBound, upperBound);
