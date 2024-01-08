@@ -9,6 +9,7 @@
 
 #include <ArduinoJson.h>
 
+#include "getGuid.h"
 #include "EepromStructs.h"
 #include "TemperatureFormats.h"
 #include "TempControl.h" // For Modes definition
@@ -425,6 +426,9 @@ void UpstreamSettings::setDefaults() {
  * \brief Serialize extended settings to JSON
  */
 void UpstreamSettings::toJson(DynamicJsonDocument &doc) {
+    char guid[20];
+    getGuid(guid);
+
     // Load the settings into the JSON Doc
     doc[UpstreamSettingsKeys::upstreamHost] = upstreamHost;
     doc[UpstreamSettingsKeys::upstreamPort] = upstreamPort;
@@ -432,6 +436,7 @@ void UpstreamSettings::toJson(DynamicJsonDocument &doc) {
     doc[UpstreamSettingsKeys::username] = username;
     doc[UpstreamSettingsKeys::apiKey] = apiKey;
     doc[UpstreamSettingsKeys::upstreamRegistrationError] = (uint16_t) upstreamRegistrationError;
+    doc[UpstreamSettingsKeys::guid] = guid;
 }
 
 /**

@@ -144,6 +144,7 @@ constexpr auto username = "username";
 constexpr auto apiKey = "apiKey";
 constexpr auto upstreamRegistrationError = "upstreamRegistrationError";
 constexpr auto messageID = "messageID";
+constexpr auto guid = "guid";
 }; // namespace UpstreamSettingsKeys
 
 
