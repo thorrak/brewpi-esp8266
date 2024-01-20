@@ -36,7 +36,6 @@ httpServer http_server;
 uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool triggerUpstreamUpdate) {
     uint8_t failCount = 0;
     bool saveSettings = false;
-    bool resetUpstream = false;
 
     // Upstream Host
     if(json.containsKey(UpstreamSettingsKeys::upstreamHost)) {
@@ -63,7 +62,8 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
     if(json.containsKey(UpstreamSettingsKeys::upstreamPort)) {
         if(json[UpstreamSettingsKeys::upstreamPort].is<uint16_t>()) {
             if((json[UpstreamSettingsKeys::upstreamPort] <= 0) || (json[UpstreamSettingsKeys::upstreamPort] > 65535)) {
-                Serial.printf("Invalid [upstreamPort]:(%u) received.\r\n", json[UpstreamSettingsKeys::upstreamPort]);
+                // This is actually impossible to reach, unless the port is 0.
+                Serial.printf("Invalid [upstreamPort]:(%u) received.\r\n", json[UpstreamSettingsKeys::upstreamPort].as<uint16_t>());
                 failCount++;
             } else {
                 //Valid - Update
@@ -73,7 +73,7 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
                 saveSettings = true;
             }
         } else {
-            Serial.printf("Invalid [upstreamPort]:(%s) received (wrong type).\r\n", json[UpstreamSettingsKeys::upstreamPort]);
+            Serial.printf("Invalid [upstreamPort]:(%s) received (wrong type).\r\n", json[UpstreamSettingsKeys::upstreamPort].as<const char*>());
             failCount++;
         }
     }
@@ -535,8 +535,8 @@ uint8_t processExtendedSettingsJson(const DynamicJsonDocument& json, bool trigge
 //         return false;
 //     }
 
-//     if(strcmp(json["action"], "reset_wifi") == 0) {
-//         Log.notice(F("Action [reset_wifi] received\r\n"));
+//     if(strcmp(json["action"], "reset_connection") == 0) {
+//         Log.notice(F("Action [reset_connection] received\r\n"));
 //         http_server.wifi_reset_requested = true;
 //         http_server.restart_requested = true;  // A restart is implicit in wifi_reset_requested, but explicitly specifying here anyways
 //     }

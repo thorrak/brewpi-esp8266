@@ -23,10 +23,10 @@ restHandler rest_handler; // Global data sender
 
 
 restHandler::restHandler() {
-    bool send_full_config_ticker = false;
-    bool send_status_ticker = false;
-    bool register_device_ticker = false;
-    bool messages_pending_on_server = false;
+    send_full_config_ticker = false;
+    send_status_ticker = false;
+    register_device_ticker = false;
+    messages_pending_on_server = false;
 }
 
 void restHandler::init()
@@ -170,7 +170,21 @@ bool restHandler::get_url(char *url, size_t size, const char *path, const char *
     // Used when we need to send the device ID and API key as part of the URL (HTTP_GET)
     if(!get_url(url, size, path))
         return false;
-    snprintf(url, size, "%s?%s=%s&%s=%s", url, UpstreamSettingsKeys::deviceID, device_id, UpstreamSettingsKeys::apiKey, api_key);
+    
+    // Ensure the buffer is large enough for the base URL plus the additional parameters
+    size_t base_url_length = strlen(url);
+    if (base_url_length + strlen(UpstreamSettingsKeys::deviceID) + strlen(device_id) + strlen(UpstreamSettingsKeys::apiKey) + strlen(api_key) + 10 > size) {
+        // Handle error: buffer not large enough
+        return false;
+    }
+
+    // Use a temporary buffer to format the URL with parameters
+    char temp_url[size];
+    snprintf(temp_url, size, "%s?%s=%s&%s=%s", url, UpstreamSettingsKeys::deviceID, device_id, UpstreamSettingsKeys::apiKey, api_key);
+    
+    // Copy the formatted URL back into the original buffer
+    strncpy(url, temp_url, size);
+
     return true;
 }
 
@@ -516,8 +530,8 @@ bool restHandler::get_messages(bool override=false) {
                 messages.default_cs = doc[RestMessagesKeys::messages][RestMessagesKeys::default_cs].as<bool>();
             if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::reset_eeprom) && doc[RestMessagesKeys::messages][RestMessagesKeys::reset_eeprom].as<bool>())
                 messages.reset_eeprom = doc[RestMessagesKeys::messages][RestMessagesKeys::reset_eeprom].as<bool>();
-            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::reset_wifi) && doc[RestMessagesKeys::messages][RestMessagesKeys::reset_wifi].as<bool>())
-                messages.reset_wifi = doc[RestMessagesKeys::messages][RestMessagesKeys::reset_wifi].as<bool>();
+            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::reset_connection) && doc[RestMessagesKeys::messages][RestMessagesKeys::reset_connection].as<bool>())
+                messages.reset_connection = doc[RestMessagesKeys::messages][RestMessagesKeys::reset_connection].as<bool>();
             if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::restart_device) && doc[RestMessagesKeys::messages][RestMessagesKeys::restart_device].as<bool>())
                 messages.restart_device = doc[RestMessagesKeys::messages][RestMessagesKeys::restart_device].as<bool>();
             if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::refresh_config) && doc[RestMessagesKeys::messages][RestMessagesKeys::refresh_config].as<bool>())

@@ -45,7 +45,7 @@ constexpr auto updated_devices = "updated_devices";
 constexpr auto default_cc = "default_cc";
 constexpr auto default_cs = "default_cs";
 constexpr auto reset_eeprom = "reset_eeprom";
-constexpr auto reset_wifi = "reset_wifi";
+constexpr auto reset_connection = "reset_connection";
 constexpr auto restart_device = "restart_device";
 constexpr auto refresh_config = "refresh_config";
 }; // namespace RestMessagesKeys
@@ -68,12 +68,12 @@ public:
     bool default_cc = false;
     bool default_cs = false;
     bool reset_eeprom = false;
-    bool reset_wifi = false;
+    bool reset_connection = false;
     bool restart_device = false;
     bool refresh_config = false;
 
     bool requires_processing() {
-        return updated_cs || updated_cc || updated_mt || updated_es || updated_devices || default_cc || default_cs || reset_eeprom || reset_wifi || restart_device || refresh_config;
+        return updated_cs || updated_cc || updated_mt || updated_es || updated_devices || default_cc || default_cs || reset_eeprom || reset_connection || restart_device || refresh_config;
     }
 
 };
@@ -143,7 +143,7 @@ private:
     restMessages messages;
     void process_messages();
     bool reset_eeprom();
-    bool reset_wifi();
+    bool reset_connection();
     bool restart_device();
     bool default_cs();
     bool default_cc();

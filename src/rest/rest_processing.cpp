@@ -56,9 +56,9 @@ void restHandler::process_messages() {
     }
 
     // Process resetting WiFi last, as we will lose the ability to signal that we processed it
-    if(messages.reset_wifi) {
-        Serial.println("Message received: reset_wifi");
-        reset_wifi();
+    if(messages.reset_connection) {
+        Serial.println("Message received: reset_connection");
+        reset_connection();
     }
 
     // bool updated_es = false;
@@ -97,13 +97,20 @@ bool restHandler::reset_eeprom() {
     return true;
 }
 
-bool restHandler::reset_wifi() {
-    Serial.println("Message received: reset_wifi");
-    messages.reset_wifi = false;
+bool restHandler::reset_connection() {
+    Serial.println("Message received: reset_connection");
+    messages.reset_connection = false;
     // Let the upstream know we processed this before we actually process it (since we'll (hopefully) disconnect)
-    set_message_processed(RestMessagesKeys::reset_wifi);
+    set_message_processed(RestMessagesKeys::reset_connection);
+
+    // Reset the Fermentrack upstream settings
+    upstreamSettings.setDefaults();
+    upstreamSettings.storeToSpiffs();
+
+    // Then disconnect WiFi and restart
     WiFi.disconnect(true);
-    // TODO - Decide if we want to restart here
+    delay(50);
+    ESP.restart();
     return true;
 }
 
