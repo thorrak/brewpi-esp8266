@@ -22,7 +22,7 @@
 #include <limits.h>
 #include <stdint.h>
 
-// DisplayLcd.cpp only is used with IIC displays. TFT displays are covered in DisplayTft.cpp
+// DisplayLcd.cpp only is used with IIC displays. TFT displays are covered in DisplayTft_X.cpp
 // NOTE - The way this used to be defined would allow compilation without a display option,
 // but that's not functionality that ever really got used. Instead, users should just use the
 // IIC version. 

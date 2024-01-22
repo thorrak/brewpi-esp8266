@@ -16,7 +16,7 @@
 #include "DisplayLcd.h"
 #include "Menu.h"
 
-#include "DisplayTFT.h"
+#include "DisplayTFT_ILI.h"
 
 #include "TempControl.h"
 #include "TemperatureFormats.h"

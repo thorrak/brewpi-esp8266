@@ -24,7 +24,7 @@
 
 // If BREWPI_TFT is set, we're going to use the DisplayTFT headers instead
 #ifdef BREWPI_TFT
-#include "DisplayTFT.h"
+#include "DisplayTFT_ILI.h"
 #else
 
 /*
