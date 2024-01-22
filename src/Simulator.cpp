@@ -98,7 +98,7 @@ void simulateLoop()
 			// update the lcd for the chamber being displayed
 			display.printAll();
 
-#ifndef BREWPI_TFT
+#ifdef BREWPI_IIC
 			display.updateBacklight();
 #endif
 		}

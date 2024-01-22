@@ -83,7 +83,7 @@ bool blinkLoop(
 }
 
 void clearSettingText() {
-#ifndef BREWPI_TFT
+#ifdef BREWPI_IIC
 	display.printAt_P(0, rotaryEncoder.read(), STR_6SPACES);
 #endif
 }
@@ -126,7 +126,7 @@ void changedMode() {
 }
 
 void clearMode() {
-#ifndef BREWPI_TFT
+#ifdef BREWPI_IIC
 	display.printAt_P(7, 0, PSTR("             ")); // print 13 spaces
 #endif
 }
@@ -180,7 +180,7 @@ void pickTempSetting(ReadTemp readTemp, WriteTemp writeTemp, const char* tempNam
 			lastChangeTime = ticks.seconds();
 			blinkTimer = 0;
 			startVal = tenthsToFixed(rotaryEncoder.read());
-#ifndef BREWPI_TFT
+#ifdef BREWPI_IIC
 			display.printTemperatureAt(12, row, startVal);
 #endif
 
@@ -194,12 +194,12 @@ void pickTempSetting(ReadTemp readTemp, WriteTemp writeTemp, const char* tempNam
 		}	
 		else{
 			if(blinkTimer == 0){
-#ifndef BREWPI_TFT
+#ifdef BREWPI_IIC
 				display.printTemperatureAt(12, row, startVal);
 #endif
 			}
 			if(blinkTimer == 128){
-#ifndef BREWPI_TFT
+#ifdef BREWPI_IIC
 				display.printAt_P(12, row, STR_6SPACES); // only 5 needed, but 6 is okay to and lets us re-use the string
 #endif
 			}
