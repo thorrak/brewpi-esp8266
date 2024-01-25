@@ -6,6 +6,8 @@
  *
  */
 
+#ifdef BREWPI_TFT_ILI9341
+
 #include "Brewpi.h"
 #include "BrewpiStrings.h"
 #include <limits.h>
@@ -13,7 +15,6 @@
 #include <string>
 
 #include "Display.h"
-#include "DisplayLcd.h"
 #include "Menu.h"
 
 #include "DisplayTFT_ILI.h"
@@ -21,8 +22,6 @@
 #include "TempControl.h"
 #include "TemperatureFormats.h"
 #include "Pins.h"
-
-#ifdef BREWPI_TFT
 
 
 #ifdef ESP8266_WiFi

@@ -408,7 +408,6 @@ void LcdDisplay::printWiFiConnect(){
 	toggleBacklight = false;  // Assuming we need this
 
 	lcd.setCursor(0,0);
-	// Factoring prints out of switch has negative effect on code size in this function
 	lcd.print("Connecting to WiFi");
 	lcd.printSpacesToRestOfLine();
 

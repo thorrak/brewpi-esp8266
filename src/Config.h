@@ -153,6 +153,7 @@
 
 
 #ifdef BREWPI_TFT
+// Check for generic settings for all TFT display types
 
 #ifdef ESP8266
 #error "Unable to use TFT displays with ESP8266 (not enough pins)"
@@ -162,15 +163,23 @@
 #error "TFT displays only work with ESP32 devices"
 #endif
 
-// Pin definitions for TFT displays
+#if defined(BREWPI_TFT_ILI9341)
+// Pin definitions for TFT displays using the ILI9341 driver
 #define TFT_CS 14  //for D32 Pro
 #define TFT_DC 27  //for D32 Pro
 #define TFT_RST 33 //for D32 Pro
 #define TS_CS  12 //for D32 Pro
 #define TFT_BACKLIGHT 32
 #define BREWPI_MENU 0
+
+#elif defined(BREWPI_TFT_ESPI)
+// Pin definitions are set in platformio.ini
+#define BREWPI_MENU 0
+#else
+#error "Unknown TFT display type"
 #endif
 
+#endif // BREWPI_TFT
 //
 //////////////////////////////////////////////////////////////////////////
 

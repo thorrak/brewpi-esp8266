@@ -22,10 +22,8 @@
 #include "Brewpi.h"
 #include "DisplayBase.h"
 
-// If BREWPI_TFT is set, we're going to use the DisplayTFT headers instead
-#ifdef BREWPI_TFT
-#include "DisplayTFT_ILI.h"
-#else
+// This file only gets used if BREWPI_IIC is set
+#ifdef BREWPI_IIC
 
 /*
  * \addtogroup display

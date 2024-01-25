@@ -35,7 +35,16 @@
  */
 
 #include "DisplayBase.h"
+
+#ifdef BREWPI_IIC
 #include "DisplayLcd.h"
+#elif defined(BREWPI_TFT_ILI9341)
+#include "DisplayTFT_ILI.h"
+#elif defined(BREWPI_TFT_ESPI)
+#include "DisplayTFT_eSPI.h"
+#else
+#error "Must select at least one valid display type!"
+#endif
 
 typedef LcdDisplay DisplayType;
 
