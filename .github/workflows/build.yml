@@ -3,12 +3,16 @@ name: Build
 on:
   push:
     branches:
-      - experimental
+      - v16_prerelease
       - master
     # tags:
     #   - "v*"
   # pull_request:
   #   types: [ open, synchronize, edited, reopened, closed ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -17,7 +21,7 @@ jobs:
       # Ensure that a builder finishes even if another fails
       fail-fast: false
       matrix:
-        pio_env: ['esp32_wifi_tft', 'esp32_wifi_iic', 'esp8266_wifi', 'esp8266_serial', 'esp32_s2_wifi', 'esp32_s2_serial']
+        pio_env: ['esp32_wifi_tft', 'esp32_wifi_iic', 'esp8266_wifi', 'esp8266_serial', 'esp32_s2_wifi', 'esp32_s2_serial', 'esp32_wifi_espi']
 
     runs-on: ubuntu-latest
 
@@ -77,15 +81,6 @@ jobs:
       continue-on-error: true
       run: |
         cp .pio/build/${{ matrix.pio_env }}/littlefs.bin bin/${{ matrix.pio_env }}_littlefs.bin
-
-    # - name: "Create Prerelease"
-    #   uses: "marvinpinto/action-automatic-releases@latest"
-    #   with:
-    #     repo_token: "${{ secrets.GITHUB_TOKEN }}"
-    #     prerelease: true
-    #     files: |
-    #       LICENSE
-    #       bin/*.bin
 
     - name: Create Draft Release
       uses: softprops/action-gh-release@v1
