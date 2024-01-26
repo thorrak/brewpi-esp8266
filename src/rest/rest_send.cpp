@@ -453,8 +453,6 @@ bool restHandler::send_status() {
         }
 
         if(doc.containsKey("updated_setpoint") && doc["updated_setpoint"].as<const char *>()) {
-            char updated_mode = doc["updated_setpoint"].as<const char *>()[0];
-
             switch(tempControl.cs.mode) {
                 case Modes::fridgeConstant:
                     SettingLoader::setFridgeSetting(doc["updated_setpoint"].as<const char *>());
