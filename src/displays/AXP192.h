@@ -1,6 +1,8 @@
 #ifndef __AXP192_H__
 #define __AXP192_H__
 
+#if defined(HAS_AXP192)
+
 #include <Arduino.h>
 #include <Wire.h>
 
@@ -79,4 +81,6 @@ class AXP192 {
     void ReadBuff(uint8_t Addr, uint8_t Size, uint8_t *Buff);
 };
 
-#endif
+#endif // HAS_AXP192
+
+#endif // __AXP192_H__

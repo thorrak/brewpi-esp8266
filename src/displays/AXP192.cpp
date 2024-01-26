@@ -1,5 +1,8 @@
 #include "AXP192.h"
 
+#if defined(HAS_AXP192)
+
+
 AXP192::AXP192() {
 }
 
@@ -438,3 +441,5 @@ void AXP192::SetPeripherialsPower(uint8_t state) {
     // uint8_t data;
     // Set EXTEN to enable 5v boost
 }
+
+#endif
