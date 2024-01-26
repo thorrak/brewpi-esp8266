@@ -277,6 +277,11 @@ bool restHandler::send_full_config() {
         doc[UpstreamSettingsKeys::deviceID] = upstreamSettings.deviceID;
         doc[UpstreamSettingsKeys::apiKey] = upstreamSettings.apiKey;
 
+        doc[UpstreamSettingsKeys::firmwareRelease] = Config::Version::release;
+        doc[UpstreamSettingsKeys::firmwareRevision] = Config::Version::git_rev;
+        doc[UpstreamSettingsKeys::firmwareTag] = Config::Version::git_tag;
+        doc[UpstreamSettingsKeys::firmwareVersion] = FIRMWARE_REVISION;
+
         // Serialize the JSON document
         serializeJson(doc, payload);
     }
