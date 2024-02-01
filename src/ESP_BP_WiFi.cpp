@@ -123,7 +123,7 @@ void initialize_wifi() {
     // Not sure if wm.SetCleanConnect breaks the hack we have below for the race condition - no reason to test it.
     // wifiManager.setCleanConnect(true);       // Always disconnect before connecting
     // wm.setCountry is causing crashes under Arduino Core 2.0, apparently
-    // wifiManager.setCountry("US");            // US country code is most restrictive, use for all countries
+    wifiManager.setCountry("US");            // US country code is most restrictive, use for all countries
 
 
     // There is a race condition on some routers when processing the deauthorization that the ESP attempts as it

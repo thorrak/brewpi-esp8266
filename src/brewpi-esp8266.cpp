@@ -196,7 +196,7 @@ void brewpiLoop()
 {
 	static unsigned long lastUpdate = 0;
 	uint8_t oldState;
-#ifndef BREWPI_TFT  // We don't want to do this for the TFT display
+#ifdef BREWPI_IIC  // We only want to do this for the IIC displays
     static unsigned long lastLcdUpdate = 0;
     if(ticks.millis() - lastLcdUpdate >= (180000)) { //reset lcd every 180 seconds as a workaround for screen scramble
         lastLcdUpdate = ticks.millis();

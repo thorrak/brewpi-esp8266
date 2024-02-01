@@ -22,8 +22,11 @@
 #include <limits.h>
 #include <stdint.h>
 
-// If we're using BREWPI_TFT, use that code instead
-#ifndef BREWPI_TFT
+// DisplayLcd.cpp only is used with IIC displays. TFT displays are covered in DisplayTft_X.cpp
+// NOTE - The way this used to be defined would allow compilation without a display option,
+// but that's not functionality that ever really got used. Instead, users should just use the
+// IIC version. 
+#ifdef BREWPI_IIC
 
 #include "Display.h"
 #include "DisplayLcd.h"
@@ -47,11 +50,8 @@
 
 uint8_t LcdDisplay::stateOnDisplay;
 uint8_t LcdDisplay::flags;
-#if defined(BREWPI_IIC)
 LcdDriver LcdDisplay::lcd(0x27, Config::Lcd::columns, Config::Lcd::lines);  // NOTE - The address here doesn't get used. Address is autodetected at startup.
-#else
-LcdDriver LcdDisplay::lcd;
-#endif
+// LcdDriver LcdDisplay::lcd;
 
 // Constant strings used multiple times
 static const char STR_Beer_[] PROGMEM = "Beer ";
@@ -408,7 +408,6 @@ void LcdDisplay::printWiFiConnect(){
 	toggleBacklight = false;  // Assuming we need this
 
 	lcd.setCursor(0,0);
-	// Factoring prints out of switch has negative effect on code size in this function
 	lcd.print("Connecting to WiFi");
 	lcd.printSpacesToRestOfLine();
 

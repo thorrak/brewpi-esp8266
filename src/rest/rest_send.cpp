@@ -277,6 +277,11 @@ bool restHandler::send_full_config() {
         doc[UpstreamSettingsKeys::deviceID] = upstreamSettings.deviceID;
         doc[UpstreamSettingsKeys::apiKey] = upstreamSettings.apiKey;
 
+        doc[UpstreamSettingsKeys::firmwareRelease] = Config::Version::release;
+        doc[UpstreamSettingsKeys::firmwareRevision] = Config::Version::git_rev;
+        doc[UpstreamSettingsKeys::firmwareTag] = Config::Version::git_tag;
+        doc[UpstreamSettingsKeys::firmwareVersion] = FIRMWARE_REVISION;
+
         // Serialize the JSON document
         serializeJson(doc, payload);
     }
@@ -453,8 +458,6 @@ bool restHandler::send_status() {
         }
 
         if(doc.containsKey("updated_setpoint") && doc["updated_setpoint"].as<const char *>()) {
-            char updated_mode = doc["updated_setpoint"].as<const char *>()[0];
-
             switch(tempControl.cs.mode) {
                 case Modes::fridgeConstant:
                     SettingLoader::setFridgeSetting(doc["updated_setpoint"].as<const char *>());

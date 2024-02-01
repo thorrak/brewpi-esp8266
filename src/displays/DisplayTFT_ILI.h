@@ -5,7 +5,7 @@
 #ifndef LEGACY_PLATFORMIO_DISPLAYTFT_H
 #define LEGACY_PLATFORMIO_DISPLAYTFT_H
 
-#ifdef BREWPI_TFT
+#ifdef BREWPI_TFT_ILI9341
 
 #include "Brewpi.h"
 #include "DisplayBase.h"
@@ -181,6 +181,6 @@ private:
 
 
 
-#endif  //BREWPI_TFT
+#endif  // BREWPI_TFT_ILI9341
 
-#endif //LEGACY_PLATFORMIO_DISPLAYTFT_H
+#endif // LEGACY_PLATFORMIO_DISPLAYTFT_H

@@ -145,6 +145,10 @@ constexpr auto apiKey = "apiKey";
 constexpr auto upstreamRegistrationError = "upstreamRegistrationError";
 constexpr auto messageID = "messageID";
 constexpr auto guid = "guid";
+constexpr auto firmwareVersion = "fwVersion";
+constexpr auto firmwareRelease = "fwRelease";
+constexpr auto firmwareRevision = "fwRevision";
+constexpr auto firmwareTag = "fwTag";
 }; // namespace UpstreamSettingsKeys
 
 

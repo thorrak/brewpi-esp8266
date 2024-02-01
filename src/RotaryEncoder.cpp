@@ -263,7 +263,7 @@ void RotaryEncoder::process(){
 
 void RotaryEncoder::setPushed(){
 	pushFlag = true;
-#ifndef BREWPI_TFT
+#ifdef BREWPI_IIC
 	display.resetBacklightTimer();
 #endif
 }
