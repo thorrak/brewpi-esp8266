@@ -3,7 +3,7 @@ name: Build
 on:
   push:
     branches:
-      - v16_prerelease
+      - v16
       - master
     # tags:
     #   - "v*"
