@@ -71,8 +71,7 @@ public:
     void getLine(uint8_t lineNumber, char * buffer);
 
     // print a temperature
-    void printTemperature(temperature temp, uint8_t font_size);
-    void printTemperatureAt(uint8_t x, uint8_t y, uint8_t font_size, temperature temp);
+    void printTemperature(temperature temp, uint8_t start_x, uint8_t start_y);
     void printTemperatureAtMonoChars(uint8_t x_chars, uint8_t y_chars, temperature temp);
     void printAtMonoChars(uint8_t x_chars, uint8_t y_chars, const char *text);
 
@@ -88,8 +87,6 @@ public:
 #endif
 
     void clear();
-    void clearForText(uint8_t start_x, uint8_t start_y, uint16_t color, uint8_t font_size, uint8_t characters);
-
 
 private:
 

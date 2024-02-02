@@ -76,12 +76,12 @@ void LcdDisplay::print_layout() {
 //     // Print the headers
 //     tft.setTextSize(HEADER_FONT_SIZE);
 //     tft.setCursor(FRIDGE_HEADER_START_X, HEADER_START_Y);
-//     tft.print((flags & LCD_FLAG_DISPLAY_ROOM) ?  "Room  " : "Fridge");
+    printAtMonoChars(0, 2, (flags & LCD_FLAG_DISPLAY_ROOM) ?  "Room  " : "Fridge");
 
 
 //     tft.setTextSize(HEADER_FONT_SIZE);
 //     tft.setCursor(BEER_HEADER_START_X, HEADER_START_Y);
-//     tft.print("Beer");
+    printAtMonoChars(0, 1, "Beer");
 
 //     tft.setTextSize(SET_HEADER_FONT_SIZE);
 //     tft.setCursor(FRIDGE_SET_HEADER_START_X, SET_HEADER_START_Y);
@@ -117,9 +117,10 @@ void LcdDisplay::init() {
     else
         tft.setRotation(1);
 
+    tft.setTextColor(TFT_WHITE, TFT_BLACK, true);
     tft.fillScreen(TFT_BLACK);
     tft.setFreeFont(FF17);
-    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+
 
 #if defined(TFT_BACKLIGHT)
     pinMode(TFT_BACKLIGHT, OUTPUT);
@@ -159,20 +160,15 @@ void LcdDisplay::setDisplayFlags(uint8_t newFlags) {
 
 void LcdDisplay::printBeerTemp(){
 	printTemperatureAtMonoChars(12, 1, tempControl.getBeerTemp());
-    // printTemperatureAt(BEER_TEMP_START_X, MAIN_TEMP_START_Y, MAIN_TEMP_FONT_SIZE, tempControl.getBeerTemp());
 }
 
 void LcdDisplay::printBeerSet(){
 //    temperature beerSet = tempControl.getBeerSetting();
-    // printTemperatureAt(BEER_SET_START_X, SET_TEMP_START_Y, SET_TEMP_FONT_SIZE, tempControl.getBeerSetting());
     printTemperatureAtMonoChars(12, 1, tempControl.getBeerSetting());
 
 }
 
 void LcdDisplay::printFridgeTemp(){
-    // printTemperatureAt(FRIDGE_TEMP_START_X, MAIN_TEMP_START_Y, MAIN_TEMP_FONT_SIZE, flags & LCD_FLAG_DISPLAY_ROOM ?
-    //                         tempControl.ambientSensor->read() :
-    //                         tempControl.getFridgeTemp());
     printTemperatureAtMonoChars(6,2, flags & LCD_FLAG_DISPLAY_ROOM ?
 		tempControl.ambientSensor->read() :
 		tempControl.getFridgeTemp());
@@ -182,42 +178,27 @@ void LcdDisplay::printFridgeSet(){
     temperature fridgeSet = tempControl.getFridgeSetting();
     if(flags & LCD_FLAG_DISPLAY_ROOM) // beer setting is not active
         fridgeSet = INVALID_TEMP;
-    // printTemperatureAt(FRIDGE_SET_START_X, SET_TEMP_START_Y, SET_TEMP_FONT_SIZE, fridgeSet);
 	printTemperatureAtMonoChars(12, 2, fridgeSet);
-}
-
-void LcdDisplay::printTemperatureAt(uint8_t x, uint8_t y, uint8_t font_size, temperature temp){
-    //tft.setTextSize(font_size);
-    //clearForText(x, y, ILI9341_BLACK, font_size, 4);  // TODO - Determine if I want this to be 4 or 5 characters
-
-    tft.setCursor(x,y);
-    printTemperature(temp, font_size);
 }
 
 void LcdDisplay::printTemperatureAtMonoChars(uint8_t x_chars, uint8_t y_chars, temperature temp){
     uint16_t x = x_chars * tft.textWidth("A", GFXFF) + 3;
-    uint16_t y = (y_chars+1) * tft.fontHeight(GFXFF) + 1;
+    uint16_t y = (y_chars) * tft.fontHeight(GFXFF) + 2;
 
-    tft.setCursor(x,y);
-    printTemperature(temp, 8);
+    printTemperature(temp, x, y);
 }
 
 void LcdDisplay::printAtMonoChars(uint8_t x_chars, uint8_t y_chars, const char *text){
-    tft.setTextColor(TFT_WHITE, TFT_BLACK);
-
     uint16_t x = x_chars * tft.textWidth("A", GFXFF) + 3;
-    uint16_t y = (y_chars+1) * tft.fontHeight(GFXFF) + 1;
+    uint16_t y = (y_chars) * tft.fontHeight(GFXFF) + 2;
 
-    tft.setCursor(x,y);
-    tft.print(text);
+    tft.drawString(text, x, y);
 }
 
 
-void LcdDisplay::printTemperature(temperature temp, uint8_t font_size){
-    tft.setTextSize(font_size);
-
+void LcdDisplay::printTemperature(temperature temp, uint8_t start_x, uint8_t start_y){
     if (temp==INVALID_TEMP) {
-        tft.print("  --.-");
+        tft.drawString("  --.-", start_x, start_y);
         return;
     }
 
@@ -242,7 +223,7 @@ void LcdDisplay::printTemperature(temperature temp, uint8_t font_size){
             break;
     }
 
-    tft.print(tempBuf);
+    tft.drawString(tempBuf, start_x, start_y);
 }
 
 //print the stationary text on the lcd.
@@ -251,10 +232,6 @@ void LcdDisplay::printStationaryText(){
 }
 
 void LcdDisplay::printMode(){
-    // tft.setTextColor(TFT_WHITE, TFT_BLACK);
-    // tft.setTextSize(MODE_FONT_SIZE);
-    // clearForText(MODE_START_X, MODE_START_Y, TFT_BLACK, MODE_FONT_SIZE, 21);
-
     printAtMonoChars(0, 0, "Mode   ");
 
     switch(tempControl.getMode()){
@@ -311,7 +288,9 @@ uint8_t LcdDisplay::printTime(uint16_t time) {
         stringLength = stringLength-2;
     }
 //        printAt(20-stringLength, 3, printString);
-    tft.print(printString);
+    // tft.print(printString);
+    printAtMonoChars(12, 3, printString);
+
     return stringLength;
 
 #else
@@ -327,91 +306,79 @@ uint8_t LcdDisplay::printTime(uint16_t time) {
 void LcdDisplay::printState(){
     uint16_t time = UINT16_MAX; // init to max
     uint8_t state = tempControl.getDisplayState();
-    uint8_t printed_chars = 8;
+    uint8_t printed_chars = 0;
 
-
-    printAtMonoChars(0, 4, "Status: ");
 
     // For the TFT, always reprint the state text
     switch (state){
         case IDLE:
-            printAtMonoChars(0, 4, "Idling for ");
+            printAtMonoChars(0, 3, "Idling for ");
             printed_chars += 11;
             break;
         case WAITING_TO_COOL:
-            printAtMonoChars(0, 4, "Wait to cool ");
+            printAtMonoChars(0, 3, "Wait to cool ");
             printed_chars += 13;
             break;
         case WAITING_TO_HEAT:
-            printAtMonoChars(0, 4, "Wait to heat ");
+            printAtMonoChars(0, 3, "Wait to heat ");
             printed_chars += 13;
             break;
         case WAITING_FOR_PEAK_DETECT:
-            printAtMonoChars(0, 4, "Waiting for peak");
+            printAtMonoChars(0, 3, "Waiting for peak    ");
             printed_chars += 16;
             break;
         case COOLING:
-            printAtMonoChars(0, 4, "Cooling for ");
+            printAtMonoChars(0, 3, "Cooling for ");
             printed_chars += 12;
             break;
         case HEATING:
-            printAtMonoChars(0, 4, "Heating for ");
+            printAtMonoChars(0, 3, "Heating for ");
             printed_chars += 12;
             break;
         case COOLING_MIN_TIME:
-            printAtMonoChars(0, 4, "Cool time left ");
+            printAtMonoChars(0, 3, "Cool time left ");
             printed_chars += 15;
             break;
         case HEATING_MIN_TIME:
-            printAtMonoChars(0, 4, "Heat time left ");
+            printAtMonoChars(0, 3, "Heat time left ");
             printed_chars += 15;
             break;
         case DOOR_OPEN:
-            printAtMonoChars(0, 4, "Door open ");
+            printAtMonoChars(0, 3, "Door open ");
             printed_chars += 9;
             break;
         case STATE_OFF:
-            printAtMonoChars(0, 4, "Off ");
-            printed_chars += 3;
+            printAtMonoChars(0, 3, "Off                 ");
+            printed_chars += 20;
             break;
         default:
-            printAtMonoChars(0, 4, "Unknown status!");
-            printed_chars += 15;
+            printAtMonoChars(0, 3, "Unknown status!     ");
+            printed_chars += 20;
             break;
     }
 
     uint16_t sinceIdleTime = tempControl.timeSinceIdle();
     if(state==IDLE){
-        // tft.print(" for ");
-        // printed_chars += 15;
         time = 	min(tempControl.timeSinceCooling(), tempControl.timeSinceHeating());
         printed_chars += printTime(time);
     } else if(state==COOLING || state==HEATING){
-        // tft.print(" for ");
-        // printed_chars += 5;
         time = sinceIdleTime;
         printed_chars += printTime(time);
     } else if(state==COOLING_MIN_TIME){
-        // tft.print(" time left ");
-        // printed_chars += 5;
         time = tempControl.getMinCoolOnTime()-sinceIdleTime;
         printed_chars += printTime(time);
     } else if(state==HEATING_MIN_TIME){
-        // tft.print(" time left ");
-        // printed_chars += 11;
         time = tempControl.getMinHeatOnTime()-sinceIdleTime;
         printed_chars += printTime(time);
     } else if(state == WAITING_TO_COOL || state == WAITING_TO_HEAT){
-        // tft.print(" ");
-        // printed_chars += 1;
         time = tempControl.getWaitTime();
         printed_chars += printTime(time);
     }
 
     // Because of the way we're updating the display, we need to clear out everything to the right of the status
     // string
-    for (int i = printed_chars; i < 20; ++i) {
-        tft.print(" ");
+    for (uint8_t i = printed_chars; i < 20; ++i) {
+        // printAtMonoChars(i+1, 3, ".");
     }
 }
 
@@ -420,26 +387,16 @@ void LcdDisplay::printState(){
 void LcdDisplay::printWiFi(){
     clear();
 
-    tft.setTextColor(TFT_WHITE, TFT_BLACK);
-
     printAtMonoChars(0, 0, "mDNS Name: ");
     printAtMonoChars(0, 1, eepromManager.fetchmDNSName().c_str());
-    // tft.print(eepromManager.fetchmDNSName());
-    // tft.println(".local");
-    tft.print(".local");
+    printAtMonoChars(strlen(eepromManager.fetchmDNSName().c_str()), 1, ".local");
 
     printAtMonoChars(0, 3, "IP Address: ");
-    // tft.println("IP Address: ");
     printAtMonoChars(0, 4, WiFi.localIP().toString().c_str());
-
-    // tft.println(WiFi.localIP());
 }
 
 void LcdDisplay::printWiFiStartup(){
     clear();
-
-    tft.setTextColor(TFT_WHITE, TFT_BLACK);
-    
 
 	printAtMonoChars(0, 0, "Connect to this AP:");
     printAtMonoChars(0, 1, "AP Name: ");
@@ -497,14 +454,6 @@ void LcdDisplay::printGravity(){
 void LcdDisplay::clear() {
     tft.fillScreen(TFT_BLACK);
 }
-
-void LcdDisplay::clearForText(uint8_t start_x, uint8_t start_y, uint16_t color, uint8_t font_size, uint8_t characters) {
-//    uint8_t width = (font_size * characters * 5) + (font_size * (characters-1) * 4);
-//    uint8_t height = font_size * 7;
-
-//    tft.fillRect(start_x, start_y, width, height, color);
-}
-
 
 
 /*
