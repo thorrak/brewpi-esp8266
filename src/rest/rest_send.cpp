@@ -430,7 +430,7 @@ bool restHandler::send_status() {
 #ifdef HAS_BLUETOOTH
         tilt* grav_sensor = bt_scanner.get_tilt(extendedSettings.tiltGravSensor);
         if(grav_sensor != nullptr) {
-            doc["gravity"] = grav_sensor->getGravity();
+            doc["gravity_raw"] = grav_sensor->getGravity();
         }
 #endif
 
