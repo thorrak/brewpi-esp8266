@@ -315,6 +315,22 @@ uint8_t processExtendedSettingsJson(const DynamicJsonDocument& json, bool trigge
     }
 
 
+#ifdef HAS_BLUETOOTH
+    // Tilt Gravity Sensor
+    if(json.containsKey(ExtendedSettingsKeys::tiltGravSensor)) {
+        if(json[ExtendedSettingsKeys::tiltGravSensor].is<std::string>()) {
+            // Validate that it's valid
+            if(extendedSettings.tiltGravSensor != json[ExtendedSettingsKeys::tiltGravSensor].as<std::string>()) {
+                extendedSettings.setTiltGravSensor(NimBLEAddress(json[ExtendedSettingsKeys::tiltGravSensor].as<std::string>()));
+                saveSettings = true;
+            }
+        } else {
+            Log.warning(F("Invalid [tiltGravSensor]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::tiltGravSensor]);
+            failCount++;
+        }
+    }
+#endif
+
     // SETTINGS_CHOICE
     if(json.containsKey(MinTimesKeys::SETTINGS_CHOICE)) {
         if(json[MinTimesKeys::SETTINGS_CHOICE].is<uint8_t>()) {

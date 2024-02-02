@@ -273,6 +273,14 @@ void DeviceManager::uninstallDevice(DeviceConfig& config)
 		case DEVICETYPE_TEMP_SENSOR:
 			// sensor may be wrapped in a TempSensor class, or may stand alone.
 			s = &unwrapSensor(config.deviceFunction, *ppv);
+#ifdef HAS_BLUETOOTH
+			if(config.deviceFunction == DEVICE_BEER_TEMP && config.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT) {
+				// If the device is a Tilt, then let's unset the gravity sensor
+				extendedSettings.setTiltGravSensor(NoTiltDevice);
+				extendedSettings.storeToSpiffs();
+			}
+#endif
+
 			if (s!=&defaultTempSensor) {
 				setSensor(config.deviceFunction, ppv, &defaultTempSensor);
 //				DEBUG_ONLY(logInfoInt(INFO_UNINSTALL_TEMP_SENSOR, config.deviceFunction));
@@ -562,6 +570,23 @@ DeviceConfig DeviceManager::updateDeviceDefinition(DeviceDefinition dev)
 		uninstallDevice(target);
 		installDevice(target);
 		eepromManager.storeDevice(target, dev.id);
+
+#ifdef HAS_BLUETOOTH
+		if(dev.deviceFunction == DEVICE_BEER_TEMP) {
+			if(dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT) {
+				// If the device is a Tilt, then let's assume that the user wants it to also be the gravity sensor
+				extendedSettings.setTiltGravSensor(target.hw.btAddress);
+				extendedSettings.storeToSpiffs();
+			} else {
+				// Otherwise, let's unset the gravity sensor
+				// TODO - Determine if I really want to do this here (as opposed to when uninstalling the Tilt)
+				extendedSettings.setTiltGravSensor(NoTiltDevice);
+				extendedSettings.storeToSpiffs();
+			}
+
+		}
+#endif
+
 		return target;
 	}
 	else {
