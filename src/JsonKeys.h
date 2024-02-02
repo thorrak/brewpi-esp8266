@@ -129,6 +129,7 @@ constexpr auto eepromReset = "confirmReset";
 constexpr auto invertTFT = "invertTFT";
 constexpr auto glycol = "glycol";
 constexpr auto largeTFT = "largeTFT";
+constexpr auto tiltGravSensor = "tiltGravSensor";
 }; // namespace ExtendedSettingsKeys
 
 

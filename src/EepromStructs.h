@@ -207,6 +207,12 @@ public:
     bool largeTFT;  //<! Whether or not to use a large TFT
     bool glycol;  //<! Whether or not to use glycol mode
 
+    #ifdef HAS_BLUETOOTH
+    NimBLEAddress tiltGravSensor; //<! The color of the Tilt hydrometer used for gravity
+    void setTiltGravSensor(NimBLEAddress setting);
+    #endif
+
+
     void toJson(DynamicJsonDocument &doc);
     void storeToSpiffs();
     void loadFromSpiffs();
@@ -267,3 +273,7 @@ public:
     static constexpr auto filename = "/upstreamSettings.json";
 private:
 };
+
+#ifdef HAS_BLUETOOTH
+extern NimBLEAddress NoTiltDevice;
+#endif

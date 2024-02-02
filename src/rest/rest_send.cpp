@@ -18,6 +18,10 @@
 #include "JsonKeys.h"
 #include "SettingLoader.h"
 
+#ifdef HAS_BLUETOOTH
+#include "wireless/BTScanner.h"
+#endif
+
 
 restHandler rest_handler; // Global data sender
 
@@ -422,6 +426,13 @@ bool restHandler::send_status() {
         doc["temps"] = temps;
         doc["temp_format"] = String(tempControl.cc.tempFormat);
         doc["mode"] = String(tempControl.cs.mode);
+
+#ifdef HAS_BLUETOOTH
+        tilt* grav_sensor = bt_scanner.get_tilt(extendedSettings.tiltGravSensor);
+        if(grav_sensor != nullptr) {
+            doc["gravity_raw"] = grav_sensor->getGravity();
+        }
+#endif
 
         // Serialize the JSON document
         serializeJson(doc, payload);

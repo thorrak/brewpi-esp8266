@@ -17,6 +17,9 @@
 #include "PiLink.h"
 #include "Display.h"
 
+#ifdef HAS_BLUETOOTH
+NimBLEAddress NoTiltDevice = NimBLEAddress("00:00:00:00:00:00");
+#endif
 
 
 void JSONSaveable::writeJsonToFile(const char *filename, const ArduinoJson::JsonDocument& json_doc) {
@@ -293,6 +296,10 @@ void ExtendedSettings::setDefaults() {
     invertTFT = false;
     glycol = false;
     largeTFT = false;
+#ifdef HAS_BLUETOOTH
+    tiltGravSensor = NoTiltDevice;
+#endif
+
 }
 
 
@@ -304,6 +311,9 @@ void ExtendedSettings::toJson(DynamicJsonDocument &doc) {
     doc[ExtendedSettingsKeys::invertTFT] = invertTFT;
     doc[ExtendedSettingsKeys::glycol] = glycol;
     doc[ExtendedSettingsKeys::largeTFT] = largeTFT;
+#ifdef HAS_BLUETOOTH
+    doc[ExtendedSettingsKeys::tiltGravSensor] = tiltGravSensor.toString();
+#endif
 }
 
 /**
@@ -331,7 +341,9 @@ void ExtendedSettings::loadFromSpiffs() {
     if(json_doc.containsKey(ExtendedSettingsKeys::invertTFT)) invertTFT = json_doc[ExtendedSettingsKeys::invertTFT];
     if(json_doc.containsKey(ExtendedSettingsKeys::glycol)) glycol = json_doc[ExtendedSettingsKeys::glycol];
     if(json_doc.containsKey(ExtendedSettingsKeys::largeTFT)) largeTFT = json_doc[ExtendedSettingsKeys::largeTFT];
-
+#ifdef HAS_BLUETOOTH
+    if(json_doc.containsKey(ExtendedSettingsKeys::tiltGravSensor)) tiltGravSensor = NimBLEAddress(json_doc[ExtendedSettingsKeys::tiltGravSensor].as<std::string>());
+#endif
 }
 
 /**
@@ -356,7 +368,13 @@ void ExtendedSettings::processSettingKeypair(JsonPair kv) {
     setGlycol(kv.value().as<bool>());
   } else if (kv.key() == ExtendedSettingsKeys::largeTFT) {
     setLargeTFT(kv.value().as<bool>());
+  } 
+  #ifdef HAS_BLUETOOTH
+  else if (kv.key() == ExtendedSettingsKeys::tiltGravSensor) {
+    NimBLEAddress addr = NimBLEAddress(kv.value().as<std::string>());
+    setTiltGravSensor(addr);
   }
+  #endif
 }
 
 /**
@@ -398,6 +416,18 @@ void ExtendedSettings::setInvertTFT(bool setting) {
     display.printStationaryText();
 	display.printState();
 }
+
+
+#ifdef HAS_BLUETOOTH
+/**
+ * \brief Set the Tilt color to be used as the gravity sensor
+ *
+ * \param setting - The new setting
+ */
+void ExtendedSettings::setTiltGravSensor(NimBLEAddress setting) {
+    tiltGravSensor = setting;
+}
+#endif
 
 
 /**
