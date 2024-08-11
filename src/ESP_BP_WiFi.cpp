@@ -24,13 +24,8 @@
 
 
 bool shouldSaveConfig = false;
-#ifndef ESP8266
-WiFiServerFixed server(23);
-WiFiClientFixed serverClient;
-#else
 WiFiServer server(23);
 WiFiClient serverClient;
-#endif
 
 extern void handleReset();  // Terrible practice. In brewpi-esp8266.cpp.
 
