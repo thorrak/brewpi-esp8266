@@ -201,7 +201,7 @@ bool restHandler::send_bluetooth_crash_report() {
         doc["uptime"] = esp_timer_get_time();
 #endif
         doc["device_id"] = guid;
-        doc["message"] = "With Arduino 2.0.9";
+        doc["message"] = "With Arduino 3.0.4";
 
         // Serialize the JSON document
         serializeJson(doc, payload);
