@@ -158,7 +158,7 @@ void initialize_wifi() {
         } else {
             // If the mDNS name is invalid, reset the WiFi configuration and restart the device
             WiFi.disconnect(true);
-            delay(2000);
+            delay(500);
             handleReset();
         }
     }

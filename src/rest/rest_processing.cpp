@@ -109,7 +109,7 @@ bool restHandler::reset_connection() {
 
     // Then disconnect WiFi and restart
     WiFi.disconnect(true);
-    delay(50);
+    delay(500);
     ESP.restart();
     return true;
 }
