@@ -223,11 +223,10 @@ void wifi_connect_clients() {
     // Additionally, every 3 minutes either attempt to reconnect WiFi, or rebroadcast mdns info
     if(ticks.millis() - last_connection_check >= (3 * 60 * 1000)) {
         last_connection_check = ticks.millis();
-        if(!WiFi.isConnected()) {
+        if(WiFi.status() != WL_CONNECTED) {
             // If we are disconnected, reconnect. On an ESP8266 this will ALSO trigger mdns_reset due to the callback
             // but on the ESP32, this means that we'll have to wait an additional 3 minutes for mdns to come back up
-            WiFi.disconnect();
-            delay(50);
+            delay(150);
             WiFi.begin();
         } else {
             // #defining this out for now as there is a memory leak caused by this
