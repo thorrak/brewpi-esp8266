@@ -186,7 +186,7 @@ void wifi_connect_clients() {
     static unsigned long last_connection_check = 0;
 
     yield();
-    if(WiFi.isConnected()) {
+    if(WiFi.status() == WL_CONNECTED) {
         // We only accept clients if we do not have a REST target defined
         if(rest_handler.configured_for_fermentrack_rest()) {
             // If we show a client as already being disconnected, force a disconnect
@@ -197,11 +197,7 @@ void wifi_connect_clients() {
             // We are handling serial connections, and have a client in queue to connect
             // If we show a client as already being disconnected, force a disconnect
             if (serverClient) serverClient.stop();
-#ifdef ESP8266
             serverClient = server.accept();
-#else
-            serverClient = server.available();
-#endif
             serverClient.flush();
         }
     } else {
@@ -210,11 +206,7 @@ void wifi_connect_clients() {
         // we show a client as already being disconnected, force a disconnect
         if (serverClient) {
             serverClient.stop();
-#ifdef ESP8266
             serverClient = server.accept();
-#else
-            serverClient = server.available();
-#endif
             serverClient.flush();
         }
     }
