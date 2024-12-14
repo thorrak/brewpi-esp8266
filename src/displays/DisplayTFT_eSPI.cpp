@@ -182,29 +182,14 @@ void LcdDisplay::printFridgeSet(){
 }
 
 void LcdDisplay::printTemperatureAtMonoChars(uint8_t x_chars, uint8_t y_chars, temperature temp){
-    uint16_t x = x_chars * tft.textWidth("A", GFXFF) + 3;
-    uint16_t y = (y_chars) * tft.fontHeight(GFXFF) + 2;
+    char tempString[9];
+    char tempBuf[9];
 
-    printTemperature(temp, x, y);
-}
-
-void LcdDisplay::printAtMonoChars(uint8_t x_chars, uint8_t y_chars, const char *text){
-    uint16_t x = x_chars * tft.textWidth("A", GFXFF) + 3;
-    uint16_t y = (y_chars) * tft.fontHeight(GFXFF) + 2;
-
-    tft.drawString(text, x, y);
-}
-
-
-void LcdDisplay::printTemperature(temperature temp, uint8_t start_x, uint8_t start_y){
     if (temp==INVALID_TEMP) {
-        tft.drawString("  --.-", start_x, start_y);
+        printAtMonoChars(x_chars, y_chars, "  --.-");
         return;
     }
 
-
-    char tempString[9];
-    char tempBuf[9];
     tempToString(tempString, temp, 1 , 9);
 
     // Pad the width 
@@ -223,7 +208,14 @@ void LcdDisplay::printTemperature(temperature temp, uint8_t start_x, uint8_t sta
             break;
     }
 
-    tft.drawString(tempBuf, start_x, start_y);
+    printAtMonoChars(x_chars, y_chars, tempBuf);
+}
+
+void LcdDisplay::printAtMonoChars(uint8_t x_chars, uint8_t y_chars, const char *text){
+    uint16_t x = x_chars * tft.textWidth("A", GFXFF) + 3;
+    uint16_t y = (y_chars) * tft.fontHeight(GFXFF) + 2;
+
+    tft.drawString(text, x, y);
 }
 
 //print the stationary text on the lcd.
