@@ -16,7 +16,9 @@
 #undef DISABLE_ALL_LIBRARY_WARNINGS
 
 #define FF17                    &FreeMono9pt7b
-#define GFXFF                   1  // THis can probably be removed
+#define GFXFF                   1  // This can probably be removed
+#define TFT_ROWS     6
+#define TFT_COLUMNS  20
 
 
 class LcdDisplay
@@ -33,7 +35,7 @@ public:
     printState();
     printAllTemperatures();
     printMode();
-    // printIPAddressInfo();
+    printIPAddressInfo();
 #ifdef HAS_BLUETOOTH
     // printGravity();
 #endif
@@ -48,7 +50,6 @@ public:
 
     // print mode on the right location on the first line, after Mode:
     void printMode();
-    // void printIPAddressInfo();
 
     void setDisplayFlags(uint8_t newFlags);
     uint8_t getDisplayFlags() { return flags; };
@@ -67,6 +68,9 @@ public:
 
     // print the current state on the last line of the LCD
     void printState();
+
+    // print the IP address on row 6 
+    void printIPAddressInfo();
 
     void getLine(uint8_t lineNumber, char * buffer);
 
@@ -92,8 +96,10 @@ private:
 
     uint8_t stateOnDisplay;
     uint8_t flags;
+    char textCache[TFT_ROWS][TFT_COLUMNS+1];  // Cache to reduce flickering
 
     uint8_t printTime(uint16_t time);
+    std::string getline_temp_string(temperature temp);
 };
 
 extern TFT_eSPI tft;

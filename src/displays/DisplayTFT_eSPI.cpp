@@ -83,17 +83,14 @@ void LcdDisplay::print_layout() {
 //     tft.setCursor(BEER_HEADER_START_X, HEADER_START_Y);
     printAtMonoChars(0, 1, "Beer");
 
-//     tft.setTextSize(SET_HEADER_FONT_SIZE);
-//     tft.setCursor(FRIDGE_SET_HEADER_START_X, SET_HEADER_START_Y);
-//     tft.print("Set");
-//     tft.setTextSize(SET_HEADER_FONT_SIZE);
-//     tft.setCursor(BEER_SET_HEADER_START_X, SET_HEADER_START_Y);
-//     tft.print("Set");
+    // Print the degree symbols & units
+    // TODO - Figure out how to fudge a degree symbol here, since there isn't one in the font in the library
+    const char degree_symbol = 176;
+    char unitBuf[3] = {' ', tempControl.cc.tempFormat, '\0'};
 
-//     // Print the "Now Fermenting" mesage
-//     tft.setTextSize(BEER_NAME_FONT_SIZE);
-//     tft.setCursor(BEER_NAME_START_X, BEER_NAME_START_Y);
-// //    tft.print("Current Beer: Belgian Beer Series - The Saisoning");
+    Serial.println(unitBuf);
+    printAtMonoChars(18, 1, unitBuf);  // Beer Row
+    printAtMonoChars(18, 2, unitBuf);  // Fridge/Room Row
 
 }
 
@@ -118,8 +115,8 @@ void LcdDisplay::init() {
         tft.setRotation(1);
 
     tft.setTextColor(TFT_WHITE, TFT_BLACK, true);
-    tft.fillScreen(TFT_BLACK);
     tft.setFreeFont(FF17);
+    clear();  // Clear the screen & initialize the text cache
 
 
 #if defined(TFT_BACKLIGHT)
@@ -159,17 +156,17 @@ void LcdDisplay::setDisplayFlags(uint8_t newFlags) {
 
 
 void LcdDisplay::printBeerTemp(){
-	printTemperatureAtMonoChars(12, 1, tempControl.getBeerTemp());
+	printTemperatureAtMonoChars(6, 1, tempControl.getBeerTemp());
 }
 
 void LcdDisplay::printBeerSet(){
-//    temperature beerSet = tempControl.getBeerSetting();
     printTemperatureAtMonoChars(12, 1, tempControl.getBeerSetting());
 
 }
 
 void LcdDisplay::printFridgeTemp(){
-    printTemperatureAtMonoChars(6,2, flags & LCD_FLAG_DISPLAY_ROOM ?
+    // Alternates between displaying the true "fridge" reading and the room temp
+    printTemperatureAtMonoChars(6, 2, flags & LCD_FLAG_DISPLAY_ROOM ?
 		tempControl.ambientSensor->read() :
 		tempControl.getFridgeTemp());
 }
@@ -182,48 +179,28 @@ void LcdDisplay::printFridgeSet(){
 }
 
 void LcdDisplay::printTemperatureAtMonoChars(uint8_t x_chars, uint8_t y_chars, temperature temp){
-    uint16_t x = x_chars * tft.textWidth("A", GFXFF) + 3;
-    uint16_t y = (y_chars) * tft.fontHeight(GFXFF) + 2;
-
-    printTemperature(temp, x, y);
+    printAtMonoChars(x_chars, y_chars, getline_temp_string(temp).c_str());
 }
 
 void LcdDisplay::printAtMonoChars(uint8_t x_chars, uint8_t y_chars, const char *text){
     uint16_t x = x_chars * tft.textWidth("A", GFXFF) + 3;
     uint16_t y = (y_chars) * tft.fontHeight(GFXFF) + 2;
 
-    tft.drawString(text, x, y);
-}
-
-
-void LcdDisplay::printTemperature(temperature temp, uint8_t start_x, uint8_t start_y){
-    if (temp==INVALID_TEMP) {
-        tft.drawString("  --.-", start_x, start_y);
+    // Ensure we aren't writing past the end of the buffer
+    if(x_chars+strlen(text) > TFT_COLUMNS || y_chars >= TFT_ROWS)
         return;
-    }
 
+    // Write the new text. Only print characters that changed to reduce flickering.
+    for(uint8_t i=0;i<strlen(text);++i)
+        if(text[i] != textCache[y_chars][x_chars+i]) {
+            // Manually draw a rectangle over the existing character
+            tft.fillRect(x+i*tft.textWidth("A", GFXFF), y, tft.textWidth("A", GFXFF), tft.fontHeight(GFXFF), TFT_BLACK);
+            tft.drawString(&text[i], x+i*tft.textWidth("A", GFXFF), y);
+        }
 
-    char tempString[9];
-    char tempBuf[9];
-    tempToString(tempString, temp, 1 , 9);
+    // Save the text in the cache
+    memcpy(&textCache[y_chars][x_chars], text, strlen(text));
 
-    // Pad the width 
-    switch(strlen(tempString)) {
-        case 5:
-            snprintf(tempBuf, 9, " %s %c", tempString, tempControl.cc.tempFormat);
-            break;
-        case 4:
-            snprintf(tempBuf, 9, "  %s %c", tempString, tempControl.cc.tempFormat);
-            break;
-        case 3:
-            snprintf(tempBuf, 9, "   %s %c", tempString, tempControl.cc.tempFormat);
-            break;
-        default:
-            snprintf(tempBuf, 9, "%s %c", tempString, tempControl.cc.tempFormat);
-            break;
-    }
-
-    tft.drawString(tempBuf, start_x, start_y);
 }
 
 //print the stationary text on the lcd.
@@ -256,21 +233,15 @@ void LcdDisplay::printMode(){
     }
 }
 
-// void LcdDisplay::printIPAddressInfo(){
-//     tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-//     tft.setTextSize(IP_ADDRESS_FONT_SIZE);
-//     clearForText(IP_ADDRESS_START_X, IP_ADDRESS_START_Y, ILI9341_BLACK, MODE_FONT_SIZE, 21);
+void LcdDisplay::printIPAddressInfo(){
+    printAtMonoChars(0, 5, "IP: ");
 
-//     tft.setCursor(IP_ADDRESS_START_X, IP_ADDRESS_START_Y);
-//     tft.print("IP Address: ");
-
-//     if(WiFi.isConnected()) {
-//         tft.print(WiFi.localIP());
-//     } else {
-//         tft.print("Disconnected");
-//     }
-
-// }
+    if(WiFi.isConnected()) {
+        printAtMonoChars(4, 5, WiFi.localIP().toString().c_str());
+    } else {
+        printAtMonoChars(4, 5, "Disconnected   ");
+    }
+}
 
 
 uint8_t LcdDisplay::printTime(uint16_t time) {
@@ -287,8 +258,6 @@ uint8_t LcdDisplay::printTime(uint16_t time) {
         printString = &timeString[2];
         stringLength = stringLength-2;
     }
-//        printAt(20-stringLength, 3, printString);
-    // tft.print(printString);
     printAtMonoChars(12, 3, printString);
 
     return stringLength;
@@ -313,47 +282,47 @@ void LcdDisplay::printState(){
     switch (state){
         case IDLE:
             printAtMonoChars(0, 3, "Idling for ");
-            printed_chars += 11;
+            printed_chars = 11;
             break;
         case WAITING_TO_COOL:
             printAtMonoChars(0, 3, "Wait to cool ");
-            printed_chars += 13;
+            printed_chars = 13;
             break;
         case WAITING_TO_HEAT:
             printAtMonoChars(0, 3, "Wait to heat ");
-            printed_chars += 13;
+            printed_chars = 13;
             break;
         case WAITING_FOR_PEAK_DETECT:
-            printAtMonoChars(0, 3, "Waiting for peak    ");
-            printed_chars += 16;
+            printAtMonoChars(0, 3, "Waiting for peak");
+            printed_chars = 16;
             break;
         case COOLING:
             printAtMonoChars(0, 3, "Cooling for ");
-            printed_chars += 12;
+            printed_chars = 12;
             break;
         case HEATING:
             printAtMonoChars(0, 3, "Heating for ");
-            printed_chars += 12;
+            printed_chars = 12;
             break;
         case COOLING_MIN_TIME:
             printAtMonoChars(0, 3, "Cool time left ");
-            printed_chars += 15;
+            printed_chars = 15;
             break;
         case HEATING_MIN_TIME:
             printAtMonoChars(0, 3, "Heat time left ");
-            printed_chars += 15;
+            printed_chars = 15;
             break;
         case DOOR_OPEN:
             printAtMonoChars(0, 3, "Door open ");
-            printed_chars += 9;
+            printed_chars = 9;
             break;
         case STATE_OFF:
-            printAtMonoChars(0, 3, "Off                 ");
-            printed_chars += 20;
+            printAtMonoChars(0, 3, "Off");
+            printed_chars = 3;
             break;
         default:
             printAtMonoChars(0, 3, "Unknown status!     ");
-            printed_chars += 20;
+            printed_chars = 20;
             break;
     }
 
@@ -377,9 +346,8 @@ void LcdDisplay::printState(){
 
     // Because of the way we're updating the display, we need to clear out everything to the right of the status
     // string
-    for (uint8_t i = printed_chars; i < 20; ++i) {
-        // printAtMonoChars(i+1, 3, ".");
-    }
+    std::string spaces(20 - printed_chars, ' ');
+    printAtMonoChars(printed_chars, 3, spaces.c_str());
 }
 
 
@@ -453,6 +421,14 @@ void LcdDisplay::printGravity(){
 
 void LcdDisplay::clear() {
     tft.fillScreen(TFT_BLACK);
+    // Fill textCache with spaces
+    for (uint8_t i = 0; i < TFT_ROWS; ++i) {
+        for (uint8_t j = 0; j < TFT_COLUMNS; ++j) {
+            textCache[i][j] = ' ';
+        }
+        textCache[i][TFT_COLUMNS] = '\0';
+    }
+
 }
 
 
@@ -463,20 +439,38 @@ Fridge 58.7  44.9 °F
 Cooling for    04m01
 */
 
-std::string getline_temp_string(temperature temp) {
+std::string LcdDisplay::getline_temp_string(temperature temp) {
     if (temp==INVALID_TEMP) {
-        std::string str(" --.-");
+        std::string str("  --.-");
         return str;
     }
 
     char tempString[9];
     tempToString(tempString, temp, 1 , 9);
     std::string str(tempString);
-    while(str.length() < 5)
+    while(str.length() <= 5)
         str.insert(0, " ");
     return str;
 }
 
+
+/**
+ * @brief Retrieves a formatted line of text for the LCD display based on the specified line number.
+ *
+ * This function populates the provided buffer with a formatted string corresponding to the given line number.
+ * The content of the line is determined by the current state of the temperature control system. This function is
+ * intended for use when sending the "contents of the LCD display" message to the BrewPi service, which always
+ * expects a 4x20 character array in response. As we are using an eSPI TFT display, we can in the future choose
+ * to display something other than the old, standard, 4x20 character display and need this function to retain
+ * compatibility with the BrewPi service.
+ *
+ * @param lineNumber The line number to retrieve (0-3).
+ *                   - 0: Displays the current mode of the temperature control system.
+ *                   - 1: Displays the beer temperature and setting.
+ *                   - 2: Displays the fridge temperature and setting.
+ *                   - 3: Displays the current state and time information of the temperature control system.
+ * @param buffer A character array to store the formatted line of text. The buffer should be large enough to hold the formatted string.
+ */
 void LcdDisplay::getLine(uint8_t lineNumber, char * buffer) {
 
     char line_buf[25];

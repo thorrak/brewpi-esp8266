@@ -242,7 +242,7 @@ void brewpiLoop()
 #ifdef HAS_BLUETOOTH
 if(bt_scanner.scanning_failed()) {
 #ifdef ENABLE_HTTP_INTERFACE
-  rest_handler.send_bluetooth_crash_report();
+  // rest_handler.send_bluetooth_crash_report();
   // TODO - Figure out if we want to keep this here
 #endif
   esp_restart();
