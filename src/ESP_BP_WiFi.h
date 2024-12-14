@@ -1,7 +1,5 @@
 #pragma once
 #include <ArduinoJson.h>
-#include "WiFiClientFix.h"
-#include "WiFiServerFixed.h"
 
 /**
  * \file ESP_BP_WiFi.h
@@ -58,13 +56,8 @@ void initWifiServer();
  */
 void wifi_connection_info(JsonDocument& doc);
 
-#ifndef ESP8266
-extern WiFiServerFixed server;
-extern WiFiClientFixed serverClient;
-#else
 extern WiFiServer server;
 extern WiFiClient serverClient;
-#endif
 
 
 

@@ -7,7 +7,6 @@
 #include <ESP8266HTTPClient.h>
 #elif defined(ESP32)
 #include <WiFi.h>
-#include "WiFiClientFix.h"
 #include <HTTPClient.h>
 #endif
 

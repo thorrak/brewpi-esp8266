@@ -53,7 +53,7 @@ There are two versions of the ESP32 firmware - one supporting an LCD2004 I2C dis
 
 ### ESP8266
 
-Although the ESP8266 was the original board chosen for this project, due to reduced support by the manufacturer its use in new builds is not recommended. For existing builds using the LoLin D1 Mini, the LoLin S2 Mini (utilizing the ESP32-S2) is recommended as a pin compatible replacement.
+Although the ESP8266 was the original board chosen for this project, due to reduced support by the manufacturer its use in new builds is not recommended, and future support by this firmware is not guaranteed. For existing builds using the LoLin D1 Mini, the LoLin S2 Mini (utilizing the ESP32-S2) is recommended as a pin compatible replacement.
 
 * D0 - Heat
 * D1 - I2C SCL
@@ -72,6 +72,7 @@ Although the ESP8266 was the original board chosen for this project, due to redu
 * OTA (WiFi) connection to BrewPi 
 * I2C LCD (20x4) Screen (/w Address Autodetection)
 * Tilt Hydrometer (as Temp Sensor) (ESP32 only)
+* Inkbird Bluetooth temperature sensors (ESP32 only)
 * TPLink Kasa WiFi Switches (ESP32 & ESP32-S2 WiFi only)
 * HTTP interface for quick updates
 
@@ -94,4 +95,4 @@ Although this firmware works with brewpi-www, it is highly recommended that user
 
 ## Hardware
 
-I maintain a separate repo with PCB and 3D-printable case designs for all of my projects. The page specific to BrewPi-ESP can be accessed [here](https://github.com/thorrak/thorrak_hardware/blob/master/BrewPi-ESP8266.md). 
+I maintain a separate repo with PCB and 3D-printable case designs for all of my projects. It is available [here](https://github.com/thorrak/thorrak_hardware/). 

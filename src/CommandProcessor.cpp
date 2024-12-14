@@ -305,7 +305,11 @@ void CommandProcessor::parseDeviceDefinition() {
  *
  * \ingroup commands
  */
-void CommandProcessor::resetWiFi() { WiFi.disconnect(true); }
+void CommandProcessor::resetWiFi() { 
+  WiFi.disconnect(true); 
+  delay(500);
+  handleReset();
+}
 
 /**
  * \brief Get info about the WiFi connection

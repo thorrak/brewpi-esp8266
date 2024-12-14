@@ -54,12 +54,7 @@
 #if defined(ESP8266_WiFi)
 // Just use the serverClient object as it supports all the same functions as Serial
 // extern WiFiClient serverClient;
-#ifdef ESP8266
 PiLink<WiFiClient> piLink(serverClient);
-#else
-// ESP32 only
-PiLink<WiFiClientFixed> piLink(serverClient);
-#endif
 #else
 // Not using ESP8266 WiFi
 #if defined(ESP32S2)
@@ -247,7 +242,7 @@ void brewpiLoop()
 #ifdef HAS_BLUETOOTH
 if(bt_scanner.scanning_failed()) {
 #ifdef ENABLE_HTTP_INTERFACE
-  // rest_handler.send_bluetooth_crash_report();
+  rest_handler.send_bluetooth_crash_report();
   // TODO - Figure out if we want to keep this here
 #endif
   esp_restart();

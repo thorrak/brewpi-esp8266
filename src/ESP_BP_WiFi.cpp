@@ -24,13 +24,8 @@
 
 
 bool shouldSaveConfig = false;
-#ifndef ESP8266
-WiFiServerFixed server(23);
-WiFiClientFixed serverClient;
-#else
 WiFiServer server(23);
 WiFiClient serverClient;
-#endif
 
 extern void handleReset();  // Terrible practice. In brewpi-esp8266.cpp.
 
@@ -163,7 +158,7 @@ void initialize_wifi() {
         } else {
             // If the mDNS name is invalid, reset the WiFi configuration and restart the device
             WiFi.disconnect(true);
-            delay(2000);
+            delay(500);
             handleReset();
         }
     }
@@ -191,7 +186,7 @@ void wifi_connect_clients() {
     static unsigned long last_connection_check = 0;
 
     yield();
-    if(WiFi.isConnected()) {
+    if(WiFi.status() == WL_CONNECTED) {
         // We only accept clients if we do not have a REST target defined
         if(rest_handler.configured_for_fermentrack_rest()) {
             // If we show a client as already being disconnected, force a disconnect
@@ -202,11 +197,7 @@ void wifi_connect_clients() {
             // We are handling serial connections, and have a client in queue to connect
             // If we show a client as already being disconnected, force a disconnect
             if (serverClient) serverClient.stop();
-#ifdef ESP8266
             serverClient = server.accept();
-#else
-            serverClient = server.available();
-#endif
             serverClient.flush();
         }
     } else {
@@ -215,11 +206,7 @@ void wifi_connect_clients() {
         // we show a client as already being disconnected, force a disconnect
         if (serverClient) {
             serverClient.stop();
-#ifdef ESP8266
             serverClient = server.accept();
-#else
-            serverClient = server.available();
-#endif
             serverClient.flush();
         }
     }
@@ -228,11 +215,10 @@ void wifi_connect_clients() {
     // Additionally, every 3 minutes either attempt to reconnect WiFi, or rebroadcast mdns info
     if(ticks.millis() - last_connection_check >= (3 * 60 * 1000)) {
         last_connection_check = ticks.millis();
-        if(!WiFi.isConnected()) {
+        if(WiFi.status() != WL_CONNECTED) {
             // If we are disconnected, reconnect. On an ESP8266 this will ALSO trigger mdns_reset due to the callback
             // but on the ESP32, this means that we'll have to wait an additional 3 minutes for mdns to come back up
-            WiFi.disconnect();
-            delay(50);
+            delay(150);
             WiFi.begin();
         } else {
             // #defining this out for now as there is a memory leak caused by this

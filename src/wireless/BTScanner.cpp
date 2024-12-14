@@ -61,7 +61,7 @@ void load_inkbird_from_advert(NimBLEAdvertisedDevice* advertisedDevice)
     // example: f208361300f28b6408
     // format:  tttthhhhssaaaabb??
     // tttt = 100* temp in C (needs endian change)
-    // hhhh = 100 * humidity in C (needs endian change)
+    // hhhh = 100 * humidity in % (needs endian change)
     // ss = Sensor selection (00 for internal, 01 for external)
     // aaaa = Alternate sensor reading (internal sensor reading if ss is 01, garbage data if ss is 00)
     // bb = battery in %
@@ -69,13 +69,39 @@ void load_inkbird_from_advert(NimBLEAdvertisedDevice* advertisedDevice)
     // Decode temp/humidity/battery
     int16_t temp = (advertisedDevice->getManufacturerData()[1]<<8) + advertisedDevice->getManufacturerData()[0];
     uint16_t hum = (advertisedDevice->getManufacturerData()[3]<<8) + advertisedDevice->getManufacturerData()[2];
+    uint8_t ss = advertisedDevice->getManufacturerData()[4];
+    int16_t alt_temp = (advertisedDevice->getManufacturerData()[6]<<8) + advertisedDevice->getManufacturerData()[5];
     uint8_t bat = advertisedDevice->getManufacturerData()[7];
 
-    // Serial.printf("Detected Inkbird: Temp: %d, Hum: %d, Bat: %d\r\n", temp, hum, bat);
+    // Serial.printf("Detected Inkbird: Temp: %d, Hum: %d, Bat: %d, SS: %d", temp, hum, bat, ss);
+    // if(ss == 1)
+    //     Serial.printf(", AltTemp: %d", alt_temp);
+    // Serial.println("");
+    // Serial.printf("Device MAC: %s, External 'MAC': %s \r\n", advertisedDevice->getAddress().toString().c_str(), NimBLEAddress(advertisedDevice->getAddress() + 0x010000000000).toString().c_str());
+    // Serial.printf("Advertised Device: %s \r\n", advertisedDevice->toString().c_str());
 
     // Locate & update the inkbird object in the list
     inkbird *ib = bt_scanner.get_or_create_inkbird(advertisedDevice->getAddress());
-    ib->update(temp, hum, bat, advertisedDevice->getRSSI());
+
+    if(ss == 1) {
+        // Device has both an internal and external sensor. Since we treat each Inkbird device as a single sensor, and differentiate
+        // devices by MAC address, to track a separate sensor means that we need to create a second, fake MAC address for it.
+
+        // Since the external sensor is disconnectable and its reading becomes the primary reading when connected, this creates an 
+        // interesting potential failure scenario. If the user sets an external (probe) sensor up as the beer temp, and has the 
+        // device in either a fridge or room, when the external sensor disconnects the fridge/room temperature will suddenly be
+        // interpreted as the beer temperature. This is really bad!
+
+        // Since we need to fake one of the MAC addresses and the internal sensor will ALWAYS be connected/reported, what we can do
+        // is fake the address of the EXTERNAL sensor. This way, the true MAC address will always be present (and always report the
+        // internal sensor's temperature) and in the case of failure of the probe, the external sensor will just stop reporting.
+        inkbird *ib_external = bt_scanner.get_or_create_inkbird(NimBLEAddress(advertisedDevice->getAddress() + 0x010000000000));
+        ib->update(alt_temp, hum, bat, advertisedDevice->getRSSI());
+        ib_external->update(temp, hum, bat, advertisedDevice->getRSSI());
+    } else {
+        // If we only have a single sensor, it's always the "internal" sensor. Just update it. 
+        ib->update(temp, hum, bat, advertisedDevice->getRSSI());
+    }
     return;
 }
 
