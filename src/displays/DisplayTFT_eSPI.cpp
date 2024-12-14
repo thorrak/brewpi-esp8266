@@ -263,21 +263,15 @@ void LcdDisplay::printMode(){
     }
 }
 
-// void LcdDisplay::printIPAddressInfo(){
-//     tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-//     tft.setTextSize(IP_ADDRESS_FONT_SIZE);
-//     clearForText(IP_ADDRESS_START_X, IP_ADDRESS_START_Y, ILI9341_BLACK, MODE_FONT_SIZE, 21);
+void LcdDisplay::printIPAddressInfo(){
+    printAtMonoChars(0, 5, "IP: ");
 
-//     tft.setCursor(IP_ADDRESS_START_X, IP_ADDRESS_START_Y);
-//     tft.print("IP Address: ");
-
-//     if(WiFi.isConnected()) {
-//         tft.print(WiFi.localIP());
-//     } else {
-//         tft.print("Disconnected");
-//     }
-
-// }
+    if(WiFi.isConnected()) {
+        printAtMonoChars(4, 5, WiFi.localIP().toString().c_str());
+    } else {
+        printAtMonoChars(4, 5, "Disconnected   ");
+    }
+}
 
 
 uint8_t LcdDisplay::printTime(uint16_t time) {

@@ -35,7 +35,7 @@ public:
     printState();
     printAllTemperatures();
     printMode();
-    // printIPAddressInfo();
+    printIPAddressInfo();
 #ifdef HAS_BLUETOOTH
     // printGravity();
 #endif
@@ -50,7 +50,6 @@ public:
 
     // print mode on the right location on the first line, after Mode:
     void printMode();
-    // void printIPAddressInfo();
 
     void setDisplayFlags(uint8_t newFlags);
     uint8_t getDisplayFlags() { return flags; };
@@ -69,6 +68,9 @@ public:
 
     // print the current state on the last line of the LCD
     void printState();
+
+    // print the IP address on row 6 
+    void printIPAddressInfo();
 
     void getLine(uint8_t lineNumber, char * buffer);
 
