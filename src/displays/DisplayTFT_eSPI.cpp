@@ -118,8 +118,8 @@ void LcdDisplay::init() {
         tft.setRotation(1);
 
     tft.setTextColor(TFT_WHITE, TFT_BLACK, true);
-    tft.fillScreen(TFT_BLACK);
     tft.setFreeFont(FF17);
+    clear();  // Clear the screen & initialize the text cache
 
 
 #if defined(TFT_BACKLIGHT)
@@ -159,7 +159,7 @@ void LcdDisplay::setDisplayFlags(uint8_t newFlags) {
 
 
 void LcdDisplay::printBeerTemp(){
-	printTemperatureAtMonoChars(12, 1, tempControl.getBeerTemp());
+	printTemperatureAtMonoChars(6, 1, tempControl.getBeerTemp());
 }
 
 void LcdDisplay::printBeerSet(){
@@ -215,7 +215,22 @@ void LcdDisplay::printAtMonoChars(uint8_t x_chars, uint8_t y_chars, const char *
     uint16_t x = x_chars * tft.textWidth("A", GFXFF) + 3;
     uint16_t y = (y_chars) * tft.fontHeight(GFXFF) + 2;
 
-    tft.drawString(text, x, y);
+    // Ensure we aren't writing past the end of the buffer
+    if(x_chars+strlen(text) > TFT_COLUMNS || y_chars >= TFT_ROWS)
+        return;
+
+    // Write the new text. Only print characters that changed to reduce flickering.
+    for(uint8_t i=0;i<strlen(text);i++)
+        if(text[i] != textCache[y_chars][x_chars+i]) {
+            // Manually draw a rectangle over the existing character
+            tft.fillRect(x+i*tft.textWidth("A", GFXFF), y, tft.textWidth("A", GFXFF), tft.fontHeight(GFXFF), TFT_BLACK);
+            tft.drawString(&text[i], x+i*tft.textWidth("A", GFXFF), y);
+        }
+
+    // Save the text in the cache, at the correct position
+    for (uint8_t i=0;i<strlen(text);i++)
+        textCache[y_chars][x_chars+i] = text[i];
+
 }
 
 //print the stationary text on the lcd.
@@ -279,8 +294,6 @@ uint8_t LcdDisplay::printTime(uint16_t time) {
         printString = &timeString[2];
         stringLength = stringLength-2;
     }
-//        printAt(20-stringLength, 3, printString);
-    // tft.print(printString);
     printAtMonoChars(12, 3, printString);
 
     return stringLength;
@@ -370,7 +383,7 @@ void LcdDisplay::printState(){
     // Because of the way we're updating the display, we need to clear out everything to the right of the status
     // string
     for (uint8_t i = printed_chars; i < 20; ++i) {
-        // printAtMonoChars(i+1, 3, ".");
+        printAtMonoChars(i+1, 3, " ");
     }
 }
 
@@ -445,6 +458,14 @@ void LcdDisplay::printGravity(){
 
 void LcdDisplay::clear() {
     tft.fillScreen(TFT_BLACK);
+    // Fill textCache with spaces
+    for (uint8_t i = 0; i < TFT_ROWS; ++i) {
+        for (uint8_t j = 0; j < TFT_COLUMNS; ++j) {
+            textCache[i][j] = ' ';
+        }
+        textCache[i][TFT_COLUMNS] = '\0';
+    }
+
 }
 
 
@@ -469,6 +490,24 @@ std::string getline_temp_string(temperature temp) {
     return str;
 }
 
+
+/**
+ * @brief Retrieves a formatted line of text for the LCD display based on the specified line number.
+ *
+ * This function populates the provided buffer with a formatted string corresponding to the given line number.
+ * The content of the line is determined by the current state of the temperature control system. This function is
+ * intended for use when sending the "contents of the LCD display" message to the BrewPi service, which always
+ * expects a 4x20 character array in response. As we are using an eSPI TFT display, we can in the future choose
+ * to display something other than the old, standard, 4x20 character display and need this function to retain
+ * compatibility with the BrewPi service.
+ *
+ * @param lineNumber The line number to retrieve (0-3).
+ *                   - 0: Displays the current mode of the temperature control system.
+ *                   - 1: Displays the beer temperature and setting.
+ *                   - 2: Displays the fridge temperature and setting.
+ *                   - 3: Displays the current state and time information of the temperature control system.
+ * @param buffer A character array to store the formatted line of text. The buffer should be large enough to hold the formatted string.
+ */
 void LcdDisplay::getLine(uint8_t lineNumber, char * buffer) {
 
     char line_buf[25];
