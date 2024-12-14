@@ -470,16 +470,16 @@ Fridge 58.7  44.9 °F
 Cooling for    04m01
 */
 
-std::string getline_temp_string(temperature temp) {
+std::string LcdDisplay::getline_temp_string(temperature temp) {
     if (temp==INVALID_TEMP) {
-        std::string str(" --.-");
+        std::string str("  --.-");
         return str;
     }
 
     char tempString[9];
     tempToString(tempString, temp, 1 , 9);
     std::string str(tempString);
-    while(str.length() < 5)
+    while(str.length() <= 5)
         str.insert(0, " ");
     return str;
 }
