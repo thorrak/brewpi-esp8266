@@ -99,6 +99,7 @@ private:
     char textCache[TFT_ROWS][TFT_COLUMNS+1];  // Cache to reduce flickering
 
     uint8_t printTime(uint16_t time);
+    std::string getline_temp_string(temperature temp);
 };
 
 extern TFT_eSPI tft;

@@ -83,17 +83,14 @@ void LcdDisplay::print_layout() {
 //     tft.setCursor(BEER_HEADER_START_X, HEADER_START_Y);
     printAtMonoChars(0, 1, "Beer");
 
-//     tft.setTextSize(SET_HEADER_FONT_SIZE);
-//     tft.setCursor(FRIDGE_SET_HEADER_START_X, SET_HEADER_START_Y);
-//     tft.print("Set");
-//     tft.setTextSize(SET_HEADER_FONT_SIZE);
-//     tft.setCursor(BEER_SET_HEADER_START_X, SET_HEADER_START_Y);
-//     tft.print("Set");
+    // Print the degree symbols & units
+    // TODO - Figure out how to fudge a degree symbol here, since there isn't one in the font in the library
+    const char degree_symbol = 176;
+    char unitBuf[3] = {' ', tempControl.cc.tempFormat, '\0'};
 
-//     // Print the "Now Fermenting" mesage
-//     tft.setTextSize(BEER_NAME_FONT_SIZE);
-//     tft.setCursor(BEER_NAME_START_X, BEER_NAME_START_Y);
-// //    tft.print("Current Beer: Belgian Beer Series - The Saisoning");
+    Serial.println(unitBuf);
+    printAtMonoChars(18, 1, unitBuf);  // Beer Row
+    printAtMonoChars(18, 2, unitBuf);  // Fridge/Room Row
 
 }
 
@@ -163,13 +160,13 @@ void LcdDisplay::printBeerTemp(){
 }
 
 void LcdDisplay::printBeerSet(){
-//    temperature beerSet = tempControl.getBeerSetting();
     printTemperatureAtMonoChars(12, 1, tempControl.getBeerSetting());
 
 }
 
 void LcdDisplay::printFridgeTemp(){
-    printTemperatureAtMonoChars(6,2, flags & LCD_FLAG_DISPLAY_ROOM ?
+    // Alternates between displaying the true "fridge" reading and the room temp
+    printTemperatureAtMonoChars(6, 2, flags & LCD_FLAG_DISPLAY_ROOM ?
 		tempControl.ambientSensor->read() :
 		tempControl.getFridgeTemp());
 }
@@ -182,33 +179,7 @@ void LcdDisplay::printFridgeSet(){
 }
 
 void LcdDisplay::printTemperatureAtMonoChars(uint8_t x_chars, uint8_t y_chars, temperature temp){
-    char tempString[9];
-    char tempBuf[9];
-
-    if (temp==INVALID_TEMP) {
-        printAtMonoChars(x_chars, y_chars, "  --.-");
-        return;
-    }
-
-    tempToString(tempString, temp, 1 , 9);
-
-    // Pad the width 
-    switch(strlen(tempString)) {
-        case 5:
-            snprintf(tempBuf, 9, " %s %c", tempString, tempControl.cc.tempFormat);
-            break;
-        case 4:
-            snprintf(tempBuf, 9, "  %s %c", tempString, tempControl.cc.tempFormat);
-            break;
-        case 3:
-            snprintf(tempBuf, 9, "   %s %c", tempString, tempControl.cc.tempFormat);
-            break;
-        default:
-            snprintf(tempBuf, 9, "%s %c", tempString, tempControl.cc.tempFormat);
-            break;
-    }
-
-    printAtMonoChars(x_chars, y_chars, tempBuf);
+    printAtMonoChars(x_chars, y_chars, getline_temp_string(temp).c_str());
 }
 
 void LcdDisplay::printAtMonoChars(uint8_t x_chars, uint8_t y_chars, const char *text){
@@ -220,16 +191,15 @@ void LcdDisplay::printAtMonoChars(uint8_t x_chars, uint8_t y_chars, const char *
         return;
 
     // Write the new text. Only print characters that changed to reduce flickering.
-    for(uint8_t i=0;i<strlen(text);i++)
+    for(uint8_t i=0;i<strlen(text);++i)
         if(text[i] != textCache[y_chars][x_chars+i]) {
             // Manually draw a rectangle over the existing character
             tft.fillRect(x+i*tft.textWidth("A", GFXFF), y, tft.textWidth("A", GFXFF), tft.fontHeight(GFXFF), TFT_BLACK);
             tft.drawString(&text[i], x+i*tft.textWidth("A", GFXFF), y);
         }
 
-    // Save the text in the cache, at the correct position
-    for (uint8_t i=0;i<strlen(text);i++)
-        textCache[y_chars][x_chars+i] = text[i];
+    // Save the text in the cache
+    memcpy(&textCache[y_chars][x_chars], text, strlen(text));
 
 }
 
@@ -312,47 +282,47 @@ void LcdDisplay::printState(){
     switch (state){
         case IDLE:
             printAtMonoChars(0, 3, "Idling for ");
-            printed_chars += 11;
+            printed_chars = 11;
             break;
         case WAITING_TO_COOL:
             printAtMonoChars(0, 3, "Wait to cool ");
-            printed_chars += 13;
+            printed_chars = 13;
             break;
         case WAITING_TO_HEAT:
             printAtMonoChars(0, 3, "Wait to heat ");
-            printed_chars += 13;
+            printed_chars = 13;
             break;
         case WAITING_FOR_PEAK_DETECT:
-            printAtMonoChars(0, 3, "Waiting for peak    ");
-            printed_chars += 16;
+            printAtMonoChars(0, 3, "Waiting for peak");
+            printed_chars = 16;
             break;
         case COOLING:
             printAtMonoChars(0, 3, "Cooling for ");
-            printed_chars += 12;
+            printed_chars = 12;
             break;
         case HEATING:
             printAtMonoChars(0, 3, "Heating for ");
-            printed_chars += 12;
+            printed_chars = 12;
             break;
         case COOLING_MIN_TIME:
             printAtMonoChars(0, 3, "Cool time left ");
-            printed_chars += 15;
+            printed_chars = 15;
             break;
         case HEATING_MIN_TIME:
             printAtMonoChars(0, 3, "Heat time left ");
-            printed_chars += 15;
+            printed_chars = 15;
             break;
         case DOOR_OPEN:
             printAtMonoChars(0, 3, "Door open ");
-            printed_chars += 9;
+            printed_chars = 9;
             break;
         case STATE_OFF:
-            printAtMonoChars(0, 3, "Off                 ");
-            printed_chars += 20;
+            printAtMonoChars(0, 3, "Off");
+            printed_chars = 3;
             break;
         default:
             printAtMonoChars(0, 3, "Unknown status!     ");
-            printed_chars += 20;
+            printed_chars = 20;
             break;
     }
 
@@ -376,9 +346,8 @@ void LcdDisplay::printState(){
 
     // Because of the way we're updating the display, we need to clear out everything to the right of the status
     // string
-    for (uint8_t i = printed_chars; i < 20; ++i) {
-        printAtMonoChars(i+1, 3, " ");
-    }
+    std::string spaces(20 - printed_chars, ' ');
+    printAtMonoChars(printed_chars, 3, spaces.c_str());
 }
 
 
