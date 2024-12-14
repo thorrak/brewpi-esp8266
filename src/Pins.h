@@ -124,7 +124,6 @@
 #define doorPin    A5
 #endif
 
-// TODO - Fix the code for the LCD module
 #define DISP_RS 9
 #define DISP_RW 8
 #define DISP_EN 7

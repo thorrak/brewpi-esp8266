@@ -40,7 +40,6 @@
 #include "Brewpi.h"  // Only needed for Config:: below
 
 
-//TODO - Clean this up
 class ESPEepromAccess
 {
 private:
