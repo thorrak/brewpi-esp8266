@@ -355,7 +355,7 @@
 
 
 
-#define FIRMWARE_REVISION "v16-alpha1"
+#define FIRMWARE_REVISION "v16-alpha2"
 
 #ifdef ESP8266_WiFi
 #define WIFI_SETUP_AP_NAME "BrewPiAP"

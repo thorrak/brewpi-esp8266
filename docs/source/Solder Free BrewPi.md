@@ -18,14 +18,38 @@ Although any ESP32 board can be used, and the screen/case are not mandatory, I f
 
 ### Other Components
 
-* 1-2 x [Kasa Smart Plug](https://www.kasasmart.com/us/products/smart-plugs/kasa-smart-plug-mini-ep10) (Heat/Cool Switches)
-* 1 x [Inkbird IBS-TH2](https://www.amazon.com/Inkbird-Thermometer-Wireless-Bluetooth-Temperature/dp/B08S3CGZ3Q/) (Fridge Temp Sensor)
-* 1 x [Tilt Pro Hydrometer](https://tilthydrometer.com/products/tilt-pro-wireless-hydrometer-and-thermometer) (Beer Temp Sensor)
-* 1 x [Inkbird IBS-TH1 Plus](https://www.amazon.com/Inkbird-Bluetooth-Temperature-Thermometer-Hygrometer/dp/B07DQNFJVL/) (Beer Temp Sensor)
+#### Power Switches
 
-You only need one of the Tilt Pro or Inkbird IBS-TH1 Plus to act as a beer temperature sensor -- The Tilt Pro is inserted directly into your beer and will measure the temperature floating on top, or you can use an Inkbird IBS-TH1 Plus which has a wired temperature sensor that can be snaked into a thermowell. Although regular, non-pro Tilts can be used, I do not recommend them as the thermometer only measures in whole-degree increments.
+For the solder-free build you will need **one or two** TPLink Kasa power switches, depending on if you want cooling support only, or both cooling and heating. 
 
-The EP10 Mini Kasa Smart Plug linked above supports loads up to 15A sustained, which should be sufficient for most heating/cooling setups -- please be sure not to overload the switch.
+* [Kasa Smart Plug EP10](https://www.kasasmart.com/us/products/smart-plugs/kasa-smart-plug-mini-ep10)
+* [Kasa Smart Plug HS103 or HS103P2](https://www.amazon.com/gp/product/B07B8W2KHZ/)
+* [Kasa Smart Outlet KP200](https://www.amazon.com/gp/product/B07N3CK3MM/)
+* [Kasa Smart Power Strip HS300](https://www.amazon.com/Kasa-Smart-Power-Strip-TP-Link/dp/B07G95FFN3/)
+
+There are a number of Kasa plugs that will work, including form factors such as power strips, plug-in dongles, and outlets. You want the traditional WiFi outlets - not the Matter-compatible ones, or the "tapo" ones. 
+
+
+#### Beer Sensors
+
+Although not strictly required, without a beer sensor BrewPi functions similarly to a traditional thermostat. A beer sensor enables the use of the PID algorithm which leverages the fridge sensor to keep your beer within a range as tight as 0.1 F from the setpoint, as well as features like beer profile mode. The beer sensor needs to be able to sense the temperature of your _beer_, either through the use of a thermowell or by floating within it (in the case of the Tilt Hydrometer).
+
+* [Tilt Pro Hydrometer](https://tilthydrometer.com/products/tilt-pro-wireless-hydrometer-and-thermometer)
+* [Inkbird IBS-TH1 Plus](https://www.amazon.com/Inkbird-Bluetooth-Temperature-Thermometer-Hygrometer/dp/B07DQNFJVL/) (Beer and Fridge)
+* [Inkbird IBS-TH2 Plus+T](https://www.amazon.com/Inkbird-Thermometer-Temperature-Humidity-Hygrometer/dp/B08TM67HJH/) (Beer and Fridge)
+
+For the Inkbird IBS-TH1 Plus and IBS-TH2 Plus+T, there are two sensors on the device -- one "ambient" temperature sensor that measures the temperature at the device itself, and a second "probe" sensor. These can simultaneously act as the "beer" and "fridge" sensor if the device is mounted inside the fridge, as the ambient sensor can serve as the "fridge" sensor while the probe sensor serves as the "beer" sensor. If you decide to go this route, you do not need one of the fridge sensors listed below. 
+
+**PLEASE NOTE** - For the IBS-TH1 Plus and IBS-TH2 Plus Inkbird offers a "temperature only" probe which looks like a metal cap at the end of a wire, and a "temperatrue + humidity" probe that looks like a plastic grid at the end of a wire. You need the thinner "temperature only" probe. 
+
+
+#### Fridge Sensors
+
+The "fridge" sensor is required for the operation of a BrewPi device. This sensor measures the air temperature inside the fridge. 
+
+* [Inkbird IBS-TH1 Plus](https://www.amazon.com/Inkbird-Bluetooth-Temperature-Thermometer-Hygrometer/dp/B07DQNFJVL/) (Beer and Fridge)
+* [Inkbird IBS-TH2 Plus+T](https://www.amazon.com/Inkbird-Thermometer-Temperature-Humidity-Hygrometer/dp/B08TM67HJH/) (Beer and Fridge)
+* [Inkbird IBS-TH2](https://www.amazon.com/Inkbird-Thermometer-Wireless-Bluetooth-Temperature/dp/B08S3CGZ3Q/)
 
 
 ## Instructions
@@ -36,10 +60,10 @@ Assembly/setup generally takes 10 minutes or less. To set up your controller, si
 2. Plug the LoLin TFT Screen into the D32 Pro using the LoLin TFT Cable
 3. If using the case, insert the screen/cable into the case, and secure the case lid to the case base using the appropriate screws
 4. Flash the BrewPi-ESP WiFi firmware to your D32 Pro using [these instructions](Installing%20the%20Firmware.md)
-5. Using a phone or other WiFi device, connect to the "BrewPiAP" WiFi network that your controller creates and connect it to your WiFi network
+5. Using a phone or other WiFi device, connect to the "BrewPiAP" WiFi network that your controller creates (password is "brewpiesp") and connect it to your WiFi network
 5. Connect the Kasa Smart Plug to the same WiFi network as your BrewPi by following the instructions included with the switches
 6. Using a phone or other WiFi device connected to the same WiFi network, log into the web interface by typing the IP address displayed in the lower left corner of the BrewPi screen into a web browser
-7. Click "Set Up Sensors/Actuators" and assign the appropriate functions to your Kasa switches, Inkbird temperature sensor, and Tilt hydrometer
-8. Connect your controller to your installation of [Fermentrack](http://www.fermentrack.com/) or [BrewPi Remix](http://www.brewpiremix.com/)
+7. Click "Set Up Sensors/Actuators" and assign the appropriate functions to your sensors and switches
+8. Connect your controller to your installation of [Fermentrack](http://www.fermentrack.com/), [Fermentrack.net](https://www.fermentrack.net/), or [BrewPi Remix](http://www.brewpiremix.com/)
 
 Enjoy your new BrewPi temperature controller!
