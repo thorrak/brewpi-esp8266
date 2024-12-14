@@ -21,7 +21,7 @@ const char *resetDescription[7] = {
     "Wake up from deep-sleep",
     "External system reset"};
 
-#elif ESP32
+#else
 
 const char *resetReason[11] = {
     "ESP_RST_UNKNOWN",    //!< Reset reason can not be determined
