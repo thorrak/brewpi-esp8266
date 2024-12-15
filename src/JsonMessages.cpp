@@ -9,7 +9,7 @@
 
 
 
-void versionInfoJson(DynamicJsonDocument &doc) {
+void versionInfoJson(JsonDocument &doc) {
   // v version
   // s shield type
   // y: simulator
@@ -28,7 +28,7 @@ void versionInfoJson(DynamicJsonDocument &doc) {
 }
 
 
-void getLcdContentJson(DynamicJsonDocument &doc) {
+void getLcdContentJson(JsonDocument &doc) {
   JsonArray rootArray = doc.to<JsonArray>();
   char stringBuffer[Config::Lcd::columns + 2];
 
@@ -39,7 +39,7 @@ void getLcdContentJson(DynamicJsonDocument &doc) {
 }
 
 
-void temp_with_null(DynamicJsonDocument &doc, const char* key, bool sensorConnected, temperature temp, bool withNull) {
+void temp_with_null(JsonDocument &doc, const char* key, bool sensorConnected, temperature temp, bool withNull) {
   if (sensorConnected) {
     doc[key] = tempToDouble(temp, Config::TempFormat::tempDecimals);
   } else {
@@ -49,7 +49,7 @@ void temp_with_null(DynamicJsonDocument &doc, const char* key, bool sensorConnec
   }
 }
 
-void printTemperaturesJson(DynamicJsonDocument &doc, const char *beerAnnotation, const char *fridgeAnnotation, bool withNulls) {
+void printTemperaturesJson(JsonDocument &doc, const char *beerAnnotation, const char *fridgeAnnotation, bool withNulls) {
 
     temp_with_null(doc, "BeerTemp", tempControl.beerSensor->isConnected(), tempControl.getBeerTemp(), withNulls);
     // TODO - fix BeerSet to track if we actually have a setpoint
@@ -82,19 +82,19 @@ void printTemperaturesJson(DynamicJsonDocument &doc, const char *beerAnnotation,
 #endif
 }
 
-void printTemperaturesJson(DynamicJsonDocument &doc, const char *beerAnnotation, const char *fridgeAnnotation) {
+void printTemperaturesJson(JsonDocument &doc, const char *beerAnnotation, const char *fridgeAnnotation) {
    printTemperaturesJson(doc, beerAnnotation, fridgeAnnotation, false);
 }
 
-void printTemperaturesJson(DynamicJsonDocument &doc) {
+void printTemperaturesJson(JsonDocument &doc) {
     printTemperaturesJson(doc, "", "");
 }
 
-void getFullTemperatureControlJson(DynamicJsonDocument &doc) {
-  DynamicJsonDocument cc(256);
-  DynamicJsonDocument cs(256);
-  DynamicJsonDocument cv(256);
-  DynamicJsonDocument temp(1024);
+void getFullTemperatureControlJson(JsonDocument &doc) {
+  JsonDocument cc;
+  JsonDocument cs;
+  JsonDocument cv;
+  JsonDocument temp;
 
   tempControl.getControlConstantsDoc(cc);
   tempControl.getControlSettingsDoc(cs);

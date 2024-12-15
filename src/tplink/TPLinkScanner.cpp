@@ -68,40 +68,29 @@ void TPLinkScanner::process_udp_incoming() {
         // Serial.printf("process_udp_incoming: Received %s from IP address %s\n", incoming_packet.c_str(), udp_ip.toString().c_str());
 
 
-        DynamicJsonDocument json_doc(4096);
+        JsonDocument json_doc;
         deserializeJson(json_doc, incoming_packet);
 
 
-        if(json_doc.containsKey("system") && json_doc["system"].is<JsonObject>() && json_doc["system"].containsKey("get_sysinfo") && json_doc["system"]["get_sysinfo"].is<JsonObject>()) {
+        if(json_doc["system"].is<JsonObject>() && json_doc["system"]["get_sysinfo"].is<JsonObject>()) {
             // This is a response to a scan
-            
-            if(!json_doc["system"]["get_sysinfo"].containsKey("mic_type") && !json_doc["system"]["get_sysinfo"].containsKey("type")) {
-                // Recent TP Link devices have a type rather than a mic_type
+                        
+            // Recent TP Link devices have a type rather than a mic_type
+            if(!(json_doc["system"]["get_sysinfo"]["mic_type"].is<const char *>() || json_doc["system"]["get_sysinfo"]["type"].is<const char *>())) 
                 continue;  // Invalid, unable to process
-            }
-            
-            if((json_doc["system"]["get_sysinfo"].containsKey("mic_type") && !json_doc["system"]["get_sysinfo"]["mic_type"].is<const char *>()) || 
-                (json_doc["system"]["get_sysinfo"].containsKey("type") && !json_doc["system"]["get_sysinfo"]["type"].is<const char *>())) 
-            {
-                // Recent TP Link devices have a type rather than a mic_type
-                continue;  // Invalid, unable to process
-            }
-            
-            
-
-            if(!json_doc["system"]["get_sysinfo"].containsKey("mac") || !json_doc["system"]["get_sysinfo"]["mac"].is<const char *>() ||
-            !json_doc["system"]["get_sysinfo"].containsKey("deviceId") || !json_doc["system"]["get_sysinfo"]["deviceId"].is<const char *>()) {
+                        
+            if(!json_doc["system"]["get_sysinfo"]["mac"].is<const char *>() || !json_doc["system"]["get_sysinfo"]["deviceId"].is<const char *>()) {
                 // Serial.println("Invalid packet - unable to process");
                 // Serial.printf("process_udp_incoming: Received %s from IP address %s\n", incoming_packet.c_str(), udp_ip.toString().c_str());
                 continue;  // Invalid, unable to process
             }
 
-            if((json_doc["system"]["get_sysinfo"].containsKey("mic_type") && json_doc["system"]["get_sysinfo"]["mic_type"] == "IOT.SMARTPLUGSWITCH") ||
-                (json_doc["system"]["get_sysinfo"].containsKey("type") && json_doc["system"]["get_sysinfo"]["type"] == "IOT.SMARTPLUGSWITCH")) 
+            if((json_doc["system"]["get_sysinfo"]["mic_type"].is<const char *>() && json_doc["system"]["get_sysinfo"]["mic_type"] == "IOT.SMARTPLUGSWITCH") ||
+                (json_doc["system"]["get_sysinfo"]["type"].is<const char *>() && json_doc["system"]["get_sysinfo"]["type"] == "IOT.SMARTPLUGSWITCH")) 
             {
                 TPLinkPlug *this_plug;
                 // This is a smart switch - process against the switch list
-                if(!json_doc["system"]["get_sysinfo"].containsKey("child_num")) {
+                if(!json_doc["system"]["get_sysinfo"]["child_num"].is<int>()) {
                     // If we're missing the child_num key, this is a single-plug switch
                     this_plug = get_or_create_tplink_plug(udp_ip, json_doc["system"]["get_sysinfo"]["mac"].as<const char *>(), json_doc["system"]["get_sysinfo"]["deviceId"].as<const char *>(), "", json_doc["system"]["get_sysinfo"]["alias"].as<const char *>());
 
@@ -110,14 +99,14 @@ void TPLinkScanner::process_udp_incoming() {
                     else
                         this_plug->last_read_on = true;
 
-                } else if(json_doc["system"]["get_sysinfo"]["child_num"].is<int>()) {
-                    if (!json_doc["system"]["get_sysinfo"].containsKey("children") || !json_doc["system"]["get_sysinfo"]["children"].is<JsonArray>())
+                } else {
+                    // child_num is present and interpretable
+                    if (!json_doc["system"]["get_sysinfo"]["children"].is<JsonArray>())
                         continue; // Children has to be populated to loop through them
 
                     // Need to loop through the children
                     for(JsonObject plug_doc : json_doc["system"]["get_sysinfo"]["children"].as<JsonArray>()) {
-                        if(!plug_doc.containsKey("id") || !plug_doc["id"].is<const char *>() ||
-                        !plug_doc.containsKey("state") || !plug_doc["state"].is<int>()) {
+                        if(!plug_doc["id"].is<const char *>() || !plug_doc["state"].is<int>()) {
                             continue;  // Invalid, unable to process
                         }
                         this_plug = get_or_create_tplink_plug(udp_ip, json_doc["system"]["get_sysinfo"]["mac"].as<const char *>(), json_doc["system"]["get_sysinfo"]["deviceId"].as<const char *>(), plug_doc["id"].as<const char *>(), plug_doc["alias"].as<const char *>());

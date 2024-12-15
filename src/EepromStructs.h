@@ -22,7 +22,7 @@ typedef uint8_t DeviceAddress[8];
 class JSONSaveable {
 protected:
     static void writeJsonToFile(const char *filename, const JsonDocument& json_doc);
-    static DynamicJsonDocument readJsonFromFile(const char*filename);
+    static JsonDocument readJsonFromFile(const char*filename);
 
 };
 
@@ -60,7 +60,7 @@ public:
     temperature pidMax;
     char tempFormat; //!< Temperature format (F/C)
 
-    void toJson(DynamicJsonDocument &doc);
+    void toJson(JsonDocument &doc);
     void storeToSpiffs();
     void loadFromSpiffs();
     void setDefaults();
@@ -84,7 +84,7 @@ public:
     temperature coolEstimator; // updated automatically by self learning algorithm
     char mode;
 
-    void toJson(DynamicJsonDocument &doc);
+    void toJson(JsonDocument &doc);
     void storeToSpiffs();
     void loadFromSpiffs();
     void setDefaults();
@@ -185,8 +185,8 @@ public:
 		};
 	} hw;
 
-    void toJson(DynamicJsonDocument &doc);
-    void fromJson(DynamicJsonDocument json_doc);
+    void toJson(JsonDocument &doc);
+    void fromJson(JsonDocument json_doc);
     void storeToSpiffs(uint8_t devID);
     void loadFromSpiffs(uint8_t devID);
     void setDefaults();
@@ -213,7 +213,7 @@ public:
     #endif
 
 
-    void toJson(DynamicJsonDocument &doc);
+    void toJson(JsonDocument &doc);
     void storeToSpiffs();
     void loadFromSpiffs();
     void setDefaults();
@@ -259,7 +259,7 @@ public:
 
     upstreamRegErrorT upstreamRegistrationError;  //<! Error code from last upstream registration attempt
 
-    void toJson(DynamicJsonDocument &doc);
+    void toJson(JsonDocument &doc);
     void storeToSpiffs();
     void loadFromSpiffs();
     void setDefaults();

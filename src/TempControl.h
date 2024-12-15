@@ -82,7 +82,7 @@ public:
     uint16_t COOL_PEAK_DETECT_TIME;  //! Time allowed for cooling peak detection
     uint16_t HEAT_PEAK_DETECT_TIME;  //! Time allowed for heating peak detection
 
-	void toJson(DynamicJsonDocument &doc);
+	void toJson(JsonDocument &doc);
     void storeToSpiffs();
     void loadFromSpiffs();
     void setDefaults();
@@ -290,9 +290,9 @@ public:
 		return isDoorOpen() ? DOOR_OPEN : getState();
 	}
 
-  TEMP_CONTROL_METHOD void getControlVariablesDoc(DynamicJsonDocument& doc);
-  TEMP_CONTROL_METHOD void getControlConstantsDoc(DynamicJsonDocument& doc);
-  TEMP_CONTROL_METHOD void getControlSettingsDoc(DynamicJsonDocument& doc);
+  TEMP_CONTROL_METHOD void getControlVariablesDoc(JsonDocument& doc);
+  TEMP_CONTROL_METHOD void getControlConstantsDoc(JsonDocument& doc);
+  TEMP_CONTROL_METHOD void getControlSettingsDoc(JsonDocument& doc);
 
 private:
 	TEMP_CONTROL_METHOD void increaseEstimator(temperature * estimator, temperature error);

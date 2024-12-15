@@ -178,7 +178,7 @@ bool restHandler::process_updated_settings() {
     Serial.printf("Response: %s\r\n", response.c_str());
 
     {
-        DynamicJsonDocument doc(2048*4);
+        JsonDocument doc;
         DeserializationError error = deserializeJson(doc, response);
 
         if(error) {
@@ -186,13 +186,13 @@ bool restHandler::process_updated_settings() {
             return false;
         }
 
-        if((doc.containsKey("success") && doc["success"].as<bool>() == false) || !doc.containsKey("config")) {
+        if((doc["success"].is<bool>() && doc["success"].as<bool>() == false) || !doc["config"].is<JsonObject>()) {
             Serial.print(F("Error retrieving full config: "));
             Serial.println(doc["message"].as<String>());
             return false;
         }
 
-        if(doc["config"].containsKey("cs") && messages.updated_cs) {
+        if(doc["config"]["cs"].is<JsonObject>() && messages.updated_cs) {
             Serial.println("Updating control settings");
             JsonObject root = doc["config"]["cs"].as<JsonObject>();
             load_settings_from_doc(root);
@@ -200,7 +200,7 @@ bool restHandler::process_updated_settings() {
             set_message_processed(RestMessagesKeys::updated_cs);
         }
 
-        if(doc["config"].containsKey("cc") && messages.updated_cc) {
+        if(doc["config"]["cc"].is<JsonObject>() && messages.updated_cc) {
             Serial.println("Updating control constants");
             JsonObject root = doc["config"]["cc"].as<JsonObject>();
             load_settings_from_doc(root);
@@ -208,7 +208,7 @@ bool restHandler::process_updated_settings() {
             set_message_processed(RestMessagesKeys::updated_cc);
         }
 
-        if(doc["config"].containsKey("devices") && messages.updated_devices) {
+        if(doc["config"]["devices"].is<JsonArray>() && messages.updated_devices) {
             Serial.println("Updating devices");
             JsonArray root = doc["config"]["devices"].as<JsonArray>();
             load_devices_from_array(root);
@@ -216,7 +216,7 @@ bool restHandler::process_updated_settings() {
             set_message_processed(RestMessagesKeys::updated_devices);
         }
 
-        if(doc["config"].containsKey("mt") && messages.updated_mt) {
+        if(doc["config"]["mt"].is<JsonArray>() && messages.updated_mt) {
             Serial.println("Updating minimum times");
             // TODO - Write this
             // JsonObject root = doc["config"]["cc"].as<JsonObject>();
@@ -239,10 +239,10 @@ bool restHandler::process_updated_settings() {
 
 void restHandler::load_devices_from_array(JsonArray &root) {
     // Process
-    for (DynamicJsonDocument kv : root) {
+    for (JsonDocument kv : root) {
         Serial.println("Processing device");
         DeviceDefinition dev;
-        // DynamicJsonDocument doc(512);
+        // JsonDocument doc;
 
         // piLink.receiveJsonMessage(doc);                                   // Read the JSON off the line from the Pi
         dev = DeviceManager::readJsonIntoDeviceDef(kv);                  // Parse the JSON into a DeviceDefinition object

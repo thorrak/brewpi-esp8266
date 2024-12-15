@@ -229,7 +229,7 @@ void HandleSimulatorConfig(const char* key, const char* val, void* pv)
  */
 void Simulator::printSettings()
 {
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
 
   doc[SimulatorRoomTempMin] = simulator.getMinRoomTemp();
 	doc[SimulatorRoomTempMax] = simulator.getMaxRoomTemp();

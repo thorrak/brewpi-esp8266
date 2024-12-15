@@ -745,7 +745,7 @@ bool TempControl::stateIsHeating(){
  *
  * \param doc - Reference to JsonDocument to populate
  */
-void TempControl::getControlVariablesDoc(DynamicJsonDocument& doc) {
+void TempControl::getControlVariablesDoc(JsonDocument& doc) {
   doc["beerDiff"] = tempDiffToDouble(cv.beerDiff, Config::TempFormat::tempDiffDecimals);
   doc["diffIntegral"] = tempDiffToDouble(cv.diffIntegral, Config::TempFormat::tempDiffDecimals);
   doc["beerSlope"] = tempDiffToDouble(cv.beerSlope, Config::TempFormat::tempDiffDecimals);
@@ -766,7 +766,7 @@ void TempControl::getControlVariablesDoc(DynamicJsonDocument& doc) {
  *
  * \param doc - Reference to JsonDocument to populate
  */
-void TempControl::getControlConstantsDoc(DynamicJsonDocument& doc) {
+void TempControl::getControlConstantsDoc(JsonDocument& doc) {
   doc["tempFormat"] = String(cc.tempFormat);
 
   doc["tempSetMin"] = tempToDouble(cc.tempSettingMin, Config::TempFormat::tempDecimals);
@@ -801,7 +801,7 @@ void TempControl::getControlConstantsDoc(DynamicJsonDocument& doc) {
  *
  * \param doc - Reference to JsonDocument to populate
  */
-void TempControl::getControlSettingsDoc(DynamicJsonDocument& doc) {
+void TempControl::getControlSettingsDoc(JsonDocument& doc) {
   doc["mode"] = String(cs.mode);
   doc["beerSet"] = tempToDouble(cs.beerSetting, Config::TempFormat::tempDecimals);
   doc["fridgeSet"] = tempToDouble(cs.fridgeSetting, Config::TempFormat::tempDecimals);
@@ -857,7 +857,7 @@ uint16_t TempControl::getMinHeatOnTime() {
  * \brief Store min times to the filesystem
  */
 void MinTimes::storeToSpiffs() {
-    DynamicJsonDocument doc(512);
+    JsonDocument doc;
 
     toJson(doc);
 
@@ -868,22 +868,22 @@ void MinTimes::loadFromSpiffs() {
     // We start by setting the defaults, as we use them as the alternative to loaded values if the keys don't exist
     setDefaults();
 
-    DynamicJsonDocument json_doc(2048);
+    JsonDocument json_doc;
     json_doc = readJsonFromFile(MinTimes::filename);
 
 	// Load the settings "default" choice from the JSON doc
-	if(json_doc.containsKey(MinTimesKeys::SETTINGS_CHOICE)) settings_choice = json_doc[MinTimesKeys::SETTINGS_CHOICE];
+	if(json_doc[MinTimesKeys::SETTINGS_CHOICE].is<MinTimesSettingsChoice>()) settings_choice = json_doc[MinTimesKeys::SETTINGS_CHOICE];
 
     // Load the constants from the JSON Doc
-    if(json_doc.containsKey(MinTimesKeys::MIN_COOL_OFF_TIME)) MIN_COOL_OFF_TIME = json_doc[MinTimesKeys::MIN_COOL_OFF_TIME];
-    if(json_doc.containsKey(MinTimesKeys::MIN_HEAT_OFF_TIME)) MIN_HEAT_OFF_TIME = json_doc[MinTimesKeys::MIN_HEAT_OFF_TIME];
-	if(json_doc.containsKey(MinTimesKeys::MIN_COOL_ON_TIME)) MIN_COOL_ON_TIME = json_doc[MinTimesKeys::MIN_COOL_ON_TIME];
-	if(json_doc.containsKey(MinTimesKeys::MIN_HEAT_ON_TIME)) MIN_HEAT_ON_TIME = json_doc[MinTimesKeys::MIN_HEAT_ON_TIME];
+    if(json_doc[MinTimesKeys::MIN_COOL_OFF_TIME].is<uint16_t>()) MIN_COOL_OFF_TIME = json_doc[MinTimesKeys::MIN_COOL_OFF_TIME];
+    if(json_doc[MinTimesKeys::MIN_HEAT_OFF_TIME].is<uint16_t>()) MIN_HEAT_OFF_TIME = json_doc[MinTimesKeys::MIN_HEAT_OFF_TIME];
+	if(json_doc[MinTimesKeys::MIN_COOL_ON_TIME].is<uint16_t>()) MIN_COOL_ON_TIME = json_doc[MinTimesKeys::MIN_COOL_ON_TIME];
+	if(json_doc[MinTimesKeys::MIN_HEAT_ON_TIME].is<uint16_t>()) MIN_HEAT_ON_TIME = json_doc[MinTimesKeys::MIN_HEAT_ON_TIME];
 	
-	if(json_doc.containsKey(MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT)) MIN_COOL_OFF_TIME_FRIDGE_CONSTANT = json_doc[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT];
-	if(json_doc.containsKey(MinTimesKeys::MIN_SWITCH_TIME)) MIN_SWITCH_TIME = json_doc[MinTimesKeys::MIN_SWITCH_TIME];
-	if(json_doc.containsKey(MinTimesKeys::COOL_PEAK_DETECT_TIME)) COOL_PEAK_DETECT_TIME = json_doc[MinTimesKeys::COOL_PEAK_DETECT_TIME];
-	if(json_doc.containsKey(MinTimesKeys::HEAT_PEAK_DETECT_TIME)) HEAT_PEAK_DETECT_TIME = json_doc[MinTimesKeys::HEAT_PEAK_DETECT_TIME];
+	if(json_doc[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT].is<uint16_t>()) MIN_COOL_OFF_TIME_FRIDGE_CONSTANT = json_doc[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT];
+	if(json_doc[MinTimesKeys::MIN_SWITCH_TIME].is<uint16_t>()) MIN_SWITCH_TIME = json_doc[MinTimesKeys::MIN_SWITCH_TIME];
+	if(json_doc[MinTimesKeys::COOL_PEAK_DETECT_TIME].is<uint16_t>()) COOL_PEAK_DETECT_TIME = json_doc[MinTimesKeys::COOL_PEAK_DETECT_TIME];
+	if(json_doc[MinTimesKeys::HEAT_PEAK_DETECT_TIME].is<uint16_t>()) HEAT_PEAK_DETECT_TIME = json_doc[MinTimesKeys::HEAT_PEAK_DETECT_TIME];
 }
 
 
@@ -891,7 +891,7 @@ void MinTimes::loadFromSpiffs() {
 /**
  * \brief Serialize min times to JSON
  */
-void MinTimes::toJson(DynamicJsonDocument &doc) {
+void MinTimes::toJson(JsonDocument &doc) {
     // Load the constants into the JSON Doc
 	doc[MinTimesKeys::SETTINGS_CHOICE] = settings_choice;
 

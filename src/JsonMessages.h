@@ -2,10 +2,10 @@
 
 
 
-void versionInfoJson(DynamicJsonDocument &doc);
-void getLcdContentJson(DynamicJsonDocument &doc);
-void printTemperaturesJson(DynamicJsonDocument &doc, const char *beerAnnotation, const char *fridgeAnnotation);
-void printTemperaturesJson(DynamicJsonDocument &doc, const char *beerAnnotation, const char *fridgeAnnotation, bool withNulls);
-void printTemperaturesJson(DynamicJsonDocument &doc);
-void getFullTemperatureControlJson(DynamicJsonDocument &doc);
+void versionInfoJson(JsonDocument &doc);
+void getLcdContentJson(JsonDocument &doc);
+void printTemperaturesJson(JsonDocument &doc, const char *beerAnnotation, const char *fridgeAnnotation);
+void printTemperaturesJson(JsonDocument &doc, const char *beerAnnotation, const char *fridgeAnnotation, bool withNulls);
+void printTemperaturesJson(JsonDocument &doc);
+void getFullTemperatureControlJson(JsonDocument &doc);
 
