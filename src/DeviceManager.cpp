@@ -372,7 +372,7 @@ void DeviceManager::installDevice(DeviceConfig& config)
  * \param doc - JSON document containing DeviceDefinition parameters
  * @return populated DeviceDefinition
  */
-DeviceDefinition DeviceManager::readJsonIntoDeviceDef(const DynamicJsonDocument& doc) {
+DeviceDefinition DeviceManager::readJsonIntoDeviceDef(const JsonDocument& doc) {
 	DeviceDefinition dev;
 
 	if(doc[DeviceDefinitionKeys::hardware].is<uint8_t>()) {
@@ -403,43 +403,37 @@ DeviceDefinition DeviceManager::readJsonIntoDeviceDef(const DynamicJsonDocument&
 	  }
   }
 
-	if(doc.containsKey(DeviceDefinitionKeys::calibrateadjust)) {
+	if(doc[DeviceDefinitionKeys::calibrateadjust].is<double>()) {
 		temperature tempDiff = 0;
-		if(doc[DeviceDefinitionKeys::calibrateadjust].is<double>()) {
-			char buff[10];
-			dtostrf(doc[DeviceDefinitionKeys::calibrateadjust].as<double>(), 4, 6, buff);
-			tempDiff = stringToTempDiff(buff);
-		} else if(doc[DeviceDefinitionKeys::calibrateadjust].is<const char *>())
-			tempDiff = stringToTempDiff(doc[DeviceDefinitionKeys::calibrateadjust].as<const char *>());
+		char buff[10];
+		dtostrf(doc[DeviceDefinitionKeys::calibrateadjust].as<double>(), 4, 6, buff);
+		tempDiff = stringToTempDiff(buff);
+		dev.calibrationAdjust = fixed4_4(tempDiff >> (TEMP_FIXED_POINT_BITS - TEMP_CALIBRATION_OFFSET_PRECISION));
+	} else if(doc[DeviceDefinitionKeys::calibrateadjust].is<const char *>()) {
+		temperature tempDiff = stringToTempDiff(doc[DeviceDefinitionKeys::calibrateadjust].as<const char *>());
 		dev.calibrationAdjust = fixed4_4(tempDiff >> (TEMP_FIXED_POINT_BITS - TEMP_CALIBRATION_OFFSET_PRECISION));
 	}
 
 	// dev.id defaults to -1, so if this fails, the device won't get processed by deviceManager.updateDeviceDefinition
-	if(doc.containsKey(DeviceDefinitionKeys::index) && doc[DeviceDefinitionKeys::index].is<uint8_t>())
-		dev.id = doc[DeviceDefinitionKeys::index].as<uint8_t>();
+	if(doc[DeviceDefinitionKeys::index].is<uint8_t>()) dev.id = doc[DeviceDefinitionKeys::index].as<uint8_t>();
 
-	if(doc.containsKey(DeviceDefinitionKeys::chamber) && doc[DeviceDefinitionKeys::chamber].is<uint8_t>())
-		dev.chamber = doc[DeviceDefinitionKeys::chamber].as<uint8_t>();
+	if(doc[DeviceDefinitionKeys::chamber].is<uint8_t>()) dev.chamber = doc[DeviceDefinitionKeys::chamber].as<uint8_t>();
 
-	if(doc.containsKey(DeviceDefinitionKeys::beer) && doc[DeviceDefinitionKeys::beer].is<uint8_t>())
-		dev.beer = doc[DeviceDefinitionKeys::beer].as<uint8_t>();
+	if(doc[DeviceDefinitionKeys::beer].is<uint8_t>()) dev.beer = doc[DeviceDefinitionKeys::beer].as<uint8_t>();
 
-	if(doc.containsKey(DeviceDefinitionKeys::function) && doc[DeviceDefinitionKeys::function].is<uint8_t>())
-		dev.deviceFunction = doc[DeviceDefinitionKeys::function].as<uint8_t>();
+	if(doc[DeviceDefinitionKeys::function].is<uint8_t>()) dev.deviceFunction = doc[DeviceDefinitionKeys::function].as<uint8_t>();
 
 	dev.deactivate = false;
 
-	if(doc.containsKey(DeviceDefinitionKeys::pin) && doc[DeviceDefinitionKeys::pin].is<uint8_t>())
+	if(doc[DeviceDefinitionKeys::pin].is<uint8_t>())
 		dev.pinNr = doc[DeviceDefinitionKeys::pin].as<uint8_t>();
 
-	if(doc.containsKey(DeviceDefinitionKeys::invert)) {
-		if(doc[DeviceDefinitionKeys::invert].is<bool>())
-			dev.invert = doc[DeviceDefinitionKeys::invert].as<bool>() ? 1 : 0;
-		else if(doc[DeviceDefinitionKeys::invert].is<const char *>())
-			dev.invert = doc[DeviceDefinitionKeys::invert].as<const char*>()[0] == '1' ? 1 : 0;
-		else if (doc[DeviceDefinitionKeys::invert].is<uint8_t>())
-			dev.invert = doc[DeviceDefinitionKeys::invert].as<uint8_t>();
-	} 
+	if(doc[DeviceDefinitionKeys::invert].is<bool>())
+		dev.invert = doc[DeviceDefinitionKeys::invert].as<bool>() ? 1 : 0;
+	else if(doc[DeviceDefinitionKeys::invert].is<const char *>())
+		dev.invert = doc[DeviceDefinitionKeys::invert].as<const char*>()[0] == '1' ? 1 : 0;
+	else if (doc[DeviceDefinitionKeys::invert].is<uint8_t>())
+		dev.invert = doc[DeviceDefinitionKeys::invert].as<uint8_t>();
 
   return dev;
 }
@@ -704,7 +698,7 @@ inline bool hasOnewire(DeviceHardware hw)
  * Used for outputting device information
  */
 void DeviceManager::serializeJsonDevice(JsonDocument& doc, device_slot_t slot, DeviceConfig& config, const char* value) {
-	DynamicJsonDocument deviceObj(1024);
+	JsonDocument deviceObj;
 	config.toJson(deviceObj);
 
 	if(strlen(value) > 0)
@@ -1044,7 +1038,7 @@ void DeviceManager::enumerateTplinkDevices(EnumerateHardware& h, EnumDevicesCall
 /**
  * \brief Output devices matching hardware spec passed in
  */
-void DeviceManager::enumerateHardware(DynamicJsonDocument& doc, EnumerateHardware spec)
+void DeviceManager::enumerateHardware(JsonDocument& doc, EnumerateHardware spec)
 {
 
 	// Initialize the document as an array
@@ -1076,7 +1070,7 @@ void DeviceManager::enumerateHardware(DynamicJsonDocument& doc, EnumerateHardwar
 /**
  * \brief Output devices matching default hardware spec (all devices, no values)
  */
-void DeviceManager::enumerateHardware(DynamicJsonDocument& doc)
+void DeviceManager::enumerateHardware(JsonDocument& doc)
 {
 	EnumerateHardware spec;
 	enumerateHardware(doc, spec);
@@ -1086,7 +1080,7 @@ void DeviceManager::enumerateHardware(DynamicJsonDocument& doc)
  * \brief Parse JSON into a DeviceDisplay struct
  */
 void DeviceManager::readJsonIntoDeviceDisplay(DeviceDisplay& dev) {
-  StaticJsonDocument<128> doc;
+  JsonDocument doc;
   piLink.receiveJsonMessage(doc);
 
   JsonVariant id = doc[DeviceDisplayKeys::index];
@@ -1111,7 +1105,7 @@ void DeviceManager::readJsonIntoDeviceDisplay(DeviceDisplay& dev) {
  * \brief Parse JSON into an EnumerateHardware struct
  */
 void DeviceManager::readJsonIntoHardwareSpec(EnumerateHardware& hw) {
-  StaticJsonDocument<128> doc;
+  JsonDocument doc;
   piLink.receiveJsonMessage(doc);
 
   JsonVariant hardware = doc[EnumerateHardwareKeys::hardware];
@@ -1234,7 +1228,7 @@ void DeviceManager::outputRawDeviceValue(DeviceConfig* config, void* pv, JsonDoc
 
     String humanName = DeviceNameManager::getDeviceName(devName);
 
-    JsonObject deviceObj = doc->createNestedObject();
+    JsonObject deviceObj = doc->add<JsonObject>();
     deviceObj["device"] = devName;
     deviceObj["value"] = str_temp;
     deviceObj["name"] = humanName;
@@ -1254,7 +1248,7 @@ void DeviceManager::outputRawDeviceValue(DeviceConfig* config, void* pv, JsonDoc
     // Pretty-print the address
     String humanName = DeviceNameManager::getDeviceName(config->hw.btAddress.toString().c_str());
 
-    JsonObject deviceObj = doc->createNestedObject();
+    JsonObject deviceObj = doc->add<JsonObject>();
     deviceObj["device"] = config->hw.btAddress.toString();
     deviceObj["value"] = str_temp;
     deviceObj["name"] = humanName;

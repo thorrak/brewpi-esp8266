@@ -162,7 +162,7 @@ void PromServer::invalidateCache() {
  */
 String PromServer::probeValues() {
   if (ticks.timeSince(dataLastUpdate) > PromServer::cacheTime) {
-    DynamicJsonDocument doc(1024);
+    JsonDocument doc;
     deviceManager.rawDeviceValues(doc);
 
     JsonArray root = doc.as<JsonArray>();

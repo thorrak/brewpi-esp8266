@@ -7,6 +7,7 @@
 #include <FS.h>  // Apparently this needs to be first
 #endif
 
+#include <ArduinoLog.h>
 #include "Brewpi.h"
 
 #include <Wire.h>
@@ -96,6 +97,21 @@ void handleReset()
     ESP.restart();
 }
 
+// For ArduinoLog support
+void printTimestamp(Print *_logOutput)
+{
+    char c[12];
+    sprintf(c, "%10lu ", millis());
+    _logOutput->print(c);
+    Serial.flush();
+}
+
+void printPrefix(Print* _logOutput, int logLevel) {
+    printTimestamp(_logOutput);
+//    printLogLevel (_logOutput, logLevel);
+}
+
+
 /**
  * \brief Startup configuration
  *
@@ -108,14 +124,26 @@ void setup()
 {
 #ifdef ESP8266_WiFi
     Serial.begin(Config::PiLink::serialSpeed);
+
+#ifndef DISABLE_LOGGING
+    Serial.setDebugOutput(true);
+    Serial.println();
+    Serial.flush();
+    Log.begin(ARDUINO_LOG_LEVEL, &Serial, true);
+    Log.setPrefix(printPrefix);
+    Log.notice(F("Serial logging started at %l.\r\n"), Config::PiLink::serialSpeed);
+#endif
+
 #endif
 
 
     // Before anything else, let's get the filesystem working. We need to start it up, and then test if the file system
     // was formatted.
-  #ifdef ESP32
+  #ifndef ESP8266
+    // For ESP32
     FILESYSTEM.begin(true);
   #else
+    // for ESP8266
     FILESYSTEM.begin();
   #endif
 

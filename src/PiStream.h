@@ -230,7 +230,7 @@ public:
    */
   void sendSingleItemJsonMessage(const char prefix, JsonDocument &doc) {
     // Pull the device object from the document array and promote it to be root
-    DynamicJsonDocument shallowDoc(doc.capacity());
+    JsonDocument shallowDoc;
 
     for (auto kvp : doc.as<JsonArray>()[0].as<JsonObject>()) {
       shallowDoc[kvp.key()] = kvp.value();

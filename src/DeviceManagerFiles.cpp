@@ -15,7 +15,7 @@
 #endif
 
 
-void DeviceConfig::toJson(DynamicJsonDocument &doc) {
+void DeviceConfig::toJson(JsonDocument &doc) {
     // Load the settings into the JSON Doc
     doc[DeviceDefinitionKeys::chamber] = chamber;
     doc[DeviceDefinitionKeys::beer] = beer;
@@ -81,7 +81,7 @@ void DeviceConfig::toJson(DynamicJsonDocument &doc) {
 }
 
 
-void DeviceConfig::fromJson(DynamicJsonDocument json_doc) {
+void DeviceConfig::fromJson(JsonDocument json_doc) {
 
     // Load the settings from the JSON Doc
     if(json_doc[DeviceDefinitionKeys::chamber].is<uint8_t>()) chamber = json_doc[DeviceDefinitionKeys::chamber];
@@ -113,12 +113,9 @@ void DeviceConfig::fromJson(DynamicJsonDocument json_doc) {
 		snprintf(hw.tplink_mac, 18, "%s", json_doc[DeviceDefinitionKeys::address].as<const char *>());
 		snprintf(hw.tplink_child_id, 3, "%s", json_doc[DeviceDefinitionKeys::child_id].as<const char *>());
 #endif
-    } else if(json_doc.containsKey(DeviceDefinitionKeys::address)) {
-        piLink.print("Contains unhandled address!!");
-        piLink.printNewLine();
     }
 
-	if (json_doc.containsKey(DeviceDefinitionKeys::calibrateadjust) && json_doc[DeviceDefinitionKeys::calibrateadjust].is<const char *>()) {
+	if (json_doc[DeviceDefinitionKeys::calibrateadjust].is<const char *>()) {
         hw.calibration = fixed4_4(stringToTempDiff(json_doc[DeviceDefinitionKeys::calibrateadjust].as<const char *>()) >> (TEMP_FIXED_POINT_BITS - TEMP_CALIBRATION_OFFSET_PRECISION));
 	}
 
@@ -140,7 +137,7 @@ void DeviceConfig::deviceFilename(char * fname, uint8_t devid) {
 
 
 void DeviceConfig::storeToSpiffs(uint8_t devID) {
-    DynamicJsonDocument doc(2048);
+    JsonDocument doc;
     char fname[32];
     deviceFilename(fname, devID);
 
@@ -158,7 +155,7 @@ void DeviceConfig::loadFromSpiffs(uint8_t devID) {
     setDefaults();
 
     if(FILESYSTEM.exists(fname)) {
-        DynamicJsonDocument json_doc = readJsonFromFile(fname);
+        JsonDocument json_doc = readJsonFromFile(fname);
         fromJson(json_doc);
     }
 }

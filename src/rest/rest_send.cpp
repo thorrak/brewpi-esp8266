@@ -83,8 +83,7 @@ sendResult restHandler::send_json_str(String &payload, const char *url, String &
 
     // snprintf(auth_header, sizeof(auth_header), "token %s", config.secret);
    
-    // Log.verbose(F("send_json_str: Sending %s to %s\r\n"), payload.c_str(), url);
-    Serial.printf("send_json_str: Sending %s to %s\r\n", payload.c_str(), url);
+    Log.info(F("send_json_str: Sending %s to %s\r\n"), payload.c_str(), url);
 
     yield();  // Yield before we lock up the radio
 
@@ -124,16 +123,14 @@ sendResult restHandler::send_json_str(String &payload, const char *url, String &
                     //     http.getString().c_str());
                     result = sendResult::failure;
                 } else {
-                    Serial.print(F("send_json_str: success!\r\n"));
-                    // Log.verbose(F("send_json_str: success!\r\n"));
+                    Log.info(F("send_json_str: success!\r\n"));
                     // Log.verbose(F("send_json_str: Response:\r\n%s\r\n"),
                     //     http.getString().c_str());
                     result = sendResult::success;
                 }
                 http.end();
             } else {
-                Serial.print(F("send_json_str: Unable to create connection\r\n"));
-                // Log.error(F("send_json_str: Unable to create connection\r\n"));
+                Log.error(F("send_json_str: Unable to create connection\r\n"));
                 result = sendResult::failure;
             }
         }
@@ -188,7 +185,7 @@ bool restHandler::get_url(char *url, size_t size, const char *path, const char *
 bool restHandler::send_bluetooth_crash_report() {
     String payload;
     {
-        DynamicJsonDocument doc(1024);
+        JsonDocument doc;
         const char *url;
         char guid[20];
 
@@ -234,18 +231,13 @@ bool restHandler::send_full_config() {
         return false;  // Skip send if the URL is not set
 
     {
-#if !defined(HAS_BLUETOOTH) && !defined(EXTERN_SENSOR_ACTUATOR_SUPPORT)
-        DynamicJsonDocument doc(8192);
-        DynamicJsonDocument devices(2048);
-#else
-        DynamicJsonDocument doc(8192*2);
-        DynamicJsonDocument devices(8192);
-#endif
-        DynamicJsonDocument cs(256);
-        DynamicJsonDocument cc(1024);
-        DynamicJsonDocument cv(1024);
-        DynamicJsonDocument es(256);
-        DynamicJsonDocument mt(1024);
+        JsonDocument doc;
+        JsonDocument devices;
+        JsonDocument cs;
+        JsonDocument cc;
+        JsonDocument cv;
+        JsonDocument es;
+        JsonDocument mt;
 
         tempControl.getControlSettingsDoc(cs);
         tempControl.getControlConstantsDoc(cc);
@@ -319,7 +311,7 @@ bool restHandler::register_device() {
         return false;   // Skip send if the URL is not set
 
     {
-        DynamicJsonDocument doc(1024);
+        JsonDocument doc;
 
         char guid[20];
         getGuid(guid);
@@ -343,7 +335,7 @@ bool restHandler::register_device() {
     send_json_str(payload, url, response, httpMethod::HTTP_PUT);
 
     {
-        DynamicJsonDocument doc(1024);
+        JsonDocument doc;
         deserializeJson(doc, response);
 
 
@@ -352,7 +344,7 @@ bool restHandler::register_device() {
         // 'msg_code': 0, 
         // 'device_id': device.id, 
         // 'created': created}
-        if(doc.containsKey("success") && doc["success"].as<bool>()) {
+        if(doc["success"].is<bool>() && doc["success"].as<bool>()) {
             bool success = doc["success"].as<bool>();
 
             if(success) {
@@ -405,9 +397,9 @@ bool restHandler::send_status() {
         return false;
 
     {
-        DynamicJsonDocument doc(1536);
-        DynamicJsonDocument lcd(512);
-        DynamicJsonDocument temps(512);
+        JsonDocument doc;
+        JsonDocument lcd;
+        JsonDocument temps;
 
         getLcdContentJson(lcd);
         printTemperaturesJson(temps, "", "", true);
@@ -434,17 +426,17 @@ bool restHandler::send_status() {
 
     // Check if we have any messages pending on the server, and set the flag if so
     {
-        DynamicJsonDocument doc(1024);
+        JsonDocument doc;
         deserializeJson(doc, response);
 
-        if(doc.containsKey("has_messages") && doc["has_messages"].as<bool>()) {
+        if(doc["has_messages"].is<bool>() && doc["has_messages"].as<bool>()) {
             bool has_messages = doc["has_messages"].as<bool>();
 
             if(has_messages)
                 messages_pending_on_server = true;
         }
 
-        if(doc.containsKey("updated_mode") && doc["updated_mode"].as<const char *>()) {
+        if(doc["updated_mode"].is<const char *>()) {
             char updated_mode = doc["updated_mode"].as<const char *>()[0];
 
             if (updated_mode == Modes::fridgeConstant || updated_mode == Modes::beerConstant || updated_mode == Modes::beerProfile ||
@@ -460,7 +452,7 @@ bool restHandler::send_status() {
             }
         }
 
-        if(doc.containsKey("updated_setpoint") && doc["updated_setpoint"].as<const char *>()) {
+        if(doc["updated_setpoint"].is<const char *>()) {
             switch(tempControl.cs.mode) {
                 case Modes::fridgeConstant:
                     SettingLoader::setFridgeSetting(doc["updated_setpoint"].as<const char *>());
@@ -476,7 +468,6 @@ bool restHandler::send_status() {
                     break;
             }
         }
-
 
     }
 
@@ -502,7 +493,7 @@ bool restHandler::get_messages(bool override=false) {
         return false;
 
     // {
-    //     DynamicJsonDocument doc(512);
+    //     JsonDocument doc;
 
     //     doc[UpstreamSettingsKeys::deviceID] = upstreamSettings.deviceID;
     //     doc[UpstreamSettingsKeys::apiKey] = upstreamSettings.apiKey;
@@ -515,32 +506,32 @@ bool restHandler::get_messages(bool override=false) {
 
     // Parse any messages that are on the server
     {
-        DynamicJsonDocument doc(1024);
+        JsonDocument doc;
         deserializeJson(doc, response);
 
         // Process any flags on the server
-        if(doc.containsKey(RestMessagesKeys::messages)) {
-            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::updated_cs) && doc[RestMessagesKeys::messages][RestMessagesKeys::updated_cs].as<bool>())
+        if(doc[RestMessagesKeys::messages].is<JsonObject>()) {
+            if(doc[RestMessagesKeys::messages][RestMessagesKeys::updated_cs].is<bool>())
                 messages.updated_cs = doc[RestMessagesKeys::messages][RestMessagesKeys::updated_cs].as<bool>();
-            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::updated_cc) && doc[RestMessagesKeys::messages][RestMessagesKeys::updated_cc].as<bool>())
+            if(doc[RestMessagesKeys::messages][RestMessagesKeys::updated_cc].is<bool>())
                 messages.updated_cc = doc[RestMessagesKeys::messages][RestMessagesKeys::updated_cc].as<bool>();
-            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::updated_mt) && doc[RestMessagesKeys::messages][RestMessagesKeys::updated_mt].as<bool>())
+            if(doc[RestMessagesKeys::messages][RestMessagesKeys::updated_mt].is<bool>())
                 messages.updated_mt = doc[RestMessagesKeys::messages][RestMessagesKeys::updated_mt].as<bool>();
-            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::updated_es) && doc[RestMessagesKeys::messages][RestMessagesKeys::updated_es].as<bool>())
+            if(doc[RestMessagesKeys::messages][RestMessagesKeys::updated_es].is<bool>())
                 messages.updated_es = doc[RestMessagesKeys::messages][RestMessagesKeys::updated_es].as<bool>();
-            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::updated_devices) && doc[RestMessagesKeys::messages][RestMessagesKeys::updated_devices].as<bool>())
+            if(doc[RestMessagesKeys::messages][RestMessagesKeys::updated_devices].is<bool>())
                 messages.updated_devices = doc[RestMessagesKeys::messages][RestMessagesKeys::updated_devices].as<bool>();
-            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::default_cc) && doc[RestMessagesKeys::messages][RestMessagesKeys::default_cc].as<bool>())
+            if(doc[RestMessagesKeys::messages][RestMessagesKeys::default_cc].is<bool>())
                 messages.default_cc = doc[RestMessagesKeys::messages][RestMessagesKeys::default_cc].as<bool>();
-            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::default_cs) && doc[RestMessagesKeys::messages][RestMessagesKeys::default_cs].as<bool>())
+            if(doc[RestMessagesKeys::messages][RestMessagesKeys::default_cs].is<bool>())
                 messages.default_cs = doc[RestMessagesKeys::messages][RestMessagesKeys::default_cs].as<bool>();
-            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::reset_eeprom) && doc[RestMessagesKeys::messages][RestMessagesKeys::reset_eeprom].as<bool>())
+            if(doc[RestMessagesKeys::messages][RestMessagesKeys::reset_eeprom].is<bool>())
                 messages.reset_eeprom = doc[RestMessagesKeys::messages][RestMessagesKeys::reset_eeprom].as<bool>();
-            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::reset_connection) && doc[RestMessagesKeys::messages][RestMessagesKeys::reset_connection].as<bool>())
+            if(doc[RestMessagesKeys::messages][RestMessagesKeys::reset_connection].is<bool>())
                 messages.reset_connection = doc[RestMessagesKeys::messages][RestMessagesKeys::reset_connection].as<bool>();
-            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::restart_device) && doc[RestMessagesKeys::messages][RestMessagesKeys::restart_device].as<bool>())
+            if(doc[RestMessagesKeys::messages][RestMessagesKeys::restart_device].is<bool>())
                 messages.restart_device = doc[RestMessagesKeys::messages][RestMessagesKeys::restart_device].as<bool>();
-            if(doc[RestMessagesKeys::messages].containsKey(RestMessagesKeys::refresh_config) && doc[RestMessagesKeys::messages][RestMessagesKeys::refresh_config].as<bool>())
+            if(doc[RestMessagesKeys::messages][RestMessagesKeys::refresh_config].is<bool>())
                 messages.refresh_config = doc[RestMessagesKeys::messages][RestMessagesKeys::refresh_config].as<bool>();
         }
      
@@ -562,7 +553,7 @@ bool restHandler::set_message_processed(const char* message_type_key) {
         return false;
 
     {
-        DynamicJsonDocument doc(512);
+        JsonDocument doc;
 
         doc[UpstreamSettingsKeys::deviceID] = upstreamSettings.deviceID;
         doc[UpstreamSettingsKeys::apiKey] = upstreamSettings.apiKey;

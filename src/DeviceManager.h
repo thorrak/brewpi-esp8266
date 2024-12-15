@@ -332,10 +332,10 @@ public:
 
 	static bool isDeviceValid(DeviceConfig& config, DeviceConfig& original, int8_t deviceIndex);
 
-	static void enumerateHardware(DynamicJsonDocument& doc, EnumerateHardware spec);
-	static void enumerateHardware(DynamicJsonDocument& doc);
+	static void enumerateHardware(JsonDocument& doc, EnumerateHardware spec);
+	static void enumerateHardware(JsonDocument& doc);
 	static void readJsonIntoHardwareSpec(EnumerateHardware&);
-	static DeviceDefinition readJsonIntoDeviceDef(const DynamicJsonDocument& doc);
+	static DeviceDefinition readJsonIntoDeviceDef(const JsonDocument& doc);
 
 	static bool enumDevice(DeviceDisplay& dd, DeviceConfig& dc, uint8_t idx);
 
