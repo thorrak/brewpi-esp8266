@@ -355,7 +355,7 @@ private:
 
 	static void outputEnumeratedDevices(DeviceConfig* config, void* pv, JsonDocument* doc);
 	static void handleEnumeratedDevice(DeviceConfig config, EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc);
-	static void readTempSensorValue(DeviceConfig::Hardware hw, char* out);
+	static void readTempSensorValue(DeviceHardware hw_type, DeviceConfig::Hardware hw, char* out);
 	static void outputRawDeviceValue(DeviceConfig* config, void* pv, JsonDocument* doc);
 
   	static void readJsonIntoDeviceDisplay(DeviceDisplay&);

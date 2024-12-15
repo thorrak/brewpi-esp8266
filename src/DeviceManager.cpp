@@ -804,14 +804,25 @@ device_slot_t findHardwareDevice(DeviceConfig& find)
  *
  * **Warning:** the read value does not include any calibration offset.
  */
-inline void DeviceManager::readTempSensorValue(DeviceConfig::Hardware hw, char* out)
+inline void DeviceManager::readTempSensorValue(DeviceHardware hw_type, DeviceConfig::Hardware hw, char* out)
 {
 #if !BREWPI_SIMULATE
-	OneWire* bus = oneWireBus(hw.pinNr);
-	OneWireTempSensor sensor(bus, hw.address, 0);		// NB: this value is uncalibrated, since we don't have the calibration offset until the device is configured
 	temperature temp = INVALID_TEMP;
-	if (sensor.init())
-		temp = sensor.read();
+
+	if(hw_type == DEVICE_HARDWARE_ONEWIRE_TEMP) {
+		OneWire* bus = oneWireBus(hw.pinNr);
+		OneWireTempSensor sensor(bus, hw.address, 0);		// NB: this value is uncalibrated, since we don't have the calibration offset until the device is configured
+		if (sensor.init())
+			temp = sensor.read();
+	} 
+#ifdef HAS_BLUETOOTH
+	else if(hw_type == DEVICE_HARDWARE_BLUETOOTH_INKBIRD) {
+		temp = bt_scanner.get_inkbird(hw.btAddress)->getTempFixedPoint();
+	} else if(hw_type == DEVICE_HARDWARE_BLUETOOTH_TILT) {
+		temp = bt_scanner.get_tilt(hw.btAddress)->getTempFixedPoint();
+	}
+#endif
+
 	tempToString(out, temp, 3, 9);
 #else
 	strcpy_P(out, PSTR("0.00"));
@@ -846,16 +857,12 @@ void DeviceManager::handleEnumeratedDevice(DeviceConfig config_in, EnumerateHard
 	if (h.values) {
 		switch (config.deviceHardware) {
 			case DEVICE_HARDWARE_ONEWIRE_TEMP:
-				readTempSensorValue(config.hw, out.value);
-				break;
 #if HAS_BLUETOOTH
 			case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
-				tempToString(out.value, bt_scanner.get_inkbird(config.hw.btAddress)->getTempFixedPoint(), 3, 9);
-				break;
 			case DEVICE_HARDWARE_BLUETOOTH_TILT:
-				tempToString(out.value, bt_scanner.get_tilt(config.hw.btAddress)->getTempFixedPoint(), 3, 9);
-				break;
 #endif
+				readTempSensorValue(config.deviceHardware, config.hw, out.value);
+				break;
 
       // unassigned pins could be input or output so we can't determine any
       // other details from here.  values can be read once the pin has been
@@ -1220,7 +1227,7 @@ void DeviceManager::outputRawDeviceValue(DeviceConfig* config, void* pv, JsonDoc
   if(config->deviceHardware == DeviceHardware::DEVICE_HARDWARE_ONEWIRE_TEMP) {
     // Read the temp
     char str_temp[10];
-    DeviceManager::readTempSensorValue(config->hw, str_temp);
+    DeviceManager::readTempSensorValue(config->deviceHardware, config->hw, str_temp);
 
     // Pretty-print the address
     char devName[17];
