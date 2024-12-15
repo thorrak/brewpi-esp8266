@@ -119,6 +119,10 @@ void setup()
     FILESYSTEM.begin();
   #endif
 
+  pinMode(coolingPin, OUTPUT);
+  pinMode(heatingPin, OUTPUT);
+  pinMode(doorPin, INPUT);
+
   extendedSettings.loadFromSpiffs();
   upstreamSettings.loadFromSpiffs();
   display.init();
