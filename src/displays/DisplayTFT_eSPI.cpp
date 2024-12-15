@@ -345,8 +345,10 @@ void LcdDisplay::printState(){
 
     // Because of the way we're updating the display, we need to clear out everything to the right of the status
     // string
-    std::string spaces(20 - printed_chars, ' ');
-    printAtMonoChars(printed_chars, 3, spaces.c_str());
+    if(printed_chars < 20) {
+        std::string spaces(20 - printed_chars, ' ');
+        printAtMonoChars(printed_chars, 3, spaces.c_str());
+    }
 }
 
 
