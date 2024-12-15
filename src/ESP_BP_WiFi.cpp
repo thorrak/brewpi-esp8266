@@ -200,7 +200,7 @@ void wifi_connect_clients() {
             serverClient = server.accept();
 
 #ifdef ESP8266
-            serverClient.purge();
+            serverClient.flush();
 #else
             serverClient.clear();
 #endif
@@ -214,7 +214,7 @@ void wifi_connect_clients() {
             serverClient.stop();
             serverClient = server.accept();
 #ifdef ESP8266
-            serverClient.purge();
+            serverClient.flush();
 #else
             serverClient.clear();
 #endif
