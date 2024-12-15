@@ -88,7 +88,6 @@ void LcdDisplay::print_layout() {
     const char degree_symbol = 176;
     char unitBuf[3] = {' ', tempControl.cc.tempFormat, '\0'};
 
-    Serial.println(unitBuf);
     printAtMonoChars(18, 1, unitBuf);  // Beer Row
     printAtMonoChars(18, 2, unitBuf);  // Fridge/Room Row
 

@@ -63,17 +63,17 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
         if(json[UpstreamSettingsKeys::upstreamPort].is<uint16_t>()) {
             if((json[UpstreamSettingsKeys::upstreamPort] <= 0) || (json[UpstreamSettingsKeys::upstreamPort] > 65535)) {
                 // This is actually impossible to reach, unless the port is 0.
-                Serial.printf("Invalid [upstreamPort]:(%u) received.\r\n", json[UpstreamSettingsKeys::upstreamPort].as<uint16_t>());
+                Log.warning("Invalid [upstreamPort]:(%u) received.\r\n", json[UpstreamSettingsKeys::upstreamPort].as<uint16_t>());
                 failCount++;
             } else {
                 //Valid - Update
                 upstreamSettings.upstreamPort = json[UpstreamSettingsKeys::upstreamPort];
                 upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
-                Serial.printf("Settings update, [upstreamPort]:(%d) applied.\r\n", json[UpstreamSettingsKeys::upstreamPort].as<uint16_t>());
+                Log.warning("Settings update, [upstreamPort]:(%d) applied.\r\n", json[UpstreamSettingsKeys::upstreamPort].as<uint16_t>());
                 saveSettings = true;
             }
         } else {
-            Serial.printf("Invalid [upstreamPort]:(%s) received (wrong type).\r\n", json[UpstreamSettingsKeys::upstreamPort].as<const char*>());
+            Log.warning("Invalid [upstreamPort]:(%s) received (wrong type).\r\n", json[UpstreamSettingsKeys::upstreamPort].as<const char*>());
             failCount++;
         }
     }
