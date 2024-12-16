@@ -18,7 +18,8 @@
 #include "Display.h"
 
 #ifdef HAS_BLUETOOTH
-NimBLEAddress NoTiltDevice = NimBLEAddress("00:00:00:00:00:00");
+// Tilts have address type 1, so replicating that here (even though this is wrong based on the address)
+NimBLEAddress NoTiltDevice = NimBLEAddress("00:00:00:00:00:00", 1);
 #endif
 
 
@@ -338,7 +339,8 @@ void ExtendedSettings::loadFromSpiffs() {
     if(json_doc[ExtendedSettingsKeys::glycol].is<bool>()) glycol = json_doc[ExtendedSettingsKeys::glycol];
     if(json_doc[ExtendedSettingsKeys::largeTFT].is<bool>()) largeTFT = json_doc[ExtendedSettingsKeys::largeTFT];
 #ifdef HAS_BLUETOOTH
-    if(json_doc[ExtendedSettingsKeys::tiltGravSensor].is<std::string>()) tiltGravSensor = NimBLEAddress(json_doc[ExtendedSettingsKeys::tiltGravSensor].as<std::string>());
+    // Tilts use address type 1 ("random", which (correctly!) indicates they didn't buy a MAC block)
+    if(json_doc[ExtendedSettingsKeys::tiltGravSensor].is<std::string>()) tiltGravSensor = NimBLEAddress(json_doc[ExtendedSettingsKeys::tiltGravSensor].as<std::string>(), 1);
 #endif
 }
 
@@ -367,7 +369,8 @@ void ExtendedSettings::processSettingKeypair(JsonPair kv) {
   } 
   #ifdef HAS_BLUETOOTH
   else if (kv.key() == ExtendedSettingsKeys::tiltGravSensor) {
-    NimBLEAddress addr = NimBLEAddress(kv.value().as<std::string>());
+    // Tilts use address type 1 ("random", which (correctly!) indicates they didn't buy a MAC block)
+    NimBLEAddress addr = NimBLEAddress(kv.value().as<std::string>(), 1);
     setTiltGravSensor(addr);
   }
   #endif

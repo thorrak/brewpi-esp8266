@@ -388,8 +388,11 @@ DeviceDefinition DeviceManager::readJsonIntoDeviceDef(const JsonDocument& doc) {
 			break;
 #ifdef HAS_BLUETOOTH
 		case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
+			dev.btAddress = NimBLEAddress(doc[DeviceDefinitionKeys::address].as<std::string>(), 0);
+			break;
 		case DEVICE_HARDWARE_BLUETOOTH_TILT:
-			dev.btAddress = NimBLEAddress(doc[DeviceDefinitionKeys::address].as<std::string>());
+			// Tilts use address type 1 ("random", which (correctly!) indicates they didn't buy a MAC block)
+			dev.btAddress = NimBLEAddress(doc[DeviceDefinitionKeys::address].as<std::string>(), 1);
 			break;
 #endif
 #ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
