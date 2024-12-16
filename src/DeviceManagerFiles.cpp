@@ -105,8 +105,12 @@ void DeviceConfig::fromJson(JsonDocument json_doc) {
         parseBytes(hw.address, json_doc[DeviceDefinitionKeys::address].as<const char *>(), 8);
         copyArray(json_doc[DeviceDefinitionKeys::address], hw.address);
 #ifdef HAS_BLUETOOTH
-    } else if(json_doc[DeviceDefinitionKeys::address].is<std::string>() && (deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD || deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT)) {
-        hw.btAddress = NimBLEAddress(json_doc[DeviceDefinitionKeys::address].as<std::string>());
+    } else if(json_doc[DeviceDefinitionKeys::address].is<std::string>() && (deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD)) {
+        // Inkbirds use address type 0 ("public") which (incorrectly!) indicates they bought a MAC block
+        hw.btAddress = NimBLEAddress(json_doc[DeviceDefinitionKeys::address].as<std::string>(), 0);
+    } else if(json_doc[DeviceDefinitionKeys::address].is<std::string>() && (deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT)) {
+        // Tilts use address type 1 ("random", which (correctly!) indicates they didn't buy a MAC block)
+        hw.btAddress = NimBLEAddress(json_doc[DeviceDefinitionKeys::address].as<std::string>(), 1);
 #endif
 #ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
     } else if(json_doc[DeviceDefinitionKeys::address].is<const char *>() && json_doc[DeviceDefinitionKeys::child_id].is<const char *>() && (deviceHardware == DEVICE_HARDWARE_TPLINK_SWITCH)) {

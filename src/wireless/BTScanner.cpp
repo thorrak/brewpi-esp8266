@@ -27,12 +27,12 @@ std::list<tilt> lTilts;
 ////////////////////////////
 
 
-void load_inkbird_from_advert(NimBLEAdvertisedDevice* advertisedDevice);
-void load_tilt_from_advert(NimBLEAdvertisedDevice* advertisedDevice);
+void load_inkbird_from_advert(const NimBLEAdvertisedDevice* advertisedDevice);
+void load_tilt_from_advert(const NimBLEAdvertisedDevice* advertisedDevice);
 
 /** Handles callbacks when advertisments are received */
-class AdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
-    void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
+class ScanCallbacks: public NimBLEScanCallbacks {
+    void onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
         bt_scanner.last_detected_device_at = esp_timer_get_time();
         // Inkbird IBS-TH2 (sps) and Inkbird IBS-TH1 (tps)
         if((advertisedDevice->getName().rfind("sps",0) == 0 || advertisedDevice->getName().rfind("tps",0) == 0) && advertisedDevice->getManufacturerData().length() == 9) {
@@ -55,7 +55,7 @@ class AdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
 };
 
 
-void load_inkbird_from_advert(NimBLEAdvertisedDevice* advertisedDevice)
+void load_inkbird_from_advert(const NimBLEAdvertisedDevice* advertisedDevice)
 {
     // The advertisement string is the "manufacturer data" part of the following:
     // example: f208361300f28b6408
@@ -95,7 +95,8 @@ void load_inkbird_from_advert(NimBLEAdvertisedDevice* advertisedDevice)
         // Since we need to fake one of the MAC addresses and the internal sensor will ALWAYS be connected/reported, what we can do
         // is fake the address of the EXTERNAL sensor. This way, the true MAC address will always be present (and always report the
         // internal sensor's temperature) and in the case of failure of the probe, the external sensor will just stop reporting.
-        inkbird *ib_external = bt_scanner.get_or_create_inkbird(NimBLEAddress(advertisedDevice->getAddress() + 0x010000000000));
+        // NOTE - Technically address type 0 here is wrong, but it matches what Inkbird uses otherwise
+        inkbird *ib_external = bt_scanner.get_or_create_inkbird(NimBLEAddress(advertisedDevice->getAddress() + 0x010000000000, 0));
         ib->update(alt_temp, hum, bat, advertisedDevice->getRSSI());
         ib_external->update(temp, hum, bat, advertisedDevice->getRSSI());
     } else {
@@ -105,7 +106,7 @@ void load_inkbird_from_advert(NimBLEAdvertisedDevice* advertisedDevice)
     return;
 }
 
-void load_tilt_from_advert(NimBLEAdvertisedDevice* advertisedDevice)
+void load_tilt_from_advert(const NimBLEAdvertisedDevice* advertisedDevice)
 {
     // The advertisement string is the "manufacturer data" part of the following:
     //Advertised Device: Name: Tilt, Address: 88:c2:55:ac:26:81, manufacturer data: 4c000215a495bb40c5b14b44b5121370f02d74de005004d9c5
@@ -174,11 +175,11 @@ void btScanner::init()
     NimBLEDevice::setPower(ESP_PWR_LVL_P9); /** +9db  */
     NimBLEScan* pBLEScan = NimBLEDevice::getScan();  // Create/get the scan
     // NOTE - The below probably creates a memory leak with deinit (but deinit is never called in our code).
-    pBLEScan->setAdvertisedDeviceCallbacks(new AdvertisedDeviceCallbacks());  // Initialize the callbacks
+    pBLEScan->setScanCallbacks(new ScanCallbacks());  // Initialize the callbacks
     pBLEScan->setMaxResults(0);
     pBLEScan->setActiveScan(true); // Required for some devices (including Inkbird sensors) - active scan actively queries devices for more info following detection.
-    pBLEScan->setInterval(97); // Select prime numbers to reduce risk of frequency beat pattern with ibeacon advertisement interval
-    pBLEScan->setWindow(37);   // Set to less or equal setInterval value. Leave reasonable gap to allow WiFi some time.
+    // pBLEScan->setInterval(97); // Select prime numbers to reduce risk of frequency beat pattern with ibeacon advertisement interval
+    // pBLEScan->setWindow(37);   // Set to less or equal setInterval value. Leave reasonable gap to allow WiFi some time.
 }
 
 
@@ -188,8 +189,8 @@ bool btScanner::scan()
         return false;
     if (NimBLEDevice::getScan()->isScanning())
         return false;
-    delay(400);
-    if (NimBLEDevice::getScan()->start(BLE_SCAN_TIME, nullptr, false))
+    delay(200);
+    if (NimBLEDevice::getScan()->start(BLE_SCAN_TIME, false, true))
         return true; //Scan successfully started.
     return false;  //Scan failed to start
 }

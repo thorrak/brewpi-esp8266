@@ -309,8 +309,9 @@ uint8_t processExtendedSettingsJson(const JsonDocument& json, bool triggerUpstre
     // Tilt Gravity Sensor
     if(json[ExtendedSettingsKeys::tiltGravSensor].is<std::string>()) {
         // Validate that it's valid
-        if(extendedSettings.tiltGravSensor != json[ExtendedSettingsKeys::tiltGravSensor].as<std::string>()) {
-            extendedSettings.setTiltGravSensor(NimBLEAddress(json[ExtendedSettingsKeys::tiltGravSensor].as<std::string>()));
+        if(extendedSettings.tiltGravSensor != NimBLEAddress(json[ExtendedSettingsKeys::tiltGravSensor].as<std::string>(), 1)) {
+            // Tilts use address type 1 ("random", which (correctly!) indicates they didn't buy a MAC block)
+            extendedSettings.setTiltGravSensor(NimBLEAddress(json[ExtendedSettingsKeys::tiltGravSensor].as<std::string>(), 1));
             saveSettings = true;
         }
     }
