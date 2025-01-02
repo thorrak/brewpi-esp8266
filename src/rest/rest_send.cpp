@@ -74,7 +74,7 @@ sendResult restHandler::send_json_str(String &payload, const char *url, String &
 
 
     if (WiFi.status() != WL_CONNECTED) {
-        Serial.print(F("send_json_str: Wifi not connected, skipping send.\r\n"));
+        Log.warning(F("send_json_str: Wifi not connected, skipping send.\r\n"));
         send_lock = false;
         return sendResult::retry;
     }
@@ -113,7 +113,7 @@ sendResult restHandler::send_json_str(String &payload, const char *url, String &
                 response = http.getString();
 
                 if (httpResponseCode < HTTP_CODE_OK || httpResponseCode > HTTP_CODE_NO_CONTENT) {
-                    Serial.printf("send_json_str: Send failed (%d): %s. Response:\r\n%s\r\n",
+                    Log.error("send_json_str: Send failed (%d): %s. Response:\r\n%s\r\n",
                         httpResponseCode,
                         http.errorToString(httpResponseCode).c_str(),
                         http.getString().c_str());
@@ -144,10 +144,10 @@ sendResult restHandler::send_json_str(String &payload, const char *url, String &
 
 bool restHandler::get_url(char *url, size_t size, const char *path) {
     if(strlen(upstreamSettings.upstreamHost) <= 3) {
-        Serial.print(F("get_url: No upstream host configured, should skip send.\r\n"));
+        Log.error(F("get_url: No upstream host configured, should skip send.\r\n"));
         return false;
     } else if(upstreamSettings.upstreamPort <= 0 || upstreamSettings.upstreamPort > 65535) {
-        Serial.print(F("get_url: No upstream port configured, should skip send.\r\n"));
+        Log.error(F("get_url: No upstream port configured, should skip send.\r\n"));
         return false;
     }
 
@@ -443,12 +443,12 @@ bool restHandler::send_status() {
                 updated_mode == Modes::off || updated_mode == Modes::test) {
                     // We have a new, valid mode. Update to it.
                     if(tempControl.cs.mode != updated_mode) {
-                        Serial.printf("Updating to valid mode \"%c\" (0x%02X)\r\n", updated_mode, updated_mode);
+                        Log.info("Updating to valid mode \"%c\" (0x%02X)\r\n", updated_mode, updated_mode);
                         tempControl.setMode(updated_mode);
                         send_status_ticker = true;  // Trigger a send to update the LCD
                     }
             } else {
-                Serial.printf("Invalid mode \"%c\" (0x%02X)\r\n", updated_mode, updated_mode);
+                Log.error("Invalid mode \"%c\" (0x%02X)\r\n", updated_mode, updated_mode);
             }
         }
 
@@ -461,7 +461,7 @@ bool restHandler::send_status() {
                 case Modes::beerConstant:
                 case Modes::beerProfile:
                     SettingLoader::setBeerSetting(doc["updated_setpoint"].as<const char *>());
-                    Serial.printf("Received updated setpoint \"%s\"\r\n", doc["updated_setpoint"].as<const char *>());
+                    Log.info("Received updated setpoint \"%s\"\r\n", doc["updated_setpoint"].as<const char *>());
                     send_status_ticker = true;  // Trigger a send to update the LCD
                     break;
                 default:
