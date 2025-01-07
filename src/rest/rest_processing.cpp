@@ -57,7 +57,7 @@ void restHandler::process_messages() {
 
     // Process resetting WiFi last, as we will lose the ability to signal that we processed it
     if(messages.reset_connection) {
-        Serial.println("Message received: reset_connection");
+        Log.infoln("Message received: reset_connection");
         reset_connection();
     }
 
@@ -68,7 +68,7 @@ void restHandler::process_messages() {
 }
 
 bool restHandler::reset_eeprom() {
-    Serial.println("Message received: reset_eeprom");
+    Log.infoln("Message received: reset_eeprom");
     if(eepromManager.initializeEeprom()) {
         logInfo(INFO_EEPROM_INITIALIZED);
         settingsManager.loadSettings();
@@ -98,7 +98,7 @@ bool restHandler::reset_eeprom() {
 }
 
 bool restHandler::reset_connection() {
-    Serial.println("Message received: reset_connection");
+    Log.infoln("Message received: reset_connection");
     messages.reset_connection = false;
     // Let the upstream know we processed this before we actually process it (since we'll (hopefully) disconnect)
     set_message_processed(RestMessagesKeys::reset_connection);
@@ -108,14 +108,14 @@ bool restHandler::reset_connection() {
     upstreamSettings.storeToSpiffs();
 
     // Then disconnect WiFi and restart
-    WiFi.disconnect(true);
+    WiFi.disconnect(false, true);
     delay(500);
     ESP.restart();
     return true;
 }
 
 bool restHandler::restart_device() {
-    Serial.println("Message received: restart_device");
+    Log.infoln("Message received: restart_device");
     messages.restart_device = false;
     // Let the upstream know we processed this before we actually process it (since we'll (hopefully) disconnect)
     set_message_processed(RestMessagesKeys::restart_device);
@@ -124,7 +124,7 @@ bool restHandler::restart_device() {
 }
 
 bool restHandler::default_cc() {
-    Serial.println("Message received: default_cc");
+    Log.infoln("Message received: default_cc");
 
     TempControl::loadDefaultConstants();
 
@@ -139,7 +139,7 @@ bool restHandler::default_cc() {
 }
 
 bool restHandler::default_cs() {
-    Serial.println("Message received: default_cs");
+    Log.infoln("Message received: default_cs");
 
     TempControl::loadDefaultSettings();
 
@@ -162,7 +162,7 @@ void load_settings_from_doc(JsonObject &root) {
 }
 
 bool restHandler::process_updated_settings() {
-    Serial.println("Message received: updated_cs/cc/mt");
+    Log.infoln("Message received: updated_cs/cc/mt");
 
     String payload = "";
     char url[256] = "";
@@ -175,25 +175,25 @@ bool restHandler::process_updated_settings() {
         return false;
 
     send_json_str(payload, url, response, httpMethod::HTTP_GET);
-    Serial.printf("Response: %s\r\n", response.c_str());
+    Log.verbose("Response: %s\r\n", response.c_str());
 
     {
         JsonDocument doc;
         DeserializationError error = deserializeJson(doc, response);
 
         if(error) {
-            Serial.printf("deserializeJson() failed: %s\r\n", error.c_str());
+            Log.warning("deserializeJson() failed: %s\r\n", error.c_str());
             return false;
         }
 
         if((doc["success"].is<bool>() && doc["success"].as<bool>() == false) || !doc["config"].is<JsonObject>()) {
-            Serial.print(F("Error retrieving full config: "));
-            Serial.println(doc["message"].as<String>());
+            Log.warning(F("Error retrieving full config: "));
+            Log.warningln(doc["message"].as<String>());
             return false;
         }
 
         if(doc["config"]["cs"].is<JsonObject>() && messages.updated_cs) {
-            Serial.println("Updating control settings");
+            Log.verboseln("Updating control settings");
             JsonObject root = doc["config"]["cs"].as<JsonObject>();
             load_settings_from_doc(root);
             TempControl::storeSettings();
@@ -201,7 +201,7 @@ bool restHandler::process_updated_settings() {
         }
 
         if(doc["config"]["cc"].is<JsonObject>() && messages.updated_cc) {
-            Serial.println("Updating control constants");
+            Log.verboseln("Updating control constants");
             JsonObject root = doc["config"]["cc"].as<JsonObject>();
             load_settings_from_doc(root);
             TempControl::storeConstants();
@@ -209,7 +209,7 @@ bool restHandler::process_updated_settings() {
         }
 
         if(doc["config"]["devices"].is<JsonArray>() && messages.updated_devices) {
-            Serial.println("Updating devices");
+            Log.verboseln("Updating devices");
             JsonArray root = doc["config"]["devices"].as<JsonArray>();
             load_devices_from_array(root);
             // TempControl::storeConstants();
@@ -217,7 +217,7 @@ bool restHandler::process_updated_settings() {
         }
 
         if(doc["config"]["mt"].is<JsonArray>() && messages.updated_mt) {
-            Serial.println("Updating minimum times");
+            Log.verboseln("Updating minimum times");
             // TODO - Write this
             // JsonObject root = doc["config"]["cc"].as<JsonObject>();
             // load_settings_from_doc(root);
@@ -240,13 +240,14 @@ bool restHandler::process_updated_settings() {
 void restHandler::load_devices_from_array(JsonArray &root) {
     // Process
     for (JsonDocument kv : root) {
-        Serial.println("Processing device");
+        Log.verboseln("Processing device");
         DeviceDefinition dev;
         // JsonDocument doc;
 
+        // serializeJsonPretty(kv, Serial);  // Print the received JSON to the console
         // piLink.receiveJsonMessage(doc);                                   // Read the JSON off the line from the Pi
         dev = DeviceManager::readJsonIntoDeviceDef(kv);                  // Parse the JSON into a DeviceDefinition object
         DeviceConfig print = deviceManager.updateDeviceDefinition(dev);   // Save the device definition (if valid)
-        Serial.println("Processed device");
+        Log.verboseln("\r\nProcessed device.");
     }
 }
