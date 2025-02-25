@@ -7,7 +7,7 @@
 #include "Tilt.h"
 #include <list>
 
-#define BLE_SCAN_TIME 60*1000        // Milliseconds to scan (0=continuous scanning)
+#define BLE_SCAN_TIME 10*1000        // Milliseconds to scan (0=continuous scanning)
 #define SCAN_FAIL_THRESHHOLD    (2*60*1000*1000)  // If we don't detect anything in 2 minutes, then the scanner failed. 
 
 class btScanner

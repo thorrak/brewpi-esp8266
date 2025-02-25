@@ -151,8 +151,8 @@ void setup()
   pinMode(heatingPin, OUTPUT);
   pinMode(doorPin, INPUT);
 
-  extendedSettings.loadFromSpiffs();
-  upstreamSettings.loadFromSpiffs();
+  extendedSettings.loadFromFilesystem();
+  upstreamSettings.loadFromFilesystem();
   display.init();
 
   initialize_wifi();

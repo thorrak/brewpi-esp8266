@@ -61,8 +61,8 @@ public:
     char tempFormat; //!< Temperature format (F/C)
 
     void toJson(JsonDocument &doc);
-    void storeToSpiffs();
-    void loadFromSpiffs();
+    void storeToFilesystem();
+    void loadFromFilesystem();
     void setDefaults();
 
     /**
@@ -85,8 +85,8 @@ public:
     char mode;
 
     void toJson(JsonDocument &doc);
-    void storeToSpiffs();
-    void loadFromSpiffs();
+    void storeToFilesystem();
+    void loadFromFilesystem();
     void setDefaults();
 
     /**
@@ -187,8 +187,8 @@ public:
 
     void toJson(JsonDocument &doc);
     void fromJson(JsonDocument json_doc);
-    void storeToSpiffs(uint8_t devID);
-    void loadFromSpiffs(uint8_t devID);
+    void storeToFilesystem(uint8_t devID);
+    void loadFromFilesystem(uint8_t devID);
     void setDefaults();
 
     static void deviceFilename(char * fname, uint8_t devid);
@@ -214,8 +214,8 @@ public:
 
 
     void toJson(JsonDocument &doc);
-    void storeToSpiffs();
-    void loadFromSpiffs();
+    void storeToFilesystem();
+    void loadFromFilesystem();
     void setDefaults();
     void processSettingKeypair(JsonPair kv);
 
@@ -260,8 +260,8 @@ public:
     upstreamRegErrorT upstreamRegistrationError;  //<! Error code from last upstream registration attempt
 
     void toJson(JsonDocument &doc);
-    void storeToSpiffs();
-    void loadFromSpiffs();
+    void storeToFilesystem();
+    void loadFromFilesystem();
     void setDefaults();
     void processSettingKeypair(JsonPair kv);
 

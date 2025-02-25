@@ -1,11 +1,4 @@
-#ifdef ESP8266
 #include <LittleFS.h>
-#elif defined(ESP32S2)
-#include <LittleFS.h>
-#elif defined(ESP32)
-#include <FS.h>
-#include <SPIFFS.h>
-#endif
 
 #include <ArduinoJson.h>
 
@@ -151,7 +144,7 @@ void ControlConstants::toJson(JsonDocument &doc) {
     doc[ControlConstantsKeys::tempFormat] = formatStr;
 }
 
-void ControlConstants::storeToSpiffs() {
+void ControlConstants::storeToFilesystem() {
     JsonDocument doc;
 
     toJson(doc);
@@ -159,7 +152,7 @@ void ControlConstants::storeToSpiffs() {
     writeJsonToFile(ControlConstants::filename, doc);  // Write the json to the file
 }
 
-void ControlConstants::loadFromSpiffs() {
+void ControlConstants::loadFromFilesystem() {
     // We start by setting the defaults, as we use them as the alternative to loaded values if the keys don't exist
     setDefaults();
 
@@ -245,7 +238,7 @@ void ControlSettings::toJson(JsonDocument &doc) {
 }
 
 
-void ControlSettings::storeToSpiffs() {
+void ControlSettings::storeToFilesystem() {
     JsonDocument doc;
 
     toJson(doc);
@@ -254,7 +247,7 @@ void ControlSettings::storeToSpiffs() {
 }
 
 
-void ControlSettings::loadFromSpiffs() {
+void ControlSettings::loadFromFilesystem() {
     // We start by setting the defaults, as we use them as the alternative to loaded values if the keys don't exist
     setDefaults();
 
@@ -316,7 +309,7 @@ void ExtendedSettings::toJson(JsonDocument &doc) {
 /**
  * \brief Store extended settings to the filesystem
  */
-void ExtendedSettings::storeToSpiffs() {
+void ExtendedSettings::storeToFilesystem() {
     JsonDocument doc;
 
     toJson(doc);
@@ -327,7 +320,7 @@ void ExtendedSettings::storeToSpiffs() {
 /**
  * \brief Load extended settings from the filesystem
  */
-void ExtendedSettings::loadFromSpiffs() {
+void ExtendedSettings::loadFromFilesystem() {
     // We start by setting the defaults, as we use them as the alternative to loaded values if the keys don't exist
     setDefaults();
 
@@ -471,7 +464,7 @@ void UpstreamSettings::toJson(JsonDocument &doc) {
 /**
  * \brief Store extended settings to the filesystem
  */
-void UpstreamSettings::storeToSpiffs() {
+void UpstreamSettings::storeToFilesystem() {
     JsonDocument doc;
     toJson(doc);
 
@@ -481,7 +474,7 @@ void UpstreamSettings::storeToSpiffs() {
 /**
  * \brief Load extended settings from the filesystem
  */
-void UpstreamSettings::loadFromSpiffs() {
+void UpstreamSettings::loadFromFilesystem() {
     // We start by setting the defaults, as we use them as the alternative to loaded values if the keys don't exist
     setDefaults();
 

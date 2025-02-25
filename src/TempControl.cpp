@@ -569,7 +569,7 @@ void TempControl::loadDefaultSettings(){
  */
 void TempControl::storeConstants() {
     // Now that control constants are an object, use that for loading/saving
-    cc.storeToSpiffs();
+    cc.storeToFilesystem();
 }
 
 /**
@@ -577,7 +577,7 @@ void TempControl::storeConstants() {
  */
 void TempControl::loadConstants(){
   // Now that control constants are an object, use that for loading/saving
-  cc.loadFromSpiffs();
+  cc.loadFromFilesystem();
   initFilters();
 }
 
@@ -587,7 +587,7 @@ void TempControl::loadConstants(){
  * The update functions only write to EEPROM if the value has changed
  */
 void TempControl::storeSettings(){
-	cs.storeToSpiffs();
+	cs.storeToFilesystem();
 	storedBeerSetting = cs.beerSetting;
 }
 
@@ -595,7 +595,7 @@ void TempControl::storeSettings(){
  * Read settings from EEPROM
  */
 void TempControl::loadSettings(){
-  cs.loadFromSpiffs();
+  cs.loadFromFilesystem();
 	logDebug("loaded settings");
 	storedBeerSetting = cs.beerSetting;
 	setMode(cs.mode, true);		// force the mode update
@@ -856,7 +856,7 @@ uint16_t TempControl::getMinHeatOnTime() {
 /**
  * \brief Store min times to the filesystem
  */
-void MinTimes::storeToSpiffs() {
+void MinTimes::storeToFilesystem() {
     JsonDocument doc;
 
     toJson(doc);
@@ -864,7 +864,7 @@ void MinTimes::storeToSpiffs() {
     writeJsonToFile(MinTimes::filename, doc);  // Write the json to the file
 }
 
-void MinTimes::loadFromSpiffs() {
+void MinTimes::loadFromFilesystem() {
     // We start by setting the defaults, as we use them as the alternative to loaded values if the keys don't exist
     setDefaults();
 

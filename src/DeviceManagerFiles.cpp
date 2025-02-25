@@ -140,7 +140,7 @@ void DeviceConfig::deviceFilename(char * fname, uint8_t devid) {
 }
 
 
-void DeviceConfig::storeToSpiffs(uint8_t devID) {
+void DeviceConfig::storeToFilesystem(uint8_t devID) {
     JsonDocument doc;
     char fname[32];
     deviceFilename(fname, devID);
@@ -151,7 +151,7 @@ void DeviceConfig::storeToSpiffs(uint8_t devID) {
 }
 
 
-void DeviceConfig::loadFromSpiffs(uint8_t devID) {
+void DeviceConfig::loadFromFilesystem(uint8_t devID) {
     char fname[32];
     deviceFilename(fname, devID);
 

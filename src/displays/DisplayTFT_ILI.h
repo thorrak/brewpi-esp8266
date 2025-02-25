@@ -103,6 +103,7 @@ public:
     void printAll()
     {
     //     printStationaryText();
+    print_layout();
     printState();
     printAllTemperatures();
     printMode();

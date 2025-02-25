@@ -145,7 +145,7 @@ uint8_t processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUp
         Log.error(F("Error: Invalid upstream configuration.\r\n"));
     } else {
         if(saveSettings == true) {
-            upstreamSettings.storeToSpiffs();
+            upstreamSettings.storeToFilesystem();
         }
         upstreamSettings.upstreamRegistrationError = UpstreamSettings::upstreamRegErrorT::NOT_ATTEMPTED_REGISTRATION;
         rest_handler.register_device_ticker = true;
@@ -258,7 +258,7 @@ uint8_t processUpdateModeJson(const JsonDocument& json, bool triggerUpstreamUpda
     } else {
         if(saveSettings == true) {
             // TODO - Force upstream cascade/send
-            // upstreamSettings.storeToSpiffs();
+            // upstreamSettings.storeToFilesystem();
         }
     }
     return failCount;
@@ -403,12 +403,12 @@ uint8_t processExtendedSettingsJson(const JsonDocument& json, bool triggerUpstre
         Log.error(F("Error: Invalid extended settings configuration.\r\n"));
     } else {
         if(saveSettings == true) {
-            extendedSettings.storeToSpiffs();
+            extendedSettings.storeToFilesystem();
             // TODO - Force upstream cascade/send
         }
         if(saveMinTimes == true) {
             minTimes.setDefaults(); // This will set defaults if defaults/lowdelay mode is set -- otherwise its a noop for custom mode
-            minTimes.storeToSpiffs();
+            minTimes.storeToFilesystem();
             // TODO - Force upstream cascade/send
         }
     }

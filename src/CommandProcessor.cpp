@@ -429,7 +429,7 @@ void CommandProcessor::processExtendedSettingsJson() {
   }
 
   // Save the settings
-  extendedSettings.storeToSpiffs();
+  extendedSettings.storeToFilesystem();
 
 #ifdef BREWPI_TFT
   display.init(); // For TFTs specifically, we need to reinitialize after updating the extended settings in case invertTFT changed

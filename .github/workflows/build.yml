@@ -5,6 +5,7 @@ on:
     branches:
       - v16
       - master
+      - bugfixes
     # tags:
     #   - "v*"
   # pull_request:
@@ -30,7 +31,7 @@ jobs:
     - run: git fetch --prune --unshallow
 
     - name: Cache pip
-      uses: actions/cache@v4.0.0
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -38,13 +39,15 @@ jobs:
           ${{ runner.os }}-pip-
 
     - name: Cache PlatformIO
-      uses: actions/cache@v4.0.0
+      uses: actions/cache@v4
       with:
         path: ~/.platformio
         key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
 
     - name: Set up Python
-      uses: actions/setup-python@v5.0.0
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.x"
 
     - name: Install PlatformIO
       run: |
@@ -54,33 +57,35 @@ jobs:
     - name: Build firmware
       run: |
         pio run -e ${{ matrix.pio_env }}
-        # pio run -e ${{ matrix.pio_env }} --target buildfs
-      # sh ./copy_bins.sh
 
-    - name: Copy firmware
-      continue-on-error: true
+    - name: Copy firmware files
       run: |
+        if [ -f .pio/build/${{ matrix.pio_env }}/firmware.bin ]; then
         cp .pio/build/${{ matrix.pio_env }}/firmware.bin bin/${{ matrix.pio_env }}_firmware.bin
-
-    - name: Copy partitions
-      continue-on-error: true
-      run: |
+        echo "Firmware copied"
+        fi
+        if [ -f .pio/build/${{ matrix.pio_env }}/partitions.bin ]; then
         cp .pio/build/${{ matrix.pio_env }}/partitions.bin bin/${{ matrix.pio_env }}_partitions.bin
+        echo "Partitions copied"
+        fi
 
     - name: Build filesystem
       run: |
         pio run -e ${{ matrix.pio_env }} --target buildfs
       # sh ./copy_bins.sh
-
-    - name: Copy Spiffs
-      continue-on-error: true
+  
+    - name: Copy filesystem files
       run: |
+        if [ -f .pio/build/${{ matrix.pio_env }}/spiffs.bin ]; then
         cp .pio/build/${{ matrix.pio_env }}/spiffs.bin bin/${{ matrix.pio_env }}_spiffs.bin
+        echo "Spiffs copied"
+        fi
+        if [ -f .pio/build/${{ matrix.pio_env }}/littlefs.bin ]; then
+        cp .pio/build/${{ matrix.pio_env }}/littlefs.bin bin/${{ matrix.pio_env }}_spiffs.bin
+        echo "LittleFS copied"
+        fi
+        # TODO - Change the above from _spiffs to _filesystem
 
-    - name: Copy LittleFS
-      continue-on-error: true
-      run: |
-        cp .pio/build/${{ matrix.pio_env }}/littlefs.bin bin/${{ matrix.pio_env }}_littlefs.bin
 
     - name: Create Draft Release
       uses: softprops/action-gh-release@v1
