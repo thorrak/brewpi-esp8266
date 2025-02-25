@@ -105,7 +105,7 @@ bool restHandler::reset_connection() {
 
     // Reset the Fermentrack upstream settings
     upstreamSettings.setDefaults();
-    upstreamSettings.storeToSpiffs();
+    upstreamSettings.storeToFilesystem();
 
     // Then disconnect WiFi and restart
     WiFi.disconnect(false, true);

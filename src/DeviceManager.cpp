@@ -277,7 +277,7 @@ void DeviceManager::uninstallDevice(DeviceConfig& config)
 			if(config.deviceFunction == DEVICE_BEER_TEMP && config.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT) {
 				// If the device is a Tilt, then let's unset the gravity sensor
 				extendedSettings.setTiltGravSensor(NoTiltDevice);
-				extendedSettings.storeToSpiffs();
+				extendedSettings.storeToFilesystem();
 			}
 #endif
 
@@ -573,12 +573,12 @@ DeviceConfig DeviceManager::updateDeviceDefinition(DeviceDefinition dev)
 			if(dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT) {
 				// If the device is a Tilt, then let's assume that the user wants it to also be the gravity sensor
 				extendedSettings.setTiltGravSensor(target.hw.btAddress);
-				extendedSettings.storeToSpiffs();
+				extendedSettings.storeToFilesystem();
 			} else {
 				// Otherwise, let's unset the gravity sensor
 				// TODO - Determine if I really want to do this here (as opposed to when uninstalling the Tilt)
 				extendedSettings.setTiltGravSensor(NoTiltDevice);
-				extendedSettings.storeToSpiffs();
+				extendedSettings.storeToFilesystem();
 			}
 
 		}

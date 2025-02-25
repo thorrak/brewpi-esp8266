@@ -355,7 +355,7 @@ bool restHandler::register_device() {
                 upstreamSettings.username[0] = '\0';  // Clear the username since we now have the apiKey
 
                 // Store the updated settings
-                upstreamSettings.storeToSpiffs(); 
+                upstreamSettings.storeToFilesystem(); 
 
                 // Also, trigger sends
                 send_status_ticker = true;

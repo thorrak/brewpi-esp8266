@@ -83,8 +83,8 @@ public:
     uint16_t HEAT_PEAK_DETECT_TIME;  //! Time allowed for heating peak detection
 
 	void toJson(JsonDocument &doc);
-    void storeToSpiffs();
-    void loadFromSpiffs();
+    void storeToFilesystem();
+    void loadFromFilesystem();
     void setDefaults();
 
     /**
