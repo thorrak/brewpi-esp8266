@@ -29,8 +29,8 @@
 
 
 #elif defined(ESP32)
-#define FILESYSTEM SPIFFS
-#include <SPIFFS.h>
+#define FILESYSTEM LittleFS
+#include <LittleFS.h>
 
 #else
 #error "Not supported!"
