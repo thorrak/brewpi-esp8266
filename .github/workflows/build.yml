@@ -5,6 +5,7 @@ on:
     branches:
       - v16
       - master
+      - bugfixes
     # tags:
     #   - "v*"
   # pull_request:
