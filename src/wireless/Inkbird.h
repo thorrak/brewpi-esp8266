@@ -12,7 +12,7 @@
 #include "TemperatureFormats.h"
 
 
-#define INKBIRD_CONNECTED_TIMEOUT       (30 * 1000 * 1000)     // Time before the sensor is considered "disconnected" (in microseconds)
+#define INKBIRD_CONNECTED_TIMEOUT       (62 * 1000 * 1000)     // Time before the sensor is considered "disconnected" (in microseconds)
 
 class inkbird
 {
