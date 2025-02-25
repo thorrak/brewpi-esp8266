@@ -12,8 +12,8 @@ var searchData=
   ['printnewline_9',['printNewLine',['../classPiStream.html#a52cbbabd3f6d9fcf64d4708b0363614c',1,'PiStream']]],
   ['printrawtemperatures_10',['printRawTemperatures',['../structCommandProcessor.html#adba1ed845ecee51be45996b9e45a9867',1,'CommandProcessor']]],
   ['printspacestorestofline_11',['printSpacesToRestOfLine',['../classSpiLcd.html#a77e3901dfd53a72bb5b4a4d2c319b317',1,'SpiLcd']]],
-  ['printtemperatures_12',['printtemperatures',['../structCommandProcessor.html#a52bc4fd70923eca29a68b5cde3210d1e',1,'CommandProcessor::printTemperatures()'],['../classPiLink.html#a3a2c5481417fa2f42f8e722838039067',1,'PiLink::printTemperatures()']]],
+  ['printtemperatures_12',['printTemperatures',['../structCommandProcessor.html#a52bc4fd70923eca29a68b5cde3210d1e',1,'CommandProcessor::printTemperatures()'],['../classPiLink.html#a3a2c5481417fa2f42f8e722838039067',1,'PiLink::printTemperatures()']]],
   ['processextendedsettingsjson_13',['processExtendedSettingsJson',['../structCommandProcessor.html#a6e73862b01606d1bfbdbc7530f602acc',1,'CommandProcessor']]],
-  ['processsettingkeypair_14',['processsettingkeypair',['../classExtendedSettings.html#a8c9d0d5f7d99c77f0ccdd09989df9d7a',1,'ExtendedSettings::processSettingKeypair()'],['../classUpstreamSettings.html#a9210f2838a47b9953e432ef3d8c9009f',1,'UpstreamSettings::processSettingKeypair()'],['../classSettingLoader.html#a9150f7230e96404ceaf79de4de496bfb',1,'SettingLoader::processSettingKeypair()']]],
+  ['processsettingkeypair_14',['processSettingKeypair',['../classExtendedSettings.html#a8c9d0d5f7d99c77f0ccdd09989df9d7a',1,'ExtendedSettings::processSettingKeypair()'],['../classUpstreamSettings.html#a9210f2838a47b9953e432ef3d8c9009f',1,'UpstreamSettings::processSettingKeypair()'],['../classSettingLoader.html#a9150f7230e96404ceaf79de4de496bfb',1,'SettingLoader::processSettingKeypair()']]],
   ['processsettingsjson_15',['processSettingsJson',['../structCommandProcessor.html#afae183ea2d742da61c0ac2220e6bed7d',1,'CommandProcessor']]]
 ];

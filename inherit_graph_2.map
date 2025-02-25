@@ -4,7 +4,7 @@
 <area shape="poly" id="edge3_Node000000_Node000001" title=" " alt="" coords="110,70,181,40,214,29,215,34,183,45,112,75"/>
 <area shape="rect" id="Node000002" href="$classExternalTempSensor.html" title=" " alt="" coords="198,55,340,80"/>
 <area shape="poly" id="edge4_Node000000_Node000002" title=" " alt="" coords="149,80,197,74,198,79,150,85"/>
-<area shape="rect" id="Node000003" href="$classMockTempSensor.html" title=" " alt="" coords="205,104,333,130"/>
+<area shape="rect" id="Node000003" href="$classMockTempSensor.html" title=" " alt="" coords="205,104,332,130"/>
 <area shape="poly" id="edge5_Node000000_Node000003" title=" " alt="" coords="150,100,205,107,204,112,149,105"/>
 <area shape="rect" id="Node000004" href="$classOneWireTempSensor.html" title="A OneWire attached temperature sensor." alt="" coords="196,153,342,179"/>
 <area shape="poly" id="edge6_Node000000_Node000004" title=" " alt="" coords="112,110,183,140,216,150,214,155,181,145,110,115"/>

@@ -1,29 +1,29 @@
 <map id="TempControl" name="TempControl">
-<area shape="rect" id="Node000001" title=" " alt="" coords="667,258,763,284"/>
-<area shape="rect" id="Node000002" href="$classTempSensor.html" title="General interface for all temperature sensor devices." alt="" coords="436,74,531,100"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="541,103,594,128,645,164,667,187,685,212,710,256,705,259,681,215,663,190,642,168,591,133,538,108"/>
-<area shape="rect" id="Node000003" href="$classBasicTempSensor.html" title=" " alt="" coords="187,30,315,56"/>
-<area shape="poly" id="edge5_Node000001_Node000003" title=" " alt="" coords="331,25,404,18,488,20,530,27,572,40,610,58,645,82,664,102,679,125,700,175,711,222,715,257,710,258,706,223,695,177,674,128,660,106,642,86,608,62,570,45,529,33,487,26,404,23,331,30"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="330,55,436,75,435,81,329,60"/>
-<area shape="rect" id="Node000004" href="$classCascadedFilter.html" title="Implements a filter that consists of multiple second order sections." alt="" coords="197,124,305,149"/>
-<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="320,131,398,119,455,98,457,103,400,124,321,136"/>
-<area shape="rect" id="Node000005" href="$classFixedFilter.html" title=" " alt="" coords="5,124,87,149"/>
-<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="102,134,196,134,196,139,102,139"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="667,259,763,284"/>
+<area shape="rect" id="Node000002" href="$classTempSensor.html" title="General interface for all temperature sensor devices." alt="" coords="436,75,531,100"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="541,104,594,129,645,164,667,187,685,213,710,257,705,260,681,216,663,191,642,168,591,134,538,109"/>
+<area shape="rect" id="Node000003" href="$classBasicTempSensor.html" title=" " alt="" coords="187,31,315,56"/>
+<area shape="poly" id="edge5_Node000001_Node000003" title=" " alt="" coords="331,25,404,18,488,21,530,28,572,40,610,58,645,83,664,103,679,126,700,176,711,223,715,258,710,259,706,224,695,177,674,128,660,106,642,87,608,63,570,45,529,33,487,26,404,24,331,30"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="330,56,436,76,435,81,329,61"/>
+<area shape="rect" id="Node000004" href="$classCascadedFilter.html" title="Implements a filter that consists of multiple second order sections." alt="" coords="197,124,305,150"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="320,130,398,118,453,98,455,103,400,123,321,136"/>
+<area shape="rect" id="Node000005" href="$classFixedFilter.html" title=" " alt="" coords="5,124,87,150"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="102,134,196,134,196,140,102,140"/>
 <area shape="rect" id="Node000006" href="$classActuator.html" title=" " alt="" coords="216,205,286,231"/>
-<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="301,209,370,205,456,205,551,213,598,222,644,234,692,255,690,260,642,239,597,227,550,218,456,210,370,210,301,215"/>
-<area shape="rect" id="Node000007" href="$classAutoOffActuator.html" title=" " alt="" coords="427,233,541,259"/>
-<area shape="poly" id="edge8_Node000007_Node000006" title=" " alt="" coords="302,221,426,236,426,241,301,226"/>
-<area shape="poly" id="edge9_Node000007_Node000006" title=" " alt="" coords="291,235,340,251,383,255,426,253,426,258,383,261,338,257,290,240"/>
-<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="556,251,667,263,666,268,556,256"/>
-<area shape="rect" id="Node000008" href="$classSensor.html" title=" " alt="" coords="430,282,538,308"/>
-<area shape="poly" id="edge10_Node000001_Node000008" title=" " alt="" coords="553,295,643,289,673,282,674,287,644,294,554,300"/>
-<area shape="rect" id="Node000009" href="$classControlConstants.html" title="PID Control constants." alt="" coords="423,332,544,357"/>
-<area shape="poly" id="edge11_Node000001_Node000009" title=" " alt="" coords="559,336,601,328,642,316,672,300,696,282,700,286,675,304,644,320,603,333,560,341"/>
-<area shape="rect" id="Node000010" href="$classJSONSaveable.html" title="Data that can be persisted as JSON." alt="" coords="195,358,307,384"/>
-<area shape="poly" id="edge12_Node000009_Node000010" title=" " alt="" coords="321,360,422,349,423,354,322,366"/>
-<area shape="rect" id="Node000011" href="$structControlSettings.html" title=" " alt="" coords="429,381,539,407"/>
-<area shape="poly" id="edge14_Node000011_Node000010" title=" " alt="" coords="322,375,428,386,428,391,322,381"/>
-<area shape="poly" id="edge13_Node000001_Node000011" title=" " alt="" coords="554,386,599,375,642,356,663,339,680,320,705,282,709,285,684,323,666,343,645,360,601,380,555,391"/>
-<area shape="rect" id="Node000012" href="$structControlVariables.html" title=" " alt="" coords="426,430,542,456"/>
-<area shape="poly" id="edge15_Node000001_Node000012" title=" " alt="" coords="557,437,601,425,642,404,668,376,687,342,708,283,713,285,692,344,672,379,645,408,603,430,558,442"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="301,210,370,205,456,204,551,212,598,221,644,233,693,256,691,261,642,238,597,226,550,218,456,210,370,210,301,215"/>
+<area shape="rect" id="Node000007" href="$classAutoOffActuator.html" title=" " alt="" coords="426,233,541,259"/>
+<area shape="poly" id="edge8_Node000007_Node000006" title=" " alt="" coords="302,222,426,237,426,242,301,227"/>
+<area shape="poly" id="edge9_Node000007_Node000006" title=" " alt="" coords="291,236,340,252,383,256,426,253,426,259,383,261,338,257,290,241"/>
+<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="556,251,667,264,666,269,556,257"/>
+<area shape="rect" id="Node000008" href="$classSensor.html" title=" " alt="" coords="430,283,538,308"/>
+<area shape="poly" id="edge10_Node000001_Node000008" title=" " alt="" coords="553,295,643,289,673,282,674,288,644,295,554,300"/>
+<area shape="rect" id="Node000009" href="$classControlConstants.html" title="PID Control constants." alt="" coords="423,332,544,358"/>
+<area shape="poly" id="edge11_Node000001_Node000009" title=" " alt="" coords="559,336,601,329,642,316,672,300,696,283,700,287,675,305,644,321,603,334,560,342"/>
+<area shape="rect" id="Node000010" href="$classJSONSaveable.html" title="Data that can be persisted as JSON." alt="" coords="195,359,306,384"/>
+<area shape="poly" id="edge12_Node000009_Node000010" title=" " alt="" coords="321,361,422,349,423,354,322,366"/>
+<area shape="rect" id="Node000011" href="$structControlSettings.html" title=" " alt="" coords="428,381,539,407"/>
+<area shape="poly" id="edge14_Node000011_Node000010" title=" " alt="" coords="322,376,428,386,428,392,322,381"/>
+<area shape="poly" id="edge13_Node000001_Node000011" title=" " alt="" coords="554,385,599,374,642,355,662,339,680,320,704,283,709,286,684,323,666,343,645,360,601,379,555,391"/>
+<area shape="rect" id="Node000012" href="$structControlVariables.html" title=" " alt="" coords="426,431,542,456"/>
+<area shape="poly" id="edge15_Node000001_Node000012" title=" " alt="" coords="557,436,601,425,642,403,668,375,687,342,708,284,713,286,692,345,672,379,645,407,603,430,558,442"/>
 </map>
