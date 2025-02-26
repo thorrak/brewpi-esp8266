@@ -94,4 +94,4 @@ Although this firmware works with brewpi-www, it is highly recommended that user
 
 ## Hardware
 
-I maintain a separate repo with PCB and 3D-printable case designs for all of my projects [here](https://github.com/thorrak/thorrak_hardware/). The page specific to BrewPi-ESP8266 can be accessed [here][(https://github.com/thorrak/thorrak_hardware/tree/master/ESP8266%20BrewPi%20Boards). And for the BrewPi-ESP32 [here](https://github.com/thorrak/thorrak_hardware/tree/master/ESP32%20BrewPi%20Boards)
+I maintain a separate repo with PCB and 3D-printable case designs for all of my projects [here](https://github.com/thorrak/thorrak_hardware/). The page specific to BrewPi-ESP8266 can be accessed [here](https://github.com/thorrak/thorrak_hardware/tree/master/ESP8266%20BrewPi%20Boards). And for the BrewPi-ESP32 [here](https://github.com/thorrak/thorrak_hardware/tree/master/ESP32%20BrewPi%20Boards)
