@@ -200,7 +200,8 @@ bool processDeviceUpdateJson(const JsonDocument& json, bool triggerUpstreamUpdat
 // Allows us to process the device definition update in the main loop rather than in the async handler
 void httpServer::processQueuedDeviceDefinition() {
     if(device_definition_update_requested) {
-        DeviceConfig print = deviceManager.updateDeviceDefinition(dev);   // Save the device definition (if valid)
+        /*DeviceConfig print =*/
+        deviceManager.updateDeviceDefinition(dev);   // Save the device definition (if valid)
         device_definition_update_requested = false;
     }
 }
@@ -307,6 +308,17 @@ bool processExtendedSettingsJson(const JsonDocument& json, bool triggerUpstreamU
         }
     } else {
         Log.warning(F("Invalid [invertTFT]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::invertTFT]);
+        failCount++;
+    }
+
+    // Reset Screen on Pin Toggle Flag
+    if(json[ExtendedSettingsKeys::resetScreenOnPin].is<bool>()) {
+        if(extendedSettings.resetScreenOnPin != json[ExtendedSettingsKeys::resetScreenOnPin].as<bool>()) {
+            extendedSettings.setResetScreenOnPin(json[ExtendedSettingsKeys::resetScreenOnPin].as<bool>());
+            saveSettings = true;
+        }
+    } else {
+        Log.warning(F("Invalid [resetScreenOnPin]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::resetScreenOnPin]);
         failCount++;
     }
 

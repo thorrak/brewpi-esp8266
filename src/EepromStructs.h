@@ -206,6 +206,7 @@ public:
     bool invertTFT;  //<! Whether or not to invert the TFT
     bool largeTFT;  //<! Whether or not to use a large TFT
     bool glycol;  //<! Whether or not to use glycol mode
+    bool resetScreenOnPin;  //<! Whether or not to reset the screen when an ActuatorArduinoPin toggles
 
     #ifdef HAS_BLUETOOTH
     NimBLEAddress tiltGravSensor; //<! The color of the Tilt hydrometer used for gravity
@@ -222,6 +223,7 @@ public:
     void setGlycol(bool setting);
     void setInvertTFT(bool setting);
     void setLargeTFT(bool setting);
+    void setResetScreenOnPin(bool setting);
 
     /**
      * \brief Filename used when reading/writing data to flash
