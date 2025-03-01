@@ -5,16 +5,7 @@
 
 #define WEB_SERVER_PORT 80
 
-#ifdef ESP8266
-#include <ESP8266WebServer.h>
-#define WEBSERVER_IMPL ESP8266WebServer
-#elif defined(ESP32)
-#include <WebServer.h>
-#define WEBSERVER_IMPL WebServer
-#endif
-
-
-uint8_t processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUpstreamUpdate = true);
+#include <ESPAsyncWebServer.h>
 
 
 class httpServer {
@@ -27,27 +18,19 @@ public:
     bool wifi_reset_requested = false;
     bool config_reset_requested = false;
     bool ota_update_requested = false;
-    WEBSERVER_IMPL *web_server;
+    // WEBSERVER_IMPL *web_server;
 
 
 private:
-    void uptime();
-    void heap();
-    void genericServeJson(void(*jsonFunc)(JsonDocument&));
-    void processJsonRequest(const char* uri, uint8_t (*handler)(const JsonDocument& json, bool triggerUpstreamUpdate));
-    void serveExtendedSettings();
-    void serveUpstreamSettings();
-    void serveMinTimes();
-    void reset_reason();
+    void genericServeJson(AsyncWebServerRequest *request, void (*jsonFunc)(JsonDocument &));
 
     void setStaticPages();
     void setJsonPages();
-    void setJsonHandlers();
+    void setPutPages();
 
     String getContentType(String filename);
-    // bool exists(String path);
-    bool handleFileRead(String path);
-    void redirect(const String& url);
+    bool handleFileRead(AsyncWebServerRequest *request, String path);
+    void redirect(AsyncWebServerRequest *request, const String &url);
 
 };
 
@@ -55,4 +38,4 @@ extern httpServer http_server;
 
 #endif //ENABLE_HTTP_INTERFACE
 
-#endif //TRONBRIDGE_HTTP_SERVER_H
+#endif //BREWPI_HTTP_SERVER_H

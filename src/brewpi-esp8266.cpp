@@ -287,7 +287,7 @@ if(bt_scanner.scanning_failed()) {
 #endif
 
 #ifdef ENABLE_HTTP_INTERFACE
-  http_server.web_server->handleClient();
+  // The webserver is now handled asynchronously, so we don't need to call handleClient() here
   rest_handler.process();
 #endif
 
