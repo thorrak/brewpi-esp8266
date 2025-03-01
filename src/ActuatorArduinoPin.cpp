@@ -14,7 +14,7 @@ void DigitalPinActuator::setActive(bool active_setting) {
     if (oldActive != active) {
         // We toggled one of the pins, which can cause issues for the display. Delay slightly to let everything settle down, then reinit the display
         delay(100);
-        display.init();
+        display.reset();
         display.printAll();
     }
 
