@@ -3,19 +3,12 @@
 #include <Arduino.h>
 #include <ArduinoLog.h>
 #include <ArduinoJson.h>
-// #define LCBURL_MDNS
-// #include <LCBUrl.h>
-// #include <WiFi.h>
-// #include <WiFiClient.h>
+#include <AsyncJson.h>
+#include <ESPAsyncWebServer.h>
 
 #include "ESPEepromAccess.h"  // Defines FILESYSTEM (and includes the approprite headers)
 
 #include "uptime.h"
-// #include "version.h"
-// #include "wifi_setup.h"
-
-// #include "jsonconfig.h"
-
 #include "resetreasons.h"
 #include "http_server.h"
 #include "TempControl.h"
@@ -26,14 +19,17 @@
 #include "JsonKeys.h"
 #include "rest/rest_send.h"
 
+#include "extended_async_json_handler.h"
+
 
 httpServer http_server;
+AsyncWebServer asyncWebServer(WEB_SERVER_PORT);
 
 
 
 // Settings Page Handlers
 
-uint8_t processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
+bool processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
     uint8_t failCount = 0;
     bool saveSettings = false;
 
@@ -150,57 +146,67 @@ uint8_t processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUp
         upstreamSettings.upstreamRegistrationError = UpstreamSettings::upstreamRegErrorT::NOT_ATTEMPTED_REGISTRATION;
         rest_handler.register_device_ticker = true;
     }
-    return failCount;
+    return failCount == 0;
 }
 
 
-uint8_t processDeviceUpdateJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
+bool processDeviceUpdateJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
     DeviceDefinition dev;
-// Check for universally required keys
-if(!json[DeviceDefinitionKeys::chamber].is<uint8_t>() || !json[DeviceDefinitionKeys::beer].is<uint8_t>() || 
-   !json[DeviceDefinitionKeys::function].is<uint8_t>() || !json[DeviceDefinitionKeys::hardware].is<uint8_t>()
-//    || !json[DeviceDefinitionKeys::deactivated].is<bool>()
-   ) 
-{
-    // We don't actually parse deactivated, so commenting out the check. If we add it later, we will need to check that we don't need to do
-    // shenanigans like we do with invert below to handle all the various ways it can be sent to us.
-    Log.warning(F("Invalid device definition received - missing required keys (c/f/h/b).\r\n"));
-    return 1;
-}
+    // Check for universally required keys
+    if(!json[DeviceDefinitionKeys::chamber].is<uint8_t>() || !json[DeviceDefinitionKeys::beer].is<uint8_t>() || 
+        !json[DeviceDefinitionKeys::function].is<uint8_t>() || !json[DeviceDefinitionKeys::hardware].is<uint8_t>()
+    //    || !json[DeviceDefinitionKeys::deactivated].is<bool>()
+    ) 
+    {
+        // We don't actually parse deactivated, so commenting out the check. If we add it later, we will need to check that we don't need to do
+        // shenanigans like we do with invert below to handle all the various ways it can be sent to us.
+        Log.warning(F("Invalid device definition received - missing required keys (c/f/h/b).\r\n"));
+        return 1;
+    }
 
-switch(json[DeviceDefinitionKeys::hardware].as<uint8_t>()) {
-    case DEVICE_HARDWARE_PIN:
+    switch(json[DeviceDefinitionKeys::hardware].as<uint8_t>()) {
+        case DEVICE_HARDWARE_PIN:
 
-        if(!json[DeviceDefinitionKeys::pin].is<int>() || !(json[DeviceDefinitionKeys::invert].is<bool>() || json[DeviceDefinitionKeys::invert].is<const char *>() || json[DeviceDefinitionKeys::invert].is<uint8_t>())) {
-            Log.warning(F("Invalid device definition received - missing required keys (p/x).\r\n"));
-            return 1;
-        }
-        break;
-    case DEVICE_HARDWARE_ONEWIRE_TEMP:
-    case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
-    case DEVICE_HARDWARE_BLUETOOTH_TILT:
-        if(!json[DeviceDefinitionKeys::address].is<const char*>()) {
-            Log.warning(F("Invalid device definition received - missing required keys (a).\r\n"));
-            return 1;
-        }
-        break;
-    case DEVICE_HARDWARE_TPLINK_SWITCH:
-        if(!json[DeviceDefinitionKeys::address].is<const char*>() || !json[DeviceDefinitionKeys::child_id].is<const char*>()) {
-            Log.warning(F("Invalid device definition received - missing required keys (a).\r\n"));
-            return 1;
-        }
-        break;
-    default:
-        break;
-}
-    dev = DeviceManager::readJsonIntoDeviceDef(json);                  // Parse the JSON into a DeviceDefinition object
-    DeviceConfig print = deviceManager.updateDeviceDefinition(dev);   // Save the device definition (if valid)
+            if(!json[DeviceDefinitionKeys::pin].is<int>() || !(json[DeviceDefinitionKeys::invert].is<bool>() || json[DeviceDefinitionKeys::invert].is<const char *>() || json[DeviceDefinitionKeys::invert].is<uint8_t>())) {
+                Log.warning(F("Invalid device definition received - missing required keys (p/x).\r\n"));
+                return 1;
+            }
+            break;
+        case DEVICE_HARDWARE_ONEWIRE_TEMP:
+        case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
+        case DEVICE_HARDWARE_BLUETOOTH_TILT:
+            if(!json[DeviceDefinitionKeys::address].is<const char*>()) {
+                Log.warning(F("Invalid device definition received - missing required keys (a).\r\n"));
+                return 1;
+            }
+            break;
+        case DEVICE_HARDWARE_TPLINK_SWITCH:
+            if(!json[DeviceDefinitionKeys::address].is<const char*>() || !json[DeviceDefinitionKeys::child_id].is<const char*>()) {
+                Log.warning(F("Invalid device definition received - missing required keys (a).\r\n"));
+                return 1;
+            }
+            break;
+        default:
+            break;
+    }
+    http_server.dev = DeviceManager::readJsonIntoDeviceDef(json);                  // Parse the JSON into a DeviceDefinition object
+    http_server.device_definition_update_requested = true;
+    // dev = DeviceManager::readJsonIntoDeviceDef(json);                  // Parse the JSON into a DeviceDefinition object
     // TODO - Trigger upstream update
-    return 0;
+    return true;
 }
 
 
-uint8_t processUpdateModeJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
+// Allows us to process the device definition update in the main loop rather than in the async handler
+void httpServer::processQueuedDeviceDefinition() {
+    if(device_definition_update_requested) {
+        DeviceConfig print = deviceManager.updateDeviceDefinition(dev);   // Save the device definition (if valid)
+        device_definition_update_requested = false;
+    }
+}
+
+
+bool processUpdateModeJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
     uint8_t failCount = 0;
     bool saveSettings = false;
 
@@ -261,12 +267,12 @@ uint8_t processUpdateModeJson(const JsonDocument& json, bool triggerUpstreamUpda
             // upstreamSettings.storeToFilesystem();
         }
     }
-    return failCount;
+    return failCount == 0;
 }
 
 
 
-uint8_t processExtendedSettingsJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
+bool processExtendedSettingsJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
     uint8_t failCount = 0;
     bool saveSettings = false;
     bool saveMinTimes = false; 
@@ -412,7 +418,7 @@ uint8_t processExtendedSettingsJson(const JsonDocument& json, bool triggerUpstre
             // TODO - Force upstream cascade/send
         }
     }
-    return failCount;
+    return failCount == 0;
 }
 
 
@@ -461,18 +467,9 @@ uint8_t processExtendedSettingsJson(const JsonDocument& json, bool triggerUpstre
 
 //-----------------------------------------------------------------------------------------
 
-void httpServer::genericServeJson(void(*jsonFunc)(JsonDocument&)) {
-    String serializedJson;  // Use String here to prevent stack overflow
-    JsonDocument doc;
-    jsonFunc(doc);
-    serializeJson(doc, serializedJson);
-    doc.clear();
-    web_server->send(200, "application/json", serializedJson);
-}
 
 // There may be a way to combine the following using virtual functions, but I'm not going to worry about that for now
-void httpServer::serveExtendedSettings() {
-    JsonDocument doc;
+void serveExtendedSettings(JsonDocument &doc) {
     JsonDocument extended_settings;
     JsonDocument min_times;
 
@@ -481,47 +478,16 @@ void httpServer::serveExtendedSettings() {
 
     doc["extendedSettings"] = extended_settings;
     doc["minTimes"] = min_times;
-
-    char serializedJson[2048];
-    serializeJson(doc, serializedJson);
-    doc.clear();
-    web_server->send(200, "application/json", serializedJson);
 }
 
-void httpServer::serveUpstreamSettings() {
-    JsonDocument doc;
+void serveUpstreamSettings(JsonDocument &doc) {
     upstreamSettings.toJson(doc);
-    char serializedJson[2048];
-    serializeJson(doc, serializedJson);
-    doc.clear();
-    web_server->send(200, "application/json", serializedJson);
 }
 
 
-// // About Page Handlers
-// //
-// void version_info(AsyncWebServerRequest *request) {
-//     Log.verbose(F("Serving version.\r\n"));
-//     JsonDocument doc;
-
-//     doc["version"] = version();
-//     doc["ota_status"] = ota_status;
-//     // doc["branch"] = branch();
-//     // doc["build"] = build();
-
-//     if(millis() > (ota_last_check_at + OTA_CHECK_PERIOD) && ota_status == no_upgrade)
-//         ota_status = pending_check;
-
-//     char output[96];
-//     serializeJson(doc, output);
-
-//     web_server->send(200, "application/json", output);
-// }
-
-
-void httpServer::uptime() {
+// About Page Handlers
+void uptime(JsonDocument &doc) {
     Log.verbose(F("Serving uptime.\r\n"));
-    JsonDocument doc;
 
     doc["days"] = uptimeDays();
     doc["hours"] = uptimeHours();
@@ -529,16 +495,11 @@ void httpServer::uptime() {
     doc["seconds"] = uptimeSeconds();
     doc["millis"] = uptimeMillis();
 
-    char output[96];
-    serializeJson(doc, output);
-
-    web_server->send(200, "application/json", output);
 }
 
 
-void httpServer::heap() {
+void heap(JsonDocument &doc) {
     Log.verbose(F("Serving heap information.\r\n"));
-    JsonDocument doc;
 
     const uint32_t free = ESP.getFreeHeap();
 #ifdef ESP32
@@ -551,17 +512,11 @@ void httpServer::heap() {
     doc["free"] = free;
     doc["max"] = max;
     doc["frag"] = frag;
-
-    char output[48];
-    serializeJson(doc, output);
-
-    web_server->send(200, "application/json", output);
 }
 
 
-void httpServer::reset_reason() {
+void reset_reason(JsonDocument &doc) {
     Log.verbose(F("Serving reset reason.\r\n"));
-    JsonDocument doc;
 
 #ifdef ESP32
     const int reset = (int)esp_reset_reason();
@@ -572,208 +527,102 @@ void httpServer::reset_reason() {
     doc["description"] = "N/A";
 #endif
 
-    char output[128];
-    serializeJson(doc, output);
-
-    web_server->send(200, "application/json", output);
 }
 
 
+// Static page routing
 void httpServer::setStaticPages() {
-    // Static page handlers - Vue
-    web_server->serveStatic("/", FILESYSTEM, "/index.html", "max-age=600");
-    web_server->serveStatic("/index.html", FILESYSTEM, "/index.html", "max-age=600");
+    // Define the base static page handlers
+    asyncWebServer.serveStatic("/", FILESYSTEM, "/index.html").setCacheControl("max-age=600");
+    asyncWebServer.serveStatic("/index.html", FILESYSTEM, "/index.html").setCacheControl("max-age=600");
 
-    // Vue routes
-    web_server->serveStatic("/upstream/", FILESYSTEM, "/index.html", "max-age=600");
-    web_server->serveStatic("/upstream", FILESYSTEM, "/index.html", "max-age=600");
-    web_server->serveStatic("/devices/", FILESYSTEM, "/index.html", "max-age=600");
-    web_server->serveStatic("/devices", FILESYSTEM, "/index.html", "max-age=600");
-    web_server->serveStatic("/about/", FILESYSTEM, "/index.html", "max-age=600");
-    web_server->serveStatic("/about", FILESYSTEM, "/index.html", "max-age=600");
-    web_server->serveStatic("/settings/", FILESYSTEM, "/index.html", "max-age=600");
-    web_server->serveStatic("/settings", FILESYSTEM, "/index.html", "max-age=600");
+    // Define Vue routes
+    const char* vueRoutes[] = {
+        "/upstream", 
+        "/devices",
+        "/about", 
+        "/settings"
+    };
+
+
+    // Serve static pages for Vue routes and their trailing-slash versions
+    for (const char* route : vueRoutes) {
+        asyncWebServer.serveStatic(route, FILESYSTEM, "/index.html").setCacheControl("max-age=600");
+
+        // Serve the same route with a trailing slash
+        String routeWithSlash = String(route) + "/";
+        asyncWebServer.serveStatic(routeWithSlash.c_str(), FILESYSTEM, "/index.html").setCacheControl("max-age=600");
+    }
 
     // Legacy static page handlers
-    web_server->serveStatic("/404/", FILESYSTEM, "/404.html", "max-age=600");
+    // TODO - Determine if this can be deleted
+    asyncWebServer.serveStatic("/404/", FILESYSTEM, "/404.html").setCacheControl("max-age=600");
+
 }
 
 
 void httpServer::setJsonPages() {
-    // Controller Version Stats
-    web_server->on("/api/version/", HTTP_GET, [&]() {
-        genericServeJson(&versionInfoJson);
-    });
+    struct Endpoint {
+        const char* path;
+        void (*handler)(JsonDocument&);
+    };
 
-    // Controller Legacy LCD Output
-    web_server->on("/api/lcd/", HTTP_GET, [&]() {
-        genericServeJson(&getLcdContentJson);
-    });
+    const Endpoint endpoints[] = {
+        {"/api/version/", versionInfoJson},
+        {"/api/lcd/", getLcdContentJson},
+        {"/api/temps/", printTemperaturesJson},
+        {"/api/cs/", tempControl.getControlSettingsDoc},
+        {"/api/cc/", tempControl.getControlConstantsDoc},
+        {"/api/cv/", tempControl.getControlVariablesDoc},
+        {"/api/all_temp_control/", getFullTemperatureControlJson},
+        {"/api/devices/", DeviceManager::enumerateHardware},
+        {"/api/extended/", serveExtendedSettings},
+        {"/api/upstream/", serveUpstreamSettings},
+        {"/api/uptime/", uptime},
+        {"/api/heap/", heap},
+        {"/api/resetreason/", reset_reason},
+    };
 
-    // Controller Temps (logging format)
-    web_server->on("/api/temps/", HTTP_GET, [&]() {
-        genericServeJson(&printTemperaturesJson);
-    });
-
-    // Temp Control Settings (cs)
-    web_server->on("/api/cs/", HTTP_GET, [&]() {
-        genericServeJson(&tempControl.getControlSettingsDoc);
-    });
-
-    // Temp Control Constants (cc)
-    web_server->on("/api/cc/", HTTP_GET, [&]() {
-        genericServeJson(&tempControl.getControlConstantsDoc);
-    });
-
-    // Temp Control Variables (cv)
-    web_server->on("/api/cv/", HTTP_GET, [&]() {
-        genericServeJson(&tempControl.getControlVariablesDoc);
-    });
-
-    // Full Temp Control Settings (cs, cc, cv, logging format)
-    web_server->on("/api/all_temp_control/", HTTP_GET, [&]() {
-        genericServeJson(&getFullTemperatureControlJson);
-    });
-
-    // Full Temp Control Settings (cs, cc, cv, logging format)
-    web_server->on("/api/devices/", HTTP_GET, [&]() {
-        genericServeJson(&DeviceManager::enumerateHardware);
-    });
-
-    // Extended (non-stock-brewpi) Settings
-    web_server->on("/api/extended/", HTTP_GET, [&]() {
-        serveExtendedSettings();
-    });
-
-    // "Upstream" (Fermentrack REST) Settings
-    web_server->on("/api/upstream/", HTTP_GET, [&]() {
-        serveUpstreamSettings();
-    });
-
-
-    web_server->on("/api/uptime/", HTTP_GET, [&]() {
-        uptime();
-    });
-    web_server->on("/api/heap/", HTTP_GET, [&]() {
-        heap();
-    });
-    web_server->on("/api/resetreason/", HTTP_GET, [&]() {
-        reset_reason();
-    });
-}
-
-
-void httpServer::processJsonRequest(const char* uri, uint8_t (*handler)(const JsonDocument& json, bool triggerUpstreamUpdate)) {
-    // Handler for configuration options
-    char message[200] = "";
-    uint8_t errors = 0;
-    uint16_t status_code = 200;
-    JsonDocument response;
-    Log.verbose(F("Processing %s\r\n"), uri);
-
-    JsonDocument json;
-    DeserializationError error = deserializeJson(json, web_server->arg("plain"));
-    if (error) {
-        Log.error(F("Error parsing JSON: %s\r\n"), error.c_str());
-        response["message"] = "Unable to parse JSON";
-        status_code = 400;
-    } else {
-        errors = handler(json, true);  // Apply the handler to the data (and trigger an upstream update)
-
-        if(errors == 0) {
-            response["message"] = "Update processed successfully";
-        } else {
-            response["message"] = "Unable to process update";
-            status_code = 400;
-        }    
+    for (const auto& endpoint : endpoints) {
+        asyncWebServer.addHandler(new GetAsyncCallbackJsonWebHandler(endpoint.path, endpoint.handler));
     }
-
-    serializeJson(response, message);
-    web_server->send(status_code, "application/json", message);
-    
 }
 
 
-void httpServer::setJsonHandlers() {
+void httpServer::setPutPages() {
+    struct Endpoint {
+        const char* path;
+        bool (*handler)(const JsonDocument&, bool);
+    };
 
-    web_server->on("/api/upstream/", HTTP_PUT, [&]() {
-        processJsonRequest("/api/upstream/", &processUpstreamConfigUpdateJson);
-    });
+    const Endpoint endpoints[] = {
+        {"/api/upstream/", processUpstreamConfigUpdateJson},
+        {"/api/devices/", processDeviceUpdateJson},
+        {"/api/mode/", processUpdateModeJson},
+        {"/api/extended/", processExtendedSettingsJson},
+    };
 
-    web_server->on("/api/devices/", HTTP_PUT, [&]() {
-        processJsonRequest("/api/devices/", &processDeviceUpdateJson);
-    });
-
-    web_server->on("/api/mode/", HTTP_PUT, [&]() {
-        processJsonRequest("/api/mode/", &processUpdateModeJson);
-    });
-
-    web_server->on("/api/extended/", HTTP_PUT, [&]() {
-        processJsonRequest("/api/extended/", &processExtendedSettingsJson);
-    });
-
-
-    // AsyncCallbackJsonWebHandler* processAction = new AsyncCallbackJsonWebHandler("/api/action/", [](AsyncWebServerRequest *request, JsonVariant const &json) {
-    //     // TODO - Adapt this to use the new processJsonRequest function
-    //     // Handler for configuration options
-    //     char message[200] = "";
-    //     JsonDocument response;
-    //     Log.verbose(F("Processing /api/action/\r\n"));
-
-    //     JsonDocument data;
-    //     if (json.is<JsonArray>())
-    //     {
-    //         data = json.as<JsonArray>();
-    //     }
-    //     else if (json.is<JsonObject>())
-    //     {
-    //         data = json.as<JsonObject>();
-    //     }
-
-    //     // char serialized_mesasage[400];
-    //     // Log.verbose(F("Received message: \r\n"));
-    //     // serializeJson(data, serialized_mesasage);
-    //     // Log.verbose(serialized_mesasage);
-
-    //     if(processActionJson(data)) {
-    //         response["message"] = "Update processed successfully";
-    //     } else {
-    //         response["message"] = "Unable to process update";
-    //     }
-        
-    //     serializeJson(response, message);
-    //     web_server->send(200, "application/json", message);
-    // });
-    // web_server->addHandler(processAction);
-
+    for (const auto& endpoint : endpoints) {
+        asyncWebServer.addHandler(new PutAsyncCallbackJsonWebHandler(endpoint.path, endpoint.handler));
+    }
 }
 
 
 void httpServer::init() {
-    web_server = new WEBSERVER_IMPL(WEB_SERVER_PORT);
-
     setStaticPages();
     setJsonPages();
-    setJsonHandlers();
+    setPutPages();
 
     // File not found handler
-    web_server->onNotFound([&]() {
-        String pathWithGz = web_server->uri() + ".gz";
-        if (web_server->method() == HTTP_OPTIONS) {
-            web_server->send(200);
-        } else if(FILESYSTEM.exists(web_server->uri()) || FILESYSTEM.exists(pathWithGz)) {
-            // WebServer doesn't automatically serve files, so we need to do that here unless we want to
-            // manually add every single file to setStaticPages(). 
-            handleFileRead(web_server->uri());
-        } else {
-            Log.verbose(F("Serving 404 for request to %s.\r\n"), web_server->uri().c_str());
-            redirect("/404/");
+    asyncWebServer.onNotFound([](AsyncWebServerRequest *request) {
+        if (!http_server.handleFileRead(request, request->url())) {
+            request->send(404, "text/plain", "Not Found");
         }
     });
 
     // DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
 
-    web_server->begin();
+    asyncWebServer.begin();
     Log.notice(F("HTTP server started. Open: http://%s.local/ to view application.\r\n"), WiFi.getHostname());
 }
 
