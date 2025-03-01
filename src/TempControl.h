@@ -216,12 +216,7 @@ public:
 	TEMP_CONTROL_METHOD temperature getFridgeSetting();
 	TEMP_CONTROL_METHOD void setFridgeTemp(temperature newTemp);
 
-  /**
-   * Get the current temperature of the room probe.
-   */
-	TEMP_CONTROL_METHOD temperature getRoomTemp() {
-		return ambientSensor->read();
-	}
+	TEMP_CONTROL_METHOD temperature getRoomTemp();
 
 	TEMP_CONTROL_METHOD void setMode(char newMode, bool force=false);
 

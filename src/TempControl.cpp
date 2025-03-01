@@ -45,6 +45,7 @@ extern DisconnectedTempSensor defaultTempSensor;
 TempSensor* TempControl::beerSensor;
 TempSensor* TempControl::fridgeSensor;
 BasicTempSensor* TempControl::ambientSensor = &defaultTempSensor;
+temperature ambientTemp = TEMP_SENSOR_DISCONNECTED;  // Updated in the updateTemperatures() function to prevent reading from the sensor in an async web response
 
 
 Actuator* TempControl::heater = &defaultActuator;
@@ -141,6 +142,17 @@ void updateSensor(TempSensor* sensor) {
 	}
 }
 
+
+/**
+ * Get the current cached room temperature.
+ *
+ * @return Current cached room temperature
+ */
+temperature TempControl::getRoomTemp() {
+	return ambientTemp;
+}
+
+
 /**
  * Update all installed temp sensors.
  *
@@ -150,10 +162,12 @@ void TempControl::updateTemperatures(){
 	
 	updateSensor(beerSensor);
 	updateSensor(fridgeSensor);
+
+	ambientTemp = ambientSensor->read();  // Update ambient sensor here rather to prevent being updated as part of an async web response
 	
-	// Read ambient sensor to keep the value up to date. If no sensor is connected, this does nothing.
+	// If no sensor is connected, this does nothing.
 	// This prevents a delay in serial response because the value is not up to date.
-	if(ambientSensor->read() == TEMP_SENSOR_DISCONNECTED){
+	if(ambientTemp == TEMP_SENSOR_DISCONNECTED){
 		ambientSensor->init(); // try to reconnect a disconnected, but installed sensor
 	}
 }
