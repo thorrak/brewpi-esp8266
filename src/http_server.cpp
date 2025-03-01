@@ -152,47 +152,57 @@ bool processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUpstr
 
 bool processDeviceUpdateJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
     DeviceDefinition dev;
-// Check for universally required keys
-if(!json[DeviceDefinitionKeys::chamber].is<uint8_t>() || !json[DeviceDefinitionKeys::beer].is<uint8_t>() || 
-   !json[DeviceDefinitionKeys::function].is<uint8_t>() || !json[DeviceDefinitionKeys::hardware].is<uint8_t>()
-//    || !json[DeviceDefinitionKeys::deactivated].is<bool>()
-   ) 
-{
-    // We don't actually parse deactivated, so commenting out the check. If we add it later, we will need to check that we don't need to do
-    // shenanigans like we do with invert below to handle all the various ways it can be sent to us.
-    Log.warning(F("Invalid device definition received - missing required keys (c/f/h/b).\r\n"));
-    return 1;
-}
+    // Check for universally required keys
+    if(!json[DeviceDefinitionKeys::chamber].is<uint8_t>() || !json[DeviceDefinitionKeys::beer].is<uint8_t>() || 
+        !json[DeviceDefinitionKeys::function].is<uint8_t>() || !json[DeviceDefinitionKeys::hardware].is<uint8_t>()
+    //    || !json[DeviceDefinitionKeys::deactivated].is<bool>()
+    ) 
+    {
+        // We don't actually parse deactivated, so commenting out the check. If we add it later, we will need to check that we don't need to do
+        // shenanigans like we do with invert below to handle all the various ways it can be sent to us.
+        Log.warning(F("Invalid device definition received - missing required keys (c/f/h/b).\r\n"));
+        return 1;
+    }
 
-switch(json[DeviceDefinitionKeys::hardware].as<uint8_t>()) {
-    case DEVICE_HARDWARE_PIN:
+    switch(json[DeviceDefinitionKeys::hardware].as<uint8_t>()) {
+        case DEVICE_HARDWARE_PIN:
 
-        if(!json[DeviceDefinitionKeys::pin].is<int>() || !(json[DeviceDefinitionKeys::invert].is<bool>() || json[DeviceDefinitionKeys::invert].is<const char *>() || json[DeviceDefinitionKeys::invert].is<uint8_t>())) {
-            Log.warning(F("Invalid device definition received - missing required keys (p/x).\r\n"));
-            return 1;
-        }
-        break;
-    case DEVICE_HARDWARE_ONEWIRE_TEMP:
-    case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
-    case DEVICE_HARDWARE_BLUETOOTH_TILT:
-        if(!json[DeviceDefinitionKeys::address].is<const char*>()) {
-            Log.warning(F("Invalid device definition received - missing required keys (a).\r\n"));
-            return 1;
-        }
-        break;
-    case DEVICE_HARDWARE_TPLINK_SWITCH:
-        if(!json[DeviceDefinitionKeys::address].is<const char*>() || !json[DeviceDefinitionKeys::child_id].is<const char*>()) {
-            Log.warning(F("Invalid device definition received - missing required keys (a).\r\n"));
-            return 1;
-        }
-        break;
-    default:
-        break;
-}
-    dev = DeviceManager::readJsonIntoDeviceDef(json);                  // Parse the JSON into a DeviceDefinition object
-    DeviceConfig print = deviceManager.updateDeviceDefinition(dev);   // Save the device definition (if valid)
+            if(!json[DeviceDefinitionKeys::pin].is<int>() || !(json[DeviceDefinitionKeys::invert].is<bool>() || json[DeviceDefinitionKeys::invert].is<const char *>() || json[DeviceDefinitionKeys::invert].is<uint8_t>())) {
+                Log.warning(F("Invalid device definition received - missing required keys (p/x).\r\n"));
+                return 1;
+            }
+            break;
+        case DEVICE_HARDWARE_ONEWIRE_TEMP:
+        case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
+        case DEVICE_HARDWARE_BLUETOOTH_TILT:
+            if(!json[DeviceDefinitionKeys::address].is<const char*>()) {
+                Log.warning(F("Invalid device definition received - missing required keys (a).\r\n"));
+                return 1;
+            }
+            break;
+        case DEVICE_HARDWARE_TPLINK_SWITCH:
+            if(!json[DeviceDefinitionKeys::address].is<const char*>() || !json[DeviceDefinitionKeys::child_id].is<const char*>()) {
+                Log.warning(F("Invalid device definition received - missing required keys (a).\r\n"));
+                return 1;
+            }
+            break;
+        default:
+            break;
+    }
+    http_server.dev = DeviceManager::readJsonIntoDeviceDef(json);                  // Parse the JSON into a DeviceDefinition object
+    http_server.device_definition_update_requested = true;
+    // dev = DeviceManager::readJsonIntoDeviceDef(json);                  // Parse the JSON into a DeviceDefinition object
     // TODO - Trigger upstream update
     return true;
+}
+
+
+// Allows us to process the device definition update in the main loop rather than in the async handler
+void httpServer::processQueuedDeviceDefinition() {
+    if(device_definition_update_requested) {
+        DeviceConfig print = deviceManager.updateDeviceDefinition(dev);   // Save the device definition (if valid)
+        device_definition_update_requested = false;
+    }
 }
 
 

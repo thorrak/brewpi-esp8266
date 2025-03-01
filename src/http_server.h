@@ -6,19 +6,22 @@
 #define WEB_SERVER_PORT 80
 
 #include <ESPAsyncWebServer.h>
+#include "DeviceManager.h"  // For DeviceDefinition
 
 
 class httpServer {
 public:
     void init();
-    //void handleClient();
     bool lcd_reinit_rqd = false;
     bool restart_requested = false;
     bool name_reset_requested = false;
     bool wifi_reset_requested = false;
     bool config_reset_requested = false;
     bool ota_update_requested = false;
-    // WEBSERVER_IMPL *web_server;
+    bool device_definition_update_requested = false;
+
+    DeviceDefinition dev;
+    void processQueuedDeviceDefinition();
 
 
 private:
