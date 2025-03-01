@@ -522,90 +522,60 @@ void reset_reason(JsonDocument &doc) {
 
 // Static page routing
 void httpServer::setStaticPages() {
-    // Static page handlers - Vue
+    // Define the base static page handlers
     asyncWebServer.serveStatic("/", FILESYSTEM, "/index.html").setCacheControl("max-age=600");
     asyncWebServer.serveStatic("/index.html", FILESYSTEM, "/index.html").setCacheControl("max-age=600");
 
-    // Vue routes
-    asyncWebServer.serveStatic("/upstream/", FILESYSTEM, "/index.html").setCacheControl("max-age=600");
-    asyncWebServer.serveStatic("/upstream", FILESYSTEM, "/index.html").setCacheControl("max-age=600");
-    asyncWebServer.serveStatic("/devices/", FILESYSTEM, "/index.html").setCacheControl("max-age=600");
-    asyncWebServer.serveStatic("/devices", FILESYSTEM, "/index.html").setCacheControl("max-age=600");
-    asyncWebServer.serveStatic("/about/", FILESYSTEM, "/index.html").setCacheControl("max-age=600");
-    asyncWebServer.serveStatic("/about", FILESYSTEM, "/index.html").setCacheControl("max-age=600");
-    asyncWebServer.serveStatic("/settings/", FILESYSTEM, "/index.html").setCacheControl("max-age=600");
-    asyncWebServer.serveStatic("/settings", FILESYSTEM, "/index.html").setCacheControl("max-age=600");
+    // Define Vue routes
+    const char* vueRoutes[] = {
+        "/upstream", 
+        "/devices",
+        "/about", 
+        "/settings"
+    };
+
+
+    // Serve static pages for Vue routes and their trailing-slash versions
+    for (const char* route : vueRoutes) {
+        asyncWebServer.serveStatic(route, FILESYSTEM, "/index.html").setCacheControl("max-age=600");
+
+        // Serve the same route with a trailing slash
+        String routeWithSlash = String(route) + "/";
+        asyncWebServer.serveStatic(routeWithSlash.c_str(), FILESYSTEM, "/index.html").setCacheControl("max-age=600");
+    }
 
     // Legacy static page handlers
+    // TODO - Determine if this can be deleted
     asyncWebServer.serveStatic("/404/", FILESYSTEM, "/404.html").setCacheControl("max-age=600");
+
 }
 
 
 void httpServer::setJsonPages() {
-    // Controller Version Stats
-    asyncWebServer.on("/api/version/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        http_server.genericServeJson(request, versionInfoJson);
-    });
+    struct Endpoint {
+        const char* path;
+        void (*handler)(JsonDocument&);
+    };
 
-    // Controller Legacy LCD Output
-    asyncWebServer.on("/api/lcd/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        http_server.genericServeJson(request, getLcdContentJson);
-    });
+    const Endpoint endpoints[] = {
+        {"/api/version/", versionInfoJson},
+        {"/api/lcd/", getLcdContentJson},
+        {"/api/temps/", printTemperaturesJson},
+        {"/api/cs/", tempControl.getControlSettingsDoc},
+        {"/api/cc/", tempControl.getControlConstantsDoc},
+        {"/api/cv/", tempControl.getControlVariablesDoc},
+        {"/api/all_temp_control/", getFullTemperatureControlJson},
+        {"/api/devices/", DeviceManager::enumerateHardware},
+        {"/api/extended/", serveExtendedSettings},
+        {"/api/upstream/", serveUpstreamSettings},
+        {"/api/uptime/", uptime},
+        {"/api/heap/", heap},
+        {"/api/resetreason/", reset_reason},
+    };
 
-    // Controller Temps (logging format)
-    asyncWebServer.on("/api/temps/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        http_server.genericServeJson(request, printTemperaturesJson);
-    });
-
-    // Temp Control Settings (cs)
-    asyncWebServer.on("/api/cs/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        http_server.genericServeJson(request, tempControl.getControlSettingsDoc);
-    });
-
-    // Temp Control Constants (cc)
-    asyncWebServer.on("/api/cc/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        http_server.genericServeJson(request, tempControl.getControlConstantsDoc);
-    });
-
-    // Temp Control Variables (cv)
-    asyncWebServer.on("/api/cv/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        http_server.genericServeJson(request, tempControl.getControlVariablesDoc);
-    });
-
-    // Full Temp Control Settings (cs, cc, cv, logging format)
-    asyncWebServer.on("/api/all_temp_control/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        http_server.genericServeJson(request, getFullTemperatureControlJson);
-    });
-
-    // Full Temp Control Settings (cs, cc, cv, logging format)
-    asyncWebServer.on("/api/devices/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        http_server.genericServeJson(request, DeviceManager::enumerateHardware);
-    });
-
-    // Extended (non-stock-brewpi) Settings
-    asyncWebServer.on("/api/extended/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        http_server.genericServeJson(request, serveExtendedSettings);
-    });
-
-    // "Upstream" (Fermentrack REST) Settings
-    asyncWebServer.on("/api/upstream/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        http_server.genericServeJson(request, serveUpstreamSettings);
-    });
-
-    // Uptime information
-    asyncWebServer.on("/api/uptime/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        http_server.genericServeJson(request, uptime);
-    });
-
-    // Heap (memory) information
-    asyncWebServer.on("/api/heap/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        http_server.genericServeJson(request, heap);
-    });
-
-    // Reason for the last reset of the controller (to help catch issues)
-     asyncWebServer.on("/api/resetreason/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        http_server.genericServeJson(request, reset_reason);
-    });
+    for (const auto& endpoint : endpoints) {
+        asyncWebServer.addHandler(new GetAsyncCallbackJsonWebHandler(endpoint.path, endpoint.handler));
+    }
 }
 
 
@@ -623,7 +593,7 @@ void httpServer::setPutPages() {
     };
 
     for (const auto& endpoint : endpoints) {
-        asyncWebServer.addHandler(new ExtendedAsyncCallbackJsonWebHandler(endpoint.path, endpoint.handler));
+        asyncWebServer.addHandler(new PutAsyncCallbackJsonWebHandler(endpoint.path, endpoint.handler));
     }
 }
 

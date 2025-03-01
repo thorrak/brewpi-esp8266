@@ -51,25 +51,5 @@ void httpServer::redirect(AsyncWebServerRequest *request, const String &url) {
   request->redirect(url);
 }
 
-void httpServer::genericServeJson(AsyncWebServerRequest *request, void (*jsonFunc)(JsonDocument &)) {
-  AsyncJsonResponse *response = new AsyncJsonResponse();
-  {
-    JsonDocument doc;
-    jsonFunc(doc);
-
-    // // Print the contents of doc to the serial console
-    // Serial.println(F("Generated JSON:"));
-    // serializeJsonPretty(doc, Serial); // Pretty print for easier reading
-    // Serial.println(); // Add a newline for better formatting
-
-    // Copy the contents of `doc` to the response
-  //   response->getRoot().set(doc.as<JsonObject>());
-    response->getRoot().set(doc);
-  }
-
-  response->setLength();
-  request->send(response);
-}
-
 
 #endif // ENABLE_HTTP_INTERFACE
