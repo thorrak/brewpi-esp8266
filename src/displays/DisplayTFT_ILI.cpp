@@ -123,7 +123,12 @@ void LcdDisplay::init(){
     pinMode(TFT_BACKLIGHT, OUTPUT);
     digitalWrite(TFT_BACKLIGHT, HIGH);
 #endif
+}
 
+void LcdDisplay::reset(){
+    // This is called whenever the screen is reset when a relay pin toggles.
+    // For now, just call init()
+    init();
 }
 
 #ifndef UINT16_MAX

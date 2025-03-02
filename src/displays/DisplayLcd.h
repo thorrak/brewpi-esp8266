@@ -58,6 +58,7 @@ class LcdDisplay DISPLAY_SUPERCLASS
   public:
 	// initializes the lcd display
 	DISPLAY_METHOD void init();
+	DISPLAY_METHOD void reset();
 
   /**
    * Print all display content

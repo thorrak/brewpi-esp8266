@@ -286,6 +286,7 @@ void ExtendedSettings::setDefaults() {
     invertTFT = false;
     glycol = false;
     largeTFT = false;
+    resetScreenOnPin = false;
 #ifdef HAS_BLUETOOTH
     tiltGravSensor = NoTiltDevice;
 #endif
@@ -301,6 +302,7 @@ void ExtendedSettings::toJson(JsonDocument &doc) {
     doc[ExtendedSettingsKeys::invertTFT] = invertTFT;
     doc[ExtendedSettingsKeys::glycol] = glycol;
     doc[ExtendedSettingsKeys::largeTFT] = largeTFT;
+    doc[ExtendedSettingsKeys::resetScreenOnPin] = resetScreenOnPin;
 #ifdef HAS_BLUETOOTH
     doc[ExtendedSettingsKeys::tiltGravSensor] = tiltGravSensor.toString();
 #endif
@@ -331,6 +333,7 @@ void ExtendedSettings::loadFromFilesystem() {
     if(json_doc[ExtendedSettingsKeys::invertTFT].is<bool>()) invertTFT = json_doc[ExtendedSettingsKeys::invertTFT];
     if(json_doc[ExtendedSettingsKeys::glycol].is<bool>()) glycol = json_doc[ExtendedSettingsKeys::glycol];
     if(json_doc[ExtendedSettingsKeys::largeTFT].is<bool>()) largeTFT = json_doc[ExtendedSettingsKeys::largeTFT];
+    if(json_doc[ExtendedSettingsKeys::resetScreenOnPin].is<bool>()) resetScreenOnPin = json_doc[ExtendedSettingsKeys::resetScreenOnPin];
 #ifdef HAS_BLUETOOTH
     // Tilts use address type 1 ("random", which (correctly!) indicates they didn't buy a MAC block)
     if(json_doc[ExtendedSettingsKeys::tiltGravSensor].is<std::string>()) tiltGravSensor = NimBLEAddress(json_doc[ExtendedSettingsKeys::tiltGravSensor].as<std::string>(), 1);
@@ -359,6 +362,8 @@ void ExtendedSettings::processSettingKeypair(JsonPair kv) {
     setGlycol(kv.value().as<bool>());
   } else if (kv.key() == ExtendedSettingsKeys::largeTFT) {
     setLargeTFT(kv.value().as<bool>());
+  } else if (kv.key() == ExtendedSettingsKeys::resetScreenOnPin) {
+    setResetScreenOnPin(kv.value().as<bool>());
   } 
   #ifdef HAS_BLUETOOTH
   else if (kv.key() == ExtendedSettingsKeys::tiltGravSensor) {
@@ -409,6 +414,19 @@ void ExtendedSettings::setInvertTFT(bool setting) {
 	display.printState();
 }
 
+/**
+ * \brief Set if the screen should be reset when an ArduinoActuatorPin (ie. relay) toggles
+ *
+ * \param setting - The new setting
+ */
+void ExtendedSettings::setResetScreenOnPin(bool setting) {
+    resetScreenOnPin = setting;
+
+    // The only thing we must do here is change the setting, but we'll reinit the screen as well 
+    // in case the user is enabling this as a result of their screen being frozen
+    if(setting)
+        display.printAll();
+}
 
 #ifdef HAS_BLUETOOTH
 /**
