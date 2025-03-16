@@ -78,13 +78,22 @@ bool OneWireTempSensor::init() {
  * begin the process of taking a measurement.  The length of time reqiured for
  * a OneWire device to sample the temperature depend on the requested precision
  * and powered vs. parasite powered.
+ * 
+ * Retries up to `attempts` times if the conversion request fails.
  *
  * @see waitForConversion()
- */
+s */
 bool OneWireTempSensor::requestConversion() {
-	bool ok = sensor->requestTemperaturesByAddress(sensorAddress);
-	setConnected(ok);
-	return ok;
+	const uint8_t attempts = 10;  // Attempt conversion up to 10 times
+	for(uint8_t i=0; i<attempts; i++){
+		if(sensor->requestTemperaturesByAddress(sensorAddress)){
+			// If we successfully converted, set connected & return
+			setConnected(true);
+			return true;
+		}
+		delay(50);
+	}
+	return false;
 }
 
 /**
@@ -113,7 +122,7 @@ void OneWireTempSensor::setConnected(bool connected) {
  * @return TEMP_SENSOR_DISCONNECTED if sensor is not connected, constrained temp otherwise.
  * @see readAndConstrainTemp()
  */
-temperature OneWireTempSensor::read(){
+temperature OneWireTempSensor::read() {
 	if (!connected)
 		return TEMP_SENSOR_DISCONNECTED;
 
@@ -124,20 +133,38 @@ temperature OneWireTempSensor::read(){
 
 
 /**
+ * \brief Reads the temperature with retries.
+ *
+ * Attempts to read the temperature up to a specified number of times.
+ * If successful, returns the temperature. If unsuccessful, returns DEVICE_DISCONNECTED_RAW.
+ */
+temperature OneWireTempSensor::readTempWithRetries(uint8_t attempts) {
+    temperature temp;
+    for(uint8_t i = 0; i < attempts; i++) {
+        temp = getTempRaw(*sensor, sensorAddress);
+        if(temp != DEVICE_DISCONNECTED_RAW) {
+            return temp;  // Successfully retrieved the temperature
+        }
+        delay(50);  // Delay slightly before retrying
+    }
+    return DEVICE_DISCONNECTED_RAW;  // Failed to read the sensor after all attempts
+}
+
+/**
  * \brief Reads the temperature.
  *
  * If successful, constrains the temp to the range of the temperature type
  * and updates lastRequestTime. If unsuccessful, leaves lastRequestTime alone
  * and returns TEMP_SENSOR_DISCONNECTED.
  */
-temperature OneWireTempSensor::readAndConstrainTemp()
-{
-	// getTempRaw is the same as sensor.getTemp() but also checks for reset
-	temperature temp = getTempRaw(*sensor, sensorAddress);
-	if(temp == DEVICE_DISCONNECTED_RAW){
-		setConnected(false);
-		return TEMP_SENSOR_DISCONNECTED;
-	}
+temperature OneWireTempSensor::readAndConstrainTemp() {
+    const uint8_t attempts = 10;  // Attempt conversion up to 10 times
+    temperature temp = readTempWithRetries(attempts);
+
+    if(temp == DEVICE_DISCONNECTED_RAW) {
+        setConnected(false);
+        return TEMP_SENSOR_DISCONNECTED;
+    }
 
 	const uint8_t shift = TEMP_FIXED_POINT_BITS - sensorPrecision; // difference in precision between DS18B20 format and temperature adt
 	temp = constrainTemp(temp+calibrationOffset+(C_OFFSET>>shift), ((int) MIN_TEMP)>>shift, ((int) MAX_TEMP)>>shift)<<shift;

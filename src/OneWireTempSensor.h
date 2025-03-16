@@ -81,6 +81,7 @@ public:
 		wait.millis(750);
 	}
 
+	temperature readTempWithRetries(uint8_t attempts);
 	temperature readAndConstrainTemp();
 
 	OneWire * oneWire;

@@ -48,8 +48,6 @@ class ScanCallbacks: public NimBLEScanCallbacks {
                 load_tilt_from_advert(advertisedDevice);
                 return;
             }
-        // } else if (advertisedDevice->getAddress() == NimBLEAddress("a4:c1:38:a5:f8:5a")) {
-        //     Serial.printf("Advertised Device: %s \r\n", advertisedDevice->toString().c_str());
         }
     };
 };
@@ -77,7 +75,7 @@ void load_inkbird_from_advert(const NimBLEAdvertisedDevice* advertisedDevice)
     // if(ss == 1)
     //     Serial.printf(", AltTemp: %d", alt_temp);
     // Serial.println("");
-    // Serial.printf("Device MAC: %s, External 'MAC': %s \r\n", advertisedDevice->getAddress().toString().c_str(), NimBLEAddress(advertisedDevice->getAddress() + 0x010000000000).toString().c_str());
+    // Serial.printf("Device MAC: %s, External 'MAC': %s \r\n", advertisedDevice->getAddress().toString().c_str(), NimBLEAddress(advertisedDevice->getAddress() + 0x010000000000, 0).toString().c_str());
     // Serial.printf("Advertised Device: %s \r\n", advertisedDevice->toString().c_str());
 
     // Locate & update the inkbird object in the list
