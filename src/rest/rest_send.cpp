@@ -186,7 +186,6 @@ bool restHandler::send_bluetooth_crash_report() {
     String payload;
     {
         JsonDocument doc;
-        const char *url;
         char guid[20];
 
         getGuid(guid);
