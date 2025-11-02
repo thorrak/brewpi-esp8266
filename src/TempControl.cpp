@@ -182,10 +182,11 @@ void TempControl::updatePID(){
 			return;
 		}
 
-		// If either sensor is not connected, although the reads should still work (since we're reading from filters) we probably
-		// don't want them.
-		if(!beerSensor->isConnected() || !fridgeSensor->isConnected()) {
-			// The question here is if we should reset the PID (or decrement some kind of counter to reset the PID) 
+		// Allow PID to continue using cached filter values for up to 60 seconds during temporary disconnections.
+		// The filters retain their last valid values, providing resilience against brief sensor dropouts.
+		// After 60 failed reads (~60 seconds), the cached data is too stale to be reliable.
+		if(beerSensor->getFailedReadCount() > 60 || fridgeSensor->getFailedReadCount() > 60) {
+			// Sensor has been disconnected too long - stop PID to prevent using stale data
 			return;
 		}
 		

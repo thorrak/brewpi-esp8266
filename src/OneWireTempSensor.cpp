@@ -37,6 +37,8 @@ OneWireTempSensor::~OneWireTempSensor(){
  * sensor reports it's disconnected.  If the result is TEMP_SENSOR_DISCONNECTED
  * then subsequent calls to read() will also return TEMP_SENSOR_DISCONNECTED.
  * Clients should attempt to re-initialize the sensor by calling init() again.
+ *
+ * Retries up to 3 times to improve resilience against transient connection issues.
  */
 bool OneWireTempSensor::init() {
 	// save address and pinNr for log messages
@@ -46,6 +48,7 @@ bool OneWireTempSensor::init() {
 	DEBUG_ONLY(uint8_t pinNr = oneWire->pinNr());
 
 	bool success = false;
+	const uint8_t attempts = 3;  // Retry init up to 3 times
 
 	if (sensor==NULL) {
 		sensor = new DallasTemperature(oneWire);
@@ -53,18 +56,29 @@ bool OneWireTempSensor::init() {
 			logErrorString(ERROR_SRAM_SENSOR, addressString);
 		}
 	}
-	
-	logDebug("init onewire sensor");
-	// This quickly tests if the sensor is connected and initializes the reset detection.
-	// During the main TempControl loop, we don't want to spend many seconds
-	// scanning each sensor since this brings things to a halt.
-	if (sensor && initConnection(*sensor, sensorAddress) && requestConversion()) {
-		logDebug("init onewire sensor - wait for conversion");
-		waitForConversion();
-		temperature temp = readAndConstrainTemp();
-		DEBUG_ONLY(logInfoIntStringTemp(INFO_TEMP_SENSOR_INITIALIZED, pinNr, addressString, temp));
-		success = temp!=TEMP_SENSOR_DISCONNECTED && requestConversion();
-	}	
+
+	// Retry initialization to handle transient connection issues
+	for(uint8_t i = 0; i < attempts; i++) {
+		logDebug("init onewire sensor (attempt %d/%d)", i+1, attempts);
+		// This quickly tests if the sensor is connected and initializes the reset detection.
+		// During the main TempControl loop, we don't want to spend many seconds
+		// scanning each sensor since this brings things to a halt.
+		if (sensor && initConnection(*sensor, sensorAddress) && requestConversion()) {
+			logDebug("init onewire sensor - wait for conversion");
+			waitForConversion();
+			temperature temp = readAndConstrainTemp();
+			DEBUG_ONLY(logInfoIntStringTemp(INFO_TEMP_SENSOR_INITIALIZED, pinNr, addressString, temp));
+			success = temp!=TEMP_SENSOR_DISCONNECTED && requestConversion();
+			if(success) {
+				break;  // Initialization succeeded, exit retry loop
+			}
+		}
+		// Wait before retrying (except on last attempt)
+		if(i < attempts - 1) {
+			delay(200);
+		}
+	}
+
 	setConnected(success);
 	logDebug("init onewire sensor complete %d", success);
 	return success;
