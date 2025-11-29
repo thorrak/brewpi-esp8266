@@ -377,16 +377,22 @@ void ExtendedSettings::processSettingKeypair(JsonPair kv) {
 /**
  * \brief Set the glycol mode
  *
+ * When switching between compressor and glycol modes, the controller is
+ * set to 'off' to prevent unexpected behavior. Sensor assignments remain
+ * unchanged.
+ *
  * \param setting - The new setting
  */
 void ExtendedSettings::setGlycol(bool setting) {
+    if (glycol != setting) {
+        // Controller type is changing - force mode to 'off'
+        // This is done via TempControl to ensure proper state management
+        extern TempControl tempControl;
+        tempControl.setMode(Modes::off, true);
+    }
     glycol = setting;
     minTimes.setDefaults();
-    if (glycol) {
-        // Glycol mode
-    } else {
-        // Non-glycol mode
-    }
+    storeToFilesystem();
 }
 
 

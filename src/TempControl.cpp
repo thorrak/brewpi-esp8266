@@ -185,12 +185,16 @@ void TempControl::updatePID(){
 		// Allow PID to continue using cached filter values for up to 60 seconds during temporary disconnections.
 		// The filters retain their last valid values, providing resilience against brief sensor dropouts.
 		// After 60 failed reads (~60 seconds), the cached data is too stale to be reliable.
-		if(beerSensor->getFailedReadCount() > 60 || fridgeSensor->getFailedReadCount() > 60) {
-			// Sensor has been disconnected too long - stop PID to prevent using stale data
+		// In glycol mode, only beer sensor is required
+		if(beerSensor->getFailedReadCount() > 60) {
+			return;
+		}
+		if(!extendedSettings.glycol && fridgeSensor->getFailedReadCount() > 60) {
 			return;
 		}
 		
-		// fridge setting is calculated with PID algorithm. Beer temperature error is input to PID
+		// In compressor cooling, fridge setting is calculated with PID algorithm. Beer temperature error is input to PID
+		// In glycol chilling, still calculate beer temperature error and slope - used by both modes
 		cv.beerDiff =  cs.beerSetting - beerSensor->readSlowFiltered();
 		cv.beerSlope = beerSensor->readSlope();
 		temperature fridgeFastFiltered = fridgeSensor->readFastFiltered();
@@ -276,11 +280,18 @@ void TempControl::updateState(){
 	if(cs.mode == Modes::off){
 		state = STATE_OFF;
 		stayIdle = true;
-	} else if( cs.fridgeSetting == INVALID_TEMP || !fridgeSensor->isConnected() || (!beerSensor->isConnected() && tempControl.modeIsBeer())){
-        // stay idle when one of the required sensors is disconnected, or the fridge setting is INVALID_TEMP
-        // Of note - setting the mode to Modes::off also sets cs.fridgeSetting to INVALID_TEMP
-		state = IDLE;
-		stayIdle = true;
+	} else {
+		// Check for invalid settings or disconnected sensors
+		// In glycol mode, fridge sensor is optional; in compressor mode it's required
+		bool fridgeRequired = !extendedSettings.glycol;
+		bool fridgeInvalid = (fridgeRequired && (!fridgeSensor->isConnected() || cs.fridgeSetting == INVALID_TEMP));
+		bool beerInvalid = (!beerSensor->isConnected() && tempControl.modeIsBeer());
+
+		if(fridgeInvalid || beerInvalid) {
+			// Stay idle when a required sensor is disconnected or settings are invalid
+			state = IDLE;
+			stayIdle = true;
+		}
 	}
 	
 	uint16_t sinceIdle = timeSinceIdle();
@@ -649,8 +660,15 @@ void TempControl::initFilters()
  * @param force - Set the mode & reset control state, even if controler is already in the requested mode
  */
 void TempControl::setMode(char newMode, bool force){
+	// In glycol mode, redirect fridge constant to beer constant
+	// (Ideally, this won't ever get triggered, but handling it here just in case the web interface is old or out of sync)
+	if(extendedSettings.glycol && newMode == Modes::fridgeConstant) {
+		logInfo("Glycol mode: redirecting fridge constant to beer constant");
+		newMode = Modes::beerConstant;
+	}
+
 	logDebug("TempControl::setMode from %c to %c", cs.mode, newMode);
-	
+
 	if(newMode != cs.mode || state == WAITING_TO_HEAT || state == WAITING_TO_COOL || state == WAITING_FOR_PEAK_DETECT){
 		state = IDLE;
 		force = true;
@@ -832,8 +850,21 @@ MinTimes::MinTimes() {
 }
 
 void MinTimes::setDefaults() {
-	if(settings_choice == MIN_TIMES_DEFAULT) {
-		// Normal Delay
+	// Glycol mode has different timing requirements than compressor mode
+	// Glycol systems can respond faster and don't need compressor protection delays
+	if(extendedSettings.glycol && settings_choice != MIN_TIMES_CUSTOM) {
+		// Glycol Mode - Fast response, tight control (±0.1°)
+		MIN_COOL_OFF_TIME = 30;
+		MIN_HEAT_OFF_TIME = 30;
+		MIN_COOL_ON_TIME = 30;
+		MIN_HEAT_ON_TIME = 30;
+
+		MIN_COOL_OFF_TIME_FRIDGE_CONSTANT = 30;  // Not used in glycol mode, but set for consistency
+		MIN_SWITCH_TIME = 60;  // Allow quick transitions between heating and cooling
+		COOL_PEAK_DETECT_TIME = 300;  // Shorter detection time for faster response
+		HEAT_PEAK_DETECT_TIME = 300;
+	} else if(settings_choice == MIN_TIMES_DEFAULT) {
+		// Compressor Mode - Normal Delay
 		MIN_COOL_OFF_TIME = 300;
 		MIN_HEAT_OFF_TIME = 300;
 		MIN_COOL_ON_TIME = 180;
@@ -844,7 +875,7 @@ void MinTimes::setDefaults() {
 		COOL_PEAK_DETECT_TIME = 1800;
 		HEAT_PEAK_DETECT_TIME = 900;
 	} else if(settings_choice == MIN_TIMES_LOW_DELAY) {
-		// Low Delay Mode
+		// Compressor Mode - Low Delay
 		MIN_COOL_OFF_TIME = 60;
 		MIN_HEAT_OFF_TIME = 300;
 		MIN_COOL_ON_TIME = 20;
@@ -855,7 +886,7 @@ void MinTimes::setDefaults() {
 		COOL_PEAK_DETECT_TIME = 1800;
 		HEAT_PEAK_DETECT_TIME = 900;
 	} else {
-		// Custom Delay -- Effectively a noop, as the defaults are set  when the json gets loaded
+		// Custom Delay -- Effectively a noop, as the defaults are set when the json gets loaded
 	}
 }
 

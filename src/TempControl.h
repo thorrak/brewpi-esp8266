@@ -54,6 +54,7 @@ struct ControlVariables{
 	temperature posPeakEstimate;
 	temperature negPeak; // last detected peak
 	temperature posPeak;
+	temperature glycolDemand; // For glycol mode: PID output as cooling/heating demand (not a temperature setpoint)
 };
 
 enum MinTimesSettingsChoice {
@@ -292,8 +293,9 @@ public:
 private:
 	TEMP_CONTROL_METHOD void increaseEstimator(temperature * estimator, temperature error);
 	TEMP_CONTROL_METHOD void decreaseEstimator(temperature * estimator, temperature error);
-	
+
 	TEMP_CONTROL_METHOD void updateEstimatedPeak(uint16_t estimate, temperature estimator, uint16_t sinceIdle);
+	TEMP_CONTROL_METHOD void updateEstimatedPeakGlycol();  // Glycol mode overshoot prediction
 public:
 	TEMP_CONTROL_FIELD TempSensor* beerSensor; //!< Temp sensor monitoring beer
 	TEMP_CONTROL_FIELD TempSensor* fridgeSensor; //!< Temp sensor monitoring fridge
