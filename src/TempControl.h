@@ -55,6 +55,11 @@ struct ControlVariables{
 	temperature negPeak; // last detected peak
 	temperature posPeak;
 	temperature glycolDemand; // For glycol mode: PID output as cooling/heating demand (not a temperature setpoint)
+
+	// Glycol mode time-proportional control variables
+	uint32_t glycolWindowStart; // Timestamp when current 1000s window started
+	uint16_t glycolCoolingOnTime; // Cooling on-time in seconds for current window (0-1000)
+	uint16_t glycolHeatingOnTime; // Heating on-time in seconds for current window (0-1000)
 };
 
 enum MinTimesSettingsChoice {
@@ -83,6 +88,10 @@ public:
     uint16_t COOL_PEAK_DETECT_TIME;  //! Time allowed for cooling peak detection
     uint16_t HEAT_PEAK_DETECT_TIME;  //! Time allowed for heating peak detection
 
+    // Glycol mode time-proportional control settings
+    uint16_t GLYCOL_WINDOW_PERIOD;  //! Window period for time-proportional control in seconds (default: 1000s)
+    uint16_t GLYCOL_MIN_ON_TIME;    //! Minimum on-time for glycol pump in seconds (default: 10s)
+
 	void toJson(JsonDocument &doc);
     void storeToFilesystem();
     void loadFromFilesystem();
@@ -109,6 +118,8 @@ namespace MinTimesKeys {
 	constexpr auto MIN_SWITCH_TIME = "MIN_SWITCH_TIME";
 	constexpr auto COOL_PEAK_DETECT_TIME = "COOL_PEAK_DETECT_TIME";
 	constexpr auto HEAT_PEAK_DETECT_TIME = "HEAT_PEAK_DETECT_TIME";
+	constexpr auto GLYCOL_WINDOW_PERIOD = "GLYCOL_WINDOW_PERIOD";
+	constexpr auto GLYCOL_MIN_ON_TIME = "GLYCOL_MIN_ON_TIME";
 };
 
 // struct ControlConstants was moved to EepromStructs.h
@@ -296,6 +307,7 @@ private:
 
 	TEMP_CONTROL_METHOD void updateEstimatedPeak(uint16_t estimate, temperature estimator, uint16_t sinceIdle);
 	TEMP_CONTROL_METHOD void updateEstimatedPeakGlycol();  // Glycol mode overshoot prediction
+	TEMP_CONTROL_METHOD void calculateGlycolDutyCycle();   // Calculate time-proportional on-times from PID demand
 public:
 	TEMP_CONTROL_FIELD TempSensor* beerSensor; //!< Temp sensor monitoring beer
 	TEMP_CONTROL_FIELD TempSensor* fridgeSensor; //!< Temp sensor monitoring fridge
