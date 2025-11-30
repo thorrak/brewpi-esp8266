@@ -85,7 +85,7 @@ void LcdDisplay::print_layout() {
     // Print the headers
     tft->setTextSize(HEADER_FONT_SIZE);
     tft->setCursor(FRIDGE_HEADER_START_X, HEADER_START_Y);
-    tft->print((flags & LCD_FLAG_DISPLAY_ROOM) ?  "Room  " : "Fridge");
+    tft->print((flags & LCD_FLAG_DISPLAY_ROOM) ?  "Room  " : (extendedSettings.glycol ? "Glycol" : "Fridge"));
 
 
     tft->setTextSize(HEADER_FONT_SIZE);
@@ -244,6 +244,8 @@ void LcdDisplay::printMode(){
     switch(tempControl.getMode()){
         case Modes::fridgeConstant:
             tft->print("Fridge Constant");
+            // TBD if we want to do anything if we're in glycol mode here -- we actually prevent setting fridge constant mode, so this should never be hit
+            // tft->print(extendedSettings.glycol ? "Glycol Constant" : "Fridge Constant");
             break;
         case Modes::beerConstant:
             tft->print("Beer Constant  ");
@@ -557,6 +559,8 @@ void LcdDisplay::getLine(uint8_t lineNumber, char * buffer) {
                 switch(tempControl.getMode()) {
                     case Modes::fridgeConstant:
                         line = "Fridge Const.";
+                        // TBD if we want to do anything if we're in glycol mode here -- we actually prevent setting fridge constant mode, so this should never be hit
+                        // line = extendedSettings.glycol ? "Glycol Const." : "Fridge Const.";
                         break;
                     case Modes::beerConstant:
                         line = "Beer Const.";
@@ -584,7 +588,9 @@ void LcdDisplay::getLine(uint8_t lineNumber, char * buffer) {
             }
         case 2:
             {
-                snprintf(line_buf, 25, "Fridge%s %s %c%c", getline_temp_string(tempControl.getFridgeTemp()).c_str(), getline_temp_string(tempControl.getFridgeSetting()).c_str(), degree_symbol, tempControl.cc.tempFormat);
+                // TODO - Come back and edit this further based on how it looks on an actual controller in practice
+                const char* label = extendedSettings.glycol ? "Glycol" : "Fridge";
+                snprintf(line_buf, 25, "%s%s %s %c%c", label, getline_temp_string(tempControl.getFridgeTemp()).c_str(), getline_temp_string(tempControl.getFridgeSetting()).c_str(), degree_symbol, tempControl.cc.tempFormat);
                 break;
             }
         case 3:
