@@ -117,6 +117,11 @@ constexpr auto lightHeater = "lightAsHeater";
 constexpr auto rotaryHalfSteps = "rotaryHalfSteps";
 constexpr auto pidMax = "pidMax";
 constexpr auto tempFormat = "tempFormat";
+// Glycol mode: Separate heating PID constants (always used in glycol mode)
+constexpr auto kpHeat = "Kp_heat";
+constexpr auto kiHeat = "Ki_heat";
+constexpr auto kdHeat = "Kd_heat";
+constexpr auto pidMaxHeat = "pidMax_heat";
 };
 
 

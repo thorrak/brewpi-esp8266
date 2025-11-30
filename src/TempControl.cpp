@@ -185,10 +185,11 @@ void TempControl::updatePID(){
         // Allow PID to continue using cached filter values for up to 60 seconds during temporary disconnections.
         // The filters retain their last valid values, providing resilience against brief sensor dropouts.
         // After 60 failed reads (~60 seconds), the cached data is too stale to be reliable.
-        // In glycol mode, only beer sensor is required
         if(beerSensor->getFailedReadCount() > 60) {
             return;
         }
+
+        // fridgeSensor is required for compressor-based cooling - In glycol mode, only the beer sensor is required
         if(!extendedSettings.glycol && fridgeSensor->getFailedReadCount() > 60) {
             return;
         }
@@ -207,39 +208,85 @@ void TempControl::updatePID(){
 
                 temperature integratorUpdate = cv.beerDiff;
 
-                // Glycol mode: Update integrator in IDLE state
-                // ALTERNATIVE APPROACH: Could update integral continuously and use demand-based
-                // anti-windup (stop integrating when glycolDemand is saturated)
-                if(state != IDLE){
-                    integratorUpdate = 0;
-                }
-                else if(abs(integratorUpdate) < cc.iMaxError){
-                    // Simplified anti-windup for glycol mode
-                    // ALTERNATIVE: Could check if demand is saturated (> max cooling/heating capacity)
-                    // or use back-calculation anti-windup (adjust integral based on actuator limits)
-                    bool updateSign = (integratorUpdate > 0);
-                    bool integratorSign = (cv.diffIntegral > 0);
+                // Glycol mode: Update integrator continuously with saturation-based anti-windup
+                // Only stop integrating if we're saturated (at max demand)
+                if(abs(integratorUpdate) < cc.iMaxError){
+                    // Within iMaxError range - update integrator with anti-windup
 
-                    if(updateSign != integratorSign){
-                        // Integrator is being decreased - allow faster decrease
-                        integratorUpdate = integratorUpdate * 2;
+                    // Check if we're saturated (demand at max)
+                    // For cooling: saturated if glycolDemand >= pidMax
+                    // For heating: saturated if abs(glycolDemand) >= pidMax_heat
+                    bool saturated = false;
+                    if (cv.glycolDemand > 0) {
+                        // Cooling - check against cooling pidMax
+                        saturated = (cv.glycolDemand >= cc.pidMax);
+                    } else if (cv.glycolDemand < 0) {
+                        // Heating - check against heating pidMax
+                        saturated = (abs(cv.glycolDemand) >= cc.pidMax_heat);
+                    }
+
+                    // Don't integrate if saturated AND error wants more of same action
+                    bool errorWantsMoreAction = ((cv.beerDiff > 0 && cv.glycolDemand < 0) ||  // Error wants heating, already heating
+                                                   (cv.beerDiff < 0 && cv.glycolDemand > 0));  // Error wants cooling, already cooling
+
+                    if (saturated && errorWantsMoreAction) {
+                        integratorUpdate = 0;  // Stop integrating when saturated
+                    } else {
+                        // Allow integration
+                        bool updateSign = (integratorUpdate > 0);
+                        bool integratorSign = (cv.diffIntegral > 0);
+
+                        if(updateSign != integratorSign){
+                            // Integrator is being decreased - allow faster decrease
+                            integratorUpdate = integratorUpdate * 2;
+                        }
                     }
                 }
                 else{
-                    // Far from setpoint - reset integrator
-                    integratorUpdate = -(cv.diffIntegral >> 3);
+                    // Far from setpoint - reset integrator faster
+                    integratorUpdate = -(cv.diffIntegral >> 2);  // Divide by 4 instead of 8 for faster reset
                 }
                 cv.diffIntegral = cv.diffIntegral + integratorUpdate;
             }
 
-            // Calculate PID components
-            cv.p = multiplyFactorTemperatureDiff(cc.Kp, cv.beerDiff);
-            cv.i = multiplyFactorTemperatureDiffLong(cc.Ki, cv.diffIntegral);
-            cv.d = multiplyFactorTemperatureDiff(cc.Kd, cv.beerSlope);
+            // Glycol mode: Always use separate heating gains due to asymmetric actuator response
+            // Determine which gains to use based on error sign, not demand sign
+            // This prevents sign-flip bugs when cooling and heating gains differ significantly
+            bool needsHeating = (cv.beerDiff > 0);  // Positive error = beer too cold
+            bool needsCooling = (cv.beerDiff < 0);  // Negative error = beer too hot
 
-            // PID output is cooling/heating demand (not a temperature)
+            // Select appropriate gains
+            temperature Kp_to_use = needsHeating ? cc.Kp_heat : cc.Kp;
+            temperature Ki_to_use = needsHeating ? cc.Ki_heat : cc.Ki;
+            temperature Kd_to_use = needsHeating ? cc.Kd_heat : cc.Kd;
+
+            // Calculate PID components once with correct gains
+            cv.p = multiplyFactorTemperatureDiff(Kp_to_use, cv.beerDiff);
+            cv.i = multiplyFactorTemperatureDiffLong(Ki_to_use, cv.diffIntegral);
+            cv.d = multiplyFactorTemperatureDiff(Kd_to_use, cv.beerSlope);
+
+            // Calculate raw PID output
+            temperature pidOutput = cv.p + cv.i + cv.d;
+
+            // Anti-windup: Detect if integral term is causing wrong action
+            // If error says "cool" but PID says "heat" (or vice versa), reset integrator
+            bool pidSaysHeat = (pidOutput > 0);
+            bool pidSaysCool = (pidOutput < 0);
+
+            if ((needsCooling && pidSaysHeat) || (needsHeating && pidSaysCool)) {
+                // Integral windup detected! PID output has wrong sign.
+                // Reset integrator to prevent wrong action
+                logDebug("Glycol: Anti-windup triggered, resetting integrator");
+                cv.diffIntegral = 0;
+
+                // Recalculate PID output without integral term
+                pidOutput = cv.p + cv.d;
+            }
+
+            // Convert PID output to glycol demand using sign convention:
             // Positive demand = cooling needed, Negative demand = heating needed
-            cv.glycolDemand = cv.p + cv.i + cv.d;
+            // Always negate to convert from PID convention to glycol convention
+            cv.glycolDemand = -pidOutput;
 
             // Set fridgeSetting to INVALID_TEMP since it's not used in glycol mode
             cs.fridgeSetting = INVALID_TEMP;
@@ -372,18 +419,30 @@ void TempControl::updateState(){
 
         // Update state based on what we should be doing
         if (shouldCool && tempControl.cooler != &defaultActuator) {
-            state = COOLING;
+            // Cooling - determine if we're in minimum time period
+            uint16_t timeSinceIdleStart = timeSinceIdle();
+            if (timeSinceIdleStart < minTimes.MIN_COOL_ON_TIME) {
+                state = COOLING_MIN_TIME;
+            } else {
+                state = COOLING;
+            }
             lastCoolTime = currentTime;
         } else if (shouldHeat && (tempControl.heater != &defaultActuator ||
                                   (cc.lightAsHeater && tempControl.light != &defaultActuator))) {
-            state = HEATING;
+            // Heating - determine if we're in minimum time period
+            uint16_t timeSinceIdleStart = timeSinceIdle();
+            if (timeSinceIdleStart < minTimes.MIN_HEAT_ON_TIME) {
+                state = HEATING_MIN_TIME;
+            } else {
+                state = HEATING;
+            }
             lastHeatTime = currentTime;
         } else {
             state = IDLE;
             lastIdleTime = currentTime;
         }
 
-        // Check for overshoot prediction (may override state to IDLE)
+        // Check for overshoot prediction (may override state to IDLE, but only if past minimum on-time)
         updateEstimatedPeakGlycol();
 
         // Glycol mode uses its own state machine - skip compressor mode logic
@@ -431,8 +490,7 @@ void TempControl::updateState(){
                         state = COOLING;	
                     }
                 }
-            }
-            else if(fridgeFast < (cs.fridgeSetting+cc.idleRangeLow)){  // fridge temperature is too low
+            } else if(fridgeFast < (cs.fridgeSetting+cc.idleRangeLow)) {  // fridge temperature is too low
                 tempControl.updateWaitTime(minTimes.MIN_SWITCH_TIME, sinceCooling);
                 tempControl.updateWaitTime(minTimes.MIN_HEAT_OFF_TIME, sinceHeating);
                 if(cs.mode!=Modes::fridgeConstant){
@@ -449,8 +507,7 @@ void TempControl::updateState(){
                         state = HEATING;
                     }
                 }
-            }
-            else{
+            } else {
                 state = IDLE; // within IDLE range, always go to IDLE
                 break;
             }
@@ -532,16 +589,27 @@ void TempControl::updateEstimatedPeakGlycol() {
     temperature estimatedDrift = (beerSlope * coastTime) / 3600;
     cv.estimatedPeak = beerSensor->readFastFiltered() + estimatedDrift;
 
+    // Get time since we last went idle (how long we've been heating/cooling)
+    uint16_t timeSinceIdleStart = timeSinceIdle();
+
     // Stop cooling if predicted final temp reaches setpoint
+    // But only if we've met the minimum on-time requirement
     if (stateIsCooling() && cv.estimatedPeak <= cs.beerSetting) {
-        logDebug("Glycol: Stopping cooling, predicted overshoot");
-        state = IDLE;
+        if (timeSinceIdleStart >= minTimes.MIN_COOL_ON_TIME) {
+            logDebug("Glycol: Stopping cooling, predicted overshoot");
+            state = IDLE;
+        }
+        // else: still in minimum time period, keep cooling
     }
 
     // Stop heating if predicted final temp reaches setpoint
+    // But only if we've met the minimum on-time requirement
     if (stateIsHeating() && cv.estimatedPeak >= cs.beerSetting) {
-        logDebug("Glycol: Stopping heating, predicted overshoot");
-        state = IDLE;
+        if (timeSinceIdleStart >= minTimes.MIN_HEAT_ON_TIME) {
+            logDebug("Glycol: Stopping heating, predicted overshoot");
+            state = IDLE;
+        }
+        // else: still in minimum time period, keep heating
     }
 }
 
@@ -568,12 +636,23 @@ void TempControl::calculateGlycolDutyCycle() {
         return;
     }
 
+    // Determine which pidMax to use based on heating vs cooling
+    // Glycol mode always uses separate pidMax for heating due to asymmetric actuators
+    temperature pidMaxToUse;
+    if (cv.glycolDemand > 0) {
+        // Cooling demand
+        pidMaxToUse = cc.pidMax;
+    } else {
+        // Heating demand - always use separate pidMax in glycol mode
+        pidMaxToUse = cc.pidMax_heat;
+    }
+
     // Calculate duty cycle as percentage (0-100)
-    // Normalize demand by pidMax and clamp to 100%
+    // Normalize demand by appropriate pidMax and clamp to 100%
     uint16_t dutyCycle = 0;
-    if (cc.pidMax > 0) {
+    if (pidMaxToUse > 0) {
         // Use 32-bit to prevent overflow during multiplication
-        dutyCycle = (uint32_t(demandAbs) * 100) / cc.pidMax;
+        dutyCycle = (uint32_t(demandAbs) * 100) / pidMaxToUse;
         if (dutyCycle > 100) dutyCycle = 100;
     }
 
@@ -1004,6 +1083,12 @@ void TempControl::getControlConstantsDoc(JsonDocument& doc) {
   doc["beerSlopeFilt"] = tempControl.cc.beerSlopeFilter;
   doc["lah"] = tempControl.cc.lightAsHeater;
   doc["hs"] = tempControl.cc.rotaryHalfSteps;
+
+  // Glycol mode: Separate heating PID constants (always used in glycol mode)
+  doc["KpHeat"] = fixedPointToDouble(tempControl.cc.Kp_heat, Config::TempFormat::fixedPointDecimals);
+  doc["KiHeat"] = fixedPointToDouble(tempControl.cc.Ki_heat, Config::TempFormat::fixedPointDecimals);
+  doc["KdHeat"] = fixedPointToDouble(tempControl.cc.Kd_heat, Config::TempFormat::fixedPointDecimals);
+  doc["pidMaxHeat"] = tempDiffToDouble(tempControl.cc.pidMax_heat, Config::TempFormat::tempDiffDecimals);
 }
 
 

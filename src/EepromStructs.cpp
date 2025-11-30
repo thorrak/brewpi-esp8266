@@ -101,6 +101,14 @@ void ControlConstants::setDefaults() {
     rotaryHalfSteps = 0;
     pidMax = intToTempDiff(10);	// +/- 10 deg Celsius
     tempFormat = 'C';
+
+    // Glycol mode: Separate heating PID constants
+    // Always used in glycol mode due to asymmetric heating/cooling response
+    // Default heating gains same as cooling (can be tuned independently)
+    Kp_heat = Kp;                // +5
+    Ki_heat = Ki;                // +0.25
+    Kd_heat = Kd;                // -1.5
+    pidMax_heat = pidMax;        // +/- 10 deg Celsius
 }
 
 
@@ -142,6 +150,12 @@ void ControlConstants::toJson(JsonDocument &doc) {
     formatStr[0] = tempFormat;
     formatStr[1] = '\0';
     doc[ControlConstantsKeys::tempFormat] = formatStr;
+
+    // Glycol mode: Separate heating PID constants (always used in glycol mode)
+    doc[ControlConstantsKeys::kpHeat] = Kp_heat;
+    doc[ControlConstantsKeys::kiHeat] = Ki_heat;
+    doc[ControlConstantsKeys::kdHeat] = Kd_heat;
+    doc[ControlConstantsKeys::pidMaxHeat] = pidMax_heat;
 }
 
 void ControlConstants::storeToFilesystem() {
@@ -196,6 +210,12 @@ void ControlConstants::loadFromFilesystem() {
         strlcpy(buf, json_doc[ControlConstantsKeys::tempFormat].as<const char *>(), 2);
         tempFormat = buf[0];
     }
+
+    // Glycol mode: Separate heating PID constants (always used in glycol mode)
+    if(json_doc[ControlConstantsKeys::kpHeat].is<temperature>()) Kp_heat = json_doc[ControlConstantsKeys::kpHeat];
+    if(json_doc[ControlConstantsKeys::kiHeat].is<temperature>()) Ki_heat = json_doc[ControlConstantsKeys::kiHeat];
+    if(json_doc[ControlConstantsKeys::kdHeat].is<temperature>()) Kd_heat = json_doc[ControlConstantsKeys::kdHeat];
+    if(json_doc[ControlConstantsKeys::pidMaxHeat].is<temperature>()) pidMax_heat = json_doc[ControlConstantsKeys::pidMaxHeat];
 }
 
 
