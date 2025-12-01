@@ -300,15 +300,8 @@ public:
 	 */
 	int8_t enumOneWirePins(uint8_t offset) {
 #ifdef ARDUINO
-#ifdef oneWirePin
 		if (offset == 0)
 			return oneWirePin;
-#elif defined(beerSensorPin) && defined(fridgeSensorPin)
-		if (offset==0)
-			return beerSensorPin;
-		if (offset==1)
-			return fridgeSensorPin;
-#endif
 #endif
 		return -1;
 	}

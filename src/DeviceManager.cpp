@@ -68,26 +68,14 @@ DisconnectedTempSensor defaultTempSensor;
 #ifdef ESP8266
 
 #if !BREWPI_SIMULATE
-#ifdef oneWirePin
 OneWire DeviceManager::primaryOneWireBus(oneWirePin);
-#else
-OneWire DeviceManager::beerSensorBus(beerSensorPin);
-OneWire DeviceManager::fridgeSensorBus(fridgeSensorPin);
-#endif
 #endif
 
 
 OneWire* DeviceManager::oneWireBus(uint8_t pin) {
 #if !BREWPI_SIMULATE
-#ifdef oneWirePin
 	if (pin == oneWirePin)
 		return &primaryOneWireBus;
-#else
-	if (pin==beerSensorPin)
-		return &beerSensorBus;
-	if (pin==fridgeSensorPin)
-		return &fridgeSensorBus;
-#endif
 #endif
 	return nullptr;
 }
@@ -115,37 +103,19 @@ bool DeviceManager::initOneWireBuses() {
     .max_rx_bytes = 10,
   };
 
-#ifdef oneWirePin
   bus_config.bus_gpio_num = oneWirePin;
   if (onewire_new_bus_rmt(&bus_config, &rmt_config, &m_primary_onewire_bus) != ESP_OK) {
     return false;
   }
-#else
-  bus_config.bus_gpio_num = beerSensorPin;
-  if (onewire_new_bus_rmt(&bus_config, &rmt_config, &m_beer_sensor_bus) != ESP_OK) {
-    return false;
-  }
 
-  bus_config.bus_gpio_num = fridgeSensorPin;
-  if (onewire_new_bus_rmt(&bus_config, &rmt_config, &m_fridge_sensor_bus) != ESP_OK) {
-    return false;
-  }
-#endif
 #endif
   return true;
 }
 
 onewire_bus_handle_t DeviceManager::oneWireBus(uint8_t pin) {
 #if !BREWPI_SIMULATE
-#ifdef oneWirePin
   if (pin == oneWirePin)
     return m_primary_onewire_bus;
-#else
-  if (pin == beerSensorPin)
-    return m_beer_sensor_bus;
-  if (pin == fridgeSensorPin)
-    return m_fridge_sensor_bus;
-#endif
 #endif
   return NULL;
 }
