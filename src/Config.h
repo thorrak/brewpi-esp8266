@@ -258,13 +258,13 @@
  #define coolingPin NODEMCU_PIN_D3
 #define heatingPin NODEMCU_PIN_D4
 #define doorPin    NODEMCU_PIN_D5
-#define oneWirePin NODEMCU_PIN_D6  // If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
+#define oneWirePin NODEMCU_PIN_D6
 */
 
 #define heatingPin NODEMCU_PIN_D0
 #define coolingPin NODEMCU_PIN_D5
 
-#define oneWirePin NODEMCU_PIN_D6  // If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
+#define oneWirePin NODEMCU_PIN_D6
 #define doorPin    NODEMCU_PIN_D7
 
 #define IIC_SDA NODEMCU_PIN_D2
@@ -285,7 +285,6 @@
 #define heatingPin 25
 #define coolingPin 26
 
-// If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
 #define oneWirePin 13
 #define doorPin    34 // Note - 34 is "input only" and shouldn't be repurposed
 
