@@ -97,9 +97,6 @@ enum DeviceType {
 inline bool isAssignable(DeviceType type, DeviceHardware hardware)
 {
 	return (hardware==DEVICE_HARDWARE_PIN && (type==DEVICETYPE_SWITCH_ACTUATOR || type==DEVICETYPE_SWITCH_SENSOR))
-#if BREWPI_DS2413
-	|| (hardware==DEVICE_HARDWARE_ONEWIRE_2413 && (type==DEVICETYPE_SWITCH_ACTUATOR || (DS2413_SUPPORT_SENSE && type==DEVICETYPE_SWITCH_SENSOR)))
-#endif
 #ifdef HAS_BLUETOOTH
 	|| (hardware==DEVICE_HARDWARE_BLUETOOTH_INKBIRD && type==DEVICETYPE_TEMP_SENSOR)
 	|| (hardware==DEVICE_HARDWARE_BLUETOOTH_TILT && type==DEVICETYPE_TEMP_SENSOR)
@@ -119,11 +116,7 @@ inline bool isAssignable(DeviceType type, DeviceHardware hardware)
  * @returns `true` if device is OneWire, `false` otherwise
  */
 inline bool isOneWire(DeviceHardware hardware) {
-	return
-#if BREWPI_DS2413
-	hardware==DEVICE_HARDWARE_ONEWIRE_2413 ||
-#endif
-	hardware==DEVICE_HARDWARE_ONEWIRE_TEMP;
+	return hardware==DEVICE_HARDWARE_ONEWIRE_TEMP;
 }
 
 /**

@@ -37,9 +37,7 @@ constexpr auto deactivated = "d";
 constexpr auto address = "a";
 constexpr auto child_id = "n";
 constexpr auto alias = "r";  // EXTERN_SENSOR_ACTUATOR or Bluetooth
-#if BREWPI_DS2413
-constexpr auto pio = "n";
-#endif
+// constexpr auto pio = "n";  // For DS2413 support which has been removed - leaving this here so we know not to reuse this key
 constexpr auto calibrateadjust = "j";
 
 constexpr auto value = "v";
