@@ -104,14 +104,6 @@
 #define BREWPI_SIMULATE 0
 #endif
 
-/**
- * \def BREWPI_DS2413
- * \brief Enable DS2413 Actuators.
- * \ingroup hardware
- */
-#ifndef BREWPI_DS2413
-#define BREWPI_DS2413 0
-#endif
 
 /**
  * Enable the LCD menu.
@@ -248,10 +240,6 @@
  */
 #ifndef ONEWIRE_PARASITE_SUPPORT
 #define ONEWIRE_PARASITE_SUPPORT 0
-#endif
-
-#ifndef DS2413_SUPPORT_SENSE
-#define DS2413_SUPPORT_SENSE 0
 #endif
 
 

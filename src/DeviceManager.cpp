@@ -38,11 +38,6 @@
 
 #include "OneWireTempSensor.h"
 
-#ifdef BREWPI_DS2413
-#include "OneWireActuator.h"
-#include "DS2413.h"
-#endif
-
 #include "ActuatorArduinoPin.h"
 #include "SensorArduinoPin.h"
 
@@ -146,18 +141,6 @@ void* DeviceManager::createDevice(DeviceConfig& config, DeviceType dt)
 		#else
 			return new OneWireTempSensor(oneWireBus(config.hw.pinNr), config.hw.address, config.hw.calibration);
 		#endif
-
-#if BREWPI_DS2413
-		case DEVICE_HARDWARE_ONEWIRE_2413:
-		#if BREWPI_SIMULATE
-		if (dt==DEVICETYPE_SWITCH_SENSOR)
-			return new ValueSensor<bool>(false);
-		else
-			return new ValueActuator();
-		#else
-			return new OneWireActuator(oneWireBus(config.hw.pinNr), config.hw.address, config.hw.pio, config.hw.invert);
-		#endif
-#endif
 
 #ifdef HAS_BLUETOOTH
 		case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
@@ -515,21 +498,12 @@ DeviceConfig DeviceManager::updateDeviceDefinition(DeviceDefinition dev)
 	target.deviceHardware = (DeviceHardware) dev.deviceHardware;
 
 	// If this is a OneWire device, force the pin number if forceDeviceDefaults is selected
-	if(Config::forceDeviceDefaults && (dev.deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP
-#if BREWPI_DS2413
-		|| dev.deviceHardware == DEVICE_HARDWARE_ONEWIRE_2413
-#endif
-		))
+	if(Config::forceDeviceDefaults && dev.deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP)
 		target.hw.pinNr = oneWirePin;
 	else
 		target.hw.pinNr = dev.pinNr;
 
 
-#if BREWPI_DS2413
-	target.hw.pio = dev.pio;
-#error The above/following code may no longer work for 2413 sensors. Check on this if this is enabled!
-#endif
-	// The following may no longer work for 2413 sensors
 	if (dev.deviceHardware == DEVICE_HARDWARE_ONEWIRE_TEMP
 		|| dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD || dev.deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT 
 		)
@@ -602,7 +576,6 @@ DeviceConfig DeviceManager::updateDeviceDefinition(DeviceDefinition dev)
  * - pinNr must be unique for digital pin devices - Not Implemented
  * - pinNr must be a valid OneWire bus for one wire devices.
  * - For OneWire temp devices, address must be unique. - Not Implemented
- * - For OneWire DS2413 devices, address+pio must be unique. - Not Implemented
  */
 bool DeviceManager::isDeviceValid(DeviceConfig& config, DeviceConfig& original, int8_t deviceIndex)
 {
@@ -660,7 +633,6 @@ bool DeviceManager::isDeviceValid(DeviceConfig& config, DeviceConfig& original, 
 	}
 
 	// todo - for onewire temp, ensure address is unique
-	// todo - for onewire 2413 check address+pio nr is unique
 	return true;
 }
 
@@ -672,11 +644,7 @@ bool DeviceManager::isDeviceValid(DeviceConfig& config, DeviceConfig& original, 
  */
 inline bool hasInvert(DeviceHardware hw)
 {
-	return hw==DEVICE_HARDWARE_PIN
-#if BREWPI_DS2413
-	|| hw==DEVICE_HARDWARE_ONEWIRE_2413
-#endif
-	;
+	return hw==DEVICE_HARDWARE_PIN;
 }
 
 
@@ -687,11 +655,7 @@ inline bool hasInvert(DeviceHardware hw)
  */
 inline bool hasOnewire(DeviceHardware hw)
 {
-	return
-#if BREWPI_DS2413
-	hw==DEVICE_HARDWARE_ONEWIRE_2413 ||
-#endif
-	hw==DEVICE_HARDWARE_ONEWIRE_TEMP;
+	return hw==DEVICE_HARDWARE_ONEWIRE_TEMP;
 }
 
 
@@ -753,7 +717,6 @@ inline bool matchAddress(uint8_t* detected, uint8_t* configured, uint8_t count) 
  * A device's location is:
  *   - pinNr  for simple digital pin devices
  *   - pinNr+address for one-wire devices
- *   - pinNr+address+pio for 2413
  *   - btAddress for bluetooth devices (Tilt/Inkbird)
  *   - tplink_mac+tplink_child_id for tplink devices
  */
@@ -781,11 +744,6 @@ device_slot_t findHardwareDevice(DeviceConfig& find)
 					break;
 #endif
 
-#if BREWPI_DS2413
-				case DEVICE_HARDWARE_ONEWIRE_2413:
-					match &= find.hw.pio==config.hw.pio;
-					// fall through
-#endif
 				case DEVICE_HARDWARE_ONEWIRE_TEMP:
 					match &= matchAddress(find.hw.address, config.hw.address, 8);
 					// fall through
