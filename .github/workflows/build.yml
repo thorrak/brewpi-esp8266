@@ -29,6 +29,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4.1.1
+      with:
+        submodules: "recursive"
     - run: git fetch --prune --unshallow
 
     - name: Cache pip
