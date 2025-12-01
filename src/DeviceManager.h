@@ -26,6 +26,9 @@
 #include "Sensor.h"
 #include "TempSensor.h"
 #include "OneWireDevices.h"
+#ifndef ESP8266
+#include "onewire_bus.h"
+#endif
 #include "Pins.h"
 #include "EepromStructs.h"
 #include "Ticks.h"
@@ -245,7 +248,9 @@ struct EnumerateHardware
  */
 void UpdateDeviceState(DeviceDisplay& dd, DeviceConfig& dc, char* val);
 
+#ifdef ESP8266
 class OneWire;
+#endif
 
 
 /**
@@ -335,6 +340,9 @@ public:
 	static void listDevices(JsonDocument& doc);
 	static void rawDeviceValues(JsonDocument& doc);
 
+#ifndef ESP8266
+	static bool initOneWireBuses();
+#endif
 private:
 	static void enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc);
 	static void enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc);
@@ -356,16 +364,29 @@ private:
 	static void* createDevice(DeviceConfig& config, DeviceType dc);
 	static void* createOneWireGPIO(DeviceConfig& config, DeviceType dt);
 
+#ifdef ESP8266
 	static OneWire* oneWireBus(uint8_t pin);
+#else
+	static onewire_bus_handle_t oneWireBus(uint8_t pin);
+#endif
 
 #ifdef ARDUINO
 
 // There is no reason to separate the OneWire busses - if we have a single bus, use it.
+#ifdef ESP8266
 #ifdef oneWirePin
 	static OneWire primaryOneWireBus;
 #else
 	static OneWire beerSensorBus;
 	static OneWire fridgeSensorBus;
+#endif
+#else
+#ifdef oneWirePin
+	static onewire_bus_handle_t m_primary_onewire_bus;
+#else
+	static onewire_bus_handle_t m_beer_sensor_bus;
+	static onewire_bus_handle_t m_fridge_sensor_bus;
+#endif
 #endif
 
 #endif
