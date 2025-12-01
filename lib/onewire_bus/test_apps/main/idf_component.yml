@@ -1,4 +1,0 @@
-dependencies:
-  espressif/onewire_bus:
-    version: "*"
-    override_path: "../.."

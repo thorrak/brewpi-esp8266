@@ -1,3 +1,0 @@
-dependencies:
-  espressif/ds18b20:
-    version: '*'
