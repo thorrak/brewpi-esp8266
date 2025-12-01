@@ -1,0 +1,10 @@
+dependencies:
+  idf: '>=5.0'
+description: Driver for Dallas 1-Wire bus
+issues: https://github.com/espressif/idf-extra-components/issues
+repository: git://github.com/espressif/idf-extra-components.git
+repository_info:
+  commit_sha: deacf3c664056bc9741e98e30a425dd8df89a9ae
+  path: onewire_bus
+url: https://github.com/espressif/idf-extra-components/tree/master/onewire_bus
+version: 1.0.4
