@@ -34,7 +34,11 @@
 #include <ArduinoLog.h>
 
 
-#include <DallasTempNG.h>  // Instead of DallasTemperature.h
+#ifdef ESP8266
+#include <DallasTempNG_8266.h>  // Instead of DallasTemperature.h
+#else
+#include "onewire_bus_impl_rmt.h"
+#endif
 
 #include "OneWireTempSensor.h"
 
@@ -61,6 +65,8 @@ ValueSensor<bool> defaultSensor(false);			// off
 ValueActuator defaultActuator;
 DisconnectedTempSensor defaultTempSensor;
 
+#ifdef ESP8266
+
 #if !BREWPI_SIMULATE
 #ifdef oneWirePin
 OneWire DeviceManager::primaryOneWireBus(oneWirePin);
@@ -86,6 +92,65 @@ OneWire* DeviceManager::oneWireBus(uint8_t pin) {
 	return nullptr;
 }
 
+
+#else
+
+#if !BREWPI_SIMULATE
+#ifdef oneWirePin
+onewire_bus_handle_t DeviceManager::m_primary_onewire_bus = NULL;
+#else
+onewire_bus_handle_t DeviceManager::m_beer_sensor_bus = NULL;
+onewire_bus_handle_t DeviceManager::m_fridge_sensor_bus = NULL;
+#endif
+#endif
+
+bool DeviceManager::initOneWireBuses() {
+#if !BREWPI_SIMULATE
+  onewire_bus_config_t bus_config = {
+    .flags = {
+      .en_pull_up = true,
+    }
+  };
+  onewire_bus_rmt_config_t rmt_config = {
+    .max_rx_bytes = 10,
+  };
+
+#ifdef oneWirePin
+  bus_config.bus_gpio_num = oneWirePin;
+  if (onewire_new_bus_rmt(&bus_config, &rmt_config, &m_primary_onewire_bus) != ESP_OK) {
+    return false;
+  }
+#else
+  bus_config.bus_gpio_num = beerSensorPin;
+  if (onewire_new_bus_rmt(&bus_config, &rmt_config, &m_beer_sensor_bus) != ESP_OK) {
+    return false;
+  }
+
+  bus_config.bus_gpio_num = fridgeSensorPin;
+  if (onewire_new_bus_rmt(&bus_config, &rmt_config, &m_fridge_sensor_bus) != ESP_OK) {
+    return false;
+  }
+#endif
+#endif
+  return true;
+}
+
+onewire_bus_handle_t DeviceManager::oneWireBus(uint8_t pin) {
+#if !BREWPI_SIMULATE
+#ifdef oneWirePin
+  if (pin == oneWirePin)
+    return m_primary_onewire_bus;
+#else
+  if (pin == beerSensorPin)
+    return m_beer_sensor_bus;
+  if (pin == fridgeSensorPin)
+    return m_fridge_sensor_bus;
+#endif
+#endif
+  return NULL;
+}
+
+#endif // ESP8266
 
 /**
  * Check if a given BasicTempSensor is the default temp sensor
@@ -771,7 +836,11 @@ inline void DeviceManager::readTempSensorValue(DeviceHardware hw_type, DeviceCon
 	temperature temp = INVALID_TEMP;
 
 	if(hw_type == DEVICE_HARDWARE_ONEWIRE_TEMP) {
+#ifdef ESP8266
 		OneWire* bus = oneWireBus(hw.pinNr);
+#else
+		onewire_bus_handle_t bus = oneWireBus(hw.pinNr);
+#endif
 		OneWireTempSensor sensor(bus, hw.address, 0);		// NB: this value is uncalibrated, since we don't have the calibration offset until the device is configured
 		if (sensor.init())
 			temp = sensor.read();
@@ -884,36 +953,35 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 			continue;
 		config.hw.pinNr = pin;
 		config.chamber = 1; // chamber 1 is default
+#ifdef ESP8266
 		OneWire* wire = oneWireBus(pin);
+#else
+		onewire_bus_handle_t wire = oneWireBus(pin);
+#endif
 		if (wire!=NULL) {
+#ifdef ESP8266
 			wire->reset_search();
 			while (wire->search(config.hw.address)) {
-				// hardware device type from OneWire family ID
-				switch (config.hw.address[0]) {
-		#if BREWPI_DS2413
-					case DS2413_FAMILY_ID:
-						config.deviceHardware = DEVICE_HARDWARE_ONEWIRE_2413;
-						break;
-		#endif
-					case 0x28:  // DS18B20MODEL
-						config.deviceHardware = DEVICE_HARDWARE_ONEWIRE_TEMP;
-						break;
-					default:
-						config.deviceHardware = DEVICE_HARDWARE_NONE;
-				}
+#else
+			onewire_device_iter_handle_t iter = NULL;
+			if (onewire_new_device_iter(wire, &iter) == ESP_OK) {
+				onewire_device_t next_device;
+				while (onewire_device_iter_get_next(iter, &next_device) == ESP_OK) {
+					// Convert address to uint8_t array
+					addressToBytes(next_device.address, config.hw.address);
+#endif
+					// hardware device type from OneWire family ID
+					switch (config.hw.address[0]) {
+						case 0x28:  // DS18B20MODEL
+							config.deviceHardware = DEVICE_HARDWARE_ONEWIRE_TEMP;
+							break;
+						default:
+							config.deviceHardware = DEVICE_HARDWARE_NONE;
+					}
 
-				switch (config.deviceHardware) {
-		#if BREWPI_DS2413
-					// for 2408 this will require iterating 0..7
-					case DEVICE_HARDWARE_ONEWIRE_2413:
-						// enumerate each pin separately
-						for (uint8_t i=0; i<2; i++) {
-							config.hw.pio = i;
-							handleEnumeratedDevice(config, h, callback, doc);
-						}
-						break;
-		#endif
-					case DEVICE_HARDWARE_ONEWIRE_TEMP:
+					switch (config.deviceHardware) {
+						case DEVICE_HARDWARE_ONEWIRE_TEMP:
+#ifdef ESP8266
 		#if !ONEWIRE_PARASITE_SUPPORT
 						{	// check that device is not parasite powered
 							DallasTemperature sensor(wire);
@@ -924,10 +992,17 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 		#else
 						handleEnumeratedDevice(config, h, callback, doc);
 		#endif
-						break;
-					default:
-						handleEnumeratedDevice(config, h, callback, doc);
+#else
+							handleEnumeratedDevice(config, h, callback, doc);
+#endif
+							break;
+						default:
+							handleEnumeratedDevice(config, h, callback, doc);
+					}
+#ifndef ESP8266
 				}
+				onewire_del_device_iter(iter);
+#endif
 			}
 		}
 	}
