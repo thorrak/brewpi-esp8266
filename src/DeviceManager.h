@@ -316,6 +316,7 @@ public:
 	}
 
 	static void setupUnconfiguredDevices();
+	static void preloadActuatorPins();
 
 	/**
 	 * \brief Determines if the given device config is complete.

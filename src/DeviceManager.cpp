@@ -1266,6 +1266,29 @@ void DeviceManager::outputRawDeviceValue(DeviceConfig* config, void* pv, JsonDoc
 #endif
 }
 
+/**
+ * @brief Scan the filesystem for "pin" actuators, and set their pin mode early.
+ * 
+ */
+void DeviceManager::preloadActuatorPins() {
+	// Quick scan for pin-based devices to get their invert state, and set pin mode (with them defaulting to "off")
+	for (uint8_t i = 0; i < Config::EepromFormat::MAX_DEVICES; i++) {
+		DeviceConfig dev;
+		dev = eepromManager.fetchDevice(i);
+		if (dev.deviceHardware == DEVICE_HARDWARE_PIN) {
+			if (deviceType(dev.deviceFunction) == DEVICETYPE_SWITCH_ACTUATOR) {
+				digitalWrite(dev.hw.pinNr, dev.hw.invert ? HIGH : LOW); // Set output register FIRST, THEN enable as output
+				pinMode(dev.hw.pinNr, OUTPUT);
+			} else if (deviceType(dev.deviceFunction) == DEVICETYPE_SWITCH_SENSOR) {
+				pinMode(dev.hw.pinNr, INPUT);
+			} else {
+				continue; // only process pin-based actuators
+			}
+		}
+	}
+}
+
+
 
 /**
  * Determines the class of device for the given DeviceID.
