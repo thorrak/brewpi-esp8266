@@ -32,6 +32,7 @@
 #include "EepromManager.h"
 #include "TempSensorDisconnected.h"
 #include "RotaryEncoder.h"
+#include "GlycolLog.h"
 
 TempControl tempControl;
 MinTimes minTimes;
@@ -1242,16 +1243,36 @@ bool TempControl::glycolCanExitEmergency() {
  * Transition to GLYCOL_IDLE state
  */
 void TempControl::glycolTransitionToIdle() {
+    GlycolState prev_state = glycolRuntime.state;
     glycolRuntime.state = GLYCOL_IDLE;
     glycolRuntime.setpoint_changed_this_cycle = false;
     state = IDLE;
     lastIdleTime = ticks.seconds();
+
+    // Log transition
+#ifdef ENABLE_GLYCOL_LOGGING
+    float current_temp = tempToDouble(beerSensor->readFastFiltered(), 2);
+    float setpoint = tempToDouble(cs.beerSetting, 2);
+    glycolLog.logTransition(
+        prev_state, GLYCOL_IDLE,
+        current_temp, setpoint,
+        glycolRuntime.current_cooling_rate,
+        glycolRuntime.cooling_duration_s,
+        glycolEstimateCoast(),
+        glycolLearned.k, glycolLearned.C_off, glycolLearned.L,
+        glycolRuntime.force_minimum_cooling,
+        "Transition to idle"
+    );
+#endif
 }
 
 /**
  * Transition to GLYCOL_COOLING state
  */
 void TempControl::glycolTransitionToCooling() {
+    GlycolState prev_state = glycolRuntime.state;
+    float setpoint = tempToDouble(cs.beerSetting, 2);
+
     glycolRuntime.state = GLYCOL_COOLING;
     glycolRuntime.t_pump_on = millis();
     glycolRuntime.temp_at_pump_on = tempToDouble(beerSensor->readFastFiltered(), 2);
@@ -1266,12 +1287,32 @@ void TempControl::glycolTransitionToCooling() {
 
     state = COOLING;
     lastCoolTime = ticks.seconds();
+
+    // Log transition
+#ifdef ENABLE_GLYCOL_LOGGING
+    const char* reason = glycolRuntime.force_minimum_cooling
+        ? "Starting cooling (forced minimum)"
+        : "Starting cooling (prediction-based)";
+    glycolLog.logTransition(
+        prev_state, GLYCOL_COOLING,
+        glycolRuntime.temp_at_pump_on, setpoint,
+        glycolRuntime.current_cooling_rate,
+        0,  // cooling_duration_s is 0 at start
+        glycolEstimateCoast(),
+        glycolLearned.k, glycolLearned.C_off, glycolLearned.L,
+        glycolRuntime.force_minimum_cooling,
+        reason
+    );
+#endif
 }
 
 /**
  * Transition to GLYCOL_COASTING state
  */
 void TempControl::glycolTransitionToCoasting() {
+    GlycolState prev_state = glycolRuntime.state;
+    float setpoint = tempToDouble(cs.beerSetting, 2);
+
     glycolRuntime.state = GLYCOL_COASTING;
     glycolRuntime.t_pump_off = millis();
     glycolRuntime.temp_at_pump_off = tempToDouble(beerSensor->readFastFiltered(), 2);
@@ -1282,26 +1323,59 @@ void TempControl::glycolTransitionToCoasting() {
     // Hot glycol compensation: during long runs, hot beer warms the glycol reservoir.
     // After pump stops, the chiller cools the reservoir back to its setpoint.
     // Next cycle will have cold glycol - force minimum time and re-learn.
+    const char* reason;
     if (glycolRuntime.cooling_duration_s > glycolConfig.hot_glycol_threshold_s) {
         glycolRuntime.force_minimum_cooling = true;
-        logDebug("Glycol: Long run (%ds) - forcing minimum time next cycle",
-                 glycolRuntime.cooling_duration_s);
+        reason = "Stopping cooling (long run - forcing min next)";
+    } else {
+        reason = "Stopping cooling (coast prediction)";
     }
 
     state = IDLE;
     lastIdleTime = ticks.seconds();
+
+    // Log transition
+#ifdef ENABLE_GLYCOL_LOGGING
+    glycolLog.logTransition(
+        prev_state, GLYCOL_COASTING,
+        glycolRuntime.temp_at_pump_off, setpoint,
+        glycolRuntime.cooling_rate_at_pump_off,
+        glycolRuntime.cooling_duration_s,
+        glycolEstimateCoast(),
+        glycolLearned.k, glycolLearned.C_off, glycolLearned.L,
+        glycolRuntime.force_minimum_cooling,
+        reason
+    );
+#endif
 }
 
 /**
  * Transition to GLYCOL_EMERGENCY_COOLING state
  */
 void TempControl::glycolTransitionToEmergency() {
+    GlycolState prev_state = glycolRuntime.state;
+    float current_temp = tempToDouble(beerSensor->readFastFiltered(), 2);
+    float setpoint = tempToDouble(cs.beerSetting, 2);
+
     glycolRuntime.state = GLYCOL_EMERGENCY_COOLING;
     glycolRuntime.emergency_entry_time = millis();
-    logDebug("Glycol: Entering emergency cooling mode");
 
     state = COOLING;
     lastCoolTime = ticks.seconds();
+
+    // Log transition
+#ifdef ENABLE_GLYCOL_LOGGING
+    glycolLog.logTransition(
+        prev_state, GLYCOL_EMERGENCY_COOLING,
+        current_temp, setpoint,
+        glycolRuntime.current_cooling_rate,
+        glycolRuntime.cooling_duration_s,
+        glycolEstimateCoast(),
+        glycolLearned.k, glycolLearned.C_off, glycolLearned.L,
+        glycolRuntime.force_minimum_cooling,
+        "EMERGENCY - cannot keep up with cooling demand"
+    );
+#endif
 }
 
 /**

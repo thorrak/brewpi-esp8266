@@ -34,6 +34,7 @@
 #include "http_server.h"
 
 #include "rest/rest_send.h"
+#include "GlycolLog.h"
 
 #if BREWPI_SIMULATE
 #include "Simulator.h"
@@ -202,6 +203,11 @@ void setup()
 
 	// Once the WiFi and piLink are initialized, we want to display a screen with connection information
   display_connect_info_and_create_callback();
+
+  // Log reboot event (NTP sync happens in display_connect_info_and_create_callback)
+#ifdef ENABLE_GLYCOL_LOGGING
+  glycolLog.logReboot();
+#endif
 
 	display.clear();
 	display.printStationaryText();
