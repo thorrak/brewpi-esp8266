@@ -148,9 +148,7 @@ void setup()
     FILESYSTEM.begin();
   #endif
 
-  pinMode(coolingPin, OUTPUT);
-  pinMode(heatingPin, OUTPUT);
-  pinMode(doorPin, INPUT);
+  deviceManager.preloadActuatorPins();  // Preload any pin-based actuators to set their pin modes
 
   extendedSettings.loadFromFilesystem();
   upstreamSettings.loadFromFilesystem();
@@ -192,7 +190,7 @@ void setup()
 #endif
 
 	tempControl.init();
-	settingsManager.loadSettings();
+	settingsManager.loadSettings();  // Also fully loads devices
 
 #if BREWPI_SIMULATE
 	simulator.step();
