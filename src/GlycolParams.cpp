@@ -47,7 +47,6 @@ void GlycolConfig::setDefaults() {
     // Timing
     min_on_time_s = 10;
     min_off_time_s = 10;
-    rate_settling_time_s = 45;
     max_continuous_on_time_min = 45;
 
     // Learning thresholds
@@ -66,12 +65,14 @@ void GlycolConfig::setDefaults() {
     emergency_horizon_min = 20.0f;   // minutes
     emergency_detection_time_s = 90; // seconds
     min_emergency_dwell_time_s = 120;// 2 minutes
+
+    // Hot glycol compensation
+    hot_glycol_threshold_s = 300;    // 5 minutes - reservoir is warmed after long runs
 }
 
 void GlycolConfig::toJson(JsonDocument& doc) {
     doc[GlycolKeys::min_on_time_s] = min_on_time_s;
     doc[GlycolKeys::min_off_time_s] = min_off_time_s;
-    doc[GlycolKeys::rate_settling_time_s] = rate_settling_time_s;
     doc[GlycolKeys::max_continuous_on_time_min] = max_continuous_on_time_min;
     doc[GlycolKeys::min_training_rate] = min_training_rate;
     doc[GlycolKeys::min_training_duration_s] = min_training_duration_s;
@@ -82,6 +83,7 @@ void GlycolConfig::toJson(JsonDocument& doc) {
     doc[GlycolKeys::emergency_horizon_min] = emergency_horizon_min;
     doc[GlycolKeys::emergency_detection_time_s] = emergency_detection_time_s;
     doc[GlycolKeys::min_emergency_dwell_time_s] = min_emergency_dwell_time_s;
+    doc[GlycolKeys::hot_glycol_threshold_s] = hot_glycol_threshold_s;
 }
 
 void GlycolConfig::storeToFilesystem() {
@@ -96,7 +98,6 @@ void GlycolConfig::loadFromFilesystem() {
 
     if (json_doc[GlycolKeys::min_on_time_s].is<uint16_t>()) min_on_time_s = json_doc[GlycolKeys::min_on_time_s];
     if (json_doc[GlycolKeys::min_off_time_s].is<uint16_t>()) min_off_time_s = json_doc[GlycolKeys::min_off_time_s];
-    if (json_doc[GlycolKeys::rate_settling_time_s].is<uint16_t>()) rate_settling_time_s = json_doc[GlycolKeys::rate_settling_time_s];
     if (json_doc[GlycolKeys::max_continuous_on_time_min].is<uint16_t>()) max_continuous_on_time_min = json_doc[GlycolKeys::max_continuous_on_time_min];
     if (json_doc[GlycolKeys::min_training_rate].is<float>()) min_training_rate = json_doc[GlycolKeys::min_training_rate];
     if (json_doc[GlycolKeys::min_training_duration_s].is<uint16_t>()) min_training_duration_s = json_doc[GlycolKeys::min_training_duration_s];
@@ -107,4 +108,5 @@ void GlycolConfig::loadFromFilesystem() {
     if (json_doc[GlycolKeys::emergency_horizon_min].is<float>()) emergency_horizon_min = json_doc[GlycolKeys::emergency_horizon_min];
     if (json_doc[GlycolKeys::emergency_detection_time_s].is<uint16_t>()) emergency_detection_time_s = json_doc[GlycolKeys::emergency_detection_time_s];
     if (json_doc[GlycolKeys::min_emergency_dwell_time_s].is<uint16_t>()) min_emergency_dwell_time_s = json_doc[GlycolKeys::min_emergency_dwell_time_s];
+    if (json_doc[GlycolKeys::hot_glycol_threshold_s].is<uint16_t>()) hot_glycol_threshold_s = json_doc[GlycolKeys::hot_glycol_threshold_s];
 }

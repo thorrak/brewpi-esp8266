@@ -8,15 +8,14 @@
 #if defined(ESP8266)
 #include <ESP8266mDNS.h>
 #include <DNSServer.h>			//Local DNS Server used for redirecting all requests to the configuration portal
-#include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 #elif defined(ESP32)
 #include <ESPmDNS.h>
 #include <DNSServer.h>			//Local DNS Server used for redirecting all requests to the configuration portal
-#include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 #include <esp_wifi.h>
 #include <Ticks.h>
 #endif
 
+#include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 #include "Version.h" 			// Used in mDNS announce string
 #include "Display.h"
 #include "EepromManager.h"

@@ -1045,6 +1045,7 @@ void GlycolRuntimeState::reset() {
     negative_rate_count = 0;
     setpoint_changed_this_cycle = false;
     cooling_duration_s = 0;
+    force_minimum_cooling = false;
     rate_buffer_head = 0;
     rate_buffer_count = 0;
 }
@@ -1278,6 +1279,15 @@ void TempControl::glycolTransitionToCoasting() {
     glycolRuntime.cooling_rate_at_pump_off = glycolRuntime.current_cooling_rate;
     glycolRuntime.cooling_duration_s = (glycolRuntime.t_pump_off - glycolRuntime.t_pump_on) / 1000;
 
+    // Hot glycol compensation: during long runs, hot beer warms the glycol reservoir.
+    // After pump stops, the chiller cools the reservoir back to its setpoint.
+    // Next cycle will have cold glycol - force minimum time and re-learn.
+    if (glycolRuntime.cooling_duration_s > glycolConfig.hot_glycol_threshold_s) {
+        glycolRuntime.force_minimum_cooling = true;
+        logDebug("Glycol: Long run (%ds) - forcing minimum time next cycle",
+                 glycolRuntime.cooling_duration_s);
+    }
+
     state = IDLE;
     lastIdleTime = ticks.seconds();
 }
@@ -1298,6 +1308,12 @@ void TempControl::glycolTransitionToEmergency() {
  * Update learned parameters after a cooling cycle
  */
 void TempControl::glycolUpdateLearning() {
+    // Clear force_minimum_cooling flag - we've completed a cycle and can resume normal prediction
+    if (glycolRuntime.force_minimum_cooling) {
+        glycolRuntime.force_minimum_cooling = false;
+        logDebug("Glycol: Cleared force_minimum_cooling after cycle");
+    }
+
     // Check cycle validity for training
     bool cycle_valid =
         glycolRuntime.cooling_duration_s >= glycolConfig.min_training_duration_s &&
@@ -1445,8 +1461,11 @@ void TempControl::updateGlycolState() {
             }
             state = COOLING;
 
-            // Wait for rate to settle before trusting predictions
-            if (glycolRuntime.cooling_duration_s < glycolConfig.rate_settling_time_s) {
+            // If force_minimum_cooling is set (after a long run warmed the reservoir),
+            // stop immediately after min_on_time and let the learning adapt
+            if (glycolRuntime.force_minimum_cooling) {
+                logDebug("Glycol: Forced minimum cooling - stopping to re-learn");
+                glycolTransitionToCoasting();
                 break;
             }
 

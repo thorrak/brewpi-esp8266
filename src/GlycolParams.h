@@ -37,7 +37,6 @@ struct GlycolConfig : public JSONSaveable {
     // Timing
     uint16_t min_on_time_s;           //!< Minimum pump on time (pump protection)
     uint16_t min_off_time_s;          //!< Minimum pump off time (pump protection)
-    uint16_t rate_settling_time_s;    //!< Time to wait for stable rate before trusting predictions
     uint16_t max_continuous_on_time_min;  //!< Safety: max continuous pump run time
 
     // Learning thresholds
@@ -56,6 +55,9 @@ struct GlycolConfig : public JSONSaveable {
     float emergency_horizon_min;      //!< Minutes to look ahead for "can't catch up" detection
     uint16_t emergency_detection_time_s;  //!< Time before declaring emergency
     uint16_t min_emergency_dwell_time_s;  //!< Minimum time in emergency before exiting
+
+    // Hot glycol compensation
+    uint16_t hot_glycol_threshold_s;  //!< Pump run time above which reservoir is warmed by beer
 
     GlycolConfig();
     void setDefaults();

@@ -85,6 +85,10 @@ struct GlycolRuntimeState {
     bool setpoint_changed_this_cycle;     //!< True if setpoint changed during this cycle
     uint16_t cooling_duration_s;          //!< Duration of current cooling cycle in seconds
 
+    // Hot glycol compensation: long runs warm the reservoir; after pump stops,
+    // chiller cools it back to setpoint. Next cycle should use minimum time and re-learn.
+    bool force_minimum_cooling;           //!< If true, stop after min_on_time_s (don't trust predictions)
+
     // Rate calculation buffer
     RateSample rate_buffer[RATE_BUFFER_SIZE];
     uint8_t rate_buffer_head;             //!< Index of next write position

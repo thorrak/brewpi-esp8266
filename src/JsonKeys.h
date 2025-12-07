@@ -176,7 +176,6 @@ namespace GlycolKeys {
 
     constexpr auto min_on_time_s = "min_on_time_s";
     constexpr auto min_off_time_s = "min_off_time_s";
-    constexpr auto rate_settling_time_s = "rate_settling_time_s";
     constexpr auto max_continuous_on_time_min = "max_continuous_on_time_min";
     constexpr auto min_training_rate = "min_training_rate";
     constexpr auto min_training_duration_s = "min_training_duration_s";
@@ -187,5 +186,6 @@ namespace GlycolKeys {
     constexpr auto emergency_horizon_min = "emergency_horizon_min";
     constexpr auto emergency_detection_time_s = "emergency_detection_time_s";
     constexpr auto min_emergency_dwell_time_s = "min_emergency_dwell_time_s";
+    constexpr auto hot_glycol_threshold_s = "hot_glycol_threshold_s";
 }
 
