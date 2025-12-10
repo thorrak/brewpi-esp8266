@@ -180,6 +180,14 @@ void setup()
 #endif
 
 	logDebug("started");
+
+#ifndef ESP8266
+	// Initialize OneWire buses
+	if (!deviceManager.initOneWireBuses()) {
+		logDebug("Failed to initialize OneWire buses");
+	}
+#endif
+
 	tempControl.init();
 	settingsManager.loadSettings();  // Also fully loads devices
 

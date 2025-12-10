@@ -72,7 +72,8 @@ enum warningMessages {
 	// TempSensorFallback.cpp
 	MSG(FALLING_BACK_ON_BACKUP_SENSOR, "Falling back on backup sensor."),
 
-	MSG(DS2413_DISCONNECTED, "OneWire actuator (DS2413) disconnected, address %s", addressString)
+	// This is no longer used, but is left here to keep the enum numbering stable
+	MSG(DS2413_DISCONNECTED, "na")
 
 }; // END enum warningMessages
 
@@ -110,8 +111,8 @@ enum infoMessages {
 	// TempSensorFallback.cpp
 	MSG(BACK_ON_MAIN_SENSOR, "Back on main sensor instead of backup sensor."),
 
-	// DS2413.cpp
-	MSG(DS2413_CONNECTED, "OneWire actuator (DS2413) connected, address %s", addressString),
+	// DS2413.cpp - Leaving this here since we don't want to change the enum numbering
+	MSG(DS2413_CONNECTED, "na"),
 
 	// EepromManager.cpp
 	MSG(INFO_UNCONFIRMED_EEPROM_RESET, "Incomplete EEPROM reset command (missing JSON confirmation)")
