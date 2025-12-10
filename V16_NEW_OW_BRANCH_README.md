@@ -85,10 +85,23 @@ The merge brought in 6 commits from esp_ow_lib:
 
 **The v16_new_ow branch exists locally and needs to be pushed to the remote repository.**
 
-To push this branch to GitHub, someone with write access needs to run:
+### Option 1: Direct Push (Requires Write Access)
+If you have write access to the repository:
 ```bash
+# The branch already exists locally as v16_new_ow
 git push -u origin v16_new_ow
 ```
+
+### Option 2: Recreate the Branch
+If you need to recreate the branch, use the provided script:
+```bash
+./create_v16_new_ow_branch.sh
+```
+
+### Option 3: Manual Recreation
+Follow the steps documented in the "Steps Performed" section above.
+
+The branch commit hash is: `a24955f507ab64ef5e22d27515e8cdfea9dcfbb1` (also saved in V16_NEW_OW_COMMIT_HASH.txt)
 
 ## Verification Commands
 
