@@ -1277,8 +1277,9 @@ void DeviceManager::preloadActuatorPins() {
 		dev = eepromManager.fetchDevice(i);
 		if (dev.deviceHardware == DEVICE_HARDWARE_PIN) {
 			if (deviceType(dev.deviceFunction) == DEVICETYPE_SWITCH_ACTUATOR) {
-				digitalWrite(dev.hw.pinNr, dev.hw.invert ? HIGH : LOW); // Set output register FIRST, THEN enable as output
+				digitalWrite(dev.hw.pinNr, dev.hw.invert ? HIGH : LOW);
 				pinMode(dev.hw.pinNr, OUTPUT);
+				digitalWrite(dev.hw.pinNr, dev.hw.invert ? HIGH : LOW);
 			} else if (deviceType(dev.deviceFunction) == DEVICETYPE_SWITCH_SENSOR) {
 				pinMode(dev.hw.pinNr, INPUT);
 			} else {
