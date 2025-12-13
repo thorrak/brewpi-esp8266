@@ -38,3 +38,5 @@ src/Version.h
 managed_components/
 .dummy/
 sdkconfig.*
+CMakeLists.txt
+dependencies.lock

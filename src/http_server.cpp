@@ -434,6 +434,312 @@ bool processExtendedSettingsJson(const JsonDocument& json, bool triggerUpstreamU
 }
 
 
+bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
+    uint8_t failCount = 0;
+    bool saveSettings = false;
+
+    // Temperature Format
+    if(json["tempFormat"].is<const char *>()) {
+        const char* formatStr = json["tempFormat"].as<const char *>();
+        if(strlen(formatStr) == 1) {
+            char format = formatStr[0];
+            if(format == 'C' || format == 'F') {
+                if(tempControl.cc.tempFormat != format) {
+                    tempControl.cc.tempFormat = format;
+                    saveSettings = true;
+                    Log.notice(F("Settings update, [tempFormat]:(%c) applied.\r\n"), format);
+                }
+            } else {
+                Log.warning(F("Invalid [tempFormat]:(%c) received.\r\n"), format);
+                failCount++;
+            }
+        } else {
+            Log.warning(F("Invalid [tempFormat]:(%s) received (wrong length).\r\n"), formatStr);
+            failCount++;
+        }
+    }
+
+    // Temperature settings (use stringToTemp for conversion)
+    // tempSetMin
+    if(json["tempSetMin"].is<double>()) {
+        char tempStr[8];
+        snprintf(tempStr, sizeof(tempStr), "%.1f", json["tempSetMin"].as<double>());
+        temperature newTemp = stringToTemp(tempStr);
+        if(tempControl.cc.tempSettingMin != newTemp) {
+            tempControl.cc.tempSettingMin = newTemp;
+            saveSettings = true;
+            Log.notice(F("Settings update, [tempSetMin]:(%s) applied.\r\n"), tempStr);
+        }
+    }
+
+    // tempSetMax
+    if(json["tempSetMax"].is<double>()) {
+        char tempStr[8];
+        snprintf(tempStr, sizeof(tempStr), "%.1f", json["tempSetMax"].as<double>());
+        temperature newTemp = stringToTemp(tempStr);
+        if(tempControl.cc.tempSettingMax != newTemp) {
+            tempControl.cc.tempSettingMax = newTemp;
+            saveSettings = true;
+            Log.notice(F("Settings update, [tempSetMax]:(%s) applied.\r\n"), tempStr);
+        }
+    }
+
+    // PID settings (use stringToFixedPoint for Kp, Ki, Kd)
+    // Kp
+    if(json["Kp"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.3f", json["Kp"].as<double>());
+        temperature newVal = stringToFixedPoint(valStr);
+        if(tempControl.cc.Kp != newVal) {
+            tempControl.cc.Kp = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [Kp]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // Ki
+    if(json["Ki"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.3f", json["Ki"].as<double>());
+        temperature newVal = stringToFixedPoint(valStr);
+        if(tempControl.cc.Ki != newVal) {
+            tempControl.cc.Ki = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [Ki]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // Kd
+    if(json["Kd"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.3f", json["Kd"].as<double>());
+        temperature newVal = stringToFixedPoint(valStr);
+        if(tempControl.cc.Kd != newVal) {
+            tempControl.cc.Kd = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [Kd]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // Temperature difference settings (use stringToTempDiff)
+    // pidMax
+    if(json["pidMax"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.1f", json["pidMax"].as<double>());
+        temperature newVal = stringToTempDiff(valStr);
+        if(tempControl.cc.pidMax != newVal) {
+            tempControl.cc.pidMax = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [pidMax]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // iMaxErr
+    if(json["iMaxErr"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.1f", json["iMaxErr"].as<double>());
+        temperature newVal = stringToTempDiff(valStr);
+        if(tempControl.cc.iMaxError != newVal) {
+            tempControl.cc.iMaxError = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [iMaxErr]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // idleRangeH
+    if(json["idleRangeH"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.1f", json["idleRangeH"].as<double>());
+        temperature newVal = stringToTempDiff(valStr);
+        if(tempControl.cc.idleRangeHigh != newVal) {
+            tempControl.cc.idleRangeHigh = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [idleRangeH]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // idleRangeL
+    if(json["idleRangeL"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.1f", json["idleRangeL"].as<double>());
+        temperature newVal = stringToTempDiff(valStr);
+        if(tempControl.cc.idleRangeLow != newVal) {
+            tempControl.cc.idleRangeLow = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [idleRangeL]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // heatTargetH
+    if(json["heatTargetH"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.1f", json["heatTargetH"].as<double>());
+        temperature newVal = stringToTempDiff(valStr);
+        if(tempControl.cc.heatingTargetUpper != newVal) {
+            tempControl.cc.heatingTargetUpper = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [heatTargetH]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // heatTargetL
+    if(json["heatTargetL"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.1f", json["heatTargetL"].as<double>());
+        temperature newVal = stringToTempDiff(valStr);
+        if(tempControl.cc.heatingTargetLower != newVal) {
+            tempControl.cc.heatingTargetLower = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [heatTargetL]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // coolTargetH
+    if(json["coolTargetH"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.1f", json["coolTargetH"].as<double>());
+        temperature newVal = stringToTempDiff(valStr);
+        if(tempControl.cc.coolingTargetUpper != newVal) {
+            tempControl.cc.coolingTargetUpper = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [coolTargetH]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // coolTargetL
+    if(json["coolTargetL"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.1f", json["coolTargetL"].as<double>());
+        temperature newVal = stringToTempDiff(valStr);
+        if(tempControl.cc.coolingTargetLower != newVal) {
+            tempControl.cc.coolingTargetLower = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [coolTargetL]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // Estimate time settings (uint16_t)
+    // maxHeatTimeForEst
+    if(json["maxHeatTimeForEst"].is<uint16_t>()) {
+        uint16_t newVal = json["maxHeatTimeForEst"].as<uint16_t>();
+        if(tempControl.cc.maxHeatTimeForEstimate != newVal) {
+            tempControl.cc.maxHeatTimeForEstimate = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [maxHeatTimeForEst]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // maxCoolTimeForEst
+    if(json["maxCoolTimeForEst"].is<uint16_t>()) {
+        uint16_t newVal = json["maxCoolTimeForEst"].as<uint16_t>();
+        if(tempControl.cc.maxCoolTimeForEstimate != newVal) {
+            tempControl.cc.maxCoolTimeForEstimate = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [maxCoolTimeForEst]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // Filter coefficients (uint8_t) - update both cc member and sensor
+    // fridgeFastFilt
+    if(json["fridgeFastFilt"].is<uint8_t>()) {
+        uint8_t newVal = json["fridgeFastFilt"].as<uint8_t>();
+        if(tempControl.cc.fridgeFastFilter != newVal) {
+            tempControl.cc.fridgeFastFilter = newVal;
+            tempControl.fridgeSensor->setFastFilterCoefficients(newVal);
+            saveSettings = true;
+            Log.notice(F("Settings update, [fridgeFastFilt]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // fridgeSlowFilt
+    if(json["fridgeSlowFilt"].is<uint8_t>()) {
+        uint8_t newVal = json["fridgeSlowFilt"].as<uint8_t>();
+        if(tempControl.cc.fridgeSlowFilter != newVal) {
+            tempControl.cc.fridgeSlowFilter = newVal;
+            tempControl.fridgeSensor->setSlowFilterCoefficients(newVal);
+            saveSettings = true;
+            Log.notice(F("Settings update, [fridgeSlowFilt]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // fridgeSlopeFilt
+    if(json["fridgeSlopeFilt"].is<uint8_t>()) {
+        uint8_t newVal = json["fridgeSlopeFilt"].as<uint8_t>();
+        if(tempControl.cc.fridgeSlopeFilter != newVal) {
+            tempControl.cc.fridgeSlopeFilter = newVal;
+            tempControl.fridgeSensor->setSlopeFilterCoefficients(newVal);
+            saveSettings = true;
+            Log.notice(F("Settings update, [fridgeSlopeFilt]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // beerFastFilt
+    if(json["beerFastFilt"].is<uint8_t>()) {
+        uint8_t newVal = json["beerFastFilt"].as<uint8_t>();
+        if(tempControl.cc.beerFastFilter != newVal) {
+            tempControl.cc.beerFastFilter = newVal;
+            tempControl.beerSensor->setFastFilterCoefficients(newVal);
+            saveSettings = true;
+            Log.notice(F("Settings update, [beerFastFilt]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // beerSlowFilt
+    if(json["beerSlowFilt"].is<uint8_t>()) {
+        uint8_t newVal = json["beerSlowFilt"].as<uint8_t>();
+        if(tempControl.cc.beerSlowFilter != newVal) {
+            tempControl.cc.beerSlowFilter = newVal;
+            tempControl.beerSensor->setSlowFilterCoefficients(newVal);
+            saveSettings = true;
+            Log.notice(F("Settings update, [beerSlowFilt]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // beerSlopeFilt
+    if(json["beerSlopeFilt"].is<uint8_t>()) {
+        uint8_t newVal = json["beerSlopeFilt"].as<uint8_t>();
+        if(tempControl.cc.beerSlopeFilter != newVal) {
+            tempControl.cc.beerSlopeFilter = newVal;
+            tempControl.beerSensor->setSlopeFilterCoefficients(newVal);
+            saveSettings = true;
+            Log.notice(F("Settings update, [beerSlopeFilt]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // Boolean/uint8_t settings
+    // lah (lightAsHeater)
+    if(json["lah"].is<bool>()) {
+        uint8_t newVal = json["lah"].as<bool>() ? 1 : 0;
+        if(tempControl.cc.lightAsHeater != newVal) {
+            tempControl.cc.lightAsHeater = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [lah]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // hs (rotaryHalfSteps)
+    if(json["hs"].is<bool>()) {
+        uint8_t newVal = json["hs"].as<bool>() ? 1 : 0;
+        if(tempControl.cc.rotaryHalfSteps != newVal) {
+            tempControl.cc.rotaryHalfSteps = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [hs]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // Save
+    if(failCount) {
+        Log.error(F("Error: Invalid control constants configuration.\r\n"));
+    } else {
+        if(saveSettings) {
+            TempControl::storeConstants();
+            // TODO - Force upstream cascade/send
+        }
+    }
+    return failCount == 0;
+}
+
+
 // bool processActionJson(const JsonDocument& json) {
 
 //     if(!json["action"].is<const char*>()) {
@@ -612,6 +918,7 @@ void httpServer::setPutPages() {
         {"/api/devices/", processDeviceUpdateJson},
         {"/api/mode/", processUpdateModeJson},
         {"/api/extended/", processExtendedSettingsJson},
+        {"/api/cc/", processControlConstantsJson},
     };
 
     for (const auto& endpoint : endpoints) {
