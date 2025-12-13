@@ -60,6 +60,14 @@ public:
     temperature pidMax;
     char tempFormat; //!< Temperature format (F/C)
 
+    // Glycol mode: Separate PID constants for heating
+    // In glycol mode, heating and cooling often have drastically different response characteristics
+    // (e.g., 1500W glycol chiller vs 20W heat mat), so separate gains are always used
+    temperature Kp_heat;        //!< Heating proportional gain (glycol mode only)
+    temperature Ki_heat;        //!< Heating integral gain (glycol mode only)
+    temperature Kd_heat;        //!< Heating derivative gain (glycol mode only)
+    temperature pidMax_heat;    //!< Maximum heating authority in degrees C (glycol mode only)
+
     void toJson(JsonDocument &doc);
     void storeToFilesystem();
     void loadFromFilesystem();

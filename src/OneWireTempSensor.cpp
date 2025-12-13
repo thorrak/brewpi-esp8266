@@ -46,6 +46,8 @@ OneWireTempSensor::~OneWireTempSensor(){
  * sensor reports it's disconnected.  If the result is TEMP_SENSOR_DISCONNECTED
  * then subsequent calls to read() will also return TEMP_SENSOR_DISCONNECTED.
  * Clients should attempt to re-initialize the sensor by calling init() again.
+ *
+ * Retries up to 3 times to improve resilience against transient connection issues.
  */
 bool OneWireTempSensor::init() {
   char addressString[17];

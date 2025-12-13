@@ -115,6 +115,11 @@ constexpr auto lightHeater = "lightAsHeater";
 constexpr auto rotaryHalfSteps = "rotaryHalfSteps";
 constexpr auto pidMax = "pidMax";
 constexpr auto tempFormat = "tempFormat";
+// Glycol mode: Separate heating PID constants (always used in glycol mode)
+constexpr auto kpHeat = "Kp_heat";
+constexpr auto kiHeat = "Ki_heat";
+constexpr auto kdHeat = "Kd_heat";
+constexpr auto pidMaxHeat = "pidMax_heat";
 };
 
 
@@ -162,4 +167,25 @@ constexpr auto mode = "newMode";
 constexpr auto setpoint = "setPoint";
 }; // namespace ModeUpdateKeys
 
+
+namespace GlycolKeys {
+    constexpr auto k = "k";
+    constexpr auto C_off = "C_off";
+    constexpr auto L = "L";
+    constexpr auto drift_rate = "drift_rate";
+
+    constexpr auto min_on_time_s = "min_on_time_s";
+    constexpr auto min_off_time_s = "min_off_time_s";
+    constexpr auto max_continuous_on_time_min = "max_continuous_on_time_min";
+    constexpr auto min_training_rate = "min_training_rate";
+    constexpr auto min_training_duration_s = "min_training_duration_s";
+    constexpr auto min_training_drop = "min_training_drop";
+    constexpr auto safety_margin_low = "safety_margin_low";
+    constexpr auto min_rate_for_k_model = "min_rate_for_k_model";
+    constexpr auto trigger_margin = "trigger_margin";
+    constexpr auto emergency_horizon_min = "emergency_horizon_min";
+    constexpr auto emergency_detection_time_s = "emergency_detection_time_s";
+    constexpr auto min_emergency_dwell_time_s = "min_emergency_dwell_time_s";
+    constexpr auto hot_glycol_threshold_s = "hot_glycol_threshold_s";
+}
 

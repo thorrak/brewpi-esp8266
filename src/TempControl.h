@@ -28,6 +28,7 @@
 #include "EepromManager.h"
 #include "ActuatorAutoOff.h"
 #include "EepromStructs.h"
+#include "GlycolParams.h"
 #include <ArduinoJson.h>
 
 
@@ -39,6 +40,62 @@
  * @{
  */
 
+// ===== GLYCOL MODE: Predictive Bang-Bang Control =====
+// See GLYCOL_COOLING_ALGORITHM.md for full design documentation
+
+/**
+ * Glycol controller states for predictive bang-bang control
+ */
+enum GlycolState : uint8_t {
+    GLYCOL_IDLE = 0,              //!< Monitoring temperature, waiting to cool
+    GLYCOL_COOLING = 1,           //!< Pump on, actively cooling
+    GLYCOL_COASTING = 2,          //!< Pump off, temperature still dropping, measuring coast
+    GLYCOL_EMERGENCY_COOLING = 3  //!< Can't keep up - running pump continuously
+};
+
+/**
+ * Sample for rate calculation buffer
+ */
+struct RateSample {
+    uint32_t timestamp_ms;
+    float temp;  // Temperature in internal units converted to float
+};
+
+/**
+ * Circular buffer size for rate calculation
+ * At ~3 second intervals, 30 samples covers ~90 seconds
+ */
+constexpr uint8_t RATE_BUFFER_SIZE = 30;
+
+/**
+ * Runtime state for glycol controller (not persisted)
+ */
+struct GlycolRuntimeState {
+    GlycolState state;                    //!< Current glycol state machine state
+    uint32_t t_pump_on;                   //!< Timestamp when pump turned on (ms)
+    uint32_t t_pump_off;                  //!< Timestamp when pump turned off (ms)
+    uint32_t emergency_entry_time;        //!< Timestamp when emergency mode was entered (ms)
+    float temp_at_pump_on;                //!< Temperature when pump was turned on
+    float temp_at_pump_off;               //!< Temperature when pump was turned off
+    float min_temp_reached;               //!< Minimum temperature during coasting
+    float cooling_rate_at_pump_off;       //!< Cooling rate when pump was turned off (°/min)
+    float current_cooling_rate;           //!< Current cooling rate (°/min)
+    bool cooling_confirmed;               //!< True once cooling effect is detected
+    uint8_t negative_rate_count;          //!< Count of consecutive negative rate readings
+    bool setpoint_changed_this_cycle;     //!< True if setpoint changed during this cycle
+    uint16_t cooling_duration_s;          //!< Duration of current cooling cycle in seconds
+
+    // Hot glycol compensation: long runs warm the reservoir; after pump stops,
+    // chiller cools it back to setpoint. Next cycle should use minimum time and re-learn.
+    bool force_minimum_cooling;           //!< If true, stop after min_on_time_s (don't trust predictions)
+
+    // Rate calculation buffer
+    RateSample rate_buffer[RATE_BUFFER_SIZE];
+    uint8_t rate_buffer_head;             //!< Index of next write position
+    uint8_t rate_buffer_count;            //!< Number of valid samples in buffer
+
+    void reset();
+};
 
 // These two structs are stored in and loaded from EEPROM
 // struct ControlSettings was moved to EepromStructs.h
@@ -82,6 +139,10 @@ public:
     uint16_t COOL_PEAK_DETECT_TIME;  //! Time allowed for cooling peak detection
     uint16_t HEAT_PEAK_DETECT_TIME;  //! Time allowed for heating peak detection
 
+    // Glycol mode time-proportional control settings
+    uint16_t GLYCOL_WINDOW_PERIOD;  //! Window period for time-proportional control in seconds (default: 1000s)
+    uint16_t GLYCOL_MIN_ON_TIME;    //! Minimum on-time for glycol pump in seconds (default: 10s)
+
 	void toJson(JsonDocument &doc);
     void storeToFilesystem();
     void loadFromFilesystem();
@@ -108,6 +169,8 @@ namespace MinTimesKeys {
 	constexpr auto MIN_SWITCH_TIME = "MIN_SWITCH_TIME";
 	constexpr auto COOL_PEAK_DETECT_TIME = "COOL_PEAK_DETECT_TIME";
 	constexpr auto HEAT_PEAK_DETECT_TIME = "HEAT_PEAK_DETECT_TIME";
+	constexpr auto GLYCOL_WINDOW_PERIOD = "GLYCOL_WINDOW_PERIOD";
+	constexpr auto GLYCOL_MIN_ON_TIME = "GLYCOL_MIN_ON_TIME";
 };
 
 // struct ControlConstants was moved to EepromStructs.h
@@ -292,8 +355,23 @@ public:
 private:
 	TEMP_CONTROL_METHOD void increaseEstimator(temperature * estimator, temperature error);
 	TEMP_CONTROL_METHOD void decreaseEstimator(temperature * estimator, temperature error);
-	
+
 	TEMP_CONTROL_METHOD void updateEstimatedPeak(uint16_t estimate, temperature estimator, uint16_t sinceIdle);
+
+	// ===== Glycol mode: Predictive bang-bang control =====
+	TEMP_CONTROL_METHOD void updateGlycolState();          //!< Main glycol state machine
+	TEMP_CONTROL_METHOD void glycolTransitionToIdle();     //!< Transition to GLYCOL_IDLE state
+	TEMP_CONTROL_METHOD void glycolTransitionToCooling();  //!< Transition to GLYCOL_COOLING state
+	TEMP_CONTROL_METHOD void glycolTransitionToCoasting(); //!< Transition to GLYCOL_COASTING state
+	TEMP_CONTROL_METHOD void glycolTransitionToEmergency();//!< Transition to GLYCOL_EMERGENCY_COOLING state
+	TEMP_CONTROL_METHOD void glycolAddRateSample(float temp);  //!< Add sample to rate buffer
+	TEMP_CONTROL_METHOD float glycolCalculateRate();       //!< Calculate rate from buffer (linear regression)
+	TEMP_CONTROL_METHOD float glycolEstimateCoast();       //!< Estimate coast using hybrid model
+	TEMP_CONTROL_METHOD void glycolUpdateLearning();       //!< Update learned parameters after cycle
+	TEMP_CONTROL_METHOD bool glycolShouldStartCooling();   //!< Check if we should start cooling
+	TEMP_CONTROL_METHOD bool glycolShouldStopCooling();    //!< Check if we should stop cooling
+	TEMP_CONTROL_METHOD bool glycolIsEmergency();          //!< Check for emergency condition
+	TEMP_CONTROL_METHOD bool glycolCanExitEmergency();     //!< Check if we can exit emergency mode
 public:
 	TEMP_CONTROL_FIELD TempSensor* beerSensor; //!< Temp sensor monitoring beer
 	TEMP_CONTROL_FIELD TempSensor* fridgeSensor; //!< Temp sensor monitoring fridge
@@ -309,6 +387,14 @@ public:
 	TEMP_CONTROL_FIELD ControlConstants cc;
 	TEMP_CONTROL_FIELD ControlSettings cs;
 	TEMP_CONTROL_FIELD ControlVariables cv;
+
+	// Glycol mode: Predictive bang-bang control
+	TEMP_CONTROL_FIELD GlycolLearnedParams glycolLearned;   //!< Learned parameters (persisted)
+	TEMP_CONTROL_FIELD GlycolConfig glycolConfig;           //!< Configuration (persisted)
+	TEMP_CONTROL_FIELD GlycolRuntimeState glycolRuntime;    //!< Runtime state (not persisted)
+
+	TEMP_CONTROL_METHOD void loadGlycolParams();            //!< Load glycol learned params and config
+	TEMP_CONTROL_METHOD void storeGlycolParams();           //!< Store glycol learned params
 
 	TEMP_CONTROL_FIELD uint16_t getMinCoolOnTime();
 	TEMP_CONTROL_FIELD uint16_t getMinHeatOnTime();
