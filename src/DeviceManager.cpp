@@ -912,12 +912,42 @@ void DeviceManager::enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallbac
  * \param callback - Callback function, called for every found hardware device
  * \param output -
  * \param doc - JsonDocument to populate
+ *
+ * \note Scans the bus multiple times to work around transient detection issues
+ *       where a single scan may return an incomplete list of devices.
  */
 void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc)
 {
 #if !BREWPI_SIMULATE
-	int8_t pin;
-	for (uint8_t count=0; (pin=deviceManager.enumOneWirePins(count))>=0; count++) {
+	// Track seen device addresses to avoid duplicate enumeration
+	// Max 16 devices should be plenty for any realistic setup
+	static const uint8_t MAX_SEEN_DEVICES = 16;
+	DeviceAddress seenAddresses[MAX_SEEN_DEVICES];
+	uint8_t seenCount = 0;
+
+	// Helper lambda to check if address was already seen
+	auto alreadySeen = [&](const DeviceAddress& addr) -> bool {
+		for (uint8_t i = 0; i < seenCount; i++) {
+			if (memcmp(seenAddresses[i], addr, sizeof(DeviceAddress)) == 0) {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	// Helper lambda to record a new address
+	auto recordAddress = [&](const DeviceAddress& addr) {
+		if (seenCount < MAX_SEEN_DEVICES) {
+			memcpy(seenAddresses[seenCount], addr, sizeof(DeviceAddress));
+			seenCount++;
+		}
+	};
+
+	// Scan the bus multiple times to catch transient detection failures
+	static const uint8_t SCAN_ITERATIONS = 3;
+	for (uint8_t scanPass = 0; scanPass < SCAN_ITERATIONS; scanPass++) {
+		int8_t pin;
+		for (uint8_t count=0; (pin=deviceManager.enumOneWirePins(count))>=0; count++) {
 		DeviceConfig config;
 		if (h.pin!=-1 && h.pin!=pin)
 			continue;
@@ -940,6 +970,11 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 					// Convert address to uint8_t array
 					addressToBytes(next_device.address, config.hw.address);
 #endif
+					// Skip if we've already processed this device in a previous scan
+					if (alreadySeen(config.hw.address)) {
+						continue;
+					}
+
 					// hardware device type from OneWire family ID
 					switch (config.hw.address[0]) {
 						case 0x28:  // DS18B20MODEL
@@ -956,17 +991,21 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 						{	// check that device is not parasite powered
 							DallasTemperature sensor(wire);
 							if(initConnection(sensor, config.hw.address)){
+								recordAddress(config.hw.address);
 								handleEnumeratedDevice(config, h, callback, doc);
 							}
 						}
 		#else
+						recordAddress(config.hw.address);
 						handleEnumeratedDevice(config, h, callback, doc);
 		#endif
 #else
+							recordAddress(config.hw.address);
 							handleEnumeratedDevice(config, h, callback, doc);
 #endif
 							break;
 						default:
+							recordAddress(config.hw.address);
 							handleEnumeratedDevice(config, h, callback, doc);
 					}
 #ifndef ESP8266
@@ -975,7 +1014,9 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 #endif
 			}
 		}
-	}
+	}  // end pin iteration
+	delay(100); // brief delay between scans
+	}  // end scan iteration
 #endif
 }
 
