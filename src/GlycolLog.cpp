@@ -2,7 +2,8 @@
 
 #include "GlycolLog.h"
 #include "ESPEepromAccess.h"  // For FILESYSTEM
-#include "ESP_BP_WiFi.h"      // For getFormattedTime
+#include "ESP_BP_WiFi.h"
+#include "ntp.h"              // For getFormattedTime
 #include "TempControl.h"      // For GlycolState enum
 
 #include <LittleFS.h>

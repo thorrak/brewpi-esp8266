@@ -1563,11 +1563,23 @@ void TempControl::updateGlycolState() {
             bool min_off_elapsed = time_since_pump_off >= glycolConfig.min_off_time_s;
 
             if (stabilized && min_off_elapsed) {
-                // Perform learning update
-                glycolUpdateLearning();
+                // Calculate actual coast achieved
+                float actual_coast = glycolRuntime.temp_at_pump_off - glycolRuntime.min_temp_reached;
 
-                // Transition to idle
-                glycolTransitionToIdle();
+                // If coast was ineffective (minimal temp drop) and we're still above setpoint,
+                // go back to cooling to extend cooling time instead of going to idle
+                bool coast_ineffective = actual_coast < 0.05f;  // Less than 0.05° drop
+                bool still_above_setpoint = current_temp > setpoint;
+
+                if (coast_ineffective && still_above_setpoint) {
+                    // Coast didn't work - extend cooling time
+                    logDebug("Glycol: Coast ineffective, extending cooling");
+                    glycolTransitionToCooling();
+                } else {
+                    // Normal coast completion - perform learning and go to idle
+                    glycolUpdateLearning();
+                    glycolTransitionToIdle();
+                }
             }
             break;
         }
