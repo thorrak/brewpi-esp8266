@@ -26,6 +26,11 @@
 #include "Ticks.h"
 #include "TemperatureFormats.h"
 
+// DS18B20 power-on default temperature is 85°C (0x0550 raw).
+// After >> 3 shift in getTempRaw(), this becomes 170.
+// This value indicates the sensor just powered on and hasn't completed a conversion.
+#define DEVICE_POWERON_RAW 170
+
 OneWireTempSensor::~OneWireTempSensor(){
 	delete sensor;
 };
@@ -127,7 +132,20 @@ temperature OneWireTempSensor::read() {
 		return TEMP_SENSOR_DISCONNECTED;
 
 	temperature temp = readAndConstrainTemp();
-	requestConversion();
+
+	// Track conversion request failures - if we can't request conversions,
+	// subsequent reads will return stale data
+	if (!requestConversion()) {
+		m_conversion_failures++;
+		if (m_conversion_failures >= 3) {
+			// Multiple consecutive failures - mark sensor as disconnected to force re-init
+			setConnected(false);
+			return TEMP_SENSOR_DISCONNECTED;
+		}
+	} else {
+		m_conversion_failures = 0;
+	}
+
 	return temp;
 }
 
@@ -162,6 +180,13 @@ temperature OneWireTempSensor::readAndConstrainTemp() {
     temperature temp = readTempWithRetries(attempts);
 
     if(temp == DEVICE_DISCONNECTED_RAW) {
+        setConnected(false);
+        return TEMP_SENSOR_DISCONNECTED;
+    }
+
+    // Reject DS18B20 power-on default (85°C) - indicates sensor just powered
+    // on and hasn't completed a conversion yet
+    if(temp == DEVICE_POWERON_RAW) {
         setConnected(false);
         return TEMP_SENSOR_DISCONNECTED;
     }
