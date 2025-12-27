@@ -84,6 +84,7 @@ private:
 
   fixed4_4 m_calibration_offset;
   bool m_connected;
+  uint8_t m_conversion_failures; //!< Consecutive conversion request failures
 };
 #else
 // If we're using an ESP8266, include the ESP8266-specific version

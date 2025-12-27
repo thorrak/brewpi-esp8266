@@ -28,8 +28,13 @@
 #include "onewire_device.h"
 #include <string.h>
 
+// DS18B20 power-on default temperature is 85°C.
+// In raw 16-bit format: 85 * 16 = 1360 (0x0550).
+// This value indicates the sensor just powered on and hasn't completed a conversion.
+#define DEVICE_POWERON_RAW 1360
+
 OneWireTempSensor::OneWireTempSensor(onewire_bus_handle_t bus, DeviceAddress address, fixed4_4 calibrationOffset)
-  : m_bus(bus), m_sensor(NULL), m_connected(true), m_calibration_offset(calibrationOffset) {
+  : m_bus(bus), m_sensor(NULL), m_connected(true), m_calibration_offset(calibrationOffset), m_conversion_failures(0) {
   memcpy(m_sensor_address, address, sizeof(DeviceAddress));
 }
 
@@ -113,6 +118,14 @@ bool OneWireTempSensor::init() {
 
   logDebug("init onewire sensor");
 
+  // Set up reset detection - writes marker to scratchpad that will be
+  // cleared on sensor power cycle, allowing us to detect resets
+  if (m_sensor && ds18b20_init_connection(m_sensor) != ESP_OK) {
+    logDebug("init onewire sensor - init_connection failed");
+    setConnected(false);
+    return false;
+  }
+
   if (m_sensor && requestConversion()) {
     logDebug("init onewire sensor - wait for conversion");
     waitForConversion();
@@ -172,8 +185,20 @@ void OneWireTempSensor::setConnected(bool connected) {
   }
 }
 
+// Interval between conversion triggers (in milliseconds)
+// 2 seconds gives plenty of margin over the 750ms conversion time
+static constexpr uint32_t CONVERSION_INTERVAL_MS = 2000;
+
+// Static variables shared across all sensors on the bus
+static uint32_t s_last_conversion_time = 0;
+static uint8_t s_conversion_failures = 0;
+
 /**
  * \brief Read the value of the sensor
+ *
+ * Reads from the sensor scratchpad and triggers a new conversion if enough
+ * time has passed since the last one. This allows non-blocking operation
+ * while keeping sensors converting regularly.
  *
  * @return TEMP_SENSOR_DISCONNECTED if sensor is not connected, constrained temp otherwise.
  * @see readAndConstrainTemp()
@@ -182,8 +207,27 @@ temperature OneWireTempSensor::read() {
   if (!m_connected)
     return TEMP_SENSOR_DISCONNECTED;
 
+  // Read the scratchpad first (this is the result of the PREVIOUS conversion)
   temperature temp = readAndConstrainTemp();
-  requestConversion();
+
+  // Trigger a new conversion if enough time has passed
+  uint32_t now = ticks.millis();
+  if (now - s_last_conversion_time >= CONVERSION_INTERVAL_MS) {
+    // Use non-blocking broadcast conversion to all sensors on bus
+    if (ds18b20_trigger_all_conversions_no_wait(m_bus) == ESP_OK) {
+      s_last_conversion_time = now;
+      s_conversion_failures = 0;
+    } else {
+      s_conversion_failures++;
+      if (s_conversion_failures >= 5) {
+        // Persistent conversion failures - mark sensor as disconnected
+        setConnected(false);
+        s_conversion_failures = 0;  // Reset to allow recovery after re-init
+        return TEMP_SENSOR_DISCONNECTED;
+      }
+    }
+  }
+
   return temp;
 }
 
@@ -217,6 +261,13 @@ temperature OneWireTempSensor::readAndConstrainTemp() {
   temperature temp = readTempWithRetries(attempts);
 
   if (temp == DEVICE_DISCONNECTED_RAW) {
+    setConnected(false);
+    return TEMP_SENSOR_DISCONNECTED;
+  }
+
+  // Reject DS18B20 power-on default (85°C) - indicates sensor just powered
+  // on and hasn't completed a conversion yet
+  if (temp == DEVICE_POWERON_RAW) {
     setConnected(false);
     return TEMP_SENSOR_DISCONNECTED;
   }
