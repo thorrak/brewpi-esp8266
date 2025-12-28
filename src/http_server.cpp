@@ -18,6 +18,8 @@
 #include "DeviceManager.h"
 #include "JsonKeys.h"
 #include "rest/rest_send.h"
+#include "EepromManager.h"
+#include "SettingsManager.h"
 
 #include "extended_async_json_handler.h"
 
@@ -203,6 +205,43 @@ void httpServer::processQueuedDeviceDefinition() {
         /*DeviceConfig print =*/
         deviceManager.updateDeviceDefinition(dev);   // Save the device definition (if valid)
         device_definition_update_requested = false;
+    }
+}
+
+
+// Allows us to process action requests in the main loop rather than in the async handler
+void httpServer::processQueuedActions() {
+    // Process config reset first (before restart)
+    if(config_reset_requested) {
+        Log.notice(F("Processing config reset request\r\n"));
+        delay(500);  // Need to give the response time to be sent/processed
+        if(eepromManager.initializeEeprom()) {
+            logInfo(INFO_EEPROM_INITIALIZED);
+            settingsManager.loadSettings();
+        }
+        config_reset_requested = false;
+    }
+
+    // Process WiFi/connection reset (this will restart, so do it last among resets)
+    if(wifi_reset_requested) {
+        Log.notice(F("Processing WiFi reset request\r\n"));
+        delay(500);  // Need to give the response time to be sent/processed
+        // Reset the upstream settings
+        upstreamSettings.setDefaults();
+        upstreamSettings.storeToFilesystem();
+        // Disconnect WiFi and restart
+        WiFi.disconnect(false, true);
+        delay(500);
+        ESP.restart();
+        // Note: Code below this won't execute after restart
+    }
+
+    // Process simple restart last (if no wifi_reset was requested)
+    if(restart_requested) {
+        Log.notice(F("Processing restart request\r\n"));
+        delay(500);  // Need to give the response time to be sent/processed
+        ESP.restart();
+        // Note: Code below this won't execute after restart
     }
 }
 
@@ -740,46 +779,38 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
 }
 
 
-// bool processActionJson(const JsonDocument& json) {
+bool processActionJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
 
-//     if(!json["action"].is<const char*>()) {
-//         Log.warning(F("Action error - Action key is not a string.\r\n"));
-//         return false;
-//     }
+    if(!json["action"].is<const char*>()) {
+        Log.warning(F("Action error - Action key is not a string.\r\n"));
+        return false;
+    }
 
-//     if(strcmp(json["action"], "reset_connection") == 0) {
-//         Log.notice(F("Action [reset_connection] received\r\n"));
-//         http_server.wifi_reset_requested = true;
-//         http_server.restart_requested = true;  // A restart is implicit in wifi_reset_requested, but explicitly specifying here anyways
-//     }
+    const char* action = json["action"].as<const char*>();
 
-//     if(strcmp(json["action"], "restart") == 0) {
-//         Log.notice(F("Action [restart] received\r\n"));
-//         http_server.restart_requested = true;
-//     }
+    if(strcmp(action, "restart") == 0) {
+        Log.notice(F("Action [restart] received\r\n"));
+        http_server.restart_requested = true;
+        return true;
+    }
 
-//     if(strcmp(json["action"], "reset_config") == 0) {
-//         Log.notice(F("Action [reset_config] received\r\n"));
-//         http_server.config_reset_requested = true;
-//         http_server.restart_requested = true;  // A restart is generally triggered when setting config_reset_requested, but explicitly specifying here anyways
-//     }
+    if(strcmp(action, "reset_connection") == 0) {
+        Log.notice(F("Action [reset_connection] received\r\n"));
+        http_server.wifi_reset_requested = true;
+        http_server.restart_requested = true;  // A restart is implicit in wifi_reset_requested, but explicitly specifying here anyways
+        return true;
+    }
 
-//     if(strcmp(json["action"], "reset_all") == 0) {
-//         Log.notice(F("Action [reset_all] received\r\n"));
-//         http_server.config_reset_requested = true;
-//         http_server.wifi_reset_requested = true;
-//         http_server.restart_requested = true;
-//     }
+    if(strcmp(action, "reset_config") == 0) {
+        Log.notice(F("Action [reset_config] received\r\n"));
+        http_server.config_reset_requested = true;
+        http_server.restart_requested = true;  // A restart is generally triggered when setting config_reset_requested, but explicitly specifying here anyways
+        return true;
+    }
 
-// #ifndef DISABLE_OTA_UPDATES
-//     if(strcmp(json["action"], "ota") == 0) {
-//         Log.notice(F("Action [ota] received\r\n"));
-//         http_server.ota_update_requested = true;
-//     }
-// #endif
-
-//     return true;
-// }
+    Log.warning(F("Action error - Unknown action: %s\r\n"), action);
+    return false;
+}
 
 
 
@@ -919,6 +950,7 @@ void httpServer::setPutPages() {
         {"/api/mode/", processUpdateModeJson},
         {"/api/extended/", processExtendedSettingsJson},
         {"/api/cc/", processControlConstantsJson},
+        {"/api/action/", processActionJson},
     };
 
     for (const auto& endpoint : endpoints) {

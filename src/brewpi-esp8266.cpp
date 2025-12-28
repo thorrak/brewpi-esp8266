@@ -296,6 +296,7 @@ if(bt_scanner.scanning_failed()) {
   // The webserver is now handled asynchronously, so we don't need to call handleClient() here
   http_server.processQueuedDeviceDefinition();  // Do this in the main loop to avoid issues with blocking to read DS18b20s
   rest_handler.process();
+  http_server.processQueuedActions();
 #endif
 
 #ifdef ESP8266
