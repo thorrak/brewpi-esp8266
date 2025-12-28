@@ -206,6 +206,10 @@ void setup()
 	display.printState();
 
 #ifdef ENABLE_HTTP_INTERFACE
+  // Wait for WiFi to fully stabilize after initial connection from captive portal
+  if(WiFi.status() == WL_CONNECTED) {
+    delay(500);
+  }
   http_server.init();     // Initialize the web server
 #endif
 
