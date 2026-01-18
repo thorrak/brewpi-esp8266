@@ -137,6 +137,19 @@ bool processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUpstr
         }
     }
 
+    // Device Name (optional, only used during registration)
+    if(json[UpstreamSettingsKeys::deviceName].is<const char*>()) {
+        if (strlen(json[UpstreamSettingsKeys::deviceName]) >= sizeof(rest_handler.pendingDeviceName)) {
+            Log.warning(F("Settings update error, [name]:(%s) too long.\r\n"), json[UpstreamSettingsKeys::deviceName].as<const char*>());
+            failCount++;
+        } else {
+            strlcpy(rest_handler.pendingDeviceName, json[UpstreamSettingsKeys::deviceName].as<const char*>(), sizeof(rest_handler.pendingDeviceName));
+            Log.notice(F("Settings update, [name]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::deviceName].as<const char*>());
+        }
+    } else {
+        // No name provided - clear any pending name
+        rest_handler.pendingDeviceName[0] = '\0';
+    }
 
     // Save
     if (failCount) {

@@ -31,6 +31,7 @@ restHandler::restHandler() {
     send_status_ticker = false;
     register_device_ticker = false;
     messages_pending_on_server = false;
+    pendingDeviceName[0] = '\0';
 }
 
 void restHandler::init()
@@ -326,6 +327,8 @@ bool restHandler::register_device() {
             doc[UpstreamSettingsKeys::apiKey] = upstreamSettings.apiKey;
         doc["hardware"] = hw_str;
         doc["version"] = FIRMWARE_REVISION;
+        if(strlen(pendingDeviceName) > 0)
+            doc[UpstreamSettingsKeys::deviceName] = pendingDeviceName;
 
         // Serialize the JSON document
         serializeJson(doc, payload);
@@ -352,6 +355,7 @@ bool restHandler::register_device() {
                 strlcpy(upstreamSettings.deviceID, doc[UpstreamSettingsKeys::deviceID].as<const char *>(), sizeof(upstreamSettings.deviceID));
                 strlcpy(upstreamSettings.apiKey, doc[UpstreamSettingsKeys::apiKey].as<const char *>(), sizeof(upstreamSettings.apiKey));
                 upstreamSettings.username[0] = '\0';  // Clear the username since we now have the apiKey
+                pendingDeviceName[0] = '\0';  // Clear the pending device name
 
                 // Store the updated settings
                 upstreamSettings.storeToFilesystem(); 
