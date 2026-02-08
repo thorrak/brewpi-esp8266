@@ -40,7 +40,7 @@ void SettingLoader::processSettingKeypair(JsonPair kv) {
     str_value = kv.value().as<float>();
   }
 
-  Serial.printf("SettingLoader::processSettingKeypair: %s = %s\r\n", kv.key().c_str(), str_value.c_str());
+  // Serial.printf("SettingLoader::processSettingKeypair: %s = %s\r\n", kv.key().c_str(), str_value.c_str());
 
   if (kv.key() == "mode") {
     char mode = kv.value().as<const char *>()[0];

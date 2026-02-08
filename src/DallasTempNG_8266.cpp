@@ -1,4 +1,5 @@
-#include "DallasTempNG.h"
+#ifdef ESP8266
+#include "DallasTempNG_8266.h"
 
 typedef uint8_t ScratchPad[9];
 
@@ -54,3 +55,4 @@ int16_t getTempRaw(DallasTemperature &sensor, const uint8_t* deviceAddress)
         return sensor.getTemp(deviceAddress) >> 3;	
     return DEVICE_DISCONNECTED_RAW;		// use a value that the sensor could not ordinarily measure
 }
+#endif

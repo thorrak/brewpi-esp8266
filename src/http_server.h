@@ -22,6 +22,7 @@ public:
 
     DeviceDefinition dev;
     void processQueuedDeviceDefinition();
+    void processQueuedActions();
 
 
 private:

@@ -23,3 +23,8 @@
 
 void parseBytes(uint8_t *data, const char *s, uint8_t len);
 void printBytes(const uint8_t *data, uint8_t len, char *buf);
+
+#ifndef ESP8266
+void addressToBytes(uint64_t address, uint8_t *bytes);
+uint64_t bytesToAddress(const uint8_t *bytes);
+#endif

@@ -99,6 +99,7 @@ public:
     ~LcdDisplay();
     // initializes the lcd display
     void init();
+    void reset();
 
     void printAll()
     {

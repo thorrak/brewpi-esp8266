@@ -125,6 +125,12 @@ void LcdDisplay::init() {
 
 }
 
+void LcdDisplay::reset() {
+    // This is called whenever the screen is reset when a relay pin toggles.
+    // For now, just call init()
+    init();
+}
+
 #ifndef UINT16_MAX
 #define UINT16_MAX 65535
 #endif
