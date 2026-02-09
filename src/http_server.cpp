@@ -23,6 +23,10 @@
 
 #include "extended_async_json_handler.h"
 
+#ifdef ENABLE_GLYCOL_LOGGING
+#include "GlycolLog.h"
+#endif
+
 
 httpServer http_server;
 AsyncWebServer asyncWebServer(WEB_SERVER_PORT);
@@ -807,6 +811,14 @@ bool processActionJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
         http_server.restart_requested = true;  // A restart is generally triggered when setting config_reset_requested, but explicitly specifying here anyways
         return true;
     }
+
+#ifdef ENABLE_GLYCOL_LOGGING
+    if(strcmp(action, "clear_glycol_log") == 0) {
+        Log.notice(F("Action [clear_glycol_log] received\r\n"));
+        glycolLog.clearLog();
+        return true;
+    }
+#endif
 
     Log.warning(F("Action error - Unknown action: %s\r\n"), action);
     return false;

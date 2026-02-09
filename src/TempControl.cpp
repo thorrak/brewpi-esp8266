@@ -1560,7 +1560,10 @@ void TempControl::updateGlycolState() {
             bool stabilized = (glycolRuntime.current_cooling_rate >= -0.005f);  // Near zero or positive
 
             uint16_t time_since_pump_off = (millis() - glycolRuntime.t_pump_off) / 1000;
-            bool min_off_elapsed = time_since_pump_off >= glycolConfig.min_off_time_s;
+            // Wait at least dead time (L) to observe the effect of cooling
+            // min_off_time_s is for pump protection; L is for observation
+            uint16_t observation_time = max(glycolConfig.min_off_time_s, (uint16_t)glycolLearned.L);
+            bool min_off_elapsed = time_since_pump_off >= observation_time;
 
             if (stabilized && min_off_elapsed) {
                 // Calculate actual coast achieved
