@@ -3,7 +3,8 @@
 #include <ArduinoJson.h>
 #include <AsyncJson.h>
 #include <ESPAsyncWebServer.h>
-#include <ArduinoLog.h>
+#include <thorlog.h>
+#include <thorlog_espidf.h>
 #include <cstring>
 
 #include "ESPEepromAccess.h"

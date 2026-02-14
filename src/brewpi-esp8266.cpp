@@ -11,7 +11,8 @@
 #include <esp_timer.h>
 #endif
 
-#include <ArduinoLog.h>
+#include <thorlog.h>
+#include <thorlog_espidf.h>
 #include "Brewpi.h"
 
 #include <Wire.h>
@@ -103,16 +104,15 @@ void handleReset()
     esp_restart();
 }
 
-// For ArduinoLog support
-void printTimestamp(Print *_logOutput)
+// For ThorLog support
+void printTimestamp(ThorPrint *_logOutput)
 {
     char c[12];
     sprintf(c, "%10lu ", (unsigned long)(esp_timer_get_time() / 1000ULL));
     _logOutput->print(c);
-    Serial.flush();
 }
 
-void printPrefix(Print* _logOutput, int logLevel) {
+void printPrefix(ThorPrint* _logOutput, int logLevel) {
     printTimestamp(_logOutput);
 //    printLogLevel (_logOutput, logLevel);
 }
@@ -135,7 +135,7 @@ void setup()
     Serial.setDebugOutput(true);
     Serial.println();
     Serial.flush();
-    Log.begin(ARDUINO_LOG_LEVEL, &Serial, true);
+    Log.begin(THORLOG_LOG_LEVEL, &EspIdfOutput, true);
     Log.setPrefix(printPrefix);
     Log.notice("Serial logging started at %l.\r\n", Config::PiLink::serialSpeed);
 #endif

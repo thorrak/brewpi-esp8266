@@ -42,7 +42,8 @@
 #include <ArduinoJson.h>
 #include "JsonKeys.h"
 #include "NumberFormats.h"
-#include <ArduinoLog.h>
+#include <thorlog.h>
+#include <thorlog_espidf.h>
 
 
 #ifdef ESP8266

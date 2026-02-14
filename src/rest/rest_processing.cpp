@@ -7,7 +7,8 @@
 #include <ctime>
 // #define LCBURL_MDNS
 // #include <LCBUrl.h>
-#include <ArduinoLog.h>
+#include <thorlog.h>
+#include <thorlog_espidf.h>
 #include <esp_system.h>
 
 #include "rest_send.h"

@@ -4,7 +4,8 @@
 #include <ctime>
 // #define LCBURL_MDNS
 // #include <LCBUrl.h>
-#include <ArduinoLog.h>
+#include <thorlog.h>
+#include <thorlog_espidf.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/timers.h>
