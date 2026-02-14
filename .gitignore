@@ -37,6 +37,6 @@ src/Version.h
 # ESP-IDF & PIO Arduino
 managed_components/
 .dummy/
-sdkconfig.*
+sdkconfig.*.old
 CMakeLists.txt
 dependencies.lock
