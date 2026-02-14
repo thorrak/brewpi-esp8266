@@ -122,6 +122,10 @@ int8_t&#160;</td><td class="memItemRight" valign="bottom"><b>enumerateSensorPins
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a1d8700c15ee55098acb21a74a09ad485" id="r_a1d8700c15ee55098acb21a74a09ad485"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1d8700c15ee55098acb21a74a09ad485">setupUnconfiguredDevices</a> ()</td></tr>
 <tr class="separator:a1d8700c15ee55098acb21a74a09ad485"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8dda2505f869e656ef203d9758472f51" id="r_a8dda2505f869e656ef203d9758472f51"><td class="memItemLeft" align="right" valign="top"><a id="a8dda2505f869e656ef203d9758472f51" name="a8dda2505f869e656ef203d9758472f51"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>preloadActuatorPins</b> ()</td></tr>
+<tr class="memdesc:a8dda2505f869e656ef203d9758472f51"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scan the filesystem for "pin" actuators, and set their pin mode early. <br /></td></tr>
+<tr class="separator:a8dda2505f869e656ef203d9758472f51"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acddeb1446df1a22a5a07fad1b25ad77a" id="r_acddeb1446df1a22a5a07fad1b25ad77a"><td class="memItemLeft" align="right" valign="top"><a id="acddeb1446df1a22a5a07fad1b25ad77a" name="acddeb1446df1a22a5a07fad1b25ad77a"></a>
 static bool&#160;</td><td class="memItemRight" valign="bottom"><b>firstUndefinedAlternative</b> (<a class="el" href="classDeviceConfig.html">DeviceConfig</a> &amp;config, <a class="el" href="structDeviceAlternatives.html">DeviceAlternatives</a> &amp;alternatives)</td></tr>
 <tr class="memdesc:acddeb1446df1a22a5a07fad1b25ad77a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines if the given device config is complete. <br /></td></tr>
@@ -138,21 +142,21 @@ static bool&#160;</td><td class="memItemRight" valign="bottom"><b>firstUndefined
 <tr class="separator:a322c437b47cd251cf766fc1671a1d836"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a566f883890b4261a1713eaef56259df4" id="r_a566f883890b4261a1713eaef56259df4"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a566f883890b4261a1713eaef56259df4">isDeviceValid</a> (<a class="el" href="classDeviceConfig.html">DeviceConfig</a> &amp;config, <a class="el" href="classDeviceConfig.html">DeviceConfig</a> &amp;original, int8_t deviceIndex)</td></tr>
 <tr class="separator:a566f883890b4261a1713eaef56259df4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a594ad50cfef57ddf06556d237d87d0c8" id="r_a594ad50cfef57ddf06556d237d87d0c8"><td class="memItemLeft" align="right" valign="top"><a id="a594ad50cfef57ddf06556d237d87d0c8" name="a594ad50cfef57ddf06556d237d87d0c8"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>enumerateHardware</b> (DynamicJsonDocument &amp;doc, <a class="el" href="structEnumerateHardware.html">EnumerateHardware</a> spec)</td></tr>
-<tr class="memdesc:a594ad50cfef57ddf06556d237d87d0c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Output devices matching hardware spec passed in. <br /></td></tr>
-<tr class="separator:a594ad50cfef57ddf06556d237d87d0c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9dc886072be620060529406d103c8cd2" id="r_a9dc886072be620060529406d103c8cd2"><td class="memItemLeft" align="right" valign="top"><a id="a9dc886072be620060529406d103c8cd2" name="a9dc886072be620060529406d103c8cd2"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>enumerateHardware</b> (DynamicJsonDocument &amp;doc)</td></tr>
-<tr class="memdesc:a9dc886072be620060529406d103c8cd2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Output devices matching default hardware spec (all devices, no values) <br /></td></tr>
-<tr class="separator:a9dc886072be620060529406d103c8cd2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04ab7a04b34bf88066e0da02f77430e8" id="r_a04ab7a04b34bf88066e0da02f77430e8"><td class="memItemLeft" align="right" valign="top"><a id="a04ab7a04b34bf88066e0da02f77430e8" name="a04ab7a04b34bf88066e0da02f77430e8"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>enumerateHardware</b> (JsonDocument &amp;doc, <a class="el" href="structEnumerateHardware.html">EnumerateHardware</a> spec)</td></tr>
+<tr class="memdesc:a04ab7a04b34bf88066e0da02f77430e8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Output devices matching hardware spec passed in. <br /></td></tr>
+<tr class="separator:a04ab7a04b34bf88066e0da02f77430e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab68bf15426a3b90844a72c23d4001040" id="r_ab68bf15426a3b90844a72c23d4001040"><td class="memItemLeft" align="right" valign="top"><a id="ab68bf15426a3b90844a72c23d4001040" name="ab68bf15426a3b90844a72c23d4001040"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>enumerateHardware</b> (JsonDocument &amp;doc)</td></tr>
+<tr class="memdesc:ab68bf15426a3b90844a72c23d4001040"><td class="mdescLeft">&#160;</td><td class="mdescRight">Output devices matching default hardware spec (all devices, no values) <br /></td></tr>
+<tr class="separator:ab68bf15426a3b90844a72c23d4001040"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acb993404b39459bd17da70f2f37a8eee" id="r_acb993404b39459bd17da70f2f37a8eee"><td class="memItemLeft" align="right" valign="top"><a id="acb993404b39459bd17da70f2f37a8eee" name="acb993404b39459bd17da70f2f37a8eee"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>readJsonIntoHardwareSpec</b> (<a class="el" href="structEnumerateHardware.html">EnumerateHardware</a> &amp;)</td></tr>
 <tr class="memdesc:acb993404b39459bd17da70f2f37a8eee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse JSON into an <a class="el" href="structEnumerateHardware.html" title="Hardware filter definition.">EnumerateHardware</a> struct. <br /></td></tr>
 <tr class="separator:acb993404b39459bd17da70f2f37a8eee"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adfe5dfa4e3d55eb5c743ba086970fc38" id="r_adfe5dfa4e3d55eb5c743ba086970fc38"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="structDeviceDefinition.html">DeviceDefinition</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#adfe5dfa4e3d55eb5c743ba086970fc38">readJsonIntoDeviceDef</a> (const DynamicJsonDocument &amp;doc)</td></tr>
-<tr class="memdesc:adfe5dfa4e3d55eb5c743ba086970fc38"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse JSON doc and populate a <a class="el" href="structDeviceDefinition.html" title="Hardware device definition.">DeviceDefinition</a>.  <br /></td></tr>
-<tr class="separator:adfe5dfa4e3d55eb5c743ba086970fc38"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a561ef046c19a9fbf2cdce91d0575fe7d" id="r_a561ef046c19a9fbf2cdce91d0575fe7d"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="structDeviceDefinition.html">DeviceDefinition</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a561ef046c19a9fbf2cdce91d0575fe7d">readJsonIntoDeviceDef</a> (const JsonDocument &amp;doc)</td></tr>
+<tr class="memdesc:a561ef046c19a9fbf2cdce91d0575fe7d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse JSON doc and populate a <a class="el" href="structDeviceDefinition.html" title="Hardware device definition.">DeviceDefinition</a>.  <br /></td></tr>
+<tr class="separator:a561ef046c19a9fbf2cdce91d0575fe7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a280f732c51c60bfc87b4216e22d83065" id="r_a280f732c51c60bfc87b4216e22d83065"><td class="memItemLeft" align="right" valign="top"><a id="a280f732c51c60bfc87b4216e22d83065" name="a280f732c51c60bfc87b4216e22d83065"></a>
 static bool&#160;</td><td class="memItemRight" valign="bottom"><b>enumDevice</b> (<a class="el" href="structDeviceDisplay.html">DeviceDisplay</a> &amp;dd, <a class="el" href="classDeviceConfig.html">DeviceConfig</a> &amp;dc, uint8_t idx)</td></tr>
 <tr class="separator:a280f732c51c60bfc87b4216e22d83065"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -162,6 +166,9 @@ static bool&#160;</td><td class="memItemRight" valign="bottom"><b>enumDevice</b>
 <tr class="memitem:a2f360865c7599a8d1bed9a3baae34d5d" id="r_a2f360865c7599a8d1bed9a3baae34d5d"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2f360865c7599a8d1bed9a3baae34d5d">rawDeviceValues</a> (JsonDocument &amp;doc)</td></tr>
 <tr class="memdesc:a2f360865c7599a8d1bed9a3baae34d5d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print the raw temp readings from all temp sensors.  <br /></td></tr>
 <tr class="separator:a2f360865c7599a8d1bed9a3baae34d5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af089e1694d57a11c31199a5102561a87" id="r_af089e1694d57a11c31199a5102561a87"><td class="memItemLeft" align="right" valign="top"><a id="af089e1694d57a11c31199a5102561a87" name="af089e1694d57a11c31199a5102561a87"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>initOneWireBuses</b> ()</td></tr>
+<tr class="separator:af089e1694d57a11c31199a5102561a87"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-static-methods" name="pri-static-methods"></a>
 Static Private Member Functions</h2></td></tr>
@@ -177,9 +184,9 @@ Static Private Member Functions</h2></td></tr>
 <tr class="memitem:ac035f111e3c9d13652593ecefb0561e9" id="r_ac035f111e3c9d13652593ecefb0561e9"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac035f111e3c9d13652593ecefb0561e9">handleEnumeratedDevice</a> (<a class="el" href="classDeviceConfig.html">DeviceConfig</a> config, <a class="el" href="structEnumerateHardware.html">EnumerateHardware</a> &amp;h, <a class="el" href="group__hardware.html#ga06efc536143a4f211ec71f903aaa0a0b">EnumDevicesCallback</a> callback, JsonDocument *doc)</td></tr>
 <tr class="memdesc:ac035f111e3c9d13652593ecefb0561e9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Process a found hardware device.  <br /></td></tr>
 <tr class="separator:ac035f111e3c9d13652593ecefb0561e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afa7704f94a98211ea2790a8477b4e8a0" id="r_afa7704f94a98211ea2790a8477b4e8a0"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afa7704f94a98211ea2790a8477b4e8a0">readTempSensorValue</a> (<a class="el" href="structDeviceConfig_1_1Hardware.html">DeviceConfig::Hardware</a> hw, char *out)</td></tr>
-<tr class="memdesc:afa7704f94a98211ea2790a8477b4e8a0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read a temp sensor device and convert the value into a string.  <br /></td></tr>
-<tr class="separator:afa7704f94a98211ea2790a8477b4e8a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa7239416397dd719896e6d6dadd1b354" id="r_aa7239416397dd719896e6d6dadd1b354"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa7239416397dd719896e6d6dadd1b354">readTempSensorValue</a> (DeviceHardware hw_type, <a class="el" href="structDeviceConfig_1_1Hardware.html">DeviceConfig::Hardware</a> hw, char *out)</td></tr>
+<tr class="memdesc:aa7239416397dd719896e6d6dadd1b354"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read a temp sensor device and convert the value into a string.  <br /></td></tr>
+<tr class="separator:aa7239416397dd719896e6d6dadd1b354"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a31a0b48878e89f0eed2fddc29c7f49ad" id="r_a31a0b48878e89f0eed2fddc29c7f49ad"><td class="memItemLeft" align="right" valign="top"><a id="a31a0b48878e89f0eed2fddc29c7f49ad" name="a31a0b48878e89f0eed2fddc29c7f49ad"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>outputRawDeviceValue</b> (<a class="el" href="classDeviceConfig.html">DeviceConfig</a> *config, void *pv, JsonDocument *doc)</td></tr>
 <tr class="memdesc:a31a0b48878e89f0eed2fddc29c7f49ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print the sensor's information &amp; current reading. <br /></td></tr>
@@ -193,9 +200,9 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>readJsonIntoDe
 <tr class="memitem:a042502960b2b5ede7b36ea364b669417" id="r_a042502960b2b5ede7b36ea364b669417"><td class="memItemLeft" align="right" valign="top"><a id="a042502960b2b5ede7b36ea364b669417" name="a042502960b2b5ede7b36ea364b669417"></a>
 static void *&#160;</td><td class="memItemRight" valign="bottom"><b>createOneWireGPIO</b> (<a class="el" href="classDeviceConfig.html">DeviceConfig</a> &amp;config, <a class="el" href="group__hardware.html#gad258d4c51629346fceac4679b3209ad9">DeviceType</a> dt)</td></tr>
 <tr class="separator:a042502960b2b5ede7b36ea364b669417"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2ecdf81ace8b3a2b64dd43ace99658d9" id="r_a2ecdf81ace8b3a2b64dd43ace99658d9"><td class="memItemLeft" align="right" valign="top"><a id="a2ecdf81ace8b3a2b64dd43ace99658d9" name="a2ecdf81ace8b3a2b64dd43ace99658d9"></a>
-static OneWire *&#160;</td><td class="memItemRight" valign="bottom"><b>oneWireBus</b> (uint8_t pin)</td></tr>
-<tr class="separator:a2ecdf81ace8b3a2b64dd43ace99658d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad49f1aefb0f2b95f8dc27198593e906a" id="r_ad49f1aefb0f2b95f8dc27198593e906a"><td class="memItemLeft" align="right" valign="top"><a id="ad49f1aefb0f2b95f8dc27198593e906a" name="ad49f1aefb0f2b95f8dc27198593e906a"></a>
+static onewire_bus_handle_t&#160;</td><td class="memItemRight" valign="bottom"><b>oneWireBus</b> (uint8_t pin)</td></tr>
+<tr class="separator:ad49f1aefb0f2b95f8dc27198593e906a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Manage the different hardware devices that can be attached. </p>
@@ -269,10 +276,11 @@ static OneWire *&#160;</td><td class="memItemRight" valign="bottom"><b>oneWireBu
     <tr><td class="paramname">h</td><td>- Hardware spec, used to filter sensors </td></tr>
     <tr><td class="paramname">callback</td><td>- Callback function, called for every found hardware device </td></tr>
     <tr><td class="paramname">output</td><td>- </td></tr>
-    <tr><td class="paramname">doc</td><td>- JsonDocument to populate </td></tr>
+    <tr><td class="paramname">doc</td><td>- JsonDocument to populate</td></tr>
   </table>
   </dd>
 </dl>
+<dl class="section note"><dt>Note</dt><dd>Scans the bus multiple times to work around transient detection issues where a single scan may return an incomplete list of devices. </dd></dl>
 
 </div>
 </div>
@@ -477,8 +485,7 @@ static OneWire *&#160;</td><td class="memItemRight" valign="bottom"><b>oneWireBu
 <li>Device hardware type must be applicable with the device function</li>
 <li>pinNr must be unique for digital pin devices - Not Implemented</li>
 <li>pinNr must be a valid OneWire bus for one wire devices.</li>
-<li>For OneWire temp devices, address must be unique. - Not Implemented</li>
-<li>For OneWire DS2413 devices, address+pio must be unique. - Not Implemented </li>
+<li>For OneWire temp devices, address must be unique. - Not Implemented </li>
 </ul>
 
 </div>
@@ -586,8 +593,8 @@ static OneWire *&#160;</td><td class="memItemRight" valign="bottom"><b>oneWireBu
 
 </div>
 </div>
-<a id="adfe5dfa4e3d55eb5c743ba086970fc38" name="adfe5dfa4e3d55eb5c743ba086970fc38"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adfe5dfa4e3d55eb5c743ba086970fc38">&#9670;&#160;</a></span>readJsonIntoDeviceDef()</h2>
+<a id="a561ef046c19a9fbf2cdce91d0575fe7d" name="a561ef046c19a9fbf2cdce91d0575fe7d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a561ef046c19a9fbf2cdce91d0575fe7d">&#9670;&#160;</a></span>readJsonIntoDeviceDef()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -598,7 +605,7 @@ static OneWire *&#160;</td><td class="memItemRight" valign="bottom"><b>oneWireBu
         <tr>
           <td class="memname"><a class="el" href="structDeviceDefinition.html">DeviceDefinition</a> DeviceManager::readJsonIntoDeviceDef </td>
           <td>(</td>
-          <td class="paramtype">const DynamicJsonDocument &amp;</td>          <td class="paramname"><span class="paramname"><em>doc</em></span></td><td>)</td>
+          <td class="paramtype">const JsonDocument &amp;</td>          <td class="paramname"><span class="paramname"><em>doc</em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -620,8 +627,8 @@ static OneWire *&#160;</td><td class="memItemRight" valign="bottom"><b>oneWireBu
 
 </div>
 </div>
-<a id="afa7704f94a98211ea2790a8477b4e8a0" name="afa7704f94a98211ea2790a8477b4e8a0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afa7704f94a98211ea2790a8477b4e8a0">&#9670;&#160;</a></span>readTempSensorValue()</h2>
+<a id="aa7239416397dd719896e6d6dadd1b354" name="aa7239416397dd719896e6d6dadd1b354"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa7239416397dd719896e6d6dadd1b354">&#9670;&#160;</a></span>readTempSensorValue()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -632,6 +639,11 @@ static OneWire *&#160;</td><td class="memItemRight" valign="bottom"><b>oneWireBu
         <tr>
           <td class="memname">void DeviceManager::readTempSensorValue </td>
           <td>(</td>
+          <td class="paramtype">DeviceHardware</td>          <td class="paramname"><span class="paramname"><em>hw_type</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype"><a class="el" href="structDeviceConfig_1_1Hardware.html">DeviceConfig::Hardware</a></td>          <td class="paramname"><span class="paramname"><em>hw</em></span>, </td>
         </tr>
         <tr>

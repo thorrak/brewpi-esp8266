@@ -9,5 +9,5 @@ var searchData=
   ['timesinceheating_6',['timeSinceHeating',['../classTempControl.html#a47a49cde9b6e60427396487ba0368b84',1,'TempControl']]],
   ['timesinceidle_7',['timeSinceIdle',['../classTempControl.html#ab4b7d638d6943da87c68eb36e7f23cd7',1,'TempControl']]],
   ['togglebacklight_8',['toggleBacklight',['../structCommandProcessor.html#a487f9caf3b424e105123c1ec72903743',1,'CommandProcessor']]],
-  ['tojson_9',['toJson',['../classControlConstants.html#aece820bdd794ad5d889ecbf5cd242492',1,'ControlConstants::toJson()'],['../classExtendedSettings.html#ad63b43d68b154795932a2636fa657a0d',1,'ExtendedSettings::toJson()'],['../classUpstreamSettings.html#a6e24fe2a719828a5f5d4ae269236c918',1,'UpstreamSettings::toJson()'],['../classMinTimes.html#a09461b2623c7c5b194bbe92d4d469d91',1,'MinTimes::toJson()']]]
+  ['tojson_9',['toJson',['../classControlConstants.html#a3af2acbb12b5f05d75e38c3cd4788a47',1,'ControlConstants::toJson()'],['../classExtendedSettings.html#a6bd379b307f10d7f312355f214b54550',1,'ExtendedSettings::toJson()'],['../classUpstreamSettings.html#a20a483749694f421cd63de9ca247a5b8',1,'UpstreamSettings::toJson()'],['../classMinTimes.html#af1eb6809ccf8b1b87abc7599e0a425b1',1,'MinTimes::toJson()']]]
 ];

@@ -92,6 +92,7 @@ $(function(){ initResizable(false); });
 <div id="doc-content">
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
@@ -125,21 +126,42 @@ Collaboration diagram for UpstreamSettings:</div>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:ace4a088375a0e8c768309767e1d93bf9" id="r_ace4a088375a0e8c768309767e1d93bf9"><td class="memItemLeft" align="right" valign="top"><a id="ace4a088375a0e8c768309767e1d93bf9" name="ace4a088375a0e8c768309767e1d93bf9"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>upstreamRegErrorT</b> { <br />
+&#160;&#160;<b>NO_ERROR</b>
+, <b>NO_GUID</b>
+, <b>NO_USERNAME</b>
+, <b>INVALID_USER</b>
+, <br />
+&#160;&#160;<b>NO_BREWHOUSE_ON_USER</b>
+, <b>NO_HARDWARE_TYPE</b>
+, <b>NO_FIRMWARE_VERSION</b>
+, <b>INVALID_API_KEY</b>
+, <br />
+&#160;&#160;<b>NOT_ATTEMPTED_REGISTRATION</b>
+, <b>REGISTRATION_ENDPOINT_ERR</b>
+<br />
+ }</td></tr>
+<tr class="separator:ace4a088375a0e8c768309767e1d93bf9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a74bbfc34153c89a793695066badd6b58" id="r_a74bbfc34153c89a793695066badd6b58"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a74bbfc34153c89a793695066badd6b58">UpstreamSettings</a> ()</td></tr>
 <tr class="memdesc:a74bbfc34153c89a793695066badd6b58"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <br /></td></tr>
 <tr class="separator:a74bbfc34153c89a793695066badd6b58"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6e24fe2a719828a5f5d4ae269236c918" id="r_a6e24fe2a719828a5f5d4ae269236c918"><td class="memItemLeft" align="right" valign="top"><a id="a6e24fe2a719828a5f5d4ae269236c918" name="a6e24fe2a719828a5f5d4ae269236c918"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>toJson</b> (DynamicJsonDocument &amp;doc)</td></tr>
-<tr class="memdesc:a6e24fe2a719828a5f5d4ae269236c918"><td class="mdescLeft">&#160;</td><td class="mdescRight">Serialize extended settings to JSON. <br /></td></tr>
-<tr class="separator:a6e24fe2a719828a5f5d4ae269236c918"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a18253b52dca0b274ffda2893f16c0f71" id="r_a18253b52dca0b274ffda2893f16c0f71"><td class="memItemLeft" align="right" valign="top"><a id="a18253b52dca0b274ffda2893f16c0f71" name="a18253b52dca0b274ffda2893f16c0f71"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>storeToSpiffs</b> ()</td></tr>
-<tr class="separator:a18253b52dca0b274ffda2893f16c0f71"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6e79f5c198eee968f7e580fe4942c915" id="r_a6e79f5c198eee968f7e580fe4942c915"><td class="memItemLeft" align="right" valign="top"><a id="a6e79f5c198eee968f7e580fe4942c915" name="a6e79f5c198eee968f7e580fe4942c915"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>loadFromSpiffs</b> ()</td></tr>
-<tr class="separator:a6e79f5c198eee968f7e580fe4942c915"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a20a483749694f421cd63de9ca247a5b8" id="r_a20a483749694f421cd63de9ca247a5b8"><td class="memItemLeft" align="right" valign="top"><a id="a20a483749694f421cd63de9ca247a5b8" name="a20a483749694f421cd63de9ca247a5b8"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>toJson</b> (JsonDocument &amp;doc)</td></tr>
+<tr class="memdesc:a20a483749694f421cd63de9ca247a5b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Serialize extended settings to JSON. <br /></td></tr>
+<tr class="separator:a20a483749694f421cd63de9ca247a5b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af600daee6de3b8fdac33ecb56e26d18d" id="r_af600daee6de3b8fdac33ecb56e26d18d"><td class="memItemLeft" align="right" valign="top"><a id="af600daee6de3b8fdac33ecb56e26d18d" name="af600daee6de3b8fdac33ecb56e26d18d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>storeToFilesystem</b> ()</td></tr>
+<tr class="memdesc:af600daee6de3b8fdac33ecb56e26d18d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store extended settings to the filesystem. <br /></td></tr>
+<tr class="separator:af600daee6de3b8fdac33ecb56e26d18d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ace1654b92694835575e5d6ae00a6db7d" id="r_ace1654b92694835575e5d6ae00a6db7d"><td class="memItemLeft" align="right" valign="top"><a id="ace1654b92694835575e5d6ae00a6db7d" name="ace1654b92694835575e5d6ae00a6db7d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>loadFromFilesystem</b> ()</td></tr>
+<tr class="memdesc:ace1654b92694835575e5d6ae00a6db7d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load extended settings from the filesystem. <br /></td></tr>
+<tr class="separator:ace1654b92694835575e5d6ae00a6db7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a596b3454376ee35962c1ec9ce0a9f00e" id="r_a596b3454376ee35962c1ec9ce0a9f00e"><td class="memItemLeft" align="right" valign="top"><a id="a596b3454376ee35962c1ec9ce0a9f00e" name="a596b3454376ee35962c1ec9ce0a9f00e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setDefaults</b> ()</td></tr>
 <tr class="memdesc:a596b3454376ee35962c1ec9ce0a9f00e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set default values for extended settings. <br /></td></tr>
@@ -147,6 +169,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>setDefaults</b> ()</t
 <tr class="memitem:a9210f2838a47b9953e432ef3d8c9009f" id="r_a9210f2838a47b9953e432ef3d8c9009f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9210f2838a47b9953e432ef3d8c9009f">processSettingKeypair</a> (JsonPair kv)</td></tr>
 <tr class="memdesc:a9210f2838a47b9953e432ef3d8c9009f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Process a single setting key/value pair.  <br /></td></tr>
 <tr class="separator:a9210f2838a47b9953e432ef3d8c9009f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a233e659e41c2f42225a80ec5810ad7e0" id="r_a233e659e41c2f42225a80ec5810ad7e0"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a233e659e41c2f42225a80ec5810ad7e0">isRegistered</a> ()</td></tr>
+<tr class="memdesc:a233e659e41c2f42225a80ec5810ad7e0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if the device is registered with the upstream server.  <br /></td></tr>
+<tr class="separator:a233e659e41c2f42225a80ec5810ad7e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -156,9 +181,18 @@ char&#160;</td><td class="memItemRight" valign="bottom"><b>upstreamHost</b> [128
 <tr class="memitem:a081dbf7a40d1ae81116db17067c8bf6f" id="r_a081dbf7a40d1ae81116db17067c8bf6f"><td class="memItemLeft" align="right" valign="top"><a id="a081dbf7a40d1ae81116db17067c8bf6f" name="a081dbf7a40d1ae81116db17067c8bf6f"></a>
 uint16_t&#160;</td><td class="memItemRight" valign="bottom"><b>upstreamPort</b></td></tr>
 <tr class="separator:a081dbf7a40d1ae81116db17067c8bf6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abb7cef0881a5363dd0e8a5c743c6cc2d" id="r_abb7cef0881a5363dd0e8a5c743c6cc2d"><td class="memItemLeft" align="right" valign="top"><a id="abb7cef0881a5363dd0e8a5c743c6cc2d" name="abb7cef0881a5363dd0e8a5c743c6cc2d"></a>
-char&#160;</td><td class="memItemRight" valign="bottom"><b>deviceID</b> [64]</td></tr>
-<tr class="separator:abb7cef0881a5363dd0e8a5c743c6cc2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7059639763f77dfb83a79bde82e729de" id="r_a7059639763f77dfb83a79bde82e729de"><td class="memItemLeft" align="right" valign="top"><a id="a7059639763f77dfb83a79bde82e729de" name="a7059639763f77dfb83a79bde82e729de"></a>
+char&#160;</td><td class="memItemRight" valign="bottom"><b>username</b> [128]</td></tr>
+<tr class="separator:a7059639763f77dfb83a79bde82e729de"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a12f85aa258291136cd71d634857c9e9d" id="r_a12f85aa258291136cd71d634857c9e9d"><td class="memItemLeft" align="right" valign="top"><a id="a12f85aa258291136cd71d634857c9e9d" name="a12f85aa258291136cd71d634857c9e9d"></a>
+char&#160;</td><td class="memItemRight" valign="bottom"><b>deviceID</b> [40]</td></tr>
+<tr class="separator:a12f85aa258291136cd71d634857c9e9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab502a03838d25073fbe2654af95929e8" id="r_ab502a03838d25073fbe2654af95929e8"><td class="memItemLeft" align="right" valign="top"><a id="ab502a03838d25073fbe2654af95929e8" name="ab502a03838d25073fbe2654af95929e8"></a>
+char&#160;</td><td class="memItemRight" valign="bottom"><b>apiKey</b> [40]</td></tr>
+<tr class="separator:ab502a03838d25073fbe2654af95929e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a07bce881e47d654c9cb103f83e317b41" id="r_a07bce881e47d654c9cb103f83e317b41"><td class="memItemLeft" align="right" valign="top"><a id="a07bce881e47d654c9cb103f83e317b41" name="a07bce881e47d654c9cb103f83e317b41"></a>
+upstreamRegErrorT&#160;</td><td class="memItemRight" valign="bottom"><b>upstreamRegistrationError</b></td></tr>
+<tr class="separator:a07bce881e47d654c9cb103f83e317b41"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
@@ -173,9 +207,9 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memitem:ae6231d0fe191537bdae81ccfc6b9fb5d inherit pro_static_methods_classJSONSaveable" id="r_ae6231d0fe191537bdae81ccfc6b9fb5d"><td class="memItemLeft" align="right" valign="top">
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>writeJsonToFile</b> (const char *filename, const JsonDocument &amp;json_doc)</td></tr>
 <tr class="separator:ae6231d0fe191537bdae81ccfc6b9fb5d inherit pro_static_methods_classJSONSaveable"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9d290a0c95212eb81a68297d0b89ed29 inherit pro_static_methods_classJSONSaveable" id="r_a9d290a0c95212eb81a68297d0b89ed29"><td class="memItemLeft" align="right" valign="top">
-static DynamicJsonDocument&#160;</td><td class="memItemRight" valign="bottom"><b>readJsonFromFile</b> (const char *filename)</td></tr>
-<tr class="separator:a9d290a0c95212eb81a68297d0b89ed29 inherit pro_static_methods_classJSONSaveable"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a48b75c8eebea7eeb8dc80c82d09b9ad4 inherit pro_static_methods_classJSONSaveable" id="r_a48b75c8eebea7eeb8dc80c82d09b9ad4"><td class="memItemLeft" align="right" valign="top">
+static JsonDocument&#160;</td><td class="memItemRight" valign="bottom"><b>readJsonFromFile</b> (const char *filename)</td></tr>
+<tr class="separator:a48b75c8eebea7eeb8dc80c82d09b9ad4 inherit pro_static_methods_classJSONSaveable"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>REST Interface settings. </p>
@@ -201,6 +235,28 @@ static DynamicJsonDocument&#160;</td><td class="memItemRight" valign="bottom"><b
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a233e659e41c2f42225a80ec5810ad7e0" name="a233e659e41c2f42225a80ec5810ad7e0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a233e659e41c2f42225a80ec5810ad7e0">&#9670;&#160;</a></span>isRegistered()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool UpstreamSettings::isRegistered </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Check if the device is registered with the upstream server. </p>
+<dl class="section return"><dt>Returns</dt><dd>true - The device is registered </dd>
+<dd>
+false - The device is not registered </dd></dl>
+
+</div>
+</div>
 <a id="a9210f2838a47b9953e432ef3d8c9009f" name="a9210f2838a47b9953e432ef3d8c9009f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9210f2838a47b9953e432ef3d8c9009f">&#9670;&#160;</a></span>processSettingKeypair()</h2>
 

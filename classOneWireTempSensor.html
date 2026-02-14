@@ -128,9 +128,9 @@ Collaboration diagram for OneWireTempSensor:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a7d336dbb29445a072ddfe31156a7cea5" id="r_a7d336dbb29445a072ddfe31156a7cea5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7d336dbb29445a072ddfe31156a7cea5">OneWireTempSensor</a> (OneWire *bus, DeviceAddress address, <a class="el" href="group__temps.html#gadd1441a58e6b2962c3f2b0af55d875c4">fixed4_4</a> <a class="el" href="#a8c9800c22c4c49f8fa7164e68d823821">calibrationOffset</a>)</td></tr>
-<tr class="memdesc:a7d336dbb29445a072ddfe31156a7cea5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a new onewire temp sensor.  <br /></td></tr>
-<tr class="separator:a7d336dbb29445a072ddfe31156a7cea5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaee8f4b4d2c2ac4b99b6041cd881f649" id="r_aaee8f4b4d2c2ac4b99b6041cd881f649"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aaee8f4b4d2c2ac4b99b6041cd881f649">OneWireTempSensor</a> (onewire_bus_handle_t bus, DeviceAddress address, <a class="el" href="group__temps.html#gadd1441a58e6b2962c3f2b0af55d875c4">fixed4_4</a> calibrationOffset)</td></tr>
+<tr class="memdesc:aaee8f4b4d2c2ac4b99b6041cd881f649"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a new onewire temp sensor.  <br /></td></tr>
+<tr class="separator:aaee8f4b4d2c2ac4b99b6041cd881f649"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6e220f680e0516e1ccfde8ae2fad1ef0" id="r_a6e220f680e0516e1ccfde8ae2fad1ef0"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6e220f680e0516e1ccfde8ae2fad1ef0">isConnected</a> ()</td></tr>
 <tr class="memdesc:a6e220f680e0516e1ccfde8ae2fad1ef0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if sensor device is connected.  <br /></td></tr>
 <tr class="separator:a6e220f680e0516e1ccfde8ae2fad1ef0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -144,7 +144,7 @@ Public Member Functions</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-methods" name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
 <tr class="memitem:ad72e38d4f2234688519f135ab8dfb89d" id="r_ad72e38d4f2234688519f135ab8dfb89d"><td class="memItemLeft" align="right" valign="top"><a id="ad72e38d4f2234688519f135ab8dfb89d" name="ad72e38d4f2234688519f135ab8dfb89d"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setConnected</b> (bool <a class="el" href="#a308c0fe0feee55629d5d06aab0b53c2c">connected</a>)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setConnected</b> (bool connected)</td></tr>
 <tr class="memdesc:ad72e38d4f2234688519f135ab8dfb89d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set sensor connection status. <br /></td></tr>
 <tr class="separator:ad72e38d4f2234688519f135ab8dfb89d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a42271f342091d9f616e114b00bbbdbcf" id="r_a42271f342091d9f616e114b00bbbdbcf"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a42271f342091d9f616e114b00bbbdbcf">requestConversion</a> ()</td></tr>
@@ -154,30 +154,34 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>setConnected</b> (boo
 void&#160;</td><td class="memItemRight" valign="bottom"><b>waitForConversion</b> ()</td></tr>
 <tr class="memdesc:ae9520be44a4ae0d82aadd52841a8d3f0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wait for sensor to sample the environment. <br /></td></tr>
 <tr class="separator:ae9520be44a4ae0d82aadd52841a8d3f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6d3c3592436d02c00ab75124631e9896" id="r_a6d3c3592436d02c00ab75124631e9896"><td class="memItemLeft" align="right" valign="top"><a class="el" href="group__temps.html#ga1289740b9060cd2dfe3872bffa2e8da3">temperature</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6d3c3592436d02c00ab75124631e9896">readTempWithRetries</a> (uint8_t attempts)</td></tr>
+<tr class="memdesc:a6d3c3592436d02c00ab75124631e9896"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reads the temperature with retries.  <br /></td></tr>
+<tr class="separator:a6d3c3592436d02c00ab75124631e9896"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a684ceb6f3aa4812ac60a77831f15f83b" id="r_a684ceb6f3aa4812ac60a77831f15f83b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="group__temps.html#ga1289740b9060cd2dfe3872bffa2e8da3">temperature</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a684ceb6f3aa4812ac60a77831f15f83b">readAndConstrainTemp</a> ()</td></tr>
 <tr class="memdesc:a684ceb6f3aa4812ac60a77831f15f83b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reads the temperature.  <br /></td></tr>
 <tr class="separator:a684ceb6f3aa4812ac60a77831f15f83b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
-<tr class="memitem:a828f16c57e8c7a079bd3e465271a9199" id="r_a828f16c57e8c7a079bd3e465271a9199"><td class="memItemLeft" align="right" valign="top"><a id="a828f16c57e8c7a079bd3e465271a9199" name="a828f16c57e8c7a079bd3e465271a9199"></a>
-OneWire *&#160;</td><td class="memItemRight" valign="bottom"><b>oneWire</b></td></tr>
-<tr class="separator:a828f16c57e8c7a079bd3e465271a9199"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5fedde76feaa17c3c61f940f286f4ce8" id="r_a5fedde76feaa17c3c61f940f286f4ce8"><td class="memItemLeft" align="right" valign="top"><a id="a5fedde76feaa17c3c61f940f286f4ce8" name="a5fedde76feaa17c3c61f940f286f4ce8"></a>
-DallasTemperature *&#160;</td><td class="memItemRight" valign="bottom"><b>sensor</b></td></tr>
-<tr class="separator:a5fedde76feaa17c3c61f940f286f4ce8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad0c9ee4bd78d7b67ae39fe27665c1a1f" id="r_ad0c9ee4bd78d7b67ae39fe27665c1a1f"><td class="memItemLeft" align="right" valign="top"><a id="ad0c9ee4bd78d7b67ae39fe27665c1a1f" name="ad0c9ee4bd78d7b67ae39fe27665c1a1f"></a>
-DeviceAddress&#160;</td><td class="memItemRight" valign="bottom"><b>sensorAddress</b></td></tr>
-<tr class="memdesc:ad0c9ee4bd78d7b67ae39fe27665c1a1f"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classSensor.html">Sensor</a> address. <br /></td></tr>
-<tr class="separator:ad0c9ee4bd78d7b67ae39fe27665c1a1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8c9800c22c4c49f8fa7164e68d823821" id="r_a8c9800c22c4c49f8fa7164e68d823821"><td class="memItemLeft" align="right" valign="top"><a id="a8c9800c22c4c49f8fa7164e68d823821" name="a8c9800c22c4c49f8fa7164e68d823821"></a>
-<a class="el" href="group__temps.html#gadd1441a58e6b2962c3f2b0af55d875c4">fixed4_4</a>&#160;</td><td class="memItemRight" valign="bottom"><b>calibrationOffset</b></td></tr>
-<tr class="memdesc:a8c9800c22c4c49f8fa7164e68d823821"><td class="mdescLeft">&#160;</td><td class="mdescRight">Temperature offset needed for calibration. <br /></td></tr>
-<tr class="separator:a8c9800c22c4c49f8fa7164e68d823821"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a308c0fe0feee55629d5d06aab0b53c2c" id="r_a308c0fe0feee55629d5d06aab0b53c2c"><td class="memItemLeft" align="right" valign="top"><a id="a308c0fe0feee55629d5d06aab0b53c2c" name="a308c0fe0feee55629d5d06aab0b53c2c"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>connected</b></td></tr>
-<tr class="memdesc:a308c0fe0feee55629d5d06aab0b53c2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Probe connection state. <br /></td></tr>
-<tr class="separator:a308c0fe0feee55629d5d06aab0b53c2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1462c65c850e7f521f78b78b5f6c2b11" id="r_a1462c65c850e7f521f78b78b5f6c2b11"><td class="memItemLeft" align="right" valign="top"><a id="a1462c65c850e7f521f78b78b5f6c2b11" name="a1462c65c850e7f521f78b78b5f6c2b11"></a>
+onewire_bus_handle_t&#160;</td><td class="memItemRight" valign="bottom"><b>m_bus</b></td></tr>
+<tr class="separator:a1462c65c850e7f521f78b78b5f6c2b11"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5eecd319094679fe68a2c38a5853df7e" id="r_a5eecd319094679fe68a2c38a5853df7e"><td class="memItemLeft" align="right" valign="top"><a id="a5eecd319094679fe68a2c38a5853df7e" name="a5eecd319094679fe68a2c38a5853df7e"></a>
+ds18b20_device_handle_t&#160;</td><td class="memItemRight" valign="bottom"><b>m_sensor</b></td></tr>
+<tr class="separator:a5eecd319094679fe68a2c38a5853df7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3efab636e7821601520876a4723372e2" id="r_a3efab636e7821601520876a4723372e2"><td class="memItemLeft" align="right" valign="top"><a id="a3efab636e7821601520876a4723372e2" name="a3efab636e7821601520876a4723372e2"></a>
+DeviceAddress&#160;</td><td class="memItemRight" valign="bottom"><b>m_sensor_address</b></td></tr>
+<tr class="separator:a3efab636e7821601520876a4723372e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa1a1b65a5f886ce0a105c21280d2235a" id="r_aa1a1b65a5f886ce0a105c21280d2235a"><td class="memItemLeft" align="right" valign="top"><a id="aa1a1b65a5f886ce0a105c21280d2235a" name="aa1a1b65a5f886ce0a105c21280d2235a"></a>
+<a class="el" href="group__temps.html#gadd1441a58e6b2962c3f2b0af55d875c4">fixed4_4</a>&#160;</td><td class="memItemRight" valign="bottom"><b>m_calibration_offset</b></td></tr>
+<tr class="separator:aa1a1b65a5f886ce0a105c21280d2235a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae2206c6362d033104fd214b798a8bb0a" id="r_ae2206c6362d033104fd214b798a8bb0a"><td class="memItemLeft" align="right" valign="top"><a id="ae2206c6362d033104fd214b798a8bb0a" name="ae2206c6362d033104fd214b798a8bb0a"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>m_connected</b></td></tr>
+<tr class="separator:ae2206c6362d033104fd214b798a8bb0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afaa2ffdb2510c702faee720184a72037" id="r_afaa2ffdb2510c702faee720184a72037"><td class="memItemLeft" align="right" valign="top"><a id="afaa2ffdb2510c702faee720184a72037" name="afaa2ffdb2510c702faee720184a72037"></a>
+uint8_t&#160;</td><td class="memItemRight" valign="bottom"><b>m_conversion_failures</b></td></tr>
+<tr class="memdesc:afaa2ffdb2510c702faee720184a72037"><td class="mdescLeft">&#160;</td><td class="mdescRight">Consecutive conversion request failures. <br /></td></tr>
+<tr class="separator:afaa2ffdb2510c702faee720184a72037"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-static-attribs" name="pri-static-attribs"></a>
 Static Private Attributes</h2></td></tr>
@@ -189,19 +193,16 @@ static constexpr uint8_t&#160;</td><td class="memItemRight" valign="bottom"><b>s
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A OneWire attached temperature sensor. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a7d336dbb29445a072ddfe31156a7cea5" name="a7d336dbb29445a072ddfe31156a7cea5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7d336dbb29445a072ddfe31156a7cea5">&#9670;&#160;</a></span>OneWireTempSensor()</h2>
+<a id="aaee8f4b4d2c2ac4b99b6041cd881f649" name="aaee8f4b4d2c2ac4b99b6041cd881f649"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaee8f4b4d2c2ac4b99b6041cd881f649">&#9670;&#160;</a></span>OneWireTempSensor()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
           <td class="memname">OneWireTempSensor::OneWireTempSensor </td>
           <td>(</td>
-          <td class="paramtype">OneWire *</td>          <td class="paramname"><span class="paramname"><em>bus</em></span>, </td>
+          <td class="paramtype">onewire_bus_handle_t</td>          <td class="paramname"><span class="paramname"><em>bus</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -214,11 +215,6 @@ static constexpr uint8_t&#160;</td><td class="memItemRight" valign="bottom"><b>s
           <td class="paramtype"><a class="el" href="group__temps.html#gadd1441a58e6b2962c3f2b0af55d875c4">fixed4_4</a></td>          <td class="paramname"><span class="paramname"><em>calibrationOffset</em></span>&#160;)</td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
 
 <p>Constructs a new onewire temp sensor. </p>
@@ -310,6 +306,7 @@ static constexpr uint8_t&#160;</td><td class="memItemRight" valign="bottom"><b>s
 </div><div class="memdoc">
 
 <p>Read the value of the sensor. </p>
+<p>Reads from the sensor scratchpad and triggers a new conversion if enough time has passed since the last one. This allows non-blocking operation while keeping sensors converting regularly.</p>
 <dl class="section return"><dt>Returns</dt><dd>TEMP_SENSOR_DISCONNECTED if sensor is not connected, constrained temp otherwise. </dd></dl>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="#a684ceb6f3aa4812ac60a77831f15f83b" title="Reads the temperature.">readAndConstrainTemp()</a> </dd></dl>
 
@@ -345,6 +342,34 @@ static constexpr uint8_t&#160;</td><td class="memItemRight" valign="bottom"><b>s
 
 </div>
 </div>
+<a id="a6d3c3592436d02c00ab75124631e9896" name="a6d3c3592436d02c00ab75124631e9896"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6d3c3592436d02c00ab75124631e9896">&#9670;&#160;</a></span>readTempWithRetries()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="group__temps.html#ga1289740b9060cd2dfe3872bffa2e8da3">temperature</a> OneWireTempSensor::readTempWithRetries </td>
+          <td>(</td>
+          <td class="paramtype">uint8_t</td>          <td class="paramname"><span class="paramname"><em>attempts</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel private">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reads the temperature with retries. </p>
+<p>Attempts to read the temperature up to a specified number of times. If successful, returns the temperature. If unsuccessful, returns DEVICE_DISCONNECTED_RAW. </p>
+
+</div>
+</div>
 <a id="a42271f342091d9f616e114b00bbbdbcf" name="a42271f342091d9f616e114b00bbbdbcf"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a42271f342091d9f616e114b00bbbdbcf">&#9670;&#160;</a></span>requestConversion()</h2>
 
@@ -369,7 +394,8 @@ static constexpr uint8_t&#160;</td><td class="memItemRight" valign="bottom"><b>s
 </div><div class="memdoc">
 
 <p>Request sensor measurement. </p>
-<p>Sends a request to the OneWire bus for the configured device address to begin the process of taking a measurement. The length of time reqiured for a OneWire device to sample the temperature depend on the requested precision and powered vs. parasite powered.</p>
+<p>Sends a request to the OneWire bus for the configured device address to begin the process of taking a measurement. The length of time required for a OneWire device to sample the temperature depend on the requested precision and powered vs. parasite powered.</p>
+<p>Retries up to <code>attempts</code> times if the conversion request fails.</p>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="#ae9520be44a4ae0d82aadd52841a8d3f0" title="Wait for sensor to sample the environment.">waitForConversion()</a> </dd></dl>
 
 </div>

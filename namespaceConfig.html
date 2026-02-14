@@ -122,7 +122,7 @@ Namespaces</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
 <tr class="memitem:a42776ab16b0079bbefda34a3cf691a5d" id="r_a42776ab16b0079bbefda34a3cf691a5d"><td class="memItemLeft" align="right" valign="top">constexpr bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a42776ab16b0079bbefda34a3cf691a5d">forceDeviceDefaults</a> = true</td></tr>
-<tr class="memdesc:a42776ab16b0079bbefda34a3cf691a5d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Locks Chamber 1/Beer 1.  <br /></td></tr>
+<tr class="memdesc:a42776ab16b0079bbefda34a3cf691a5d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Locks Chamber 1/Beer 1, and overrides OneWire pin numbers on sensor assignment.  <br /></td></tr>
 <tr class="separator:a42776ab16b0079bbefda34a3cf691a5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -148,8 +148,8 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Locks Chamber 1/Beer 1. </p>
-<p>Prevents the user from trying to configure probes with other chamber/beer values. All probe configurations will have their beer &amp; chamber values overwritten with 1. </p>
+<p>Locks Chamber 1/Beer 1, and overrides OneWire pin numbers on sensor assignment. </p>
+<p>Prevents the user from trying to configure probes with other chamber/beer values. All probe configurations will have their beer &amp; chamber values overwritten with 1. Also overrides the OneWire pin number on sensor assignment to match oneWirePin as defined above. </p>
 
 </div>
 </div>

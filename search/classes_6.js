@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['hardware_0',['Hardware',['../structDeviceConfig_1_1Hardware.html',1,'DeviceConfig']]],
-  ['heatpotential_1',['HeatPotential',['../structHeatPotential.html',1,'']]]
+  ['fermentphases_0',['FermentPhases',['../structFermentPhases.html',1,'']]],
+  ['fixedfilter_1',['FixedFilter',['../classFixedFilter.html',1,'']]]
 ];

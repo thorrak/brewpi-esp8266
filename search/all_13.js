@@ -32,6 +32,6 @@ var searchData=
   ['to_20fixed_20point_20temp_29',['to fixed point temp',['../group__temps.html#autotoc_md1',1,'From C to fixed point temp'],['../group__temps.html#autotoc_md2',1,'From F to fixed point temp']]],
   ['todo_20list_30',['Todo List',['../todo.html',1,'']]],
   ['togglebacklight_31',['toggleBacklight',['../structCommandProcessor.html#a487f9caf3b424e105123c1ec72903743',1,'CommandProcessor']]],
-  ['tojson_32',['toJson',['../classControlConstants.html#aece820bdd794ad5d889ecbf5cd242492',1,'ControlConstants::toJson()'],['../classExtendedSettings.html#ad63b43d68b154795932a2636fa657a0d',1,'ExtendedSettings::toJson()'],['../classUpstreamSettings.html#a6e24fe2a719828a5f5d4ae269236c918',1,'UpstreamSettings::toJson()'],['../classMinTimes.html#a09461b2623c7c5b194bbe92d4d469d91',1,'MinTimes::toJson()']]],
+  ['tojson_32',['toJson',['../classControlConstants.html#a3af2acbb12b5f05d75e38c3cd4788a47',1,'ControlConstants::toJson()'],['../classExtendedSettings.html#a6bd379b307f10d7f312355f214b54550',1,'ExtendedSettings::toJson()'],['../classUpstreamSettings.html#a20a483749694f421cd63de9ca247a5b8',1,'UpstreamSettings::toJson()'],['../classMinTimes.html#af1eb6809ccf8b1b87abc7599e0a425b1',1,'MinTimes::toJson()']]],
   ['tplinkactuator_33',['TPLinkActuator',['../classTPLinkActuator.html',1,'']]]
 ];

@@ -130,16 +130,16 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ae84161e428f320dadf3a9991e2148dad" id="r_ae84161e428f320dadf3a9991e2148dad"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae84161e428f320dadf3a9991e2148dad">ControlConstants</a> ()</td></tr>
 <tr class="memdesc:ae84161e428f320dadf3a9991e2148dad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <br /></td></tr>
 <tr class="separator:ae84161e428f320dadf3a9991e2148dad"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aece820bdd794ad5d889ecbf5cd242492" id="r_aece820bdd794ad5d889ecbf5cd242492"><td class="memItemLeft" align="right" valign="top"><a id="aece820bdd794ad5d889ecbf5cd242492" name="aece820bdd794ad5d889ecbf5cd242492"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>toJson</b> (DynamicJsonDocument &amp;doc)</td></tr>
-<tr class="memdesc:aece820bdd794ad5d889ecbf5cd242492"><td class="mdescLeft">&#160;</td><td class="mdescRight">Serialize control constants to JSON. <br /></td></tr>
-<tr class="separator:aece820bdd794ad5d889ecbf5cd242492"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a349f89f11ddbfccead8d3942675c347e" id="r_a349f89f11ddbfccead8d3942675c347e"><td class="memItemLeft" align="right" valign="top"><a id="a349f89f11ddbfccead8d3942675c347e" name="a349f89f11ddbfccead8d3942675c347e"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>storeToSpiffs</b> ()</td></tr>
-<tr class="separator:a349f89f11ddbfccead8d3942675c347e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae6cc3ecc223488896c91f505d000ddd2" id="r_ae6cc3ecc223488896c91f505d000ddd2"><td class="memItemLeft" align="right" valign="top"><a id="ae6cc3ecc223488896c91f505d000ddd2" name="ae6cc3ecc223488896c91f505d000ddd2"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>loadFromSpiffs</b> ()</td></tr>
-<tr class="separator:ae6cc3ecc223488896c91f505d000ddd2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3af2acbb12b5f05d75e38c3cd4788a47" id="r_a3af2acbb12b5f05d75e38c3cd4788a47"><td class="memItemLeft" align="right" valign="top"><a id="a3af2acbb12b5f05d75e38c3cd4788a47" name="a3af2acbb12b5f05d75e38c3cd4788a47"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>toJson</b> (JsonDocument &amp;doc)</td></tr>
+<tr class="memdesc:a3af2acbb12b5f05d75e38c3cd4788a47"><td class="mdescLeft">&#160;</td><td class="mdescRight">Serialize control constants to JSON. <br /></td></tr>
+<tr class="separator:a3af2acbb12b5f05d75e38c3cd4788a47"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8fd6c40f15dff19867c4ef3771aaebf0" id="r_a8fd6c40f15dff19867c4ef3771aaebf0"><td class="memItemLeft" align="right" valign="top"><a id="a8fd6c40f15dff19867c4ef3771aaebf0" name="a8fd6c40f15dff19867c4ef3771aaebf0"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>storeToFilesystem</b> ()</td></tr>
+<tr class="separator:a8fd6c40f15dff19867c4ef3771aaebf0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee72458a82a09a8738f9c5700577f81e" id="r_aee72458a82a09a8738f9c5700577f81e"><td class="memItemLeft" align="right" valign="top"><a id="aee72458a82a09a8738f9c5700577f81e" name="aee72458a82a09a8738f9c5700577f81e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>loadFromFilesystem</b> ()</td></tr>
+<tr class="separator:aee72458a82a09a8738f9c5700577f81e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad7c5c9455b8c9bc2e04c86f7bd6ca483" id="r_ad7c5c9455b8c9bc2e04c86f7bd6ca483"><td class="memItemLeft" align="right" valign="top"><a id="ad7c5c9455b8c9bc2e04c86f7bd6ca483" name="ad7c5c9455b8c9bc2e04c86f7bd6ca483"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setDefaults</b> ()</td></tr>
 <tr class="memdesc:ad7c5c9455b8c9bc2e04c86f7bd6ca483"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set reasonable default values for control constants. <br /></td></tr>
@@ -244,9 +244,9 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memitem:ae6231d0fe191537bdae81ccfc6b9fb5d inherit pro_static_methods_classJSONSaveable" id="r_ae6231d0fe191537bdae81ccfc6b9fb5d"><td class="memItemLeft" align="right" valign="top">
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>writeJsonToFile</b> (const char *filename, const JsonDocument &amp;json_doc)</td></tr>
 <tr class="separator:ae6231d0fe191537bdae81ccfc6b9fb5d inherit pro_static_methods_classJSONSaveable"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9d290a0c95212eb81a68297d0b89ed29 inherit pro_static_methods_classJSONSaveable" id="r_a9d290a0c95212eb81a68297d0b89ed29"><td class="memItemLeft" align="right" valign="top">
-static DynamicJsonDocument&#160;</td><td class="memItemRight" valign="bottom"><b>readJsonFromFile</b> (const char *filename)</td></tr>
-<tr class="separator:a9d290a0c95212eb81a68297d0b89ed29 inherit pro_static_methods_classJSONSaveable"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a48b75c8eebea7eeb8dc80c82d09b9ad4 inherit pro_static_methods_classJSONSaveable" id="r_a48b75c8eebea7eeb8dc80c82d09b9ad4"><td class="memItemLeft" align="right" valign="top">
+static JsonDocument&#160;</td><td class="memItemRight" valign="bottom"><b>readJsonFromFile</b> (const char *filename)</td></tr>
+<tr class="separator:a48b75c8eebea7eeb8dc80c82d09b9ad4 inherit pro_static_methods_classJSONSaveable"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>PID Control constants. </p>

@@ -249,6 +249,8 @@ Functions</h2></td></tr>
 <tr class="separator:ga768b32f046775652220f405015e277ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaff1756d19cd744296c8e22e47d3c2bda" id="r_gaff1756d19cd744296c8e22e47d3c2bda"><td class="memItemLeft" align="right" valign="top"><a class="el" href="#ga87f833f6cb36e339255ef7478ded8513">long_temperature</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#gaff1756d19cd744296c8e22e47d3c2bda">convertToInternalTempImpl</a> (<a class="el" href="#ga87f833f6cb36e339255ef7478ded8513">long_temperature</a> rawTemp, bool addOffset)</td></tr>
 <tr class="separator:gaff1756d19cd744296c8e22e47d3c2bda"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga56d69b556357348ecb90543159b17796" id="r_ga56d69b556357348ecb90543159b17796"><td class="memItemLeft" align="right" valign="top"><a class="el" href="#ga87f833f6cb36e339255ef7478ded8513">long_temperature</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ga56d69b556357348ecb90543159b17796">convertToInternalTempImpl</a> (<a class="el" href="#ga87f833f6cb36e339255ef7478ded8513">long_temperature</a> rawTemp, bool addOffset, char tempFormat)</td></tr>
+<tr class="separator:ga56d69b556357348ecb90543159b17796"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gacb0c36586901a9fb5141212372f5bacc" id="r_gacb0c36586901a9fb5141212372f5bacc"><td class="memItemLeft" align="right" valign="top"><a id="gacb0c36586901a9fb5141212372f5bacc" name="gacb0c36586901a9fb5141212372f5bacc"></a>
 <a class="el" href="#ga87f833f6cb36e339255ef7478ded8513">long_temperature</a>&#160;</td><td class="memItemRight" valign="bottom"><b>convertFromInternalTempImpl</b> (<a class="el" href="#ga87f833f6cb36e339255ef7478ded8513">long_temperature</a> rawTemp, bool addOffset)</td></tr>
 <tr class="separator:gacb0c36586901a9fb5141212372f5bacc"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -261,6 +263,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga7d715416b3f02d0d48521083f7dacd45" id="r_ga7d715416b3f02d0d48521083f7dacd45"><td class="memItemLeft" align="right" valign="top"><a id="ga7d715416b3f02d0d48521083f7dacd45" name="ga7d715416b3f02d0d48521083f7dacd45"></a>
 <a class="el" href="#ga87f833f6cb36e339255ef7478ded8513">long_temperature</a>&#160;</td><td class="memItemRight" valign="bottom"><b>convertToInternalTemp</b> (<a class="el" href="#ga87f833f6cb36e339255ef7478ded8513">long_temperature</a> rawTemp)</td></tr>
 <tr class="separator:ga7d715416b3f02d0d48521083f7dacd45"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga8a13bc056b7da76fe2cefd4594b57c3a" id="r_ga8a13bc056b7da76fe2cefd4594b57c3a"><td class="memItemLeft" align="right" valign="top"><a id="ga8a13bc056b7da76fe2cefd4594b57c3a" name="ga8a13bc056b7da76fe2cefd4594b57c3a"></a>
+<a class="el" href="#ga87f833f6cb36e339255ef7478ded8513">long_temperature</a>&#160;</td><td class="memItemRight" valign="bottom"><b>convertToInternalTemp</b> (<a class="el" href="#ga87f833f6cb36e339255ef7478ded8513">long_temperature</a> rawTemp, char tempFormat)</td></tr>
+<tr class="separator:ga8a13bc056b7da76fe2cefd4594b57c3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7ffbf7f019ea3ee24a9323478747d71f" id="r_ga7ffbf7f019ea3ee24a9323478747d71f"><td class="memItemLeft" align="right" valign="top"><a id="ga7ffbf7f019ea3ee24a9323478747d71f" name="ga7ffbf7f019ea3ee24a9323478747d71f"></a>
 <a class="el" href="#ga87f833f6cb36e339255ef7478ded8513">long_temperature</a>&#160;</td><td class="memItemRight" valign="bottom"><b>convertFromInternalTemp</b> (<a class="el" href="#ga87f833f6cb36e339255ef7478ded8513">long_temperature</a> rawTemp)</td></tr>
 <tr class="separator:ga7ffbf7f019ea3ee24a9323478747d71f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -605,7 +610,7 @@ From fixed point temp to F</h3>
 </div>
 </div>
 <a id="gaff1756d19cd744296c8e22e47d3c2bda" name="gaff1756d19cd744296c8e22e47d3c2bda"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#gaff1756d19cd744296c8e22e47d3c2bda">&#9670;&#160;</a></span>convertToInternalTempImpl()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#gaff1756d19cd744296c8e22e47d3c2bda">&#9670;&#160;</a></span>convertToInternalTempImpl() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -627,6 +632,41 @@ From fixed point temp to F</h3>
   <table class="params">
     <tr><td class="paramname">rawTemp</td><td>- Temperature to convert </td></tr>
     <tr><td class="paramname">addOffset</td><td>- Flag to control if temp offsets are added. Should be <code>true</code> when working with absolute temps, <code>false</code> when working with differences. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ga56d69b556357348ecb90543159b17796" name="ga56d69b556357348ecb90543159b17796"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga56d69b556357348ecb90543159b17796">&#9670;&#160;</a></span>convertToInternalTempImpl() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="#ga87f833f6cb36e339255ef7478ded8513">long_temperature</a> convertToInternalTempImpl </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="#ga87f833f6cb36e339255ef7478ded8513">long_temperature</a></td>          <td class="paramname"><span class="paramname"><em>rawTemp</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>addOffset</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">char</td>          <td class="paramname"><span class="paramname"><em>tempFormat</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Receives the tempFormat temp format in fixed point and converts it to the internal format It scales the value for Fahrenheit and adds the offset needed for absolute temperatures. For temperature differences, use no offset.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">rawTemp</td><td>- Temperature to convert </td></tr>
+    <tr><td class="paramname">addOffset</td><td>- Flag to control if temp offsets are added. Should be <code>true</code> when working with absolute temps, <code>false</code> when working with differences. </td></tr>
+    <tr><td class="paramname">tempFormat</td><td>- The format of the temperature to convert </td></tr>
   </table>
   </dd>
 </dl>
@@ -819,7 +859,7 @@ From fixed point temp to F</h3>
 <p>Convert a c-str into a temperature value. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">numberString</td><td>- String to convert </td></tr>
+    <tr><td class="paramname">numberString</td><td>- String to convert (Either with units or in tempControl.cc.tempFormat units) </td></tr>
   </table>
   </dd>
 </dl>

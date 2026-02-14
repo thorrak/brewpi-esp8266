@@ -2,11 +2,11 @@ var searchData=
 [
   ['id_0',['id',['../structDeviceDisplay.html#adbe7268342b52671e728143def1326e4',1,'DeviceDisplay']]],
   ['idle_1',['IDLE',['../group__tempcontrol.html#ggaa19be6305a5a4485e1e70de70ed7d677afd6a0e4343048b10646dd2976cc5ad18',1,'TempControl.h']]],
-  ['iiclcd_2',['IIClcd',['../classIIClcd.html',1,'']]],
-  ['increaseestimator_3',['increaseEstimator',['../classTempControl.html#abfd13f53695a6e17d6060804dad93b6a',1,'TempControl']]],
-  ['init_4',['init',['../classCascadedFilter.html#a7cb56b3a7583eb465e72d2074bb6d606',1,'CascadedFilter::init()'],['../classFixedFilter.html#a5e72fbe3de2afce761259805bae8b0f5',1,'FixedFilter::init()'],['../classOneWireTempSensor.html#a88dd248fba3ef9f7b2afc466e3fd4e45',1,'OneWireTempSensor::init()'],['../classPiStream.html#a4f70872f75018a564a0cf57d3aa326e4',1,'PiStream::init()'],['../classPiStream.html#a302834bbde5b17a2b168581f64e0b0be',1,'PiStream::init()'],['../classPiStream.html#aa361482b12d1ffa4a5e35459a0e594ba',1,'PiStream::init()'],['../classTempControl.html#ad81c2dcc98f6756e09bdea7d35d1778f',1,'TempControl::init()'],['../classTempSensor.html#a554fa88426709d0330bd2d631d91f97c',1,'TempSensor::init()'],['../classBasicTempSensor.html#a41fbbfbd303c077c6bba42fc0c18d268',1,'BasicTempSensor::init()'],['../classDisconnectedTempSensor.html#a4c10ee2b1a63ce64650dd181e223cad0',1,'DisconnectedTempSensor::init()'],['../classExternalTempSensor.html#ab5e0112749c1293777f96a2b85ec15ec',1,'ExternalTempSensor::init()'],['../classMockTempSensor.html#a71d61f3b5d8e4e31816f066f2a6d3183',1,'MockTempSensor::init()']]],
-  ['initeeprom_5',['initEeprom',['../structCommandProcessor.html#aacdf76a0d08cf1a5493d082c265fe3cc',1,'CommandProcessor']]],
-  ['initfilters_6',['initFilters',['../classTempControl.html#a9d0d486698a7f5818bf9f63297dc1754',1,'TempControl']]],
+  ['increaseestimator_2',['increaseEstimator',['../classTempControl.html#abfd13f53695a6e17d6060804dad93b6a',1,'TempControl']]],
+  ['init_3',['init',['../classCascadedFilter.html#a7cb56b3a7583eb465e72d2074bb6d606',1,'CascadedFilter::init()'],['../classFixedFilter.html#a5e72fbe3de2afce761259805bae8b0f5',1,'FixedFilter::init()'],['../classOneWireTempSensor.html#a88dd248fba3ef9f7b2afc466e3fd4e45',1,'OneWireTempSensor::init()'],['../classPiStream.html#a4f70872f75018a564a0cf57d3aa326e4',1,'PiStream::init()'],['../classPiStream.html#a302834bbde5b17a2b168581f64e0b0be',1,'PiStream::init()'],['../classPiStream.html#aa361482b12d1ffa4a5e35459a0e594ba',1,'PiStream::init()'],['../classTempControl.html#ad81c2dcc98f6756e09bdea7d35d1778f',1,'TempControl::init()'],['../classTempSensor.html#a554fa88426709d0330bd2d631d91f97c',1,'TempSensor::init()'],['../classBasicTempSensor.html#a41fbbfbd303c077c6bba42fc0c18d268',1,'BasicTempSensor::init()'],['../classDisconnectedTempSensor.html#a4c10ee2b1a63ce64650dd181e223cad0',1,'DisconnectedTempSensor::init()'],['../classExternalTempSensor.html#ab5e0112749c1293777f96a2b85ec15ec',1,'ExternalTempSensor::init()'],['../classMockTempSensor.html#a71d61f3b5d8e4e31816f066f2a6d3183',1,'MockTempSensor::init()']]],
+  ['initeeprom_4',['initEeprom',['../structCommandProcessor.html#aacdf76a0d08cf1a5493d082c265fe3cc',1,'CommandProcessor']]],
+  ['initfilters_5',['initFilters',['../classTempControl.html#a9d0d486698a7f5818bf9f63297dc1754',1,'TempControl']]],
+  ['initialize_5ffilters_6',['initialize_filters',['../classTempSensor.html#a06298e47051eeb9951817e8ce5cdae9e',1,'TempSensor']]],
   ['initialize_5fwifi_7',['initialize_wifi',['../group__wifi.html#ga38d44e2e1dc4cebb09dec960185019c5',1,'initialize_wifi():&#160;ESP_BP_WiFi.cpp'],['../group__wifi.html#ga38d44e2e1dc4cebb09dec960185019c5',1,'initialize_wifi():&#160;ESP_BP_WiFi.cpp']]],
   ['initializeeeprom_8',['initializeEeprom',['../classEepromManager.html#abdd05b75a2ea67ccd8a9851d0e9a7c00',1,'EepromManager']]],
   ['initwifiserver_9',['initWifiServer',['../group__wifi.html#ga1e96c7f1b935af54670cafb599329ebd',1,'ESP_BP_WiFi.h']]],
@@ -24,5 +24,6 @@ var searchData=
   ['isdevicevalid_21',['isDeviceValid',['../classDeviceManager.html#a566f883890b4261a1713eaef56259df4',1,'DeviceManager']]],
   ['isdigitalpin_22',['isDigitalPin',['../group__hardware.html#gad5dc2c9e3de5862533ae006595fb7e5f',1,'DeviceManager.h']]],
   ['isdooropen_23',['isDoorOpen',['../classTempControl.html#abbddddc97eca129b027097acf990d3cb',1,'TempControl']]],
-  ['isonewire_24',['isOneWire',['../group__hardware.html#ga3e3dd2ccc6f6b8cec4b8c18d2bdf23db',1,'DeviceManager.h']]]
+  ['isonewire_24',['isOneWire',['../group__hardware.html#ga3e3dd2ccc6f6b8cec4b8c18d2bdf23db',1,'DeviceManager.h']]],
+  ['isregistered_25',['isRegistered',['../classUpstreamSettings.html#a233e659e41c2f42225a80ec5810ad7e0',1,'UpstreamSettings']]]
 ];
