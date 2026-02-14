@@ -201,8 +201,8 @@ void CommandProcessor::invalidCommand(const char inByte) {
  * \param command - Command requested.
  * \param message - An message explaining why the command isn't implemented.
  */
-void CommandProcessor::commandNotImplemented(const char command, const String message) {
-  piLink.print_P(PSTR("Command \"%c\" not implemented. %s"), command, message.c_str());
+void CommandProcessor::commandNotImplemented(const char command, const char* message) {
+  piLink.print_P(PSTR("Command \"%c\" not implemented. %s"), command, message);
   piLink.printNewLine();
 }
 
@@ -317,7 +317,7 @@ void CommandProcessor::resetWiFi() {
  */
 void CommandProcessor::wifiInfo() {
   if (!Config::PiLink::useWifi) {
-    commandNotImplemented('W', String("WiFi info not available when WiFi is disabled"));
+    commandNotImplemented('W', "WiFi info not available when WiFi is disabled");
     return;
   }
 

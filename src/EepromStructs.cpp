@@ -349,11 +349,12 @@ void ExtendedSettings::processSettingKeypair(JsonPair kv) {
   // A good chunk of the conversions want a string representation of the value,
   // but the brewpi script presents the data as a number.  Prep a string
   // version in case we need it for this value.
-  String str_value;
+  // NOTE: str_value is currently unused but retained for future use.
+  char str_value[32] = "";
   if (kv.value().is<const char *>())
-    str_value = kv.value().as<const char *>();
+    strlcpy(str_value, kv.value().as<const char *>(), sizeof(str_value));
   else if (kv.value().is<float>()) {
-    str_value = kv.value().as<float>();
+    snprintf(str_value, sizeof(str_value), "%g", kv.value().as<float>());
   }
 
   if (kv.key() == ExtendedSettingsKeys::invertTFT) {

@@ -266,10 +266,9 @@ void TempControl::updateState(){
 		
 	if(newDoorOpen!=doorOpen) {
 		doorOpen = newDoorOpen;
-		String annotation = "";
-		annotation += "Fridge door ";
-		annotation += doorOpen ? "opened" : "closed";
-		piLink.printTemperatures(0, annotation.c_str());
+		char annotation[64];
+		snprintf(annotation, sizeof(annotation), "Fridge door %s", doorOpen ? "opened" : "closed");
+		piLink.printTemperatures(0, annotation);
 	}
 
 	if(cs.mode == Modes::off){
@@ -781,7 +780,8 @@ void TempControl::getControlVariablesDoc(JsonDocument& doc) {
  * \param doc - Reference to JsonDocument to populate
  */
 void TempControl::getControlConstantsDoc(JsonDocument& doc) {
-  doc["tempFormat"] = String(cc.tempFormat);
+  char tempFmt[2] = {cc.tempFormat, '\0'};
+  doc["tempFormat"] = tempFmt;
 
   doc["tempSetMin"] = tempToDouble(cc.tempSettingMin, Config::TempFormat::tempDecimals);
   doc["tempSetMax"] = tempToDouble(cc.tempSettingMax, Config::TempFormat::tempDecimals);
@@ -816,7 +816,8 @@ void TempControl::getControlConstantsDoc(JsonDocument& doc) {
  * \param doc - Reference to JsonDocument to populate
  */
 void TempControl::getControlSettingsDoc(JsonDocument& doc) {
-  doc["mode"] = String(cs.mode);
+  char modeFmt[2] = {cs.mode, '\0'};
+  doc["mode"] = modeFmt;
   doc["beerSet"] = tempToDouble(cs.beerSetting, Config::TempFormat::tempDecimals);
   doc["fridgeSet"] = tempToDouble(cs.fridgeSetting, Config::TempFormat::tempDecimals);
   doc["heatEst"] = fixedPointToDouble(cs.heatEstimator, Config::TempFormat::fixedPointDecimals);

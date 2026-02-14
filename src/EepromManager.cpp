@@ -20,6 +20,7 @@
 
 #include "Brewpi.h"
 #include <stddef.h>
+#include <string>
 
 #include "EepromManager.h"
 #include "TempControl.h"
@@ -146,9 +147,8 @@ void EepromManager::deleteDeviceWithFunction(DeviceFunction deviceFunction)
 // Not sure if I should put this in EepromManager or ESPEepromAccess. Oh well.
 // TODO - Make a decision & stick with it
 #ifdef ESP8266_WiFi
-String EepromManager::fetchmDNSName()
+std::string EepromManager::fetchmDNSName()
 {
-	String mdns_id;
 	// The below loads the mDNS name from the file we saved it to (if the file exists)
 
     if (FILESYSTEM.exists("/mdns.txt")) {
@@ -157,14 +157,19 @@ String EepromManager::fetchmDNSName()
 
 		if (dns_name_file) {
 			// Assuming everything goes well, read in the mdns name
-			mdns_id = dns_name_file.readStringUntil('\n');
-			mdns_id.trim();
-			return mdns_id;
+			char buf[64];
+			size_t len = dns_name_file.readBytes(buf, sizeof(buf) - 1);
+			buf[len] = '\0';
+			// Trim trailing whitespace (newlines, spaces, carriage returns)
+			while (len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r' || buf[len - 1] == ' ')) {
+				buf[--len] = '\0';
+			}
+			return std::string(buf);
 		}
 	}
 
 #if defined(ESP8266)
-    mdns_id = "ESP" + String(ESP.getChipId());
+    std::string mdns_id = "ESP" + String(ESP.getChipId());
 #elif defined(ESP32)
     // There isn't a straightforward "getChipId" function on an ESP32, so we'll have to make do
     char ssid[15]; //Create a Unique AP from MAC address
@@ -175,20 +180,19 @@ String EepromManager::fetchmDNSName()
     uint16_t chip = (uint16_t)(chipid>>32);
     snprintf(ssid,15,"%04X",chip);
 
-    mdns_id = "ESP" + (String) ssid;
+    std::string mdns_id = std::string("ESP") + ssid;
 #else
 #error "Invalid device selected!"
 #endif
-	
+
 	return mdns_id;
 }
 
-void EepromManager::savemDNSName(String mdns_id)
+void EepromManager::savemDNSName(const char* mdns_id)
 {
 	File dns_name_file = FILESYSTEM.open("/mdns.txt", "w");
 	if (dns_name_file) {
 		// If the above fails, we weren't able to open the file for writing
-		mdns_id.trim();
 		dns_name_file.println(mdns_id);
 	}
 	dns_name_file.close();

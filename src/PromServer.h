@@ -3,6 +3,7 @@
 #include "Brewpi.h"
 #include "TemperatureFormats.h"
 #include "Ticks.h"
+#include <string>
 
 #if defined(ESP32)
 #include "AsyncTCP.h"
@@ -43,7 +44,7 @@ private:
    * \see https://github.com/me-no-dev/ESPAsyncWebServer
    */
   AsyncWebServer server = AsyncWebServer(Config::Prometheus::port);
-  static String probeCache;
+  static std::string probeCache;
 
   /**
    * \brief Template string for the metrics data.
@@ -65,8 +66,8 @@ private:
    */
   static const char probeTemplate[];
 
-  static String formatProbeTemp(const temperature temp);
-  static String probeValues();
+  static std::string formatProbeTemp(const temperature temp);
+  static std::string probeValues();
 
   /**
    * \brief How long to cache probe readings

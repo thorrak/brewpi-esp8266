@@ -8,6 +8,8 @@
 #include "TempControl.h"
 #include "TemperatureFormats.h"
 #include "Ticks.h"
+#include <string>
+#include <cstring>
 
 const char PromServer::metricsTemplate[] PROGMEM =
     R"PROM(# HELP brewpi_uptime_seconds Number of seconds since the last hardware reset
@@ -40,7 +42,7 @@ const char PromServer::probeTemplate[] PROGMEM =
 /**
  * \brief Storage for caching probe values
  */
-String PromServer::probeCache = String("");
+std::string PromServer::probeCache;
 
 // Initialize this as a negative so that we immediately are in an expired
 // state, otherwise you have to wait around before the first read actually
@@ -96,23 +98,23 @@ String PromServer::templateProcessor(const String &var) {
     return tempControl.stateIsHeating() ? "1" : "0";
 
   if (var == "BEER_TEMP")
-    return formatProbeTemp(tempControl.getBeerTemp());
+    return String(formatProbeTemp(tempControl.getBeerTemp()).c_str());
 
   if (var == "BEER_TARGET")
-    return formatProbeTemp(tempControl.getBeerSetting());
+    return String(formatProbeTemp(tempControl.getBeerSetting()).c_str());
 
   if (var == "FRIDGE_TEMP")
-    return formatProbeTemp(tempControl.getFridgeTemp());
+    return String(formatProbeTemp(tempControl.getFridgeTemp()).c_str());
 
   if (var == "FRIDGE_TARGET")
-    return formatProbeTemp(tempControl.getFridgeSetting());
+    return String(formatProbeTemp(tempControl.getFridgeSetting()).c_str());
 
   if (var == "ROOM_TEMP")
-    return formatProbeTemp(tempControl.getRoomTemp());
+    return String(formatProbeTemp(tempControl.getRoomTemp()).c_str());
 
   // Probe readings
   if (var == "PROBE_VALUES")
-    return probeValues();
+    return String(probeValues().c_str());
 
   return String();
 }
@@ -127,16 +129,15 @@ String PromServer::templateProcessor(const String &var) {
  * \param temp - Temperature value to format
  * \return String representation of temperature
  */
-String PromServer::formatProbeTemp(const temperature temp) {
+std::string PromServer::formatProbeTemp(const temperature temp) {
   char buf[10];
   tempToString(buf, temp, Config::TempFormat::fixedPointDecimals, Config::TempFormat::maxLength);
-  const String ret = String(buf);
 
-  // Prometheus wants 'NaN' to for null data
-  if (ret.equals("null"))
-    return String("NaN");
+  // Prometheus wants 'NaN' for null data
+  if (strcmp(buf, "null") == 0)
+    return "NaN";
 
-  return ret;
+  return std::string(buf);
 }
 
 /**
@@ -160,17 +161,17 @@ void PromServer::invalidateCache() {
  * \see PromServer::cacheTime
  * \return Formatted metrics string
  */
-String PromServer::probeValues() {
+std::string PromServer::probeValues() {
   if (ticks.timeSince(dataLastUpdate) > PromServer::cacheTime) {
     JsonDocument doc;
     deviceManager.rawDeviceValues(doc);
 
     JsonArray root = doc.as<JsonArray>();
-    probeCache = String("");
+    probeCache.clear();
 
     for (JsonVariant probe : root) {
-      String devName(probe["device"].as<const char *>());
-      String humanName = DeviceNameManager::getDeviceName(devName.c_str());
+      const char* devName = probe["device"].as<const char *>();
+      std::string humanName = DeviceNameManager::getDeviceName(devName);
 
       char buffer[256];
       sprintf_P(buffer, probeTemplate, humanName.c_str(), probe["value"].as<const char *>());

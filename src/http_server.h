@@ -30,8 +30,8 @@ private:
     void setJsonPages();
     void setPutPages();
 
-    String getContentType(String filename);
-    bool handleFileRead(AsyncWebServerRequest *request, String path);
+    const char* getContentType(const char* filename);
+    bool handleFileRead(AsyncWebServerRequest *request, const char* path);
     void redirect(AsyncWebServerRequest *request, const String &url);
 
 };

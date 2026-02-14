@@ -22,16 +22,17 @@
 
 #include "Brewpi.h"
 #include <ArduinoJson.h>
+#include <string>
 
 /**
  * \brief Tuple of device name and ID
  */
 struct DeviceName
 {
-  String name; //!< Human readable name
-  String device; //!< Device ID
+  std::string name; //!< Human readable name
+  std::string device; //!< Device ID
 
-  DeviceName(String device, String name): name(name), device(device){}
+  DeviceName(const char* device, const char* name): name(name), device(device){}
 };
 
 
@@ -43,14 +44,14 @@ class DeviceNameManager
 {
   public:
     static void setDeviceName(const char* device, const char* name);
-    static String getDeviceName(const char* device);
+    static std::string getDeviceName(const char* device);
     static void deleteDeviceName(const char* device);
 
     static void enumerateDeviceNames(JsonDocument& doc);
 
   private:
     static void deviceNameFilename(char* filename, const char* device);
-    static DeviceName filenameToDeviceName(String filename);
+    static DeviceName filenameToDeviceName(const char* filename);
 
     static const char filenamePrefix[];
     static constexpr int prefixLength();

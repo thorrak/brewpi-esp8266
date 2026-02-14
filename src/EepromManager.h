@@ -22,6 +22,7 @@
 
 #include "Brewpi.h"
 
+#include <string>
 #include "ESPEepromAccess.h"
 #include "EepromStructs.h"
 
@@ -54,8 +55,8 @@ public:
 	static uint8_t saveDefaultDevices();
 
 #ifdef ESP8266_WiFi
-	static String fetchmDNSName();
-	static void savemDNSName(String mdns_id);
+	static std::string fetchmDNSName();
+	static void savemDNSName(const char* mdns_id);
 #endif
 
 

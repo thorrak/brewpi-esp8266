@@ -415,7 +415,7 @@ void LcdDisplay::printWiFi(){
     tft->setCursor(0, 0);
 
     tft->println("mDNS Name: ");
-    tft->print(eepromManager.fetchmDNSName());
+    tft->print(eepromManager.fetchmDNSName().c_str());
     tft->println(".local");
 
     tft->println(" ");

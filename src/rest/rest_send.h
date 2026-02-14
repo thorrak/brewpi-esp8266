@@ -15,6 +15,7 @@
 #include <WiFiClientSecure.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/timers.h>
+#include <string>
 #include <ArduinoJson.hpp>
 
 
@@ -154,8 +155,8 @@ private:
 
     bool get_url(char *url, size_t size, const char *path);
     bool get_url(char *url, size_t size, const char *path, const char *device_id, const char *api_key);
-    sendResult send_json_str(String &payload, const char *url, httpMethod method);
-    sendResult send_json_str(String &payload, const char *url, String &response, httpMethod method);
+    sendResult send_json_str(std::string &payload, const char *url, httpMethod method);
+    sendResult send_json_str(std::string &payload, const char *url, std::string &response, httpMethod method);
     void get_useragent(char *ua, size_t size);
 
     HTTPClient http;

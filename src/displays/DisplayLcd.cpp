@@ -395,7 +395,7 @@ void LcdDisplay::printWiFi(){
 	lcd.printSpacesToRestOfLine();
 
 	lcd.setCursor(0,1);
-	lcd.print(eepromManager.fetchmDNSName());
+	lcd.print(eepromManager.fetchmDNSName().c_str());
 	lcd.print(".local");
 	lcd.printSpacesToRestOfLine();
 

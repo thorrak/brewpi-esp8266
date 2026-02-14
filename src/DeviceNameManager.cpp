@@ -21,6 +21,7 @@
 
 #include "DeviceNameManager.h"
 #include "ESPEepromAccess.h"  // Includes filesystem headers/definition
+#include <string>
 
 /**
  * \brief Set a human readable name for a device.
@@ -48,20 +49,22 @@ void DeviceNameManager::setDeviceName(const char* device, const char* name)
  * \param device - The identifier for the device, most commonly the OneWire device address (in hex)
  * \return The registered device name, or if none is set, the provided device ID
  */
-String DeviceNameManager::getDeviceName(const char* device) {
+std::string DeviceNameManager::getDeviceName(const char* device) {
   char filename[32];
   DeviceNameManager::deviceNameFilename(filename, device);
 
     if (FILESYSTEM.exists(filename)) {
         File f = FILESYSTEM.open(filename, "r");
         if (f) {
-          String res = f.readString();
+          char buf[64];
+          size_t len = f.readBytes(buf, sizeof(buf) - 1);
+          buf[len] = '\0';
           f.close();
-          return res;
+          return std::string(buf);
         }
   }
 
-  return device;
+  return std::string(device);
 }
 
 
@@ -145,9 +148,10 @@ void DeviceNameManager::enumerateDeviceNames(JsonDocument& doc) {
  *
  * \param filename
  */
-DeviceName DeviceNameManager::filenameToDeviceName(String filename) {
+DeviceName DeviceNameManager::filenameToDeviceName(const char* filename) {
   // strip the prefix off
-  filename = filename.substring(prefixLength());
+  const char* stripped = filename + prefixLength();
 
-  return DeviceName(filename, getDeviceName(filename.c_str()));
+  std::string name = getDeviceName(stripped);
+  return DeviceName(stripped, name.c_str());
 }

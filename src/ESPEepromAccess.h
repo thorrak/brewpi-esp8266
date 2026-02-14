@@ -27,7 +27,7 @@
 class ESPEepromAccess
 {
 private:
-    static bool doesFileExist(String target_name) {
+    static bool doesFileExist(const char* target_name) {
         return FILESYSTEM.exists(target_name);
     }
 

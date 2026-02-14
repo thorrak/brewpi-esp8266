@@ -23,6 +23,8 @@
 #include "Display.h"
 #include "PiLink.h"
 #include "TempControl.h"
+#include <cstdio>
+#include <cstring>
 
 /**
  * \brief Process a single setting key/value pair
@@ -33,14 +35,14 @@ void SettingLoader::processSettingKeypair(JsonPair kv) {
   // A good chunk of the conversions want a string representation of the value,
   // but the brewpi script presents the data as a number.  Prep a string
   // version in case we need it for this value.
-  String str_value;
+  char str_value[64] = {};
   if (kv.value().is<const char *>())
-    str_value = kv.value().as<const char *>();
+    strlcpy(str_value, kv.value().as<const char *>(), sizeof(str_value));
   else if (kv.value().is<float>()) {
-    str_value = kv.value().as<float>();
+    snprintf(str_value, sizeof(str_value), "%g", kv.value().as<float>());
   }
 
-  // Serial.printf("SettingLoader::processSettingKeypair: %s = %s\r\n", kv.key().c_str(), str_value.c_str());
+  // Serial.printf("SettingLoader::processSettingKeypair: %s = %s\r\n", kv.key().c_str(), str_value);
 
   if (kv.key() == "mode") {
     char mode = kv.value().as<const char *>()[0];
@@ -55,19 +57,19 @@ void SettingLoader::processSettingKeypair(JsonPair kv) {
   }
 
   else if (kv.key() == "beerSet") {
-    setBeerSetting(str_value.c_str());
+    setBeerSetting(str_value);
   }
 
   else if (kv.key() == "fridgeSet") {
-    setFridgeSetting(str_value.c_str());
+    setFridgeSetting(str_value);
   }
 
   else if (kv.key() == "heatEst") {
-    tempControl.cs.heatEstimator = stringToFixedPoint(str_value.c_str());
+    tempControl.cs.heatEstimator = stringToFixedPoint(str_value);
   }
 
   else if (kv.key() == "coolEst") {
-    tempControl.cs.coolEstimator = stringToFixedPoint(str_value.c_str());
+    tempControl.cs.coolEstimator = stringToFixedPoint(str_value);
   }
 
   else if (kv.key() == "tempFormat") {
@@ -84,55 +86,55 @@ void SettingLoader::processSettingKeypair(JsonPair kv) {
   }
 
   else if (kv.key() == "tempSetMin") {
-    tempControl.cc.tempSettingMin = stringToTemp(str_value.c_str());
+    tempControl.cc.tempSettingMin = stringToTemp(str_value);
   }
 
   else if (kv.key() == "tempSetMax") {
-    tempControl.cc.tempSettingMax = stringToTemp(str_value.c_str());
+    tempControl.cc.tempSettingMax = stringToTemp(str_value);
   }
 
   else if (kv.key() == "pidMax") {
-    tempControl.cc.pidMax = stringToTempDiff(str_value.c_str());
+    tempControl.cc.pidMax = stringToTempDiff(str_value);
   }
 
   else if (kv.key() == "Kp") {
-    tempControl.cc.Kp = stringToFixedPoint(str_value.c_str());
+    tempControl.cc.Kp = stringToFixedPoint(str_value);
   }
 
   else if (kv.key() == "Ki") {
-    tempControl.cc.Ki = stringToFixedPoint(str_value.c_str());
+    tempControl.cc.Ki = stringToFixedPoint(str_value);
   }
 
   else if (kv.key() == "Kd") {
-    tempControl.cc.Kd = stringToFixedPoint(str_value.c_str());
+    tempControl.cc.Kd = stringToFixedPoint(str_value);
   }
 
   else if (kv.key() == "iMaxErr") {
-    tempControl.cc.iMaxError = stringToTempDiff(str_value.c_str());
+    tempControl.cc.iMaxError = stringToTempDiff(str_value);
   }
 
   else if (kv.key() == "idleRangeH") {
-    tempControl.cc.idleRangeHigh = stringToTempDiff(str_value.c_str());
+    tempControl.cc.idleRangeHigh = stringToTempDiff(str_value);
   }
 
   else if (kv.key() == "idleRangeL") {
-    tempControl.cc.idleRangeLow = stringToTempDiff(str_value.c_str());
+    tempControl.cc.idleRangeLow = stringToTempDiff(str_value);
   }
 
   else if (kv.key() == "heatTargetH") {
-    tempControl.cc.heatingTargetUpper = stringToTempDiff(str_value.c_str());
+    tempControl.cc.heatingTargetUpper = stringToTempDiff(str_value);
   }
 
   else if (kv.key() == "heatTargetL") {
-    tempControl.cc.heatingTargetLower = stringToTempDiff(str_value.c_str());
+    tempControl.cc.heatingTargetLower = stringToTempDiff(str_value);
   }
 
   else if (kv.key() == "coolTargetH") {
-    tempControl.cc.coolingTargetUpper = stringToTempDiff(str_value.c_str());
+    tempControl.cc.coolingTargetUpper = stringToTempDiff(str_value);
   }
 
   else if (kv.key() == "coolTargetL") {
-    tempControl.cc.coolingTargetLower = stringToTempDiff(str_value.c_str());
+    tempControl.cc.coolingTargetLower = stringToTempDiff(str_value);
   }
 
   else if (kv.key() == "maxHeatTimeForEst") {
@@ -176,7 +178,7 @@ void SettingLoader::processSettingKeypair(JsonPair kv) {
   }
 
   else {
-    Serial.printf("Unknown key \"%s\" with value \"%s\"", kv.key().c_str(), str_value.c_str());
+    Serial.printf("Unknown key \"%s\" with value \"%s\"", kv.key().c_str(), str_value);
   }
 
 }
@@ -186,22 +188,21 @@ void SettingLoader::processSettingKeypair(JsonPair kv) {
  * @param val - New temp value
  */
 void SettingLoader::setBeerSetting(const char *val) {
-  String annotation = "Beer temp set to ";
-  annotation += val;
+  char annotation[128];
+  snprintf(annotation, sizeof(annotation), "Beer temp set to %s", val);
 
   temperature newTemp = stringToTemp(val);
 
   if (tempControl.cs.mode == 'p') {
     // this excludes gradual updates under 0.2 degrees
     if (abs(newTemp - tempControl.cs.beerSetting) > 100) {
-      annotation += " by temperature profile";
+      strlcat(annotation, " by temperature profile", sizeof(annotation));
     }
   } else {
-    annotation += " in web interface";
+    strlcat(annotation, " in web interface", sizeof(annotation));
   }
 
-  if (annotation.length() > 0)
-    piLink.sendStateNotification(annotation.c_str());
+  piLink.sendStateNotification(annotation);
 
   tempControl.setBeerTemp(newTemp);
 }
@@ -213,11 +214,10 @@ void SettingLoader::setBeerSetting(const char *val) {
 void SettingLoader::setFridgeSetting(const char *val) {
   temperature newTemp = stringToTemp(val);
   if (tempControl.cs.mode == 'f') {
-    String annotation = "Fridge temp set to ";
-    annotation += val;
-    annotation += " in web interface";
+    char annotation[128];
+    snprintf(annotation, sizeof(annotation), "Fridge temp set to %s in web interface", val);
 
-    piLink.sendStateNotification(nullptr, annotation.c_str());
+    piLink.sendStateNotification(nullptr, annotation);
   }
 
   tempControl.setFridgeTemp(newTemp);

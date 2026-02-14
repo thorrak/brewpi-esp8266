@@ -31,7 +31,7 @@ public:
 
 private:
   static void invalidCommand(const char inByte);
-  static void commandNotImplemented(const char command, const String message);
+  static void commandNotImplemented(const char command, const char* message);
   static void versionInfo();
 
   static void sendControlSettings();

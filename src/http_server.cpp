@@ -915,8 +915,9 @@ void httpServer::setStaticPages() {
         asyncWebServer.serveStatic(route, FILESYSTEM, "/index.html").setCacheControl("max-age=600");
 
         // Serve the same route with a trailing slash
-        String routeWithSlash = String(route) + "/";
-        asyncWebServer.serveStatic(routeWithSlash.c_str(), FILESYSTEM, "/index.html").setCacheControl("max-age=600");
+        char routeWithSlash[64];
+        snprintf(routeWithSlash, sizeof(routeWithSlash), "%s/", route);
+        asyncWebServer.serveStatic(routeWithSlash, FILESYSTEM, "/index.html").setCacheControl("max-age=600");
     }
 
     // Legacy static page handlers
@@ -982,7 +983,7 @@ void httpServer::init() {
 
     // File not found handler
     asyncWebServer.onNotFound([](AsyncWebServerRequest *request) {
-        if (!http_server.handleFileRead(request, request->url())) {
+        if (!http_server.handleFileRead(request, request->url().c_str())) {
             request->send(404, "text/plain", "Not Found");
         }
     });

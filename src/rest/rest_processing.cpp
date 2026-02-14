@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <string>
 #include <ctime>
 // #define LCBURL_MDNS
 // #include <LCBUrl.h>
@@ -167,9 +168,9 @@ void load_settings_from_doc(JsonObject &root) {
 bool restHandler::process_updated_settings() {
     Log.infoln("Message received: updated_cs/cc/mt");
 
-    String payload = "";
+    std::string payload;
     char url[256] = "";
-    String response;
+    std::string response;
 
     // We can't retrieve config if we're not registered
     if(upstreamSettings.isRegistered() == false)
@@ -191,7 +192,7 @@ bool restHandler::process_updated_settings() {
 
         if((doc["success"].is<bool>() && doc["success"].as<bool>() == false) || !doc["config"].is<JsonObject>()) {
             Log.warning("Error retrieving full config: ");
-            Log.warningln(doc["message"].as<String>());
+            Log.warningln(doc["message"].as<const char *>());
             return false;
         }
 

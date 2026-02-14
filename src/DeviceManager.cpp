@@ -1291,7 +1291,7 @@ void DeviceManager::outputRawDeviceValue(DeviceConfig* config, void* pv, JsonDoc
     char devName[17];
     printBytes(config->hw.address, 8, devName);
 
-    String humanName = DeviceNameManager::getDeviceName(devName);
+    std::string humanName = DeviceNameManager::getDeviceName(devName);
 
     JsonObject deviceObj = doc->add<JsonObject>();
     deviceObj["device"] = devName;
@@ -1311,7 +1311,7 @@ void DeviceManager::outputRawDeviceValue(DeviceConfig* config, void* pv, JsonDoc
 		tempToString(str_temp, bt_scanner.get_tilt(config->hw.btAddress)->getTempFixedPoint(), 3, 9);
 
     // Pretty-print the address
-    String humanName = DeviceNameManager::getDeviceName(config->hw.btAddress.toString().c_str());
+    std::string humanName = DeviceNameManager::getDeviceName(config->hw.btAddress.toString().c_str());
 
     JsonObject deviceObj = doc->add<JsonObject>();
     deviceObj["device"] = config->hw.btAddress.toString();

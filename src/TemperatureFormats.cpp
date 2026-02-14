@@ -20,6 +20,7 @@
 #include "Brewpi.h"
 #include "TemperatureFormats.h"
 #include <string.h>
+#include <cstdlib>
 #include <limits.h>
 #include "TempControl.h"
 
@@ -377,9 +378,10 @@ temperature multiplyFactorTemperatureDiff(temperature factor, temperature b)
  */
 double tempToDouble(long_temperature rawTemp, uint8_t numDecimals) {
   char tempString[Config::TempFormat::bufferLen];
-  String temp(tempToString(tempString, rawTemp, numDecimals, Config::TempFormat::bufferLen));
-  temp.trim();
-  return temp.toDouble();
+  tempToString(tempString, rawTemp, numDecimals, Config::TempFormat::bufferLen);
+  const char *start = tempString;
+  while (*start == ' ') start++;
+  return strtod(start, nullptr);
 }
 
 /**
@@ -392,9 +394,10 @@ double tempToDouble(long_temperature rawTemp, uint8_t numDecimals) {
  */
 double tempDiffToDouble(long_temperature rawTempDiff, uint8_t numDecimals) {
     char tempString[Config::TempFormat::bufferLen];
-    String temp(tempDiffToString(tempString, rawTempDiff, numDecimals, Config::TempFormat::bufferLen));
-    temp.trim();
-    return temp.toDouble();
+    tempDiffToString(tempString, rawTempDiff, numDecimals, Config::TempFormat::bufferLen);
+    const char *start = tempString;
+    while (*start == ' ') start++;
+    return strtod(start, nullptr);
 }
 
 /**
@@ -407,7 +410,8 @@ double tempDiffToDouble(long_temperature rawTempDiff, uint8_t numDecimals) {
  */
 double fixedPointToDouble(long_temperature rawFixedPoint, uint8_t numDecimals) {
     char tempString[Config::TempFormat::bufferLen];
-    String temp(fixedPointToString(tempString, rawFixedPoint, numDecimals, Config::TempFormat::bufferLen));
-    temp.trim();
-    return temp.toDouble();
+    fixedPointToString(tempString, rawFixedPoint, numDecimals, Config::TempFormat::bufferLen);
+    const char *start = tempString;
+    while (*start == ' ') start++;
+    return strtod(start, nullptr);
 }

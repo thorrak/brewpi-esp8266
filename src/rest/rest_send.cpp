@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <string>
 #include <ctime>
 // #define LCBURL_MDNS
 // #include <LCBUrl.h>
@@ -81,12 +82,12 @@ void restHandler::process() {
     send_full_config();
 }
 
-sendResult restHandler::send_json_str(String &payload, const char *url, httpMethod method) {
-    String response;
+sendResult restHandler::send_json_str(std::string &payload, const char *url, httpMethod method) {
+    std::string response;
     return send_json_str(payload, url, response, method);
 }
 
-sendResult restHandler::send_json_str(String &payload, const char *url, String &response, httpMethod method) {
+sendResult restHandler::send_json_str(std::string &payload, const char *url, std::string &response, httpMethod method) {
     char auth_header[64];
     char userAgent[128];
     int httpResponseCode;
@@ -130,9 +131,12 @@ sendResult restHandler::send_json_str(String &payload, const char *url, String &
                 http.setUserAgent(userAgent);
 
                 // Use whatever method we were passed
-                httpResponseCode = http.sendRequest(httpMethodToString(method), payload);
+                httpResponseCode = http.sendRequest(httpMethodToString(method), payload.c_str());
 
-                response = http.getString();
+                {
+                    String tmp = http.getString();
+                    response = std::string(tmp.c_str(), tmp.length());
+                }
 
                 if (httpResponseCode < HTTP_CODE_OK || httpResponseCode > HTTP_CODE_NO_CONTENT) {
                     Log.error("send_json_str: Send failed (%d): %s. Response:\r\n%s\r\n",
@@ -205,7 +209,7 @@ bool restHandler::get_url(char *url, size_t size, const char *path, const char *
 
 
 bool restHandler::send_bluetooth_crash_report() {
-    String payload;
+    std::string payload;
     {
         JsonDocument doc;
         char guid[20];
@@ -232,7 +236,7 @@ bool restHandler::send_bluetooth_crash_report() {
 
 bool restHandler::send_full_config() {
     char url[256] = "";
-    String payload;
+    std::string payload;
 
     // Only send if the semaphore is set - otherwise return
     if(!send_full_config_ticker)
@@ -313,8 +317,8 @@ bool restHandler::configured_for_fermentrack_rest() {
 
 bool restHandler::register_device() {
     char url[256] = "";
-    String payload;
-    String response;
+    std::string payload;
+    std::string response;
 
     // Only send if the semaphore is set - otherwise return
     if(!register_device_ticker)
@@ -402,9 +406,9 @@ bool restHandler::register_device() {
 
 
 bool restHandler::send_status() {
-    String payload;
+    std::string payload;
     char url[256] = "";
-    String response;
+    std::string response;
 
     // Only send if the semaphore is set - otherwise return
     if(!send_status_ticker)
@@ -432,8 +436,10 @@ bool restHandler::send_status() {
         doc[UpstreamSettingsKeys::apiKey] = upstreamSettings.apiKey;
         doc["lcd"] = lcd;
         doc["temps"] = temps;
-        doc["temp_format"] = String(tempControl.cc.tempFormat);
-        doc["mode"] = String(tempControl.cs.mode);
+        char tempFormatStr[2] = { tempControl.cc.tempFormat, '\0' };
+        char modeStr[2] = { tempControl.cs.mode, '\0' };
+        doc["temp_format"] = tempFormatStr;
+        doc["mode"] = modeStr;
 
 #ifdef HAS_BLUETOOTH
         tilt* grav_sensor = bt_scanner.get_tilt(extendedSettings.tiltGravSensor);
@@ -501,9 +507,9 @@ bool restHandler::send_status() {
 
 
 bool restHandler::get_messages(bool override=false) {
-    String payload = "";
+    std::string payload;
     char url[256] = "";
-    String response;
+    std::string response;
 
     // Only retrieve if we're being forced (via override) or if there are messages on the server
     if(!messages_pending_on_server && !override)
@@ -566,9 +572,9 @@ bool restHandler::get_messages(bool override=false) {
 }
 
 bool restHandler::set_message_processed(const char* message_type_key) {
-    String payload = "";
+    std::string payload;
     char url[256] = "";
-    String response;
+    std::string response;
 
     // We can't delete messages if we're not registered
     if(upstreamSettings.isRegistered() == false)

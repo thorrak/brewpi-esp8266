@@ -6,6 +6,7 @@
 #ifdef ESP8266_WiFi
 
 #include <FS.h>  // Apparently this needs to be first
+#include <string>
 #include "Brewpi.h"
 
 #if defined(ESP8266)
@@ -54,11 +55,10 @@ void apCallback(WiFiManager *myWiFiManager) {
 
 
 // Not sure if this is sufficient to test for validity
-bool isValidmDNSName(const String& mdns_name) {
-//    for (std::string::size_type i = 0; i < mdns_name.length(); ++i) {
-    for (char i : mdns_name) {
+bool isValidmDNSName(const char* mdns_name) {
+    for (size_t i = 0; i < strlen(mdns_name); ++i) {
         // For now, we're just checking that every character in the string is alphanumeric. May need to add more validation here.
-        if (!isalnum(i))
+        if (!isalnum(mdns_name[i]))
             return false;
     }
     return true;
@@ -67,7 +67,7 @@ bool isValidmDNSName(const String& mdns_name) {
 const char * mdns_servicename = "brewpi";
 
 void mdns_reset() {
-    String mdns_id;
+    std::string mdns_id;
     mdns_id = eepromManager.fetchmDNSName();
 
     MDNS.end();  // TODO - Determine if we still need to do this, given the addition of mDNS.update() to the loop
@@ -104,7 +104,7 @@ void onStationConnected(const WiFiEventSoftAPModeStationConnected& evt) {
 #endif
 
 void initialize_wifi() {
-    String mdns_id;
+    std::string mdns_id;
     WiFiManager wifiManager;
 
     display.clear();
@@ -118,7 +118,7 @@ void initialize_wifi() {
     WiFi.setOutputPower(20.5);  // Max transmit power
 #endif
 
-    wifiManager.setHostname(mdns_id);        // Allow DHCP to get proper name
+    wifiManager.setHostname(mdns_id.c_str());        // Allow DHCP to get proper name
     wifiManager.setWiFiAPChannel(1);         // Pick the most common channel, safe for all countries
     // Not sure if wm.SetCleanConnect breaks the hack we have below for the race condition - no reason to test it.
     // wifiManager.setCleanConnect(true);       // Always disconnect before connecting
