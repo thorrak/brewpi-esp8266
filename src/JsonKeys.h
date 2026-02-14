@@ -147,6 +147,7 @@ constexpr auto upstreamPort = "upstreamPort";
 constexpr auto deviceID = "deviceID";
 constexpr auto username = "username";
 constexpr auto apiKey = "apiKey";
+constexpr auto deviceName = "name";
 constexpr auto upstreamRegistrationError = "upstreamRegistrationError";
 constexpr auto messageID = "messageID";
 constexpr auto guid = "guid";

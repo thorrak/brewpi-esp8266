@@ -38,4 +38,3 @@ The About Controller page allows you to see the controller's firmware version, t
 ## Technical Notes
 
 The BrewPi-ESP front end is written in JavaScript + Vue. The source files for the interface are saved to a [separate repository on GitHub](https://github.com/thorrak/brewpi_esp_ui) and are governed by a different license from BrewPi-ESP. The front end primarily speaks to the controller via a number of JSON api endpoints that were designed specifically for this purpose. Please be aware that these endpoints are not expected to remain static between firmware versions, and _will_ change without notice.
-s

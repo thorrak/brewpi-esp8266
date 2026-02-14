@@ -141,6 +141,19 @@ bool processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUpstr
         }
     }
 
+    // Device Name (optional, only used during registration)
+    if(json[UpstreamSettingsKeys::deviceName].is<const char*>()) {
+        if (strlen(json[UpstreamSettingsKeys::deviceName]) >= sizeof(rest_handler.pendingDeviceName)) {
+            Log.warning(F("Settings update error, [name]:(%s) too long.\r\n"), json[UpstreamSettingsKeys::deviceName].as<const char*>());
+            failCount++;
+        } else {
+            strlcpy(rest_handler.pendingDeviceName, json[UpstreamSettingsKeys::deviceName].as<const char*>(), sizeof(rest_handler.pendingDeviceName));
+            Log.notice(F("Settings update, [name]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::deviceName].as<const char*>());
+        }
+    } else {
+        // No name provided - clear any pending name
+        rest_handler.pendingDeviceName[0] = '\0';
+    }
 
     // Save
     if (failCount) {
@@ -226,7 +239,7 @@ void httpServer::processQueuedActions() {
         config_reset_requested = false;
     }
 
-    // Process WiFi/connection reset (this will restart, so do it last among resets)
+    // Process WiFi/connection reset (this will also restart)
     if(wifi_reset_requested) {
         Log.notice(F("Processing WiFi reset request\r\n"));
         delay(500);  // Need to give the response time to be sent/processed
@@ -237,7 +250,6 @@ void httpServer::processQueuedActions() {
         WiFi.disconnect(false, true);
         delay(500);
         ESP.restart();
-        // Note: Code below this won't execute after restart
     }
 
     // Process simple restart last (if no wifi_reset was requested)
@@ -245,7 +257,6 @@ void httpServer::processQueuedActions() {
         Log.notice(F("Processing restart request\r\n"));
         delay(500);  // Need to give the response time to be sent/processed
         ESP.restart();
-        // Note: Code below this won't execute after restart
     }
 }
 

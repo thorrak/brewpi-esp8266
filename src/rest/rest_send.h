@@ -115,6 +115,8 @@ public:
 
     bool trigger_unregister_device;
 
+    char pendingDeviceName[64];  // Temporary storage for device name during registration
+
     restHandler();
     void init();
     bool configured_for_fermentrack_rest();

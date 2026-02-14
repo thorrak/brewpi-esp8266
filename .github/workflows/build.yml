@@ -6,8 +6,6 @@ on:
       - v16
       - v17_glycol
       - master
-      - esp_ow_lib_gh
-      - v16_ow_change
     # tags:
     #   - "v*"
   # pull_request:
