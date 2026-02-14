@@ -18,6 +18,9 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 #ifndef ESP8266
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #include "Brewpi.h"
 #include "OneWireTempSensor.h"
 #include "EspDS18B20.h"
@@ -163,7 +166,7 @@ bool OneWireTempSensor::requestConversion() {
       setConnected(true);
       return true;
     }
-    delay(50);
+    vTaskDelay(pdMS_TO_TICKS(50));
   }
   return false;
 }
@@ -244,7 +247,7 @@ temperature OneWireTempSensor::readTempWithRetries(uint8_t attempts) {
     if (ds18b20_get_temperature_raw(m_sensor, &temp) == ESP_OK) {
       return temp;
     }
-    delay(50);
+    vTaskDelay(pdMS_TO_TICKS(50));
   }
   return DEVICE_DISCONNECTED_RAW;
 }

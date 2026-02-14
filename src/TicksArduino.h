@@ -23,16 +23,18 @@
 #ifdef ARDUINO
 
 #include "Brewpi.h"
+#include <esp_timer.h>
 
 /*
  * The Ticks class provides the time period since the device was powered up.
+ * Uses esp_timer_get_time() (microsecond resolution) instead of Arduino millis().
  */
 class HardwareTicks {
 public:
-	ticks_millis_t millis() { return ::millis(); }
-	ticks_micros_t micros() { return ::micros(); }	
+	ticks_millis_t millis() { return (unsigned long)(esp_timer_get_time() / 1000ULL); }
+	ticks_micros_t micros() { return (unsigned long)(esp_timer_get_time()); }
 	ticks_seconds_t seconds();
-		
+
 	ticks_seconds_t timeSince(ticks_seconds_t timeStamp);
 };
 

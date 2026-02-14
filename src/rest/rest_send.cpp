@@ -5,6 +5,8 @@
 // #define LCBURL_MDNS
 // #include <LCBUrl.h>
 #include <ArduinoLog.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 #include "rest_send.h"
 #include "http_server.h"
@@ -75,7 +77,7 @@ sendResult restHandler::send_json_str(String &payload, const char *url, String &
 
 
     if (WiFi.status() != WL_CONNECTED) {
-        Log.warning(F("send_json_str: Wifi not connected, skipping send.\r\n"));
+        Log.warning("send_json_str: Wifi not connected, skipping send.\r\n");
         send_lock = false;
         return sendResult::retry;
     }
@@ -84,9 +86,9 @@ sendResult restHandler::send_json_str(String &payload, const char *url, String &
 
     // snprintf(auth_header, sizeof(auth_header), "token %s", config.secret);
    
-    Log.info(F("send_json_str: Sending %s to %s\r\n"), payload.c_str(), url);
+    Log.info("send_json_str: Sending %s to %s\r\n", payload.c_str(), url);
 
-    yield();  // Yield before we lock up the radio
+    vTaskDelay(pdMS_TO_TICKS(1));  // Yield before we lock up the radio
 
     // TODO - Determine if we can get rid of the call to new
     // WiFiClientSecure *client = new WiFiClientSecure;
@@ -104,8 +106,8 @@ sendResult restHandler::send_json_str(String &payload, const char *url, String &
             http.setReuse(false);
 
             if (http.begin(client, url)) {
-                http.addHeader(F("Content-Type"), F("application/json"));
-                // http.addHeader(F("Authorization"), auth_header);
+                http.addHeader("Content-Type", "application/json");
+                // http.addHeader("Authorization", auth_header);
                 http.setUserAgent(userAgent);
 
                 // Use whatever method we were passed
@@ -118,20 +120,20 @@ sendResult restHandler::send_json_str(String &payload, const char *url, String &
                         httpResponseCode,
                         http.errorToString(httpResponseCode).c_str(),
                         http.getString().c_str());
-                    // Log.error(F("send_json_str: Send failed (%d): %s. Response:\r\n%s\r\n"),
+                    // Log.error("send_json_str: Send failed (%d): %s. Response:\r\n%s\r\n",
                     //     httpResponseCode,
                     //     http.errorToString(httpResponseCode).c_str(),
                     //     http.getString().c_str());
                     result = sendResult::failure;
                 } else {
-                    Log.info(F("send_json_str: success!\r\n"));
-                    // Log.verbose(F("send_json_str: Response:\r\n%s\r\n"),
+                    Log.info("send_json_str: success!\r\n");
+                    // Log.verbose("send_json_str: Response:\r\n%s\r\n",
                     //     http.getString().c_str());
                     result = sendResult::success;
                 }
                 http.end();
             } else {
-                Log.error(F("send_json_str: Unable to create connection\r\n"));
+                Log.error("send_json_str: Unable to create connection\r\n");
                 result = sendResult::failure;
             }
         }
@@ -145,10 +147,10 @@ sendResult restHandler::send_json_str(String &payload, const char *url, String &
 
 bool restHandler::get_url(char *url, size_t size, const char *path) {
     if(strlen(upstreamSettings.upstreamHost) <= 3) {
-        Log.error(F("get_url: No upstream host configured, should skip send.\r\n"));
+        Log.error("get_url: No upstream host configured, should skip send.\r\n");
         return false;
     } else if(upstreamSettings.upstreamPort <= 0 || upstreamSettings.upstreamPort > 65535) {
-        Log.error(F("get_url: No upstream port configured, should skip send.\r\n"));
+        Log.error("get_url: No upstream port configured, should skip send.\r\n");
         return false;
     }
 

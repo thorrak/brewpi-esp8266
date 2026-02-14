@@ -115,7 +115,7 @@
                        customHandler(doc);
  
                        // // Print the contents of doc to the serial console
-                       // Serial.println(F("Generated JSON:"));
+                       // Serial.println("Generated JSON:");
                        // serializeJsonPretty(doc, Serial); // Pretty print for easier reading
                        // Serial.println(); // Add a newline for better formatting
  

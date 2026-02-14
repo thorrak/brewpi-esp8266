@@ -1,3 +1,6 @@
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #include "ESP_BP_WiFi.h"
 
 #ifdef ESP8266_WiFi
@@ -15,6 +18,8 @@
 #include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 #include <esp_wifi.h>
 #include <Ticks.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 #endif
 
 #include "Version.h" 			// Used in mDNS announce string
@@ -158,7 +163,7 @@ void initialize_wifi() {
         } else {
             // If the mDNS name is invalid, reset the WiFi configuration and restart the device
             WiFi.disconnect(true);
-            delay(500);
+            vTaskDelay(pdMS_TO_TICKS(500));
             handleReset();
         }
     }
@@ -178,14 +183,14 @@ void display_connect_info_and_create_callback() {
     stationConnectedHandler = WiFi.onSoftAPModeStationConnected(&onStationConnected);
 #endif
     display.printWiFi();  // Print the WiFi info (mDNS name & IP address)
-    delay(5000);
+    vTaskDelay(pdMS_TO_TICKS(5000));
 }
 
 
 void wifi_connect_clients() {
     static unsigned long last_connection_check = 0;
 
-    yield();
+    vTaskDelay(pdMS_TO_TICKS(1));
     if(WiFi.status() == WL_CONNECTED) {
         // We only accept clients if we do not have a REST target defined
         if(rest_handler.configured_for_fermentrack_rest()) {
@@ -220,7 +225,7 @@ void wifi_connect_clients() {
 #endif
         }
     }
-    yield();
+    vTaskDelay(pdMS_TO_TICKS(1));
 
     // Additionally, every 3 minutes either attempt to reconnect WiFi, or rebroadcast mdns info
     if(ticks.millis() - last_connection_check >= (3 * 60 * 1000)) {
@@ -228,7 +233,7 @@ void wifi_connect_clients() {
         if(WiFi.status() != WL_CONNECTED) {
             // If we are disconnected, reconnect. On an ESP8266 this will ALSO trigger mdns_reset due to the callback
             // but on the ESP32, this means that we'll have to wait an additional 3 minutes for mdns to come back up
-            delay(150);
+            vTaskDelay(pdMS_TO_TICKS(150));
             WiFi.begin();
         } else {
             // #defining this out for now as there is a memory leak caused by this
@@ -237,7 +242,7 @@ void wifi_connect_clients() {
 #endif
         }
     }
-    yield();
+    vTaskDelay(pdMS_TO_TICKS(1));
 }
 
 

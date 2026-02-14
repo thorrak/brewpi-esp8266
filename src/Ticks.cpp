@@ -18,6 +18,9 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #include "Brewpi.h"
 #include "Ticks.h"
 
@@ -41,17 +44,19 @@ ticks_seconds_t ExternalTicks::timeSince(ticks_seconds_t previousTime){
 
 #ifdef ARDUINO
 
+#include <esp_timer.h>
+
 // return time that has passed since timeStamp, take overflow into account
 ticks_seconds_t HardwareTicks::timeSince(ticks_seconds_t previousTime){
 	ticks_seconds_t currentTime = ticks.seconds();
 	return ::timeSince(currentTime, previousTime);
 }
 
-ticks_seconds_t HardwareTicks::seconds() { return ::millis()/1000; }
-	
+ticks_seconds_t HardwareTicks::seconds() { return (unsigned long)(esp_timer_get_time() / 1000000ULL); }
 
-void HardwareDelay::millis(uint16_t millis) { ::delay(millis); }
-	
+
+void HardwareDelay::millis(uint16_t millis) { vTaskDelay(pdMS_TO_TICKS(millis)); }
+
 void HardwareDelay::seconds(uint16_t seconds)	{ millis(seconds<<10); }
 
 #endif

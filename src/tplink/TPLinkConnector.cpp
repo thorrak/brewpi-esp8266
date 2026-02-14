@@ -8,8 +8,8 @@
 #include <WiFi.h>
 #endif
 #include <WiFiUdp.h>
-
-
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 #include <string>
 #include <stdexcept>
@@ -181,7 +181,7 @@ std::string TPLinkConnector::receive_udp(IPAddress *udp_ip) {
         packet_cppstr = decrypt(packet_cppstr).c_str();
     }
 
-    yield();
+    vTaskDelay(pdMS_TO_TICKS(1));
     if(udp_ip != nullptr)
         *udp_ip = udp.remoteIP();
     return packet_cppstr;

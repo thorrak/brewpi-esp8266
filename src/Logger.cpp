@@ -34,8 +34,8 @@ void Logger::logMessageVaArg(const char type, const LOG_ID_TYPE errorID, const c
   JsonDocument doc;
 
 	va_list args;
-  doc[F("logType")] = String(type);
-  doc[F("logID")] = errorID;
+  doc["logType"] = String(type);
+  doc["logID"] = errorID;
   JsonArray varArray = doc["V"].to<JsonArray>();
 
 	va_start (args, varTypes);

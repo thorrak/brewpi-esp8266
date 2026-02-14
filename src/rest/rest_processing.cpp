@@ -1,3 +1,6 @@
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ctime>
@@ -5,6 +8,7 @@
 // #define LCBURL_MDNS
 // #include <LCBUrl.h>
 #include <ArduinoLog.h>
+#include <esp_system.h>
 
 #include "rest_send.h"
 #include "http_server.h"
@@ -109,8 +113,8 @@ bool restHandler::reset_connection() {
 
     // Then disconnect WiFi and restart
     WiFi.disconnect(false, true);
-    delay(500);
-    ESP.restart();
+    vTaskDelay(pdMS_TO_TICKS(500));
+    esp_restart();
     return true;
 }
 
@@ -119,7 +123,7 @@ bool restHandler::restart_device() {
     messages.restart_device = false;
     // Let the upstream know we processed this before we actually process it (since we'll (hopefully) disconnect)
     set_message_processed(RestMessagesKeys::restart_device);
-    ESP.restart();
+    esp_restart();
     return true;
 }
 
@@ -187,7 +191,7 @@ bool restHandler::process_updated_settings() {
         }
 
         if((doc["success"].is<bool>() && doc["success"].as<bool>() == false) || !doc["config"].is<JsonObject>()) {
-            Log.warning(F("Error retrieving full config: "));
+            Log.warning("Error retrieving full config: ");
             Log.warningln(doc["message"].as<String>());
             return false;
         }

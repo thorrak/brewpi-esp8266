@@ -19,6 +19,9 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #include "CommandProcessor.h"
 #include "Brewpi.h"
 #include "Display.h"
@@ -302,8 +305,8 @@ void CommandProcessor::parseDeviceDefinition() {
  * \ingroup commands
  */
 void CommandProcessor::resetWiFi() { 
-  WiFi.disconnect(true); 
-  delay(500);
+  WiFi.disconnect(true);
+  vTaskDelay(pdMS_TO_TICKS(500));
   handleReset();
 }
 

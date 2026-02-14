@@ -1,3 +1,6 @@
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #include <Arduino.h>
 #include <WiFiUdp.h>
 #include "TPLinkPlug.h"
@@ -123,7 +126,7 @@ void TPLinkPlug::set_countdown(uint8_t act, uint16_t secs) {
 
     // Before we send the command to set a new countdown, clear any countdown that may already exist
     clear_countdown();
-    delay(50);
+    vTaskDelay(pdMS_TO_TICKS(50));
 
     send_payload(command, false);
     return;

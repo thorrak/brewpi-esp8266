@@ -14,6 +14,7 @@
 #elif defined(ESP32)
 #include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 #include <esp_wifi.h>
+#include <esp_timer.h>
 #endif
 
 
@@ -58,8 +59,8 @@ void TPLinkScanner::process_udp_incoming() {
     IPAddress udp_ip;
     std::string incoming_packet;
 
-    uint64_t scan_until = millis() + (5 * 1000); // Read replies for 5 seconds at most 
-    while(millis() < scan_until) {
+    uint64_t scan_until = (unsigned long)(esp_timer_get_time() / 1000ULL) + (5 * 1000); // Read replies for 5 seconds at most
+    while((unsigned long)(esp_timer_get_time() / 1000ULL) < scan_until) {
         incoming_packet = tplink_connector.receive_udp(&udp_ip);
 
         if(incoming_packet.length() <= 0)
@@ -161,14 +162,14 @@ void TPLinkScanner::scan_and_refresh() {
     if(!WiFi.isConnected())
         return;
 
-    if(millis() > (last_discover_at + (TPLINK_DISCOVER_EVERY * 1000))) {
+    if((unsigned long)(esp_timer_get_time() / 1000ULL) > (last_discover_at + (TPLINK_DISCOVER_EVERY * 1000))) {
         tp_link_scanner.send_discover();
-        last_discover_at = millis();
+        last_discover_at = (unsigned long)(esp_timer_get_time() / 1000ULL);
     }
 
-    if(millis() > (last_refresh_at + (TPLINK_SAFETY_TIMEOUT_REFRESH * 1000))) {
+    if((unsigned long)(esp_timer_get_time() / 1000ULL) > (last_refresh_at + (TPLINK_SAFETY_TIMEOUT_REFRESH * 1000))) {
         tp_link_scanner.send_refresh();
-        last_refresh_at = millis();
+        last_refresh_at = (unsigned long)(esp_timer_get_time() / 1000ULL);
     }
 
     tp_link_scanner.process_udp_incoming();

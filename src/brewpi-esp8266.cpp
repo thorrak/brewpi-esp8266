@@ -1,10 +1,14 @@
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #ifdef ESP8266
 #include <FS.h>  // Apparently this needs to be first
 #include <LittleFS.h>
 #include <ESP8266mDNS.h>
 #elif defined(ESP32)
 #include <FS.h>  // Apparently this needs to be first
+#include <esp_timer.h>
 #endif
 
 #include <ArduinoLog.h>
@@ -34,6 +38,8 @@
 #include "http_server.h"
 
 #include "rest/rest_send.h"
+#include <esp_system.h>
+#include <esp_heap_caps.h>
 
 #if BREWPI_SIMULATE
 #include "Simulator.h"
@@ -79,8 +85,8 @@ ValueActuator alarm_actuator;
 #ifdef ESP32
 void printMem() {
     char buf[256];
-    const uint32_t free = ESP.getFreeHeap();
-    const uint32_t max = ESP.getMaxAllocHeap();
+    const uint32_t free = esp_get_free_heap_size();
+    const uint32_t max = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
     const uint8_t frag = 100 - (max * 100) / free;
     sprintf(buf, "Free Heap: %d, Largest contiguous block: %d, Frag: %d%%\r\n", free, max, frag );
     // PiLink.print(F(), free, max, frag);
@@ -93,15 +99,15 @@ void printMem() {
  */
 void handleReset()
 {
-    // The asm volatile method doesn't work on ESP8266. Instead, use ESP.restart
-    ESP.restart();
+    // The asm volatile method doesn't work on ESP8266. Instead, use esp_restart
+    esp_restart();
 }
 
 // For ArduinoLog support
 void printTimestamp(Print *_logOutput)
 {
     char c[12];
-    sprintf(c, "%10lu ", millis());
+    sprintf(c, "%10lu ", (unsigned long)(esp_timer_get_time() / 1000ULL));
     _logOutput->print(c);
     Serial.flush();
 }
@@ -131,7 +137,7 @@ void setup()
     Serial.flush();
     Log.begin(ARDUINO_LOG_LEVEL, &Serial, true);
     Log.setPrefix(printPrefix);
-    Log.notice(F("Serial logging started at %l.\r\n"), Config::PiLink::serialSpeed);
+    Log.notice("Serial logging started at %l.\r\n", Config::PiLink::serialSpeed);
 #endif
 
 #endif
@@ -168,7 +174,7 @@ void setup()
   // TODO - Test how this reacts when WiFi is not available
   tp_link_scanner.init();
   tp_link_scanner.send_discover();
-  delay(200); // This should be very quick
+  vTaskDelay(pdMS_TO_TICKS(200)); // This should be very quick
   tp_link_scanner.process_udp_incoming();
 #endif
 
@@ -176,7 +182,7 @@ void setup()
     bt_scanner.init();
     bt_scanner.scan();
     display.printBluetoothStartup();  // Alert the user about the startup delay
-    delay(10000);
+    vTaskDelay(pdMS_TO_TICKS(10000));
 #endif
 
 	logDebug("started");
@@ -208,7 +214,7 @@ void setup()
 #ifdef ENABLE_HTTP_INTERFACE
   // Wait for WiFi to fully stabilize after initial connection from captive portal
   if(WiFi.status() == WL_CONNECTED) {
-    delay(500);
+    vTaskDelay(pdMS_TO_TICKS(500));
   }
   http_server.init();     // Initialize the web server
 #endif

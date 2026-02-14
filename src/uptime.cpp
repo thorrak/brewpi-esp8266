@@ -3,6 +3,7 @@
 //
 
 #include "uptime.h"
+#include <esp_timer.h>
 
 static int refresh = UPTIME_REFRESH * 1000;
 static unsigned long uptimeNow;
@@ -15,20 +16,20 @@ static int mills;
 void getNow()
 {
     // Set the uptime values if refresh time is expired
-    if ((int)(millis() - uptimeNow) > refresh)
+    if ((int)((unsigned long)(esp_timer_get_time() / 1000ULL) - uptimeNow) > refresh)
     {
         setValues();
     }
     // Reset timer for another period to avoid a really unlikely situation
     // where the timer expires in between grabbing two parts
-    uptimeNow = millis();
+    uptimeNow = (unsigned long)(esp_timer_get_time() / 1000ULL);
 }
 
 void setValues()
 {
     // Call this only by getNow()
     // Using refr = true forces recalculation
-    uptimeNow = millis();
+    uptimeNow = (unsigned long)(esp_timer_get_time() / 1000ULL);
     days = uptimeDays(true);
     hours = uptimeHours(true);
     minutes = uptimeMinutes(true);

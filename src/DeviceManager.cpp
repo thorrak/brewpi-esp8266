@@ -18,6 +18,9 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #include "Brewpi.h"
 #include "BrewpiStrings.h"
 #include "DeviceManager.h"
@@ -185,7 +188,7 @@ void* DeviceManager::createDevice(DeviceConfig& config, DeviceType dt)
 #else
 		case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
 		case DEVICE_HARDWARE_BLUETOOTH_TILT:
-		Log.error(F("Bluetooth not supported"));
+		Log.error("Bluetooth not supported");
 			return nullptr;
 #endif
 
@@ -194,7 +197,7 @@ void* DeviceManager::createDevice(DeviceConfig& config, DeviceType dt)
 			return new TPLinkActuator(config.hw.tplink_mac, config.hw.tplink_child_id);
 #else
 		case DEVICE_HARDWARE_TPLINK_SWITCH:
-		Log.error(F("TPLink not supported"));
+		Log.error("TPLink not supported");
 			return nullptr;
 #endif
 
@@ -1015,7 +1018,7 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 			}
 		}
 	}  // end pin iteration
-	delay(100); // brief delay between scans
+	vTaskDelay(pdMS_TO_TICKS(100)); // brief delay between scans
 	}  // end scan iteration
 #endif
 }

@@ -1,4 +1,7 @@
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #include "Brewpi.h"
 #include "Pins.h"
 #include "ActuatorArduinoPin.h"
@@ -15,7 +18,7 @@ void DigitalPinActuator::setActive(bool active_setting) {
     if (oldActive != active && extendedSettings.resetScreenOnPin) {
         // We toggled one of the pins, which can cause issues for the display. 
         // Delay slightly to let everything settle down, then reinit the display
-        delay(100);
+        vTaskDelay(pdMS_TO_TICKS(100));
         display.reset();
         display.printAll();
     }

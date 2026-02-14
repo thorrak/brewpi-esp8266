@@ -24,6 +24,7 @@
 #include "Display.h"
 #include "PiLink.h"
 #include "CommandProcessor.h"
+#include <esp_timer.h>
 
 #if BREWPI_SIMULATE
 
@@ -36,18 +37,18 @@ uint8_t printTempInterval = 5;
 void setRunFactor(temperature factor)
 {
 	funFactor = factor>>9;		// for now whole values only
-	lastUpdate = ::millis();
+	lastUpdate = (unsigned long)(esp_timer_get_time() / 1000ULL);
 }
 
 void updateSimulationTicks()
 {
 #if BREWPI_EMULATE
-	// in the avr simulator (we call emulator to try to distinguish), ticks take forever. 1 second takes many minutes if 
+	// in the avr simulator (we call emulator to try to distinguish), ticks take forever. 1 second takes many minutes if
 	// emulating waiting for millis() to increment.
 	ticks.incMillis(1000);
 #else
 	if (funFactor) {
-		unsigned long now = ::millis();
+		unsigned long now = (unsigned long)(esp_timer_get_time() / 1000ULL);
 		int interval = 1000/funFactor;
 		if (interval>0) {
 			if ((now-lastUpdate)>=uint16_t(interval)) {
@@ -92,7 +93,7 @@ void simulateLoop()
 			updateCount = 0;
 		}
 		static unsigned long lastDisplayUpdate = 0;  // update the display every second
-		if ((::millis()-lastDisplayUpdate)>=1000 && (lastDisplayUpdate+=1000))
+		if (((unsigned long)(esp_timer_get_time() / 1000ULL)-lastDisplayUpdate)>=1000 && (lastDisplayUpdate+=1000))
 		#endif
 		{
 			// update the lcd for the chamber being displayed
@@ -107,7 +108,7 @@ void simulateLoop()
 	}
 	#if !BREWPI_EMULATE
 	static unsigned long lastCheckSerial = 0;
-	if ((::millis()-lastCheckSerial)>=1000 && (lastCheckSerial=::millis()>0))	// only listen if 1s passed since last time
+	if (((unsigned long)(esp_timer_get_time() / 1000ULL)-lastCheckSerial)>=1000 && (lastCheckSerial=(unsigned long)(esp_timer_get_time() / 1000ULL)>0))	// only listen if 1s passed since last time
 	#endif
 	//listen for incoming serial connections while waiting to update
 	CommandProcessor::receiveCommand();

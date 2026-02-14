@@ -1,5 +1,8 @@
 #ifdef ENABLE_HTTP_INTERFACE
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #include <Arduino.h>
 #include <ArduinoLog.h>
 #include <ArduinoJson.h>
@@ -7,6 +10,8 @@
 #include <ESPAsyncWebServer.h>
 
 #include "ESPEepromAccess.h"  // Defines FILESYSTEM (and includes the approprite headers)
+#include <esp_system.h>
+#include <esp_heap_caps.h>
 
 #include "uptime.h"
 #include "resetreasons.h"
@@ -41,16 +46,16 @@ bool processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUpstr
             // The user unset the upstream host - Clear it from memory
             upstreamSettings.upstreamHost[0] = '\0';
             upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
-            Log.notice(F("Settings update, [upstreamHost]: unset.\r\n"));
+            Log.notice("Settings update, [upstreamHost]: unset.\r\n");
         } else if (strlen(json[UpstreamSettingsKeys::upstreamHost]) >= 128 ) {
-            Log.warning(F("Settings update error, [upstreamHost]:(%s) not valid.\r\n"), json[UpstreamSettingsKeys::upstreamHost].as<const char*>());
+            Log.warning("Settings update error, [upstreamHost]:(%s) not valid.\r\n", json[UpstreamSettingsKeys::upstreamHost].as<const char*>());
             failCount++;
         } else {
             // Valid - Update
             if(strcmp(json[UpstreamSettingsKeys::upstreamHost], upstreamSettings.upstreamHost) != 0) {
                 strlcpy(upstreamSettings.upstreamHost, json[UpstreamSettingsKeys::upstreamHost].as<const char*>(), 128);
                 upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
-                Log.notice(F("Settings update, [upstreamHost]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::upstreamHost].as<const char*>());
+                Log.notice("Settings update, [upstreamHost]:(%s) applied.\r\n", json[UpstreamSettingsKeys::upstreamHost].as<const char*>());
                 saveSettings = true;
             }
         }
@@ -80,14 +85,14 @@ bool processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUpstr
     //     if (strlen(json[UpstreamSettingsKeys::deviceID]) <= 0) {
     //         // The user unset the upstream host - Clear it from memory
     //         upstreamSettings.deviceID[0] = '\0';
-    //         Log.notice(F("Settings update, [deviceID]: unset.\r\n"));
+    //         Log.notice("Settings update, [deviceID]: unset.\r\n");
     //     } else if (strlen(json[UpstreamSettingsKeys::deviceID]) >= 40 ) {
-    //         Log.warning(F("Settings update error, [deviceID]:(%s) not valid.\r\n"), json[UpstreamSettingsKeys::deviceID].as<const char*>());
+    //         Log.warning("Settings update error, [deviceID]:(%s) not valid.\r\n", json[UpstreamSettingsKeys::deviceID].as<const char*>());
     //         failCount++;
     //     } else {
     //         if(strcmp(json[UpstreamSettingsKeys::deviceID], upstreamSettings.deviceID) != 0) {
     //             strlcpy(upstreamSettings.deviceID, json[UpstreamSettingsKeys::deviceID].as<const char*>(), 40);
-    //             Log.notice(F("Settings update, [deviceID]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::deviceID].as<const char*>());
+    //             Log.notice("Settings update, [deviceID]:(%s) applied.\r\n", json[UpstreamSettingsKeys::deviceID].as<const char*>());
     //             saveSettings = true;
     //         }
     //     }
@@ -100,16 +105,16 @@ bool processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUpstr
             // The user unset the upstream host - Clear it from memory
             upstreamSettings.username[0] = '\0';
             upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
-            Log.notice(F("Settings update, [username]: unset.\r\n"));
+            Log.notice("Settings update, [username]: unset.\r\n");
         } else if (strlen(json[UpstreamSettingsKeys::username]) >= 128 ) {
-            Log.warning(F("Settings update error, [username]:(%s) not valid.\r\n"), json[UpstreamSettingsKeys::username].as<const char*>());
+            Log.warning("Settings update error, [username]:(%s) not valid.\r\n", json[UpstreamSettingsKeys::username].as<const char*>());
             failCount++;
         } else {
             // Valid - Update
             if(strcmp(json[UpstreamSettingsKeys::username], upstreamSettings.username) != 0) {
                 strlcpy(upstreamSettings.username, json[UpstreamSettingsKeys::username].as<const char*>(), 128);
                 upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
-                Log.notice(F("Settings update, [username]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::username].as<const char*>());
+                Log.notice("Settings update, [username]:(%s) applied.\r\n", json[UpstreamSettingsKeys::username].as<const char*>());
                 saveSettings = true;
             }
         }
@@ -122,16 +127,16 @@ bool processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUpstr
             // The user unset the upstream host - Clear it from memory
             upstreamSettings.apiKey[0] = '\0';
             upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
-            Log.notice(F("Settings update, [apiKey]: unset.\r\n"));
+            Log.notice("Settings update, [apiKey]: unset.\r\n");
         } else if (strlen(json[UpstreamSettingsKeys::apiKey]) >= 40 ) {
-            Log.warning(F("Settings update error, [apiKey]:(%s) not valid.\r\n"), json[UpstreamSettingsKeys::apiKey].as<const char*>());
+            Log.warning("Settings update error, [apiKey]:(%s) not valid.\r\n", json[UpstreamSettingsKeys::apiKey].as<const char*>());
             failCount++;
         } else {
             // Valid - Update
             if(strcmp(json[UpstreamSettingsKeys::apiKey], upstreamSettings.apiKey) != 0) {
                 strlcpy(upstreamSettings.apiKey, json[UpstreamSettingsKeys::apiKey].as<const char*>(), sizeof(upstreamSettings.apiKey));
                 upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
-                Log.notice(F("Settings update, [apiKey]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::apiKey].as<const char*>());
+                Log.notice("Settings update, [apiKey]:(%s) applied.\r\n", json[UpstreamSettingsKeys::apiKey].as<const char*>());
                 saveSettings = true;
             }
         }
@@ -140,11 +145,11 @@ bool processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUpstr
     // Device Name (optional, only used during registration)
     if(json[UpstreamSettingsKeys::deviceName].is<const char*>()) {
         if (strlen(json[UpstreamSettingsKeys::deviceName]) >= sizeof(rest_handler.pendingDeviceName)) {
-            Log.warning(F("Settings update error, [name]:(%s) too long.\r\n"), json[UpstreamSettingsKeys::deviceName].as<const char*>());
+            Log.warning("Settings update error, [name]:(%s) too long.\r\n", json[UpstreamSettingsKeys::deviceName].as<const char*>());
             failCount++;
         } else {
             strlcpy(rest_handler.pendingDeviceName, json[UpstreamSettingsKeys::deviceName].as<const char*>(), sizeof(rest_handler.pendingDeviceName));
-            Log.notice(F("Settings update, [name]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::deviceName].as<const char*>());
+            Log.notice("Settings update, [name]:(%s) applied.\r\n", json[UpstreamSettingsKeys::deviceName].as<const char*>());
         }
     } else {
         // No name provided - clear any pending name
@@ -153,7 +158,7 @@ bool processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUpstr
 
     // Save
     if (failCount) {
-        Log.error(F("Error: Invalid upstream configuration.\r\n"));
+        Log.error("Error: Invalid upstream configuration.\r\n");
     } else {
         if(saveSettings == true) {
             upstreamSettings.storeToFilesystem();
@@ -175,7 +180,7 @@ bool processDeviceUpdateJson(const JsonDocument& json, bool triggerUpstreamUpdat
     {
         // We don't actually parse deactivated, so commenting out the check. If we add it later, we will need to check that we don't need to do
         // shenanigans like we do with invert below to handle all the various ways it can be sent to us.
-        Log.warning(F("Invalid device definition received - missing required keys (c/f/h/b).\r\n"));
+        Log.warning("Invalid device definition received - missing required keys (c/f/h/b).\r\n");
         return 1;
     }
 
@@ -183,7 +188,7 @@ bool processDeviceUpdateJson(const JsonDocument& json, bool triggerUpstreamUpdat
         case DEVICE_HARDWARE_PIN:
 
             if(!json[DeviceDefinitionKeys::pin].is<int>() || !(json[DeviceDefinitionKeys::invert].is<bool>() || json[DeviceDefinitionKeys::invert].is<const char *>() || json[DeviceDefinitionKeys::invert].is<uint8_t>())) {
-                Log.warning(F("Invalid device definition received - missing required keys (p/x).\r\n"));
+                Log.warning("Invalid device definition received - missing required keys (p/x).\r\n");
                 return 1;
             }
             break;
@@ -191,13 +196,13 @@ bool processDeviceUpdateJson(const JsonDocument& json, bool triggerUpstreamUpdat
         case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
         case DEVICE_HARDWARE_BLUETOOTH_TILT:
             if(!json[DeviceDefinitionKeys::address].is<const char*>()) {
-                Log.warning(F("Invalid device definition received - missing required keys (a).\r\n"));
+                Log.warning("Invalid device definition received - missing required keys (a).\r\n");
                 return 1;
             }
             break;
         case DEVICE_HARDWARE_TPLINK_SWITCH:
             if(!json[DeviceDefinitionKeys::address].is<const char*>() || !json[DeviceDefinitionKeys::child_id].is<const char*>()) {
-                Log.warning(F("Invalid device definition received - missing required keys (a).\r\n"));
+                Log.warning("Invalid device definition received - missing required keys (a).\r\n");
                 return 1;
             }
             break;
@@ -226,8 +231,8 @@ void httpServer::processQueuedDeviceDefinition() {
 void httpServer::processQueuedActions() {
     // Process config reset first (before restart)
     if(config_reset_requested) {
-        Log.notice(F("Processing config reset request\r\n"));
-        delay(500);  // Need to give the response time to be sent/processed
+        Log.notice("Processing config reset request\r\n");
+        vTaskDelay(pdMS_TO_TICKS(500));  // Need to give the response time to be sent/processed
         if(eepromManager.initializeEeprom()) {
             logInfo(INFO_EEPROM_INITIALIZED);
             settingsManager.loadSettings();
@@ -237,22 +242,22 @@ void httpServer::processQueuedActions() {
 
     // Process WiFi/connection reset (this will also restart)
     if(wifi_reset_requested) {
-        Log.notice(F("Processing WiFi reset request\r\n"));
-        delay(500);  // Need to give the response time to be sent/processed
+        Log.notice("Processing WiFi reset request\r\n");
+        vTaskDelay(pdMS_TO_TICKS(500));  // Need to give the response time to be sent/processed
         // Reset the upstream settings
         upstreamSettings.setDefaults();
         upstreamSettings.storeToFilesystem();
         // Disconnect WiFi and restart
         WiFi.disconnect(false, true);
-        delay(500);
-        ESP.restart();
+        vTaskDelay(pdMS_TO_TICKS(500));
+        esp_restart();
     }
 
     // Process simple restart last (if no wifi_reset was requested)
     if(restart_requested) {
-        Log.notice(F("Processing restart request\r\n"));
-        delay(500);  // Need to give the response time to be sent/processed
-        ESP.restart();
+        Log.notice("Processing restart request\r\n");
+        vTaskDelay(pdMS_TO_TICKS(500));  // Need to give the response time to be sent/processed
+        esp_restart();
     }
 }
 
@@ -270,17 +275,17 @@ bool processUpdateModeJson(const JsonDocument& json, bool triggerUpstreamUpdate)
                 // Mode is valid - Update
                 if(new_mode != tempControl.getMode()) {
                     tempControl.setMode(new_mode);
-                    Log.notice(F("Settings update, [newMode]:(%c) applied.\r\n"), new_mode);
+                    Log.notice("Settings update, [newMode]:(%c) applied.\r\n", new_mode);
                     saveSettings = true;
                 } else {
-                    Log.notice(F("Settings update, [newMode]:(%c) NOT applied - no change.\r\n"), new_mode);
+                    Log.notice("Settings update, [newMode]:(%c) NOT applied - no change.\r\n", new_mode);
                 }
             } else {
-                Log.warning(F("Settings update error, [newMode]:(%c) not valid.\r\n"), new_mode);
+                Log.warning("Settings update error, [newMode]:(%c) not valid.\r\n", new_mode);
                 failCount++;
             }
         } else {
-            Log.warning(F("Settings update error, [newMode]:(%s) not a valid type.\r\n"), json[ModeUpdateKeys::mode].as<const char*>());
+            Log.warning("Settings update error, [newMode]:(%s) not a valid type.\r\n", json[ModeUpdateKeys::mode].as<const char*>());
             failCount++;
         }
     }
@@ -289,7 +294,7 @@ bool processUpdateModeJson(const JsonDocument& json, bool triggerUpstreamUpdate)
     // Set Point
     if(json[ModeUpdateKeys::setpoint].is<double>()) {
         if(tempControl.getMode() != Modes::fridgeConstant && tempControl.getMode() != Modes::beerConstant && tempControl.getMode() != Modes::beerProfile) {
-            Log.info(F("Settings update error, [setpoint]:(%s) current mode (%c) does not take a setpoint.\r\n"), json[ModeUpdateKeys::setpoint].as<const char*>(), tempControl.getMode());
+            Log.info("Settings update error, [setpoint]:(%s) current mode (%c) does not take a setpoint.\r\n", json[ModeUpdateKeys::setpoint].as<const char*>(), tempControl.getMode());
         } else {
             char modeString[7];
             snprintf(modeString, 7, "%.1f", json[ModeUpdateKeys::setpoint].as<double>());
@@ -303,7 +308,7 @@ bool processUpdateModeJson(const JsonDocument& json, bool triggerUpstreamUpdate)
                 tempControl.setBeerTemp(newTemp);
                 saveSettings = true;
             } else {
-                Log.error(F("Settings update error, [setpoint]:(%s) current mode (%c) does not take a setpoint (should never be reached).\r\n"), modeString, tempControl.getMode());
+                Log.error("Settings update error, [setpoint]:(%s) current mode (%c) does not take a setpoint (should never be reached).\r\n", modeString, tempControl.getMode());
             }
         }
     }
@@ -311,7 +316,7 @@ bool processUpdateModeJson(const JsonDocument& json, bool triggerUpstreamUpdate)
 
     // Save
     if (failCount) {
-        Log.error(F("Error: Invalid upstream configuration.\r\n"));
+        Log.error("Error: Invalid upstream configuration.\r\n");
     } else {
         if(saveSettings == true) {
             // TODO - Force upstream cascade/send
@@ -335,7 +340,7 @@ bool processExtendedSettingsJson(const JsonDocument& json, bool triggerUpstreamU
             saveSettings = true;
         }
     } else {
-        Log.warning(F("Invalid [glycol]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::glycol]);
+        Log.warning("Invalid [glycol]:(%s) received (wrong type).\r\n", json[ExtendedSettingsKeys::glycol]);
         failCount++;
     }
 
@@ -346,7 +351,7 @@ bool processExtendedSettingsJson(const JsonDocument& json, bool triggerUpstreamU
             saveSettings = true;
         }
     } else {
-        Log.warning(F("Invalid [largeTFT]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::largeTFT]);
+        Log.warning("Invalid [largeTFT]:(%s) received (wrong type).\r\n", json[ExtendedSettingsKeys::largeTFT]);
         failCount++;
     }
 
@@ -357,7 +362,7 @@ bool processExtendedSettingsJson(const JsonDocument& json, bool triggerUpstreamU
             saveSettings = true;
         }
     } else {
-        Log.warning(F("Invalid [invertTFT]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::invertTFT]);
+        Log.warning("Invalid [invertTFT]:(%s) received (wrong type).\r\n", json[ExtendedSettingsKeys::invertTFT]);
         failCount++;
     }
 
@@ -368,7 +373,7 @@ bool processExtendedSettingsJson(const JsonDocument& json, bool triggerUpstreamU
             saveSettings = true;
         }
     } else {
-        Log.warning(F("Invalid [resetScreenOnPin]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::resetScreenOnPin]);
+        Log.warning("Invalid [resetScreenOnPin]:(%s) received (wrong type).\r\n", json[ExtendedSettingsKeys::resetScreenOnPin]);
         failCount++;
     }
 
@@ -468,7 +473,7 @@ bool processExtendedSettingsJson(const JsonDocument& json, bool triggerUpstreamU
 
     // Save
     if (failCount) {
-        Log.error(F("Error: Invalid extended settings configuration.\r\n"));
+        Log.error("Error: Invalid extended settings configuration.\r\n");
     } else {
         if(saveSettings == true) {
             extendedSettings.storeToFilesystem();
@@ -497,14 +502,14 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
                 if(tempControl.cc.tempFormat != format) {
                     tempControl.cc.tempFormat = format;
                     saveSettings = true;
-                    Log.notice(F("Settings update, [tempFormat]:(%c) applied.\r\n"), format);
+                    Log.notice("Settings update, [tempFormat]:(%c) applied.\r\n", format);
                 }
             } else {
-                Log.warning(F("Invalid [tempFormat]:(%c) received.\r\n"), format);
+                Log.warning("Invalid [tempFormat]:(%c) received.\r\n", format);
                 failCount++;
             }
         } else {
-            Log.warning(F("Invalid [tempFormat]:(%s) received (wrong length).\r\n"), formatStr);
+            Log.warning("Invalid [tempFormat]:(%s) received (wrong length).\r\n", formatStr);
             failCount++;
         }
     }
@@ -518,7 +523,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
         if(tempControl.cc.tempSettingMin != newTemp) {
             tempControl.cc.tempSettingMin = newTemp;
             saveSettings = true;
-            Log.notice(F("Settings update, [tempSetMin]:(%s) applied.\r\n"), tempStr);
+            Log.notice("Settings update, [tempSetMin]:(%s) applied.\r\n", tempStr);
         }
     }
 
@@ -530,7 +535,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
         if(tempControl.cc.tempSettingMax != newTemp) {
             tempControl.cc.tempSettingMax = newTemp;
             saveSettings = true;
-            Log.notice(F("Settings update, [tempSetMax]:(%s) applied.\r\n"), tempStr);
+            Log.notice("Settings update, [tempSetMax]:(%s) applied.\r\n", tempStr);
         }
     }
 
@@ -543,7 +548,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
         if(tempControl.cc.Kp != newVal) {
             tempControl.cc.Kp = newVal;
             saveSettings = true;
-            Log.notice(F("Settings update, [Kp]:(%s) applied.\r\n"), valStr);
+            Log.notice("Settings update, [Kp]:(%s) applied.\r\n", valStr);
         }
     }
 
@@ -555,7 +560,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
         if(tempControl.cc.Ki != newVal) {
             tempControl.cc.Ki = newVal;
             saveSettings = true;
-            Log.notice(F("Settings update, [Ki]:(%s) applied.\r\n"), valStr);
+            Log.notice("Settings update, [Ki]:(%s) applied.\r\n", valStr);
         }
     }
 
@@ -567,7 +572,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
         if(tempControl.cc.Kd != newVal) {
             tempControl.cc.Kd = newVal;
             saveSettings = true;
-            Log.notice(F("Settings update, [Kd]:(%s) applied.\r\n"), valStr);
+            Log.notice("Settings update, [Kd]:(%s) applied.\r\n", valStr);
         }
     }
 
@@ -580,7 +585,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
         if(tempControl.cc.pidMax != newVal) {
             tempControl.cc.pidMax = newVal;
             saveSettings = true;
-            Log.notice(F("Settings update, [pidMax]:(%s) applied.\r\n"), valStr);
+            Log.notice("Settings update, [pidMax]:(%s) applied.\r\n", valStr);
         }
     }
 
@@ -592,7 +597,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
         if(tempControl.cc.iMaxError != newVal) {
             tempControl.cc.iMaxError = newVal;
             saveSettings = true;
-            Log.notice(F("Settings update, [iMaxErr]:(%s) applied.\r\n"), valStr);
+            Log.notice("Settings update, [iMaxErr]:(%s) applied.\r\n", valStr);
         }
     }
 
@@ -604,7 +609,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
         if(tempControl.cc.idleRangeHigh != newVal) {
             tempControl.cc.idleRangeHigh = newVal;
             saveSettings = true;
-            Log.notice(F("Settings update, [idleRangeH]:(%s) applied.\r\n"), valStr);
+            Log.notice("Settings update, [idleRangeH]:(%s) applied.\r\n", valStr);
         }
     }
 
@@ -616,7 +621,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
         if(tempControl.cc.idleRangeLow != newVal) {
             tempControl.cc.idleRangeLow = newVal;
             saveSettings = true;
-            Log.notice(F("Settings update, [idleRangeL]:(%s) applied.\r\n"), valStr);
+            Log.notice("Settings update, [idleRangeL]:(%s) applied.\r\n", valStr);
         }
     }
 
@@ -628,7 +633,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
         if(tempControl.cc.heatingTargetUpper != newVal) {
             tempControl.cc.heatingTargetUpper = newVal;
             saveSettings = true;
-            Log.notice(F("Settings update, [heatTargetH]:(%s) applied.\r\n"), valStr);
+            Log.notice("Settings update, [heatTargetH]:(%s) applied.\r\n", valStr);
         }
     }
 
@@ -640,7 +645,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
         if(tempControl.cc.heatingTargetLower != newVal) {
             tempControl.cc.heatingTargetLower = newVal;
             saveSettings = true;
-            Log.notice(F("Settings update, [heatTargetL]:(%s) applied.\r\n"), valStr);
+            Log.notice("Settings update, [heatTargetL]:(%s) applied.\r\n", valStr);
         }
     }
 
@@ -652,7 +657,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
         if(tempControl.cc.coolingTargetUpper != newVal) {
             tempControl.cc.coolingTargetUpper = newVal;
             saveSettings = true;
-            Log.notice(F("Settings update, [coolTargetH]:(%s) applied.\r\n"), valStr);
+            Log.notice("Settings update, [coolTargetH]:(%s) applied.\r\n", valStr);
         }
     }
 
@@ -664,7 +669,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
         if(tempControl.cc.coolingTargetLower != newVal) {
             tempControl.cc.coolingTargetLower = newVal;
             saveSettings = true;
-            Log.notice(F("Settings update, [coolTargetL]:(%s) applied.\r\n"), valStr);
+            Log.notice("Settings update, [coolTargetL]:(%s) applied.\r\n", valStr);
         }
     }
 
@@ -675,7 +680,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
         if(tempControl.cc.maxHeatTimeForEstimate != newVal) {
             tempControl.cc.maxHeatTimeForEstimate = newVal;
             saveSettings = true;
-            Log.notice(F("Settings update, [maxHeatTimeForEst]:(%u) applied.\r\n"), newVal);
+            Log.notice("Settings update, [maxHeatTimeForEst]:(%u) applied.\r\n", newVal);
         }
     }
 
@@ -685,7 +690,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
         if(tempControl.cc.maxCoolTimeForEstimate != newVal) {
             tempControl.cc.maxCoolTimeForEstimate = newVal;
             saveSettings = true;
-            Log.notice(F("Settings update, [maxCoolTimeForEst]:(%u) applied.\r\n"), newVal);
+            Log.notice("Settings update, [maxCoolTimeForEst]:(%u) applied.\r\n", newVal);
         }
     }
 
@@ -697,7 +702,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
             tempControl.cc.fridgeFastFilter = newVal;
             tempControl.fridgeSensor->setFastFilterCoefficients(newVal);
             saveSettings = true;
-            Log.notice(F("Settings update, [fridgeFastFilt]:(%u) applied.\r\n"), newVal);
+            Log.notice("Settings update, [fridgeFastFilt]:(%u) applied.\r\n", newVal);
         }
     }
 
@@ -708,7 +713,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
             tempControl.cc.fridgeSlowFilter = newVal;
             tempControl.fridgeSensor->setSlowFilterCoefficients(newVal);
             saveSettings = true;
-            Log.notice(F("Settings update, [fridgeSlowFilt]:(%u) applied.\r\n"), newVal);
+            Log.notice("Settings update, [fridgeSlowFilt]:(%u) applied.\r\n", newVal);
         }
     }
 
@@ -719,7 +724,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
             tempControl.cc.fridgeSlopeFilter = newVal;
             tempControl.fridgeSensor->setSlopeFilterCoefficients(newVal);
             saveSettings = true;
-            Log.notice(F("Settings update, [fridgeSlopeFilt]:(%u) applied.\r\n"), newVal);
+            Log.notice("Settings update, [fridgeSlopeFilt]:(%u) applied.\r\n", newVal);
         }
     }
 
@@ -730,7 +735,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
             tempControl.cc.beerFastFilter = newVal;
             tempControl.beerSensor->setFastFilterCoefficients(newVal);
             saveSettings = true;
-            Log.notice(F("Settings update, [beerFastFilt]:(%u) applied.\r\n"), newVal);
+            Log.notice("Settings update, [beerFastFilt]:(%u) applied.\r\n", newVal);
         }
     }
 
@@ -741,7 +746,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
             tempControl.cc.beerSlowFilter = newVal;
             tempControl.beerSensor->setSlowFilterCoefficients(newVal);
             saveSettings = true;
-            Log.notice(F("Settings update, [beerSlowFilt]:(%u) applied.\r\n"), newVal);
+            Log.notice("Settings update, [beerSlowFilt]:(%u) applied.\r\n", newVal);
         }
     }
 
@@ -752,7 +757,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
             tempControl.cc.beerSlopeFilter = newVal;
             tempControl.beerSensor->setSlopeFilterCoefficients(newVal);
             saveSettings = true;
-            Log.notice(F("Settings update, [beerSlopeFilt]:(%u) applied.\r\n"), newVal);
+            Log.notice("Settings update, [beerSlopeFilt]:(%u) applied.\r\n", newVal);
         }
     }
 
@@ -763,7 +768,7 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
         if(tempControl.cc.lightAsHeater != newVal) {
             tempControl.cc.lightAsHeater = newVal;
             saveSettings = true;
-            Log.notice(F("Settings update, [lah]:(%u) applied.\r\n"), newVal);
+            Log.notice("Settings update, [lah]:(%u) applied.\r\n", newVal);
         }
     }
 
@@ -773,13 +778,13 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
         if(tempControl.cc.rotaryHalfSteps != newVal) {
             tempControl.cc.rotaryHalfSteps = newVal;
             saveSettings = true;
-            Log.notice(F("Settings update, [hs]:(%u) applied.\r\n"), newVal);
+            Log.notice("Settings update, [hs]:(%u) applied.\r\n", newVal);
         }
     }
 
     // Save
     if(failCount) {
-        Log.error(F("Error: Invalid control constants configuration.\r\n"));
+        Log.error("Error: Invalid control constants configuration.\r\n");
     } else {
         if(saveSettings) {
             TempControl::storeConstants();
@@ -793,33 +798,33 @@ bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamU
 bool processActionJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
 
     if(!json["action"].is<const char*>()) {
-        Log.warning(F("Action error - Action key is not a string.\r\n"));
+        Log.warning("Action error - Action key is not a string.\r\n");
         return false;
     }
 
     const char* action = json["action"].as<const char*>();
 
     if(strcmp(action, "restart") == 0) {
-        Log.notice(F("Action [restart] received\r\n"));
+        Log.notice("Action [restart] received\r\n");
         http_server.restart_requested = true;
         return true;
     }
 
     if(strcmp(action, "reset_connection") == 0) {
-        Log.notice(F("Action [reset_connection] received\r\n"));
+        Log.notice("Action [reset_connection] received\r\n");
         http_server.wifi_reset_requested = true;
         http_server.restart_requested = true;  // A restart is implicit in wifi_reset_requested, but explicitly specifying here anyways
         return true;
     }
 
     if(strcmp(action, "reset_config") == 0) {
-        Log.notice(F("Action [reset_config] received\r\n"));
+        Log.notice("Action [reset_config] received\r\n");
         http_server.config_reset_requested = true;
         http_server.restart_requested = true;  // A restart is generally triggered when setting config_reset_requested, but explicitly specifying here anyways
         return true;
     }
 
-    Log.warning(F("Action error - Unknown action: %s\r\n"), action);
+    Log.warning("Action error - Unknown action: %s\r\n", action);
     return false;
 }
 
@@ -847,7 +852,7 @@ void serveUpstreamSettings(JsonDocument &doc) {
 
 // About Page Handlers
 void uptime(JsonDocument &doc) {
-    Log.verbose(F("Serving uptime.\r\n"));
+    Log.verbose("Serving uptime.\r\n");
 
     doc["days"] = uptimeDays();
     doc["hours"] = uptimeHours();
@@ -859,11 +864,11 @@ void uptime(JsonDocument &doc) {
 
 
 void heap(JsonDocument &doc) {
-    Log.verbose(F("Serving heap information.\r\n"));
+    Log.verbose("Serving heap information.\r\n");
 
-    const uint32_t free = ESP.getFreeHeap();
+    const uint32_t free = esp_get_free_heap_size();
 #ifdef ESP32
-    const uint32_t max = ESP.getMaxAllocHeap();
+    const uint32_t max = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
 #elif defined(ESP8266)
     const uint32_t max = ESP.getMaxFreeBlockSize();
 #endif
@@ -876,7 +881,7 @@ void heap(JsonDocument &doc) {
 
 
 void reset_reason(JsonDocument &doc) {
-    Log.verbose(F("Serving reset reason.\r\n"));
+    Log.verbose("Serving reset reason.\r\n");
 
 #ifdef ESP32
     const int reset = (int)esp_reset_reason();
@@ -985,7 +990,7 @@ void httpServer::init() {
     // DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
 
     asyncWebServer.begin();
-    Log.notice(F("HTTP server started. Open: http://%s.local/ to view application.\r\n"), WiFi.getHostname());
+    Log.notice("HTTP server started. Open: http://%s.local/ to view application.\r\n", WiFi.getHostname());
 }
 
 

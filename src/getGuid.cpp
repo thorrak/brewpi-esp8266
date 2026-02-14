@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <esp_mac.h>
 #include "getGuid.h"
 
 void getGuid(char *str)
@@ -7,7 +8,10 @@ void getGuid(char *str)
     strcpy(str, String(ESP.getChipId()).c_str());
 #elif defined(ESP32)
 
-    uint64_t chipid = ESP.getEfuseMac();
+    uint8_t mac[6];
+    esp_efuse_mac_get_default(mac);
+    uint64_t chipid = 0;
+    for (int i = 0; i < 6; i++) chipid |= ((uint64_t)mac[i]) << (i * 8);
     uint32_t int32_1, int32_2;
 
     int32_1 = chipid & 0x00000000FFFFFFFF;

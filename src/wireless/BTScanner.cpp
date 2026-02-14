@@ -1,4 +1,7 @@
 #ifdef HAS_BLUETOOTH
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #include <Arduino.h>
 #include <bitset> // for std::bitset
 #include <list>
@@ -36,7 +39,7 @@ class ScanCallbacks: public NimBLEScanCallbacks {
         bt_scanner.last_detected_device_at = esp_timer_get_time();
         // Inkbird IBS-TH2 (sps) and Inkbird IBS-TH1 (tps)
         if((advertisedDevice->getName().rfind("sps",0) == 0 || advertisedDevice->getName().rfind("tps",0) == 0) && advertisedDevice->getManufacturerData().length() == 9) {
-            // Log.verbose(F("Advertised Device: %s \r\n"), advertisedDevice->toString().c_str());
+            // Log.verbose("Advertised Device: %s \r\n", advertisedDevice->toString().c_str());
             load_inkbird_from_advert(advertisedDevice);
             return;
         // } else if(advertisedDevice->getName().rfind("Govee",0) == 0) {
@@ -187,7 +190,7 @@ bool btScanner::scan()
         return false;
     if (NimBLEDevice::getScan()->isScanning())
         return false;
-    delay(200);
+    vTaskDelay(pdMS_TO_TICKS(200));
     if (NimBLEDevice::getScan()->start(BLE_SCAN_TIME, false, true))
         return true; //Scan successfully started.
     return false;  //Scan failed to start

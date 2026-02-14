@@ -20,6 +20,9 @@
  */
 #pragma once
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #include "Brewpi.h"
 #include <ArduinoJson.h>
 #include <StreamUtils.h>
@@ -71,9 +74,8 @@ public:
   int readPersistent(const int timeout = 10) {
     uint8_t retries = 0;
     while (available() == 0) {
-      // Uses delay as delayMicroseconds doesn't yield like delay does
-      delay(1);
-      yield();
+      // Uses vTaskDelay as delayMicroseconds doesn't yield like delay does
+      vTaskDelay(pdMS_TO_TICKS(1));
       retries++;
       if (retries >= timeout) {
         return -1;

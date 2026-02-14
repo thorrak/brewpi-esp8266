@@ -8,6 +8,9 @@
 
 #ifdef BREWPI_TFT_ESPI
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #include "Brewpi.h"
 #include "BrewpiStrings.h"
 #include <limits.h>
@@ -98,7 +101,7 @@ void LcdDisplay::init() {
 #ifdef HAS_AXP192
     // For m5 stick and whatnot, the LCD backlight AND the controller both are powered off the AXP192, so we need to initialize that first
     Axp.begin();
-    delay(50);    
+    vTaskDelay(pdMS_TO_TICKS(50));
 #endif
 
     tft.init();

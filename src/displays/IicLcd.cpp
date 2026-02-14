@@ -10,6 +10,9 @@
 //Library version:1.1
 
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #include "IicLcd.h"
 
 #include "Brewpi.h"
@@ -63,7 +66,7 @@ void IIClcd::scan_address() {
 			// We found the i2c device address. 
 			_Addr = i;
 			i = 120;
-			delay(1);
+			vTaskDelay(pdMS_TO_TICKS(1));
 			_displayFound = true;
 			break;
 		}
@@ -104,11 +107,11 @@ void IIClcd::begin(uint8_t cols, uint8_t lines, uint8_t dotsize) {
 	// SEE PAGE 45/46 FOR INITIALIZATION SPECIFICATION!
 	// according to datasheet, we need at least 40ms after power rises above 2.7V
 	// before sending commands. Arduino can turn on way befer 4.5V so we'll wait 50
-	delay(50);
+	vTaskDelay(pdMS_TO_TICKS(50));
 
 	// Now we pull both RS and R/W low to begin commands
 	expanderWrite(_backlightval);	// reset expanderand turn backlight off (Bit 8 =1)
-	delay(1000);
+	vTaskDelay(pdMS_TO_TICKS(1000));
 
 	//put the LCD into 4 bit mode
 	// this is according to the hitachi HD44780 datasheet

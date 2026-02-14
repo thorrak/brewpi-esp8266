@@ -25,6 +25,7 @@
 #include "TempControl.h"
 #include "PiLink.h"
 #include "JsonKeys.h"
+#include <esp_mac.h>
 
 EepromManager eepromManager;
 ESPEepromAccess eepromAccess;
@@ -167,7 +168,10 @@ String EepromManager::fetchmDNSName()
 #elif defined(ESP32)
     // There isn't a straightforward "getChipId" function on an ESP32, so we'll have to make do
     char ssid[15]; //Create a Unique AP from MAC address
-    uint64_t chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
+    uint8_t mac[6];
+    esp_efuse_mac_get_default(mac);
+    uint64_t chipid = 0;
+    for (int i = 0; i < 6; i++) chipid |= ((uint64_t)mac[i]) << (i * 8);
     uint16_t chip = (uint16_t)(chipid>>32);
     snprintf(ssid,15,"%04X",chip);
 
