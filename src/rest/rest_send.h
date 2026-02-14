@@ -13,7 +13,8 @@
 // #include <WiFiMulti.h>
 #include <WiFiClient.h>
 #include <WiFiClientSecure.h>
-#include <Ticker.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/timers.h>
 #include <ArduinoJson.hpp>
 
 
@@ -105,9 +106,9 @@ class restHandler
 public:
 
     // Timers and semaphores
-    Ticker fullConfigTicker;
-    Ticker statusTicker;
-    Ticker registerDeviceTicker;
+    TimerHandle_t fullConfigTicker = nullptr;
+    TimerHandle_t statusTicker = nullptr;
+    TimerHandle_t registerDeviceTicker = nullptr;
 
     bool send_full_config_ticker;
     bool send_status_ticker;

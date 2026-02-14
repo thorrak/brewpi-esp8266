@@ -24,6 +24,14 @@
 #include "Brewpi.h"
 #include "BrewpiStrings.h"
 #include "DeviceManager.h"
+#include <driver/gpio.h>
+
+#ifndef HIGH
+#define HIGH 1
+#endif
+#ifndef LOW
+#define LOW 0
+#endif
 #include "TempControl.h"
 #include "Actuator.h"
 #include "Sensor.h"
@@ -1324,11 +1332,11 @@ void DeviceManager::preloadActuatorPins() {
 		dev = eepromManager.fetchDevice(i);
 		if (dev.deviceHardware == DEVICE_HARDWARE_PIN) {
 			if (deviceType(dev.deviceFunction) == DEVICETYPE_SWITCH_ACTUATOR) {
-				digitalWrite(dev.hw.pinNr, dev.hw.invert ? HIGH : LOW);
-				pinMode(dev.hw.pinNr, OUTPUT);
-				digitalWrite(dev.hw.pinNr, dev.hw.invert ? HIGH : LOW);
+				gpio_set_level((gpio_num_t)dev.hw.pinNr, dev.hw.invert ? HIGH : LOW);
+				gpio_set_direction((gpio_num_t)dev.hw.pinNr, GPIO_MODE_OUTPUT);
+				gpio_set_level((gpio_num_t)dev.hw.pinNr, dev.hw.invert ? HIGH : LOW);
 			} else if (deviceType(dev.deviceFunction) == DEVICETYPE_SWITCH_SENSOR) {
-				pinMode(dev.hw.pinNr, INPUT);
+				gpio_set_direction((gpio_num_t)dev.hw.pinNr, GPIO_MODE_INPUT);
 			} else {
 				continue; // only process pin-based actuators
 			}

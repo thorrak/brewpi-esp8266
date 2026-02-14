@@ -6,7 +6,6 @@
 #include <bitset> // for std::bitset
 #include <list>
 
-#include "Ticker.h"
 #include <ArduinoJson.h>
 #include <NimBLEBeacon.h>
 #include <NimBLEDevice.h>

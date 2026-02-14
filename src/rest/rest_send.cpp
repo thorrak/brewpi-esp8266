@@ -1,12 +1,12 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ctime>
-#include "Ticker.h"
 // #define LCBURL_MDNS
 // #include <LCBUrl.h>
 #include <ArduinoLog.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <freertos/timers.h>
 
 #include "rest_send.h"
 #include "http_server.h"
@@ -28,6 +28,20 @@
 restHandler rest_handler; // Global data sender
 
 
+// FreeRTOS timer callbacks
+static void fullConfigTimerCallback(TimerHandle_t xTimer) {
+    rest_handler.send_full_config_ticker = true;
+}
+
+static void statusTimerCallback(TimerHandle_t xTimer) {
+    rest_handler.send_status_ticker = true;
+}
+
+static void registerDeviceTimerCallback(TimerHandle_t xTimer) {
+    rest_handler.register_device_ticker = true;
+}
+
+
 restHandler::restHandler() {
     send_full_config_ticker = false;
     send_status_ticker = false;
@@ -38,10 +52,15 @@ restHandler::restHandler() {
 
 void restHandler::init()
 {
-    // Set up timers
-    registerDeviceTicker.once(5, [](){rest_handler.register_device_ticker = true;});
-    statusTicker.once(25, [](){rest_handler.send_status_ticker = true;});
-    fullConfigTicker.once(15, [](){rest_handler.send_full_config_ticker=true;});
+    // Create one-shot FreeRTOS software timers
+    fullConfigTicker = xTimerCreate("fullCfg", pdMS_TO_TICKS(15 * 1000), pdFALSE, nullptr, fullConfigTimerCallback);
+    statusTicker = xTimerCreate("status", pdMS_TO_TICKS(25 * 1000), pdFALSE, nullptr, statusTimerCallback);
+    registerDeviceTicker = xTimerCreate("regDev", pdMS_TO_TICKS(5 * 1000), pdFALSE, nullptr, registerDeviceTimerCallback);
+
+    // Start all three timers
+    xTimerStart(fullConfigTicker, 0);
+    xTimerStart(statusTicker, 0);
+    xTimerStart(registerDeviceTicker, 0);
 }
 
 
@@ -222,10 +241,10 @@ bool restHandler::send_full_config() {
     // Force getting messages before sending the full config
     // We do this here, before setting send_full_config_ticker false, as get_messages() will set it to true if there are config updates.
     // We can just send them as part of this full config push instead of having to queue up a second
-    fullConfigTicker.detach();
+    xTimerStop(fullConfigTicker, 0);
     get_messages(true);
     send_full_config_ticker = false;
-    fullConfigTicker.once(FULL_CONFIG_PUSH_DELAY, [](){rest_handler.send_full_config_ticker=true;});
+    xTimerChangePeriod(fullConfigTicker, pdMS_TO_TICKS(FULL_CONFIG_PUSH_DELAY * 1000), 0);
 
     if(!upstreamSettings.isRegistered())
         return false;  // If we aren't registered, we have nowhere to send the data
@@ -303,8 +322,8 @@ bool restHandler::register_device() {
     else
         register_device_ticker = false;
 
-    registerDeviceTicker.detach();
-    registerDeviceTicker.once(REGISTER_DEVICE_DELAY, [](){rest_handler.register_device_ticker = true;});
+    xTimerStop(registerDeviceTicker, 0);
+    xTimerChangePeriod(registerDeviceTicker, pdMS_TO_TICKS(REGISTER_DEVICE_DELAY * 1000), 0);
 
     // If we've already registered or are missing critical information necessary to register, skip this attempt
     if(upstreamSettings.isRegistered() || (strlen(upstreamSettings.username) == 0 && strlen(upstreamSettings.apiKey) == 0))
@@ -393,8 +412,8 @@ bool restHandler::send_status() {
     else
         send_status_ticker = false;
 
-    statusTicker.detach();
-    statusTicker.once(LCD_PUSH_DELAY, [](){rest_handler.send_status_ticker = true;});
+    xTimerStop(statusTicker, 0);
+    xTimerChangePeriod(statusTicker, pdMS_TO_TICKS(LCD_PUSH_DELAY * 1000), 0);
 
     if(upstreamSettings.isRegistered() == false)
         return false;

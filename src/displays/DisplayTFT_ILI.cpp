@@ -15,6 +15,7 @@
 #include <string>
 
 #include "Display.h"
+#include <driver/gpio.h>
 #include "Menu.h"
 
 #include "DisplayTFT_ILI.h"
@@ -120,8 +121,8 @@ void LcdDisplay::init(){
     tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
 
 #if defined(TFT_BACKLIGHT)
-    pinMode(TFT_BACKLIGHT, OUTPUT);
-    digitalWrite(TFT_BACKLIGHT, HIGH);
+    gpio_set_direction((gpio_num_t)TFT_BACKLIGHT, GPIO_MODE_OUTPUT);
+    gpio_set_level((gpio_num_t)TFT_BACKLIGHT, 1);
 #endif
 }
 

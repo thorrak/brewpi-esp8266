@@ -23,6 +23,7 @@
 #include "OLEDFourBit.h"
 
 #include <Arduino.h>
+#include <driver/gpio.h>
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
@@ -42,10 +43,10 @@ void OLEDFourBit::init(uint8_t rs, uint8_t rw, uint8_t enable,
 	_data_pins[3] = d7; 
 
 
-	pinMode(_rs_pin, OUTPUT);
-	pinMode(_rw_pin, OUTPUT);
-	pinMode(_enable_pin, OUTPUT);
-  
+	gpio_set_direction((gpio_num_t)_rs_pin, GPIO_MODE_OUTPUT);
+	gpio_set_direction((gpio_num_t)_rw_pin, GPIO_MODE_OUTPUT);
+	gpio_set_direction((gpio_num_t)_enable_pin, GPIO_MODE_OUTPUT);
+
 	_displayfunction = LCD_FUNCTIONSET | LCD_4BITMODE;
    
 }
@@ -55,18 +56,18 @@ void OLEDFourBit::begin(uint8_t cols, uint8_t lines) {
 	_currline = 0;
 	_currpos = 0;
   
-	pinMode(_rs_pin, OUTPUT);
-	pinMode(_rw_pin, OUTPUT);
-	pinMode(_enable_pin, OUTPUT);
-  
+	gpio_set_direction((gpio_num_t)_rs_pin, GPIO_MODE_OUTPUT);
+	gpio_set_direction((gpio_num_t)_rw_pin, GPIO_MODE_OUTPUT);
+	gpio_set_direction((gpio_num_t)_enable_pin, GPIO_MODE_OUTPUT);
+
 	// Now we pull both RS and R/W low to begin commands
-	digitalWrite(_rs_pin, LOW);
-	digitalWrite(_enable_pin, LOW);
-	digitalWrite(_rw_pin, LOW);
-  
-  	for (int i = 0; i < 4; i++) {
-		pinMode(_data_pins[i], OUTPUT);
-		digitalWrite(_data_pins[i], LOW);
+	gpio_set_level((gpio_num_t)_rs_pin, 0);
+	gpio_set_level((gpio_num_t)_enable_pin, 0);
+	gpio_set_level((gpio_num_t)_rw_pin, 0);
+
+	for (int i = 0; i < 4; i++) {
+		gpio_set_direction((gpio_num_t)_data_pins[i], GPIO_MODE_OUTPUT);
+		gpio_set_level((gpio_num_t)_data_pins[i], 0);
 	}
 	
 	// SEE PAGE 20 of NHD-0420DZW-AY5 
@@ -224,24 +225,24 @@ inline size_t OLEDFourBit::write(uint8_t value) {
 
 // write either command or data
 void OLEDFourBit::send(uint8_t value, uint8_t mode) {
-	digitalWrite(_rs_pin, mode);
-	pinMode(_rw_pin, OUTPUT);
-	digitalWrite(_rw_pin, LOW);
+	gpio_set_level((gpio_num_t)_rs_pin, mode);
+	gpio_set_direction((gpio_num_t)_rw_pin, GPIO_MODE_OUTPUT);
+	gpio_set_level((gpio_num_t)_rw_pin, 0);
 
 	write4bits(value>>4);
 	write4bits(value);
 }
 
 void OLEDFourBit::pulseEnable() {
-	digitalWrite(_enable_pin, HIGH);
+	gpio_set_level((gpio_num_t)_enable_pin, 1);
 	delayMicroseconds(100); // enable pulse must be >450ns
-	digitalWrite(_enable_pin, LOW);
+	gpio_set_level((gpio_num_t)_enable_pin, 0);
 }
 
 void OLEDFourBit::write4bits(uint8_t value) {
 	for (int i = 0; i < 4; i++) {
-		pinMode(_data_pins[i], OUTPUT);
-		digitalWrite(_data_pins[i], (value >> i) & 0x01);
+		gpio_set_direction((gpio_num_t)_data_pins[i], GPIO_MODE_OUTPUT);
+		gpio_set_level((gpio_num_t)_data_pins[i], (value >> i) & 0x01);
 	}
 	delayMicroseconds(100);
 	pulseEnable();
@@ -249,16 +250,16 @@ void OLEDFourBit::write4bits(uint8_t value) {
 
 void OLEDFourBit::waitBusy() {
 	uint8_t busy = 1;
-	pinMode(_busy_pin, INPUT);
-	digitalWrite(_rs_pin, LOW);
-	digitalWrite(_rw_pin, HIGH);
+	gpio_set_direction((gpio_num_t)_busy_pin, GPIO_MODE_INPUT);
+	gpio_set_level((gpio_num_t)_rs_pin, 0);
+	gpio_set_level((gpio_num_t)_rw_pin, 1);
 	uint8_t tries = 0;
 	do{
-		digitalWrite(_enable_pin, LOW);
-		digitalWrite(_enable_pin, HIGH);
+		gpio_set_level((gpio_num_t)_enable_pin, 0);
+		gpio_set_level((gpio_num_t)_enable_pin, 1);
 		delayMicroseconds(10);
-		busy = digitalRead(_busy_pin);
-		digitalWrite(_enable_pin, LOW);
+		busy = gpio_get_level((gpio_num_t)_busy_pin);
+		gpio_set_level((gpio_num_t)_enable_pin, 0);
 		pulseEnable(); // get remaining 4 bits, which are not used.
 		tries++;
 		if(tries>200){
@@ -266,26 +267,26 @@ void OLEDFourBit::waitBusy() {
 		}
 	}while(busy);
 
-	pinMode(_busy_pin, OUTPUT);
-	digitalWrite(_rw_pin, LOW);
+	gpio_set_direction((gpio_num_t)_busy_pin, GPIO_MODE_OUTPUT);
+	gpio_set_level((gpio_num_t)_rw_pin, 0);
 }
 
 char OLEDFourBit::readChar(){
 	char value=0x00;
 	for (int i = 0; i < 4; i++) {
-		pinMode(_data_pins[i], INPUT);
+		gpio_set_direction((gpio_num_t)_data_pins[i], GPIO_MODE_INPUT);
 	}
-	digitalWrite(_rs_pin, HIGH);
-	digitalWrite(_rw_pin, HIGH);
+	gpio_set_level((gpio_num_t)_rs_pin, 1);
+	gpio_set_level((gpio_num_t)_rw_pin, 1);
 	pulseEnable();
 	delayMicroseconds(600);
 	for (int i = 0; i < 4; i++) {
-		value = value | (digitalRead(_data_pins[i]) << (i+4));
+		value = value | (gpio_get_level((gpio_num_t)_data_pins[i]) << (i+4));
 	}
 	pulseEnable();
 	delayMicroseconds(600);
 	for (int i = 0; i < 4; i++) {
-		value = value | (digitalRead(_data_pins[i]) << (i));
+		value = value | (gpio_get_level((gpio_num_t)_data_pins[i]) << (i));
 	}
 	return value;
 }

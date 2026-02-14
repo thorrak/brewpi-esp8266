@@ -12,6 +12,7 @@
 #include "Brewpi.h"
 #include "FastDigitalPin.h"
 #include "Pins.h"
+#include <driver/gpio.h>
 
 /* A SwitchSensor whose state is provided by a hardware pin. 
   By using a template, the compiler can inline and optimize the call to digitalRead to a single instruction.
@@ -21,11 +22,14 @@ class DigitalConstantPinSensor : public SwitchSensor
 {
 	public:
 	DigitalConstantPinSensor() {
-		fastPinMode(pin, internalPullup ? INPUT_PULLUP : INPUT);
+		gpio_set_direction((gpio_num_t)pin, GPIO_MODE_INPUT);
+		if (internalPullup) {
+			gpio_set_pull_mode((gpio_num_t)pin, GPIO_PULLUP_ONLY);
+		}
 	}
-	
+
 	virtual bool sense() {
-		return fastDigitalRead(pin) ^ invert;
+		return gpio_get_level((gpio_num_t)pin) ^ invert;
 	}
 };
 
@@ -41,13 +45,16 @@ public:
 
 	DigitalPinSensor(uint8_t pin, bool invert)
 	{
-		pinMode(pin, USE_INTERNAL_PULL_UP_RESISTORS ? INPUT_PULLUP : INPUT);
+		gpio_set_direction((gpio_num_t)pin, GPIO_MODE_INPUT);
+		if (USE_INTERNAL_PULL_UP_RESISTORS) {
+			gpio_set_pull_mode((gpio_num_t)pin, GPIO_PULLUP_ONLY);
+		}
 		this->invert = invert;
-		this->pin = pin;		
+		this->pin = pin;
 	}
-	
+
 	virtual bool sense() {
-		return digitalRead(pin) ^ invert;
+		return gpio_get_level((gpio_num_t)pin) ^ invert;
 	}	
 };
 

@@ -18,6 +18,7 @@
 #include <string>
 
 #include "Display.h"
+#include <driver/gpio.h>
 
 #include "DisplayTFT_eSPI.h"
 
@@ -122,8 +123,8 @@ void LcdDisplay::init() {
 
 
 #if defined(TFT_BACKLIGHT)
-    pinMode(TFT_BACKLIGHT, OUTPUT);
-    digitalWrite(TFT_BACKLIGHT, HIGH);
+    gpio_set_direction((gpio_num_t)TFT_BACKLIGHT, GPIO_MODE_OUTPUT);
+    gpio_set_level((gpio_num_t)TFT_BACKLIGHT, 1);
 #endif
 
 }

@@ -8,6 +8,7 @@
 #pragma once
 
 #include "Actuator.h"
+#include <driver/gpio.h>
 
 //template<uint8_t pin, bool invert>
 //class DigitalConstantPinActuator ACTUATOR_BASE_CLASS_DECL
@@ -42,7 +43,7 @@ class DigitalPinActuator ACTUATOR_BASE_CLASS_DECL
 		this->invert = invert;
 		this->pin = pin;
 		setActive(false);
-		pinMode(pin, OUTPUT);
+		gpio_set_direction((gpio_num_t)pin, GPIO_MODE_OUTPUT);
 	}
 	
 	void setActive(bool active_setting);
