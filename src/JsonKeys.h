@@ -37,9 +37,7 @@ constexpr auto deactivated = "d";
 constexpr auto address = "a";
 constexpr auto child_id = "n";
 constexpr auto alias = "r";  // EXTERN_SENSOR_ACTUATOR or Bluetooth
-#if BREWPI_DS2413
-constexpr auto pio = "n";
-#endif
+// constexpr auto pio = "n";  // For DS2413 support which has been removed - leaving this here so we know not to reuse this key
 constexpr auto calibrateadjust = "j";
 
 constexpr auto value = "v";
@@ -129,6 +127,8 @@ constexpr auto eepromReset = "confirmReset";
 constexpr auto invertTFT = "invertTFT";
 constexpr auto glycol = "glycol";
 constexpr auto largeTFT = "largeTFT";
+constexpr auto resetScreenOnPin = "resetScreenOnPin";
+constexpr auto tiltGravSensor = "tiltGravSensor";
 }; // namespace ExtendedSettingsKeys
 
 
@@ -140,6 +140,16 @@ namespace UpstreamSettingsKeys {
 constexpr auto upstreamHost = "upstreamHost";
 constexpr auto upstreamPort = "upstreamPort";
 constexpr auto deviceID = "deviceID";
+constexpr auto username = "username";
+constexpr auto apiKey = "apiKey";
+constexpr auto deviceName = "name";
+constexpr auto upstreamRegistrationError = "upstreamRegistrationError";
+constexpr auto messageID = "messageID";
+constexpr auto guid = "guid";
+constexpr auto firmwareVersion = "fwVersion";
+constexpr auto firmwareRelease = "fwRelease";
+constexpr auto firmwareRevision = "fwRevision";
+constexpr auto firmwareTag = "fwTag";
 }; // namespace UpstreamSettingsKeys
 
 
@@ -149,7 +159,7 @@ constexpr auto deviceID = "deviceID";
  * \see processUpdateModeJson
  */
 namespace ModeUpdateKeys {
-constexpr auto mode = "mode";
+constexpr auto mode = "newMode";
 constexpr auto setpoint = "setPoint";
 }; // namespace ModeUpdateKeys
 

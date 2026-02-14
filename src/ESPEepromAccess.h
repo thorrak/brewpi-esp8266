@@ -17,30 +17,13 @@
 
 #pragma once
 
-#if defined(ESP8266)
 #define FILESYSTEM LittleFS
 #include <LittleFS.h>
-
-#elif defined(ESP32S2)
-// #define FILESYSTEM LittleFS
-// #include <LittleFS.h>
-#define FILESYSTEM SPIFFS
-#include <SPIFFS.h>
-
-
-#elif defined(ESP32)
-#define FILESYSTEM SPIFFS
-#include <SPIFFS.h>
-
-#else
-#error "Not supported!"
-#endif
 
 #include "EepromStructs.h"
 #include "Brewpi.h"  // Only needed for Config:: below
 
 
-//TODO - Clean this up
 class ESPEepromAccess
 {
 private:

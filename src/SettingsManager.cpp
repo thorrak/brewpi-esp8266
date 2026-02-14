@@ -36,6 +36,7 @@ void SettingsManager::loadSettings()
 		minTimes.setDefaults();
 		
 		deviceManager.setupUnconfiguredDevices();
+		// TODO - Determine if we want to reset extendedSettings here as well
 
 		logWarning(WARNING_START_IN_SAFE_MODE);
 	}

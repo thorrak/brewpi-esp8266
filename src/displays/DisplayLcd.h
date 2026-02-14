@@ -22,10 +22,8 @@
 #include "Brewpi.h"
 #include "DisplayBase.h"
 
-// If BREWPI_TFT is set, we're going to use the DisplayTFT headers instead
-#ifdef BREWPI_TFT
-#include "DisplayTFT.h"
-#else
+// This file only gets used if BREWPI_IIC is set
+#ifdef BREWPI_IIC
 
 /*
  * \addtogroup display
@@ -60,6 +58,7 @@ class LcdDisplay DISPLAY_SUPERCLASS
   public:
 	// initializes the lcd display
 	DISPLAY_METHOD void init();
+	DISPLAY_METHOD void reset();
 
   /**
    * Print all display content

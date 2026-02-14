@@ -15,7 +15,7 @@
 #endif
 
 
-void DeviceConfig::toJson(DynamicJsonDocument &doc) {
+void DeviceConfig::toJson(JsonDocument &doc) {
     // Load the settings into the JSON Doc
     doc[DeviceDefinitionKeys::chamber] = chamber;
     doc[DeviceDefinitionKeys::beer] = beer;
@@ -55,9 +55,9 @@ void DeviceConfig::toJson(DynamicJsonDocument &doc) {
             tilt *th = bt_scanner.get_tilt(hw.btAddress);
             if(th != nullptr) {
                 // ArduinoJson attempts to deduplicate strings - we explicitly do not want that here
-                char color[20];
-                strcpy(color, th->get_color_string().c_str());
-                doc[DeviceDefinitionKeys::alias] = color;
+                // char color[20];
+                // strcpy(color, th->get_color_string().c_str());
+                doc[DeviceDefinitionKeys::alias] = String(th->get_color_string().c_str());
             }
         }
     }
@@ -69,7 +69,7 @@ void DeviceConfig::toJson(DynamicJsonDocument &doc) {
         doc[DeviceDefinitionKeys::child_id] = hw.tplink_child_id;
         TPLinkPlug *tp = tp_link_scanner.get_tplink_plug(hw.tplink_mac, hw.tplink_child_id);
         if(tp != nullptr)
-            doc[DeviceDefinitionKeys::alias] = tp->device_alias;
+            doc[DeviceDefinitionKeys::alias] = String(tp->device_alias);  // Prevent deduplication
     }
 #endif
 
@@ -81,7 +81,7 @@ void DeviceConfig::toJson(DynamicJsonDocument &doc) {
 }
 
 
-void DeviceConfig::fromJson(DynamicJsonDocument json_doc) {
+void DeviceConfig::fromJson(JsonDocument json_doc) {
 
     // Load the settings from the JSON Doc
     if(json_doc[DeviceDefinitionKeys::chamber].is<uint8_t>()) chamber = json_doc[DeviceDefinitionKeys::chamber];
@@ -105,20 +105,21 @@ void DeviceConfig::fromJson(DynamicJsonDocument json_doc) {
         parseBytes(hw.address, json_doc[DeviceDefinitionKeys::address].as<const char *>(), 8);
         copyArray(json_doc[DeviceDefinitionKeys::address], hw.address);
 #ifdef HAS_BLUETOOTH
-    } else if(json_doc[DeviceDefinitionKeys::address].is<std::string>() && (deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD || deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT)) {
-        hw.btAddress = NimBLEAddress(json_doc[DeviceDefinitionKeys::address].as<std::string>());
+    } else if(json_doc[DeviceDefinitionKeys::address].is<std::string>() && (deviceHardware == DEVICE_HARDWARE_BLUETOOTH_INKBIRD)) {
+        // Inkbirds use address type 0 ("public") which (incorrectly!) indicates they bought a MAC block
+        hw.btAddress = NimBLEAddress(json_doc[DeviceDefinitionKeys::address].as<std::string>(), 0);
+    } else if(json_doc[DeviceDefinitionKeys::address].is<std::string>() && (deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT)) {
+        // Tilts use address type 1 ("random", which (correctly!) indicates they didn't buy a MAC block)
+        hw.btAddress = NimBLEAddress(json_doc[DeviceDefinitionKeys::address].as<std::string>(), 1);
 #endif
 #ifdef EXTERN_SENSOR_ACTUATOR_SUPPORT
     } else if(json_doc[DeviceDefinitionKeys::address].is<const char *>() && json_doc[DeviceDefinitionKeys::child_id].is<const char *>() && (deviceHardware == DEVICE_HARDWARE_TPLINK_SWITCH)) {
 		snprintf(hw.tplink_mac, 18, "%s", json_doc[DeviceDefinitionKeys::address].as<const char *>());
 		snprintf(hw.tplink_child_id, 3, "%s", json_doc[DeviceDefinitionKeys::child_id].as<const char *>());
 #endif
-    } else if(json_doc.containsKey(DeviceDefinitionKeys::address)) {
-        piLink.print("Contains unhandled address!!");
-        piLink.printNewLine();
     }
 
-	if (json_doc.containsKey(DeviceDefinitionKeys::calibrateadjust) && json_doc[DeviceDefinitionKeys::calibrateadjust].is<const char *>()) {
+	if (json_doc[DeviceDefinitionKeys::calibrateadjust].is<const char *>()) {
         hw.calibration = fixed4_4(stringToTempDiff(json_doc[DeviceDefinitionKeys::calibrateadjust].as<const char *>()) >> (TEMP_FIXED_POINT_BITS - TEMP_CALIBRATION_OFFSET_PRECISION));
 	}
 
@@ -139,8 +140,8 @@ void DeviceConfig::deviceFilename(char * fname, uint8_t devid) {
 }
 
 
-void DeviceConfig::storeToSpiffs(uint8_t devID) {
-    DynamicJsonDocument doc(2048);
+void DeviceConfig::storeToFilesystem(uint8_t devID) {
+    JsonDocument doc;
     char fname[32];
     deviceFilename(fname, devID);
 
@@ -150,7 +151,7 @@ void DeviceConfig::storeToSpiffs(uint8_t devID) {
 }
 
 
-void DeviceConfig::loadFromSpiffs(uint8_t devID) {
+void DeviceConfig::loadFromFilesystem(uint8_t devID) {
     char fname[32];
     deviceFilename(fname, devID);
 
@@ -158,7 +159,7 @@ void DeviceConfig::loadFromSpiffs(uint8_t devID) {
     setDefaults();
 
     if(FILESYSTEM.exists(fname)) {
-        DynamicJsonDocument json_doc = readJsonFromFile(fname);
+        JsonDocument json_doc = readJsonFromFile(fname);
         fromJson(json_doc);
     }
 }

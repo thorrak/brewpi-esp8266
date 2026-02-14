@@ -121,6 +121,7 @@ class TempSensor {
 	TempSensorFilter slopeFilter; //!< Slope filter
 	unsigned char updateCounter;
 	temperature_precise prevOutputForSlope;
+	void initialize_filters(temperature temp);
 
   /**
    * \brief An indication of how stale the data is in the filters.

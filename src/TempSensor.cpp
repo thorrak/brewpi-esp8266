@@ -24,6 +24,18 @@
 
 
 /**
+ * \brief Initialize the temperature filters
+ */
+void TempSensor::initialize_filters(temperature temp){
+	fastFilter.init(temp);
+	slowFilter.init(temp);
+	slopeFilter.init(0);
+	prevOutputForSlope = slowFilter.readOutputDoublePrecision();
+	failedReadCount = 0;
+}
+
+
+/**
  * \brief Initialize temp sensor
  */
 void TempSensor::init()
@@ -33,11 +45,7 @@ void TempSensor::init()
 		temperature temp = _sensor->read();
 		if (temp!=TEMP_SENSOR_DISCONNECTED) {
 			logDebug("initializing filters with value %d", temp);
-			fastFilter.init(temp);
-			slowFilter.init(temp);
-			slopeFilter.init(0);
-			prevOutputForSlope = slowFilter.readOutputDoublePrecision();
-			failedReadCount = 0;
+			initialize_filters(temp);
 		}		
 	}
 }
@@ -51,9 +59,20 @@ void TempSensor::update()
 	if (!_sensor || (temp=_sensor->read())==TEMP_SENSOR_DISCONNECTED) {
 		if(failedReadCount >= 0)
 			failedReadCount++;
-		failedReadCount = min(failedReadCount,int8_t(127));	// limit
+		failedReadCount = min(failedReadCount,int8_t(120));	// limit
 		return;
 	}
+
+	// We successfully read the temp. If this is the initial read, initialize the filters.
+	// Also reinitialize the filters if we had more than 60 failed reads. 
+	if(failedReadCount < 0 || failedReadCount > 60){
+		initialize_filters(temp);
+		return;
+	} else {
+		// If we hit here, we have between 0 and 60 failed reads - but the last read was successful. 
+		// Reset the fail count.
+		failedReadCount = 0;
+	}	
 		
 	fastFilter.add(temp);
 	slowFilter.add(temp);

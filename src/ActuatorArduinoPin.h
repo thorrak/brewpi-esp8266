@@ -45,10 +45,7 @@ class DigitalPinActuator ACTUATOR_BASE_CLASS_DECL
 		pinMode(pin, OUTPUT);
 	}
 	
-	inline ACTUATOR_METHOD void setActive(bool active_setting) {
-        this->active = active_setting;
-       digitalWrite(pin, active_setting^invert ? HIGH : LOW);
-	}
+	void setActive(bool active_setting);
 	
 	bool isActive() { return active; }
 };

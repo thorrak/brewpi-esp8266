@@ -26,6 +26,9 @@
 #include "Sensor.h"
 #include "TempSensor.h"
 #include "OneWireDevices.h"
+#ifndef ESP8266
+#include "onewire_bus.h"
+#endif
 #include "Pins.h"
 #include "EepromStructs.h"
 #include "Ticks.h"
@@ -97,9 +100,6 @@ enum DeviceType {
 inline bool isAssignable(DeviceType type, DeviceHardware hardware)
 {
 	return (hardware==DEVICE_HARDWARE_PIN && (type==DEVICETYPE_SWITCH_ACTUATOR || type==DEVICETYPE_SWITCH_SENSOR))
-#if BREWPI_DS2413
-	|| (hardware==DEVICE_HARDWARE_ONEWIRE_2413 && (type==DEVICETYPE_SWITCH_ACTUATOR || (DS2413_SUPPORT_SENSE && type==DEVICETYPE_SWITCH_SENSOR)))
-#endif
 #ifdef HAS_BLUETOOTH
 	|| (hardware==DEVICE_HARDWARE_BLUETOOTH_INKBIRD && type==DEVICETYPE_TEMP_SENSOR)
 	|| (hardware==DEVICE_HARDWARE_BLUETOOTH_TILT && type==DEVICETYPE_TEMP_SENSOR)
@@ -119,11 +119,7 @@ inline bool isAssignable(DeviceType type, DeviceHardware hardware)
  * @returns `true` if device is OneWire, `false` otherwise
  */
 inline bool isOneWire(DeviceHardware hardware) {
-	return
-#if BREWPI_DS2413
-	hardware==DEVICE_HARDWARE_ONEWIRE_2413 ||
-#endif
-	hardware==DEVICE_HARDWARE_ONEWIRE_TEMP;
+	return hardware==DEVICE_HARDWARE_ONEWIRE_TEMP;
 }
 
 /**
@@ -252,7 +248,9 @@ struct EnumerateHardware
  */
 void UpdateDeviceState(DeviceDisplay& dd, DeviceConfig& dc, char* val);
 
+#ifdef ESP8266
 class OneWire;
+#endif
 
 
 /**
@@ -302,20 +300,14 @@ public:
 	 */
 	int8_t enumOneWirePins(uint8_t offset) {
 #ifdef ARDUINO
-#ifdef oneWirePin
 		if (offset == 0)
 			return oneWirePin;
-#elif defined(beerSensorPin) && defined(fridgeSensorPin)
-		if (offset==0)
-			return beerSensorPin;
-		if (offset==1)
-			return fridgeSensorPin;
-#endif
 #endif
 		return -1;
 	}
 
 	static void setupUnconfiguredDevices();
+	static void preloadActuatorPins();
 
 	/**
 	 * \brief Determines if the given device config is complete.
@@ -332,16 +324,19 @@ public:
 
 	static bool isDeviceValid(DeviceConfig& config, DeviceConfig& original, int8_t deviceIndex);
 
-	static void enumerateHardware(DynamicJsonDocument& doc, EnumerateHardware spec);
-	static void enumerateHardware(DynamicJsonDocument& doc);
+	static void enumerateHardware(JsonDocument& doc, EnumerateHardware spec);
+	static void enumerateHardware(JsonDocument& doc);
 	static void readJsonIntoHardwareSpec(EnumerateHardware&);
-	static DeviceDefinition readJsonIntoDeviceDef(const DynamicJsonDocument& doc);
+	static DeviceDefinition readJsonIntoDeviceDef(const JsonDocument& doc);
 
 	static bool enumDevice(DeviceDisplay& dd, DeviceConfig& dc, uint8_t idx);
 
 	static void listDevices(JsonDocument& doc);
 	static void rawDeviceValues(JsonDocument& doc);
 
+#ifndef ESP8266
+	static bool initOneWireBuses();
+#endif
 private:
 	static void enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc);
 	static void enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc);
@@ -355,7 +350,7 @@ private:
 
 	static void outputEnumeratedDevices(DeviceConfig* config, void* pv, JsonDocument* doc);
 	static void handleEnumeratedDevice(DeviceConfig config, EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc);
-	static void readTempSensorValue(DeviceConfig::Hardware hw, char* out);
+	static void readTempSensorValue(DeviceHardware hw_type, DeviceConfig::Hardware hw, char* out);
 	static void outputRawDeviceValue(DeviceConfig* config, void* pv, JsonDocument* doc);
 
   	static void readJsonIntoDeviceDisplay(DeviceDisplay&);
@@ -363,16 +358,29 @@ private:
 	static void* createDevice(DeviceConfig& config, DeviceType dc);
 	static void* createOneWireGPIO(DeviceConfig& config, DeviceType dt);
 
+#ifdef ESP8266
 	static OneWire* oneWireBus(uint8_t pin);
+#else
+	static onewire_bus_handle_t oneWireBus(uint8_t pin);
+#endif
 
 #ifdef ARDUINO
 
 // There is no reason to separate the OneWire busses - if we have a single bus, use it.
+#ifdef ESP8266
 #ifdef oneWirePin
 	static OneWire primaryOneWireBus;
 #else
 	static OneWire beerSensorBus;
 	static OneWire fridgeSensorBus;
+#endif
+#else
+#ifdef oneWirePin
+	static onewire_bus_handle_t m_primary_onewire_bus;
+#else
+	static onewire_bus_handle_t m_beer_sensor_bus;
+	static onewire_bus_handle_t m_fridge_sensor_bus;
+#endif
 #endif
 
 #endif

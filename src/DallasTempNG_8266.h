@@ -1,3 +1,5 @@
+#ifdef ESP8266
+
 #ifndef BREWPI_ESP_DALLAS_TEMP_NG_H
 #define BREWPI_ESP_DALLAS_TEMP_NG_H
 
@@ -8,3 +10,5 @@ bool initConnection(DallasTemperature &sensor, const uint8_t* deviceAddress);
 int16_t getTempRaw(DallasTemperature &sensor, const uint8_t* deviceAddress);
 
 #endif  // BREWPI_ESP_DALLAS_TEMP_NG_H
+
+#endif // ESP8266

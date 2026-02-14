@@ -69,8 +69,7 @@ public:
    * \param fridgeAnnotation - Annotation for the beer
    */
   void printTemperatures(const char *beerAnnotation, const char *fridgeAnnotation) {
-    // StaticJsonDocument<1024> doc;
-    DynamicJsonDocument doc(1024);
+    JsonDocument doc;
     printTemperaturesJson(doc, beerAnnotation, fridgeAnnotation);
     this->sendJsonMessage('T', doc);
   }

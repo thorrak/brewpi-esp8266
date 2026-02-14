@@ -31,12 +31,12 @@
  * \param errorID
  */
 void Logger::logMessageVaArg(const char type, const LOG_ID_TYPE errorID, const char * varTypes, ...){
-  DynamicJsonDocument doc(2048);
+  JsonDocument doc;
 
 	va_list args;
   doc[F("logType")] = String(type);
   doc[F("logID")] = errorID;
-  JsonArray varArray = doc.createNestedArray("V");
+  JsonArray varArray = doc["V"].to<JsonArray>();
 
 	va_start (args, varTypes);
 	uint8_t index = 0;

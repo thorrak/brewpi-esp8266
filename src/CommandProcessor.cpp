@@ -210,7 +210,7 @@ void CommandProcessor::commandNotImplemented(const char command, const String me
  * \ingroup commands
  */
 void CommandProcessor::versionInfo() {
-  DynamicJsonDocument doc(256);
+  JsonDocument doc;
   // v version
   // s shield type
   // y: simulator
@@ -257,7 +257,7 @@ void CommandProcessor::setAlarmState(bool enabled) { alarm_actuator.setActive(en
  * \ingroup commands
  */
 void CommandProcessor::listDevices() {
-  DynamicJsonDocument doc(2048);
+  JsonDocument doc;
   deviceManager.listDevices(doc);
   piLink.sendJsonMessage('d', doc);
 }
@@ -268,11 +268,7 @@ void CommandProcessor::listDevices() {
  * \ingroup commands
  */
 void CommandProcessor::listHardware() {
-#if !defined(HAS_BLUETOOTH) && !defined(EXTERN_SENSOR_ACTUATOR_SUPPORT)
-  DynamicJsonDocument doc(2048);
-#else
-  DynamicJsonDocument doc(8192);
-#endif
+  JsonDocument doc;
 
   EnumerateHardware spec;
   deviceManager.readJsonIntoHardwareSpec(spec);  // This reads JSON off the wire into an EnumerateHardware object
@@ -288,7 +284,7 @@ void CommandProcessor::listHardware() {
  */
 void CommandProcessor::parseDeviceDefinition() {
   DeviceDefinition dev;
-  DynamicJsonDocument doc(512);
+  JsonDocument doc;
 
 	piLink.receiveJsonMessage(doc);                                   // Read the JSON off the line from the Pi
   dev = DeviceManager::readJsonIntoDeviceDef(doc);                  // Parse the JSON into a DeviceDefinition object
@@ -305,7 +301,11 @@ void CommandProcessor::parseDeviceDefinition() {
  *
  * \ingroup commands
  */
-void CommandProcessor::resetWiFi() { WiFi.disconnect(true); }
+void CommandProcessor::resetWiFi() { 
+  WiFi.disconnect(true); 
+  delay(500);
+  handleReset();
+}
 
 /**
  * \brief Get info about the WiFi connection
@@ -318,7 +318,7 @@ void CommandProcessor::wifiInfo() {
     return;
   }
 
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
   wifi_connection_info(doc);
   piLink.sendJsonMessage('W', doc);
 }
@@ -336,7 +336,7 @@ void CommandProcessor::toggleBacklight() { ::toggleBacklight = !::toggleBackligh
  * \ingroup commands
  */
 void CommandProcessor::getLcdContent() {
-  DynamicJsonDocument doc(256);
+  JsonDocument doc;
   getLcdContentJson(doc);
   piLink.sendJsonMessage('L', doc);
 }
@@ -357,7 +357,7 @@ void CommandProcessor::printTemperatures() {
  * \ingroup commands
  */
 void CommandProcessor::printRawTemperatures() {
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
   deviceManager.rawDeviceValues(doc);
   piLink.sendJsonMessage('R', doc);
 }
@@ -368,13 +368,12 @@ void CommandProcessor::printRawTemperatures() {
  * \see EepromManager::initializeEeprom()
  */
 void CommandProcessor::initEeprom() {
-	StaticJsonDocument<128> doc;
+	JsonDocument doc;
 	piLink.receiveJsonMessage(doc);
 
 	// Due to the "scanning" issue, we now need to test that there is an
 	// additional key being appended to the initializeEeprom command
-	if(!doc.containsKey(ExtendedSettingsKeys::eepromReset) || 
-	   !doc[ExtendedSettingsKeys::eepromReset].is<bool>() || !doc[ExtendedSettingsKeys::eepromReset].as<bool>()) {
+	if(!doc[ExtendedSettingsKeys::eepromReset].is<bool>() || !doc[ExtendedSettingsKeys::eepromReset].as<bool>()) {
 		logError(INFO_UNCONFIRMED_EEPROM_RESET);
 		return;
 	}
@@ -389,7 +388,7 @@ void CommandProcessor::initEeprom() {
  * \brief Print out the configured device names
  */
 void CommandProcessor::printDeviceNames() {
-  DynamicJsonDocument doc(256);
+  JsonDocument doc;
   DeviceNameManager::enumerateDeviceNames(doc);
   piLink.sendJsonMessage('N', doc);
 }
@@ -398,7 +397,7 @@ void CommandProcessor::printDeviceNames() {
  * \brief Process incoming settings
  */
 void CommandProcessor::processSettingsJson() {
-  DynamicJsonDocument doc(256);
+  JsonDocument doc;
   piLink.receiveJsonMessage(doc);
 
   // Process
@@ -420,7 +419,7 @@ void CommandProcessor::processSettingsJson() {
  * \brief Process incoming extended settings
  */
 void CommandProcessor::processExtendedSettingsJson() {
-  DynamicJsonDocument doc(256);
+  JsonDocument doc;
   piLink.receiveJsonMessage(doc);
 
   // Process
@@ -430,7 +429,7 @@ void CommandProcessor::processExtendedSettingsJson() {
   }
 
   // Save the settings
-  extendedSettings.storeToSpiffs();
+  extendedSettings.storeToFilesystem();
 
 #ifdef BREWPI_TFT
   display.init(); // For TFTs specifically, we need to reinitialize after updating the extended settings in case invertTFT changed
@@ -447,7 +446,7 @@ void CommandProcessor::processExtendedSettingsJson() {
  * @see DeviceNameManager::setDeviceName
  */
 void CommandProcessor::setDeviceNames() {
-  DynamicJsonDocument doc(256);
+  JsonDocument doc;
   piLink.receiveJsonMessage(doc);
 
   JsonObject root = doc.as<JsonObject>();
@@ -467,7 +466,7 @@ void CommandProcessor::setDeviceNames() {
  * \brief Send control settings as JSON string
  */
 void CommandProcessor::sendControlSettings() {
-  DynamicJsonDocument doc(256);
+  JsonDocument doc;
   tempControl.getControlSettingsDoc(doc);
   piLink.sendJsonMessage('S', doc);
 }
@@ -476,7 +475,7 @@ void CommandProcessor::sendControlSettings() {
  * \brief Send extended settings as JSON string
  */
 void CommandProcessor::sendExtendedSettings() {
-  DynamicJsonDocument doc(256);
+  JsonDocument doc;
   extendedSettings.toJson(doc);
   piLink.sendJsonMessage('X', doc);
 }
@@ -488,7 +487,7 @@ void CommandProcessor::sendExtendedSettings() {
  * these
  */
 void CommandProcessor::sendControlConstants() {
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
   tempControl.getControlConstantsDoc(doc);
   piLink.sendJsonMessage('C', doc);
 }
@@ -499,7 +498,7 @@ void CommandProcessor::sendControlConstants() {
  * Useful for debugging and choosing parameters
  */
 void CommandProcessor::sendControlVariables() {
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
   tempControl.getControlVariablesDoc(doc);
   piLink.sendJsonMessage('V', doc);
 }

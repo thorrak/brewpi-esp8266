@@ -59,4 +59,6 @@ void wifi_connection_info(JsonDocument& doc);
 extern WiFiServer server;
 extern WiFiClient serverClient;
 
+
+
 /** @} */

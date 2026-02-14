@@ -22,7 +22,7 @@ typedef uint8_t DeviceAddress[8];
 class JSONSaveable {
 protected:
     static void writeJsonToFile(const char *filename, const JsonDocument& json_doc);
-    static DynamicJsonDocument readJsonFromFile(const char*filename);
+    static JsonDocument readJsonFromFile(const char*filename);
 
 };
 
@@ -60,9 +60,9 @@ public:
     temperature pidMax;
     char tempFormat; //!< Temperature format (F/C)
 
-    void toJson(DynamicJsonDocument &doc);
-    void storeToSpiffs();
-    void loadFromSpiffs();
+    void toJson(JsonDocument &doc);
+    void storeToFilesystem();
+    void loadFromFilesystem();
     void setDefaults();
 
     /**
@@ -84,9 +84,9 @@ public:
     temperature coolEstimator; // updated automatically by self learning algorithm
     char mode;
 
-    void toJson(DynamicJsonDocument &doc);
-    void storeToSpiffs();
-    void loadFromSpiffs();
+    void toJson(JsonDocument &doc);
+    void storeToFilesystem();
+    void loadFromFilesystem();
     void setDefaults();
 
     /**
@@ -137,9 +137,8 @@ enum DeviceHardware {
 	DEVICE_HARDWARE_NONE = 0,
 	DEVICE_HARDWARE_PIN = 1, //!< A digital pin, either input or output
 	DEVICE_HARDWARE_ONEWIRE_TEMP = 2,	//<! A onewire temperature sensor
-#if BREWPI_DS2413
-	DEVICE_HARDWARE_ONEWIRE_2413 = 3,	//<! A onewire 2-channel PIO input or output.
-#endif
+  // DS2413 is no longer supported - leaving this here (but commented out) for historical reference
+//	DEVICE_HARDWARE_ONEWIRE_2413 = 3,	//<! A onewire 2-channel PIO input or output.
 // Skipping 4, as that is used in "modern" brewpi
   DEVICE_HARDWARE_BLUETOOTH_INKBIRD = 5,
   DEVICE_HARDWARE_BLUETOOTH_TILT = 6,
@@ -173,22 +172,14 @@ public:
 #endif
 		DeviceAddress address;        // for onewire devices, if address[0]==0 then use the first matching device type, otherwise use the device with the specific address
 
-												/* The pio and sensor calibration are never needed at the same time so they are a union.
-												* To ensure the eeprom format is stable when including/excluding DS2413 support, ensure all fields are the same size.
-												*/
-		union {
-#if BREWPI_DS2413
-			uint8_t pio;						// for ds2413 (deviceHardware==3) : the pio number (0,1)
-#endif			
-			int8_t /* fixed4_4 */ calibration;	// for temp sensors (deviceHardware==2), calibration adjustment to add to sensor readings
-												// this is intentionally chosen to match the raw value precision returned by the ds18b20 sensors
-		};
+    int8_t /* fixed4_4 */ calibration;	// for temp sensors (deviceHardware==2), calibration adjustment to add to sensor readings
+                      // this is intentionally chosen to match the raw value precision returned by the ds18b20 sensors
 	} hw;
 
-    void toJson(DynamicJsonDocument &doc);
-    void fromJson(DynamicJsonDocument json_doc);
-    void storeToSpiffs(uint8_t devID);
-    void loadFromSpiffs(uint8_t devID);
+    void toJson(JsonDocument &doc);
+    void fromJson(JsonDocument json_doc);
+    void storeToFilesystem(uint8_t devID);
+    void loadFromFilesystem(uint8_t devID);
     void setDefaults();
 
     static void deviceFilename(char * fname, uint8_t devid);
@@ -206,16 +197,24 @@ public:
     bool invertTFT;  //<! Whether or not to invert the TFT
     bool largeTFT;  //<! Whether or not to use a large TFT
     bool glycol;  //<! Whether or not to use glycol mode
+    bool resetScreenOnPin;  //<! Whether or not to reset the screen when an ActuatorArduinoPin toggles
 
-    void toJson(DynamicJsonDocument &doc);
-    void storeToSpiffs();
-    void loadFromSpiffs();
+    #ifdef HAS_BLUETOOTH
+    NimBLEAddress tiltGravSensor; //<! The color of the Tilt hydrometer used for gravity
+    void setTiltGravSensor(NimBLEAddress setting);
+    #endif
+
+
+    void toJson(JsonDocument &doc);
+    void storeToFilesystem();
+    void loadFromFilesystem();
     void setDefaults();
     void processSettingKeypair(JsonPair kv);
 
     void setGlycol(bool setting);
     void setInvertTFT(bool setting);
     void setLargeTFT(bool setting);
+    void setResetScreenOnPin(bool setting);
 
     /**
      * \brief Filename used when reading/writing data to flash
@@ -230,17 +229,36 @@ private:
  */
 class UpstreamSettings : public JSONSaveable {
 public:
+    enum class upstreamRegErrorT {
+      NO_ERROR,                   // 0
+      NO_GUID,                    // 1
+      NO_USERNAME,                // 2
+      INVALID_USER,               // 3
+      NO_BREWHOUSE_ON_USER,       // 4
+      NO_HARDWARE_TYPE,           // 5
+      NO_FIRMWARE_VERSION,        // 6
+      INVALID_API_KEY,            // 7
+      NOT_ATTEMPTED_REGISTRATION, // 8
+      REGISTRATION_ENDPOINT_ERR,  // 9
+    };
+
     UpstreamSettings();
 
     char upstreamHost[128];  // Hostname (or IP address) of the upstream server
-    uint16_t upstreamPort;  // Port of the upstream server (defaults to 80)
-    char deviceID[64];      // UUID of this device, as assigned by upstream server
+    uint16_t upstreamPort;   // Port of the upstream server (defaults to 80)
+    char username[128];      // Hostname (or IP address) of the upstream server
+    char deviceID[40];       // UUID of this device, as assigned by upstream server
+    char apiKey[40];         // API key (uuid4 format) for the brewhouse this device is assigned to, as assigned by upstream server 
 
-    void toJson(DynamicJsonDocument &doc);
-    void storeToSpiffs();
-    void loadFromSpiffs();
+    upstreamRegErrorT upstreamRegistrationError;  //<! Error code from last upstream registration attempt
+
+    void toJson(JsonDocument &doc);
+    void storeToFilesystem();
+    void loadFromFilesystem();
     void setDefaults();
     void processSettingKeypair(JsonPair kv);
+
+    bool isRegistered();  //<! Whether or not this device has been registered with the upstream server
 
     /**
      * \brief Filename used when reading/writing data to flash
@@ -248,3 +266,7 @@ public:
     static constexpr auto filename = "/upstreamSettings.json";
 private:
 };
+
+#ifdef HAS_BLUETOOTH
+extern NimBLEAddress NoTiltDevice;
+#endif

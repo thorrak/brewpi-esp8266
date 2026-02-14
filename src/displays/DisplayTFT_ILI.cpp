@@ -6,6 +6,8 @@
  *
  */
 
+#ifdef BREWPI_TFT_ILI9341
+
 #include "Brewpi.h"
 #include "BrewpiStrings.h"
 #include <limits.h>
@@ -13,16 +15,13 @@
 #include <string>
 
 #include "Display.h"
-#include "DisplayLcd.h"
 #include "Menu.h"
 
-#include "DisplayTFT.h"
+#include "DisplayTFT_ILI.h"
 
 #include "TempControl.h"
 #include "TemperatureFormats.h"
 #include "Pins.h"
-
-#ifdef BREWPI_TFT
 
 
 #ifdef ESP8266_WiFi
@@ -43,6 +42,10 @@
 #include "Adafruit_ILI9341.h"
 
 //#include <XPT2046_Touchscreen.h>
+
+#ifdef HAS_BLUETOOTH
+#include "wireless/BTScanner.h"
+#endif
 
 
 bool toggleBacklight;
@@ -120,7 +123,12 @@ void LcdDisplay::init(){
     pinMode(TFT_BACKLIGHT, OUTPUT);
     digitalWrite(TFT_BACKLIGHT, HIGH);
 #endif
+}
 
+void LcdDisplay::reset(){
+    // This is called whenever the screen is reset when a relay pin toggles.
+    // For now, just call init()
+    init();
 }
 
 #ifndef UINT16_MAX
@@ -142,6 +150,10 @@ void LcdDisplay::printAllTemperatures(){
     printBeerSet();
     printFridgeTemp();
     printFridgeSet();
+
+#ifdef HAS_BLUETOOTH
+    printGravity();
+#endif
 }
 
 void LcdDisplay::setDisplayFlags(uint8_t newFlags) {
@@ -234,19 +246,19 @@ void LcdDisplay::printMode(){
             tft->print("Fridge Constant");
             break;
         case Modes::beerConstant:
-            tft->print("Beer Constant");
+            tft->print("Beer Constant  ");
             break;
         case Modes::beerProfile:
-            tft->print("Beer Profile");
+            tft->print("Beer Profile   ");
             break;
         case Modes::off:
-            tft->print("Off");
+            tft->print("Off            ");
             break;
         case Modes::test:
-            tft->print("** Testing **");
+            tft->print("** Testing **  ");
             break;
         default:
-            tft->print("Invalid Mode");
+            tft->print("Invalid Mode   ");
             break;
     }
 }
@@ -475,19 +487,26 @@ void LcdDisplay::printGravity(){
     clearForText(GRAVITY_START_X, GRAVITY_START_Y, ILI9341_BLACK, GRAVITY_HEADER_FONT_SIZE, 5);
 
     tft->setCursor(GRAVITY_START_X, GRAVITY_HEADER_START_Y);
-    tft->print("Gravity");
 
+    tilt* grav_sensor = bt_scanner.get_tilt(extendedSettings.tiltGravSensor);
+    if(grav_sensor != nullptr) {
+        tft->print("Gravity");
 
-    // Print the Gravity
-    double grav = 80.0 / 1000.0;
+        // Print the Gravity
+        double grav = grav_sensor->getGravity() / 1000.0;
 
-
-
-    char grav_text[6];
-    snprintf(grav_text, 6, "%05.3f", grav);
-    tft->setTextSize(GRAVITY_FONT_SIZE);
-    tft->setCursor(GRAVITY_START_X, GRAVITY_START_Y);
-    tft->print(grav_text);
+        char grav_text[6];
+        snprintf(grav_text, 6, "%05.3f", grav);
+        tft->setTextSize(GRAVITY_FONT_SIZE);
+        tft->setCursor(GRAVITY_START_X, GRAVITY_START_Y);
+        tft->print(grav_text);
+    } else {
+        // Clear the gravity section of the screen
+        tft->print("       ");
+        tft->setTextSize(GRAVITY_FONT_SIZE);
+        tft->setCursor(GRAVITY_START_X, GRAVITY_START_Y);
+        tft->print("     ");
+    }
 }
 #endif
 

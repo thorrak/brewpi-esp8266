@@ -33,3 +33,10 @@ src/Version.h
 /venv
 /docs/venv
 /docs/_build
+
+# ESP-IDF & PIO Arduino
+managed_components/
+.dummy/
+sdkconfig.*
+CMakeLists.txt
+dependencies.lock

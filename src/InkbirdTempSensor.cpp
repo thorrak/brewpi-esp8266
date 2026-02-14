@@ -45,11 +45,13 @@ temperature InkbirdTempSensor::read(){
 
 
 /**
- * \brief Reads the temperature.
+ * @brief Reads the temperature from the Inkbird temperature sensor and constrains it within the defined limits.
  *
- * If successful, constrains the temp to the range of the temperature type
- * and updates lastRequestTime. On successful, leaves lastRequestTime alone
- * and returns TEMP_SENSOR_DISCONNECTED.
+ * This function checks if the sensor is connected and, if connected, retrieves the cached temperature in a 
+ * fixed-point format, applies a calibration offset, and constrains the temperature within the minimum and 
+ * maximum allowable limits.
+ *
+ * @return temperature The constrained temperature value or a constant indicating the sensor is disconnected.
  */
 temperature InkbirdTempSensor::readAndConstrainTemp()
 {

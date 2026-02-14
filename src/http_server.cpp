@@ -3,19 +3,12 @@
 #include <Arduino.h>
 #include <ArduinoLog.h>
 #include <ArduinoJson.h>
-// #define LCBURL_MDNS
-// #include <LCBUrl.h>
-// #include <WiFi.h>
-// #include <WiFiClient.h>
+#include <AsyncJson.h>
+#include <ESPAsyncWebServer.h>
 
 #include "ESPEepromAccess.h"  // Defines FILESYSTEM (and includes the approprite headers)
 
 #include "uptime.h"
-// #include "version.h"
-// #include "wifi_setup.h"
-
-// #include "jsonconfig.h"
-
 #include "resetreasons.h"
 #include "http_server.h"
 #include "TempControl.h"
@@ -24,23 +17,30 @@
 #include "JsonMessages.h"
 #include "DeviceManager.h"
 #include "JsonKeys.h"
+#include "rest/rest_send.h"
+#include "EepromManager.h"
+#include "SettingsManager.h"
+
+#include "extended_async_json_handler.h"
 
 
 httpServer http_server;
+AsyncWebServer asyncWebServer(WEB_SERVER_PORT);
 
 
 
 // Settings Page Handlers
 
-uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool triggerUpstreamUpdate) {
+bool processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
     uint8_t failCount = 0;
     bool saveSettings = false;
 
     // Upstream Host
-    if(json.containsKey(UpstreamSettingsKeys::upstreamHost)) {
+    if(json[UpstreamSettingsKeys::upstreamHost].is<const char*>()) {
         if (strlen(json[UpstreamSettingsKeys::upstreamHost]) <= 0) {
             // The user unset the upstream host - Clear it from memory
             upstreamSettings.upstreamHost[0] = '\0';
+            upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
             Log.notice(F("Settings update, [upstreamHost]: unset.\r\n"));
         } else if (strlen(json[UpstreamSettingsKeys::upstreamHost]) >= 128 ) {
             Log.warning(F("Settings update error, [upstreamHost]:(%s) not valid.\r\n"), json[UpstreamSettingsKeys::upstreamHost].as<const char*>());
@@ -49,6 +49,7 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
             // Valid - Update
             if(strcmp(json[UpstreamSettingsKeys::upstreamHost], upstreamSettings.upstreamHost) != 0) {
                 strlcpy(upstreamSettings.upstreamHost, json[UpstreamSettingsKeys::upstreamHost].as<const char*>(), 128);
+                upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
                 Log.notice(F("Settings update, [upstreamHost]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::upstreamHost].as<const char*>());
                 saveSettings = true;
             }
@@ -56,36 +57,36 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
     }
 
     // Upstream Port
-    if(json.containsKey(UpstreamSettingsKeys::upstreamPort)) {
-        if(json[UpstreamSettingsKeys::upstreamPort].is<uint16_t>()) {
-            if((json[UpstreamSettingsKeys::upstreamPort] < 0) || (json[UpstreamSettingsKeys::upstreamPort] > 65535)) {
-                Log.warning(F("Invalid [upstreamPort]:(%u) received.\r\n"), json[UpstreamSettingsKeys::upstreamPort]);
-                failCount++;
-            } else {
-                //Valid - Update
-                upstreamSettings.upstreamPort = json[UpstreamSettingsKeys::upstreamPort];
-                Log.notice(F("Settings update, [upstreamPort]:(%d) applied.\r\n"), json[UpstreamSettingsKeys::upstreamHost].as<uint16_t>());
-                saveSettings = true;
-            }
-        } else {
-            Log.warning(F("Invalid [upstreamPort]:(%s) received (wrong type).\r\n"), json[UpstreamSettingsKeys::upstreamPort]);
+    if(json[UpstreamSettingsKeys::upstreamPort].is<uint16_t>()) {
+        if((json[UpstreamSettingsKeys::upstreamPort] <= 0) || (json[UpstreamSettingsKeys::upstreamPort] > 65535)) {
+            // This is actually impossible to reach, unless the port is 0.
+            Log.warning("Invalid [upstreamPort]:(%u) received.\r\n", json[UpstreamSettingsKeys::upstreamPort].as<uint16_t>());
             failCount++;
+        } else {
+            //Valid - Update
+            upstreamSettings.upstreamPort = json[UpstreamSettingsKeys::upstreamPort];
+            upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
+            Log.warning("Settings update, [upstreamPort]:(%d) applied.\r\n", json[UpstreamSettingsKeys::upstreamPort].as<uint16_t>());
+            saveSettings = true;
         }
+    } else {
+        Log.warning("Invalid [upstreamPort]:(%s) received (wrong type).\r\n", json[UpstreamSettingsKeys::upstreamPort].as<const char*>());
+        failCount++;
     }
 
     // Device ID
     // NOTE - We're not allowing the device ID to be changed via the API for now. Instead, it has to be reset with the upstream
-    // if(json.containsKey(UpstreamSettingsKeys::deviceID)) {
+    // if(json[UpstreamSettingsKeys::deviceID].is<const char*>()) {
     //     if (strlen(json[UpstreamSettingsKeys::deviceID]) <= 0) {
     //         // The user unset the upstream host - Clear it from memory
     //         upstreamSettings.deviceID[0] = '\0';
     //         Log.notice(F("Settings update, [deviceID]: unset.\r\n"));
-    //     } else if (strlen(json[UpstreamSettingsKeys::deviceID]) >= 128 ) {
+    //     } else if (strlen(json[UpstreamSettingsKeys::deviceID]) >= 40 ) {
     //         Log.warning(F("Settings update error, [deviceID]:(%s) not valid.\r\n"), json[UpstreamSettingsKeys::deviceID].as<const char*>());
     //         failCount++;
     //     } else {
     //         if(strcmp(json[UpstreamSettingsKeys::deviceID], upstreamSettings.deviceID) != 0) {
-    //             strlcpy(upstreamSettings.deviceID, json[UpstreamSettingsKeys::deviceID].as<const char*>(), 64);
+    //             strlcpy(upstreamSettings.deviceID, json[UpstreamSettingsKeys::deviceID].as<const char*>(), 40);
     //             Log.notice(F("Settings update, [deviceID]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::deviceID].as<const char*>());
     //             saveSettings = true;
     //         }
@@ -93,107 +94,175 @@ uint8_t processUpstreamConfigUpdateJson(const DynamicJsonDocument& json, bool tr
     // }
 
 
-    // Device ID Reset
-    if(json.containsKey("resetDeviceID")) {
-        if(json["resetDeviceID"].is<bool>()) {
-            if(json["resetDeviceID"]) {
-                // The user wants to reset the device ID
-                Log.notice(F("Settings update, [resetDeviceID]: true.\r\n"));
-                upstreamSettings.deviceID[0] = '\0';
+    // Upstream Username
+    if(json[UpstreamSettingsKeys::username].is<const char*>()) {
+        if (strlen(json[UpstreamSettingsKeys::username]) <= 0) {
+            // The user unset the upstream host - Clear it from memory
+            upstreamSettings.username[0] = '\0';
+            upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
+            Log.notice(F("Settings update, [username]: unset.\r\n"));
+        } else if (strlen(json[UpstreamSettingsKeys::username]) >= 128 ) {
+            Log.warning(F("Settings update error, [username]:(%s) not valid.\r\n"), json[UpstreamSettingsKeys::username].as<const char*>());
+            failCount++;
+        } else {
+            // Valid - Update
+            if(strcmp(json[UpstreamSettingsKeys::username], upstreamSettings.username) != 0) {
+                strlcpy(upstreamSettings.username, json[UpstreamSettingsKeys::username].as<const char*>(), 128);
+                upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
+                Log.notice(F("Settings update, [username]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::username].as<const char*>());
                 saveSettings = true;
             }
-        } else {
-            Log.warning(F("Invalid [resetDeviceID]:(%s) received (wrong type).\r\n"), json["resetDeviceID"]);
-            failCount++;
         }
     }
 
+    // Upstream API Key
+    // NOTE - Unused as of Jan 2024
+    if(json[UpstreamSettingsKeys::apiKey].is<const char*>()) {
+        if (strlen(json[UpstreamSettingsKeys::apiKey]) <= 0) {
+            // The user unset the upstream host - Clear it from memory
+            upstreamSettings.apiKey[0] = '\0';
+            upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
+            Log.notice(F("Settings update, [apiKey]: unset.\r\n"));
+        } else if (strlen(json[UpstreamSettingsKeys::apiKey]) >= 40 ) {
+            Log.warning(F("Settings update error, [apiKey]:(%s) not valid.\r\n"), json[UpstreamSettingsKeys::apiKey].as<const char*>());
+            failCount++;
+        } else {
+            // Valid - Update
+            if(strcmp(json[UpstreamSettingsKeys::apiKey], upstreamSettings.apiKey) != 0) {
+                strlcpy(upstreamSettings.apiKey, json[UpstreamSettingsKeys::apiKey].as<const char*>(), sizeof(upstreamSettings.apiKey));
+                upstreamSettings.deviceID[0] = '\0';  // Also clear the device ID
+                Log.notice(F("Settings update, [apiKey]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::apiKey].as<const char*>());
+                saveSettings = true;
+            }
+        }
+    }
 
-    // //////  Generic Settings
-    // // mDNS ID
-    // if(json.containsKey("mdnsID")) {
-    //     // Set hostname
-    //     LCBUrl url;
-    //     if (!url.isValidLabel(json["mdnsID"])) {
-    //         Log.warning(F("Settings update error, [mdnsID]:(%s) not valid.\r\n"), json["mdnsID"]);
-    //         failCount++;
-    //     } else {
-    //         if (strcmp(config.mdnsID, json["mdnsID"].as<const char*>()) != 0) {
-    //             hostnamechanged = true;
-    //             strlcpy(config.mdnsID, json["mdnsID"].as<const char*>(), 32);
-    //             Log.notice(F("Settings update, [mdnsID]:(%s) applied.\r\n"), json["mdnsID"].as<const char*>());
-    //         } else {
-    //             Log.notice(F("Settings update, [mdnsID]:(%s) NOT applied - no change.\r\n"), json["mdnsID"].as<const char*>());
-    //         }
-
-    //     }
-    // }
-
+    // Device Name (optional, only used during registration)
+    if(json[UpstreamSettingsKeys::deviceName].is<const char*>()) {
+        if (strlen(json[UpstreamSettingsKeys::deviceName]) >= sizeof(rest_handler.pendingDeviceName)) {
+            Log.warning(F("Settings update error, [name]:(%s) too long.\r\n"), json[UpstreamSettingsKeys::deviceName].as<const char*>());
+            failCount++;
+        } else {
+            strlcpy(rest_handler.pendingDeviceName, json[UpstreamSettingsKeys::deviceName].as<const char*>(), sizeof(rest_handler.pendingDeviceName));
+            Log.notice(F("Settings update, [name]:(%s) applied.\r\n"), json[UpstreamSettingsKeys::deviceName].as<const char*>());
+        }
+    } else {
+        // No name provided - clear any pending name
+        rest_handler.pendingDeviceName[0] = '\0';
+    }
 
     // Save
     if (failCount) {
         Log.error(F("Error: Invalid upstream configuration.\r\n"));
     } else {
         if(saveSettings == true) {
-            // TODO - Force upstream cascade/send
-            upstreamSettings.storeToSpiffs();
+            upstreamSettings.storeToFilesystem();
         }
+        upstreamSettings.upstreamRegistrationError = UpstreamSettings::upstreamRegErrorT::NOT_ATTEMPTED_REGISTRATION;
+        rest_handler.register_device_ticker = true;
     }
-    return failCount;
+    return failCount == 0;
 }
 
 
-uint8_t processDeviceUpdateJson(const DynamicJsonDocument& json, bool triggerUpstreamUpdate) {
+bool processDeviceUpdateJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
     DeviceDefinition dev;
-
     // Check for universally required keys
-    if(!json.containsKey(DeviceDefinitionKeys::chamber) || !json.containsKey(DeviceDefinitionKeys::beer) || 
-       !json.containsKey(DeviceDefinitionKeys::function) || !json.containsKey(DeviceDefinitionKeys::hardware) ||
-       !json.containsKey(DeviceDefinitionKeys::deactivated)) {
-
-        Log.warning(F("Invalid device definition received - missing required keys.\r\n"));
+    if(!json[DeviceDefinitionKeys::chamber].is<uint8_t>() || !json[DeviceDefinitionKeys::beer].is<uint8_t>() || 
+        !json[DeviceDefinitionKeys::function].is<uint8_t>() || !json[DeviceDefinitionKeys::hardware].is<uint8_t>()
+    //    || !json[DeviceDefinitionKeys::deactivated].is<bool>()
+    ) 
+    {
+        // We don't actually parse deactivated, so commenting out the check. If we add it later, we will need to check that we don't need to do
+        // shenanigans like we do with invert below to handle all the various ways it can be sent to us.
+        Log.warning(F("Invalid device definition received - missing required keys (c/f/h/b).\r\n"));
         return 1;
     }
 
-
-	  switch(json[DeviceDefinitionKeys::hardware].as<uint8_t>()) {
+    switch(json[DeviceDefinitionKeys::hardware].as<uint8_t>()) {
         case DEVICE_HARDWARE_PIN:
-            if(!json.containsKey(DeviceDefinitionKeys::pin) || !json.containsKey(DeviceDefinitionKeys::invert)) {
-                Log.warning(F("Invalid device definition received - missing required keys.\r\n"));
+
+            if(!json[DeviceDefinitionKeys::pin].is<int>() || !(json[DeviceDefinitionKeys::invert].is<bool>() || json[DeviceDefinitionKeys::invert].is<const char *>() || json[DeviceDefinitionKeys::invert].is<uint8_t>())) {
+                Log.warning(F("Invalid device definition received - missing required keys (p/x).\r\n"));
                 return 1;
             }
             break;
-		case DEVICE_HARDWARE_ONEWIRE_TEMP:
-		case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
-		case DEVICE_HARDWARE_BLUETOOTH_TILT:
-            if(!json.containsKey(DeviceDefinitionKeys::address)) {
-                Log.warning(F("Invalid device definition received - missing required keys.\r\n"));
+        case DEVICE_HARDWARE_ONEWIRE_TEMP:
+        case DEVICE_HARDWARE_BLUETOOTH_INKBIRD:
+        case DEVICE_HARDWARE_BLUETOOTH_TILT:
+            if(!json[DeviceDefinitionKeys::address].is<const char*>()) {
+                Log.warning(F("Invalid device definition received - missing required keys (a).\r\n"));
                 return 1;
             }
-			break;
-		case DEVICE_HARDWARE_TPLINK_SWITCH:
-            if(!json.containsKey(DeviceDefinitionKeys::address) || !json.containsKey(DeviceDefinitionKeys::child_id)) {
-                Log.warning(F("Invalid device definition received - missing required keys.\r\n"));
+            break;
+        case DEVICE_HARDWARE_TPLINK_SWITCH:
+            if(!json[DeviceDefinitionKeys::address].is<const char*>() || !json[DeviceDefinitionKeys::child_id].is<const char*>()) {
+                Log.warning(F("Invalid device definition received - missing required keys (a).\r\n"));
                 return 1;
             }
-			break;
-		default:
-			break;
-	  }
-
-    dev = DeviceManager::readJsonIntoDeviceDef(json);                  // Parse the JSON into a DeviceDefinition object
-    DeviceConfig print = deviceManager.updateDeviceDefinition(dev);   // Save the device definition (if valid)
+            break;
+        default:
+            break;
+    }
+    http_server.dev = DeviceManager::readJsonIntoDeviceDef(json);                  // Parse the JSON into a DeviceDefinition object
+    http_server.device_definition_update_requested = true;
+    // dev = DeviceManager::readJsonIntoDeviceDef(json);                  // Parse the JSON into a DeviceDefinition object
     // TODO - Trigger upstream update
-    return 0;
+    return true;
 }
 
 
-uint8_t processUpdateModeJson(const DynamicJsonDocument& json, bool triggerUpstreamUpdate) {
+// Allows us to process the device definition update in the main loop rather than in the async handler
+void httpServer::processQueuedDeviceDefinition() {
+    if(device_definition_update_requested) {
+        /*DeviceConfig print =*/
+        deviceManager.updateDeviceDefinition(dev);   // Save the device definition (if valid)
+        device_definition_update_requested = false;
+    }
+}
+
+
+// Allows us to process action requests in the main loop rather than in the async handler
+void httpServer::processQueuedActions() {
+    // Process config reset first (before restart)
+    if(config_reset_requested) {
+        Log.notice(F("Processing config reset request\r\n"));
+        delay(500);  // Need to give the response time to be sent/processed
+        if(eepromManager.initializeEeprom()) {
+            logInfo(INFO_EEPROM_INITIALIZED);
+            settingsManager.loadSettings();
+        }
+        config_reset_requested = false;
+    }
+
+    // Process WiFi/connection reset (this will also restart)
+    if(wifi_reset_requested) {
+        Log.notice(F("Processing WiFi reset request\r\n"));
+        delay(500);  // Need to give the response time to be sent/processed
+        // Reset the upstream settings
+        upstreamSettings.setDefaults();
+        upstreamSettings.storeToFilesystem();
+        // Disconnect WiFi and restart
+        WiFi.disconnect(false, true);
+        delay(500);
+        ESP.restart();
+    }
+
+    // Process simple restart last (if no wifi_reset was requested)
+    if(restart_requested) {
+        Log.notice(F("Processing restart request\r\n"));
+        delay(500);  // Need to give the response time to be sent/processed
+        ESP.restart();
+    }
+}
+
+
+bool processUpdateModeJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
     uint8_t failCount = 0;
     bool saveSettings = false;
 
     // Temperature Control Mode
-    if(json.containsKey(ModeUpdateKeys::mode)) {
+    if(json[ModeUpdateKeys::mode].is<const char *>()) {
         if (strlen(json[ModeUpdateKeys::mode]) == 1) {
             char new_mode = json[ModeUpdateKeys::mode].as<const char *>()[0];
             if (new_mode == Modes::fridgeConstant || new_mode == Modes::beerConstant || new_mode == Modes::beerProfile ||
@@ -201,27 +270,27 @@ uint8_t processUpdateModeJson(const DynamicJsonDocument& json, bool triggerUpstr
                 // Mode is valid - Update
                 if(new_mode != tempControl.getMode()) {
                     tempControl.setMode(new_mode);
-                    Log.notice(F("Settings update, [mode]:(%c) applied.\r\n"), new_mode);
+                    Log.notice(F("Settings update, [newMode]:(%c) applied.\r\n"), new_mode);
                     saveSettings = true;
                 } else {
-                    Log.notice(F("Settings update, [mode]:(%c) NOT applied - no change.\r\n"), new_mode);
+                    Log.notice(F("Settings update, [newMode]:(%c) NOT applied - no change.\r\n"), new_mode);
                 }
             } else {
-                Log.warning(F("Settings update error, [mode]:(%c) not valid.\r\n"), new_mode);
+                Log.warning(F("Settings update error, [newMode]:(%c) not valid.\r\n"), new_mode);
                 failCount++;
             }
         } else {
-            Log.warning(F("Settings update error, [mode]:(%s) not a valid type.\r\n"), json[ModeUpdateKeys::mode].as<const char*>());
+            Log.warning(F("Settings update error, [newMode]:(%s) not a valid type.\r\n"), json[ModeUpdateKeys::mode].as<const char*>());
             failCount++;
         }
     }
 
 
     // Set Point
-    if(json.containsKey(ModeUpdateKeys::setpoint)) {
+    if(json[ModeUpdateKeys::setpoint].is<double>()) {
         if(tempControl.getMode() != Modes::fridgeConstant && tempControl.getMode() != Modes::beerConstant && tempControl.getMode() != Modes::beerProfile) {
             Log.info(F("Settings update error, [setpoint]:(%s) current mode (%c) does not take a setpoint.\r\n"), json[ModeUpdateKeys::setpoint].as<const char*>(), tempControl.getMode());
-        } else if(json[ModeUpdateKeys::setpoint].is<double>()) {
+        } else {
             char modeString[7];
             snprintf(modeString, 7, "%.1f", json[ModeUpdateKeys::setpoint].as<double>());
 
@@ -236,9 +305,6 @@ uint8_t processUpdateModeJson(const DynamicJsonDocument& json, bool triggerUpstr
             } else {
                 Log.error(F("Settings update error, [setpoint]:(%s) current mode (%c) does not take a setpoint (should never be reached).\r\n"), modeString, tempControl.getMode());
             }
-        } else {
-            Log.warning(F("Invalid [setpoint]:(%s) received (wrong type).\r\n"), json[ModeUpdateKeys::setpoint]);
-            failCount++;
         }
     }
 
@@ -249,70 +315,82 @@ uint8_t processUpdateModeJson(const DynamicJsonDocument& json, bool triggerUpstr
     } else {
         if(saveSettings == true) {
             // TODO - Force upstream cascade/send
-            // upstreamSettings.storeToSpiffs();
+            // upstreamSettings.storeToFilesystem();
         }
     }
-    return failCount;
+    return failCount == 0;
 }
 
 
 
-uint8_t processExtendedSettingsJson(const DynamicJsonDocument& json, bool triggerUpstreamUpdate) {
+bool processExtendedSettingsJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
     uint8_t failCount = 0;
     bool saveSettings = false;
     bool saveMinTimes = false; 
 
     // Glycol Mode
-    if(json.containsKey(ExtendedSettingsKeys::glycol)) {
-        if(json[ExtendedSettingsKeys::glycol].is<bool>()) {
-            if(extendedSettings.glycol != json[ExtendedSettingsKeys::glycol].as<bool>()) {
-                extendedSettings.setGlycol(json[ExtendedSettingsKeys::glycol].as<bool>());
-                saveSettings = true;
-            }
-        } else {
-            Log.warning(F("Invalid [glycol]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::glycol]);
-            failCount++;
+    if(json[ExtendedSettingsKeys::glycol].is<bool>()) {
+        if(extendedSettings.glycol != json[ExtendedSettingsKeys::glycol].as<bool>()) {
+            extendedSettings.setGlycol(json[ExtendedSettingsKeys::glycol].as<bool>());
+            saveSettings = true;
         }
+    } else {
+        Log.warning(F("Invalid [glycol]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::glycol]);
+        failCount++;
     }
 
-    // Low Delay Mode
-    if(json.containsKey(ExtendedSettingsKeys::largeTFT)) {
-        if(json[ExtendedSettingsKeys::largeTFT].is<bool>()) {
-            if(extendedSettings.largeTFT != json[ExtendedSettingsKeys::largeTFT].as<bool>()) {
-                extendedSettings.setLargeTFT(json[ExtendedSettingsKeys::largeTFT].as<bool>());
-                saveSettings = true;
-            }
-        } else {
-            Log.warning(F("Invalid [largeTFT]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::largeTFT]);
-            failCount++;
+    // Large TFT flag
+    if(json[ExtendedSettingsKeys::largeTFT].is<bool>()) {
+        if(extendedSettings.largeTFT != json[ExtendedSettingsKeys::largeTFT].as<bool>()) {
+            extendedSettings.setLargeTFT(json[ExtendedSettingsKeys::largeTFT].as<bool>());
+            saveSettings = true;
         }
+    } else {
+        Log.warning(F("Invalid [largeTFT]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::largeTFT]);
+        failCount++;
     }
 
     // Invert TFT Flag
-    if(json.containsKey(ExtendedSettingsKeys::invertTFT)) {
-        if(json[ExtendedSettingsKeys::invertTFT].is<bool>()) {
-            if(extendedSettings.invertTFT != json[ExtendedSettingsKeys::invertTFT].as<bool>()) {
-                extendedSettings.setInvertTFT(json[ExtendedSettingsKeys::invertTFT].as<bool>());
-                saveSettings = true;
-            }
-        } else {
-            Log.warning(F("Invalid [invertTFT]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::invertTFT]);
-            failCount++;
+    if(json[ExtendedSettingsKeys::invertTFT].is<bool>()) {
+        if(extendedSettings.invertTFT != json[ExtendedSettingsKeys::invertTFT].as<bool>()) {
+            extendedSettings.setInvertTFT(json[ExtendedSettingsKeys::invertTFT].as<bool>());
+            saveSettings = true;
         }
+    } else {
+        Log.warning(F("Invalid [invertTFT]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::invertTFT]);
+        failCount++;
+    }
+
+    // Reset Screen on Pin Toggle Flag
+    if(json[ExtendedSettingsKeys::resetScreenOnPin].is<bool>()) {
+        if(extendedSettings.resetScreenOnPin != json[ExtendedSettingsKeys::resetScreenOnPin].as<bool>()) {
+            extendedSettings.setResetScreenOnPin(json[ExtendedSettingsKeys::resetScreenOnPin].as<bool>());
+            saveSettings = true;
+        }
+    } else {
+        Log.warning(F("Invalid [resetScreenOnPin]:(%s) received (wrong type).\r\n"), json[ExtendedSettingsKeys::resetScreenOnPin]);
+        failCount++;
     }
 
 
+#ifdef HAS_BLUETOOTH
+    // Tilt Gravity Sensor
+    if(json[ExtendedSettingsKeys::tiltGravSensor].is<std::string>()) {
+        // Validate that it's valid
+        if(extendedSettings.tiltGravSensor != NimBLEAddress(json[ExtendedSettingsKeys::tiltGravSensor].as<std::string>(), 1)) {
+            // Tilts use address type 1 ("random", which (correctly!) indicates they didn't buy a MAC block)
+            extendedSettings.setTiltGravSensor(NimBLEAddress(json[ExtendedSettingsKeys::tiltGravSensor].as<std::string>(), 1));
+            saveSettings = true;
+        }
+    }
+#endif
+
     // SETTINGS_CHOICE
-    if(json.containsKey(MinTimesKeys::SETTINGS_CHOICE)) {
-        if(json[MinTimesKeys::SETTINGS_CHOICE].is<uint8_t>()) {
-            // Validate that it's valid and different
-            if(minTimes.settings_choice != json[MinTimesKeys::SETTINGS_CHOICE].as<uint8_t>() && json[MinTimesKeys::SETTINGS_CHOICE].as<uint8_t>() <= MIN_TIMES_CUSTOM) {
-                minTimes.settings_choice = (MinTimesSettingsChoice) json[MinTimesKeys::SETTINGS_CHOICE].as<uint8_t>();
-                saveMinTimes = true;
-            }
-        } else {
-            Log.warning(F("Invalid [SETTINGS_CHOICE]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::SETTINGS_CHOICE]);
-            failCount++;
+    if(json[MinTimesKeys::SETTINGS_CHOICE].is<uint8_t>()) {
+        // Validate that it's valid and different
+        if(minTimes.settings_choice != json[MinTimesKeys::SETTINGS_CHOICE].as<uint8_t>() && json[MinTimesKeys::SETTINGS_CHOICE].as<uint8_t>() <= MIN_TIMES_CUSTOM) {
+            minTimes.settings_choice = (MinTimesSettingsChoice) json[MinTimesKeys::SETTINGS_CHOICE].as<uint8_t>();
+            saveMinTimes = true;
         }
     }
 
@@ -321,109 +399,69 @@ uint8_t processExtendedSettingsJson(const DynamicJsonDocument& json, bool trigge
         // We only care about the other keys if we're in custom mode -- otherwise the call to setDefaults below will overwrite them
 
         // MIN_COOL_OFF_TIME
-        if(json.containsKey(MinTimesKeys::MIN_COOL_OFF_TIME)) {
-            if(json[MinTimesKeys::MIN_COOL_OFF_TIME].is<uint16_t>()) {
-                if(minTimes.MIN_COOL_OFF_TIME != json[MinTimesKeys::MIN_COOL_OFF_TIME].as<uint16_t>()) {
-                    minTimes.MIN_COOL_OFF_TIME = json[MinTimesKeys::MIN_COOL_OFF_TIME].as<uint16_t>();
-                    saveMinTimes = true;
-                }
-            } else {
-                Log.warning(F("Invalid [MIN_COOL_OFF_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::MIN_COOL_OFF_TIME]);
-                failCount++;
+        if(json[MinTimesKeys::MIN_COOL_OFF_TIME].is<uint16_t>()) {
+            if(minTimes.MIN_COOL_OFF_TIME != json[MinTimesKeys::MIN_COOL_OFF_TIME].as<uint16_t>()) {
+                minTimes.MIN_COOL_OFF_TIME = json[MinTimesKeys::MIN_COOL_OFF_TIME].as<uint16_t>();
+                saveMinTimes = true;
             }
         }
 
 
         // MIN_HEAT_OFF_TIME
-        if(json.containsKey(MinTimesKeys::MIN_HEAT_OFF_TIME)) {
-            if(json[MinTimesKeys::MIN_HEAT_OFF_TIME].is<uint16_t>()) {
-                if(minTimes.MIN_HEAT_OFF_TIME != json[MinTimesKeys::MIN_HEAT_OFF_TIME].as<uint16_t>()) {
-                    minTimes.MIN_HEAT_OFF_TIME = json[MinTimesKeys::MIN_HEAT_OFF_TIME].as<uint16_t>();
-                    saveMinTimes = true;
-                }
-            } else {
-                Log.warning(F("Invalid [MIN_HEAT_OFF_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::MIN_HEAT_OFF_TIME]);
-                failCount++;
+        if(json[MinTimesKeys::MIN_HEAT_OFF_TIME].is<uint16_t>()) {
+            if(minTimes.MIN_HEAT_OFF_TIME != json[MinTimesKeys::MIN_HEAT_OFF_TIME].as<uint16_t>()) {
+                minTimes.MIN_HEAT_OFF_TIME = json[MinTimesKeys::MIN_HEAT_OFF_TIME].as<uint16_t>();
+                saveMinTimes = true;
             }
         }
 
         // MIN_COOL_ON_TIME
-        if(json.containsKey(MinTimesKeys::MIN_COOL_ON_TIME)) {
-            if(json[MinTimesKeys::MIN_COOL_ON_TIME].is<uint16_t>()) {
-                if(minTimes.MIN_COOL_ON_TIME != json[MinTimesKeys::MIN_COOL_ON_TIME].as<uint16_t>()) {
-                    minTimes.MIN_COOL_ON_TIME = json[MinTimesKeys::MIN_COOL_ON_TIME].as<uint16_t>();
-                    saveMinTimes = true;
-                }
-            } else {
-                Log.warning(F("Invalid [MIN_COOL_ON_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::MIN_COOL_ON_TIME]);
-                failCount++;
+        if(json[MinTimesKeys::MIN_COOL_ON_TIME].is<uint16_t>()) {
+            if(minTimes.MIN_COOL_ON_TIME != json[MinTimesKeys::MIN_COOL_ON_TIME].as<uint16_t>()) {
+                minTimes.MIN_COOL_ON_TIME = json[MinTimesKeys::MIN_COOL_ON_TIME].as<uint16_t>();
+                saveMinTimes = true;
             }
         }
 
         // MIN_HEAT_ON_TIME
-        if(json.containsKey(MinTimesKeys::MIN_HEAT_ON_TIME)) {
-            if(json[MinTimesKeys::MIN_HEAT_ON_TIME].is<uint16_t>()) {
-                if(minTimes.MIN_HEAT_ON_TIME != json[MinTimesKeys::MIN_HEAT_ON_TIME].as<uint16_t>()) {
-                    minTimes.MIN_HEAT_ON_TIME = json[MinTimesKeys::MIN_HEAT_ON_TIME].as<uint16_t>();
-                    saveMinTimes = true;
-                }
-            } else {
-                Log.warning(F("Invalid [MIN_HEAT_ON_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::MIN_HEAT_ON_TIME]);
-                failCount++;
+        if(json[MinTimesKeys::MIN_HEAT_ON_TIME].is<uint16_t>()) {
+            if(minTimes.MIN_HEAT_ON_TIME != json[MinTimesKeys::MIN_HEAT_ON_TIME].as<uint16_t>()) {
+                minTimes.MIN_HEAT_ON_TIME = json[MinTimesKeys::MIN_HEAT_ON_TIME].as<uint16_t>();
+                saveMinTimes = true;
             }
         }
 
 
         // MIN_COOL_OFF_TIME_FRIDGE_CONSTANT
-        if(json.containsKey(MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT)) {
-            if(json[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT].is<uint16_t>()) {
-                if(minTimes.MIN_COOL_OFF_TIME_FRIDGE_CONSTANT != json[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT].as<uint16_t>()) {
-                    minTimes.MIN_COOL_OFF_TIME_FRIDGE_CONSTANT = json[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT].as<uint16_t>();
-                    saveMinTimes = true;
-                }
-            } else {
-                Log.warning(F("Invalid [MIN_COOL_OFF_TIME_FRIDGE_CONSTANT]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT]);
-                failCount++;
+        if(json[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT].is<uint16_t>()) {
+            if(minTimes.MIN_COOL_OFF_TIME_FRIDGE_CONSTANT != json[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT].as<uint16_t>()) {
+                minTimes.MIN_COOL_OFF_TIME_FRIDGE_CONSTANT = json[MinTimesKeys::MIN_COOL_OFF_TIME_FRIDGE_CONSTANT].as<uint16_t>();
+                saveMinTimes = true;
             }
         }
 
         // MIN_SWITCH_TIME
-        if(json.containsKey(MinTimesKeys::MIN_SWITCH_TIME)) {
-            if(json[MinTimesKeys::MIN_SWITCH_TIME].is<uint16_t>()) {
-                if(minTimes.MIN_SWITCH_TIME != json[MinTimesKeys::MIN_SWITCH_TIME].as<uint16_t>()) {
-                    minTimes.MIN_SWITCH_TIME = json[MinTimesKeys::MIN_SWITCH_TIME].as<uint16_t>();
-                    saveMinTimes = true;
-                }
-            } else {
-                Log.warning(F("Invalid [MIN_SWITCH_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::MIN_SWITCH_TIME]);
-                failCount++;
+        if(json[MinTimesKeys::MIN_SWITCH_TIME].is<uint16_t>()) {
+            if(minTimes.MIN_SWITCH_TIME != json[MinTimesKeys::MIN_SWITCH_TIME].as<uint16_t>()) {
+                minTimes.MIN_SWITCH_TIME = json[MinTimesKeys::MIN_SWITCH_TIME].as<uint16_t>();
+                saveMinTimes = true;
             }
         }
 
         // COOL_PEAK_DETECT_TIME
-        if(json.containsKey(MinTimesKeys::COOL_PEAK_DETECT_TIME)) {
-            if(json[MinTimesKeys::COOL_PEAK_DETECT_TIME].is<uint16_t>()) {
-                if(minTimes.COOL_PEAK_DETECT_TIME != json[MinTimesKeys::COOL_PEAK_DETECT_TIME].as<uint16_t>()) {
-                    minTimes.COOL_PEAK_DETECT_TIME = json[MinTimesKeys::COOL_PEAK_DETECT_TIME].as<uint16_t>();
-                    saveMinTimes = true;
-                }
-            } else {
-                Log.warning(F("Invalid [COOL_PEAK_DETECT_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::COOL_PEAK_DETECT_TIME]);
-                failCount++;
+        if(json[MinTimesKeys::COOL_PEAK_DETECT_TIME].is<uint16_t>()) {
+            if(minTimes.COOL_PEAK_DETECT_TIME != json[MinTimesKeys::COOL_PEAK_DETECT_TIME].as<uint16_t>()) {
+                minTimes.COOL_PEAK_DETECT_TIME = json[MinTimesKeys::COOL_PEAK_DETECT_TIME].as<uint16_t>();
+                saveMinTimes = true;
             }
         }
 
 
         // HEAT_PEAK_DETECT_TIME
-        if(json.containsKey(MinTimesKeys::HEAT_PEAK_DETECT_TIME)) {
-            if(json[MinTimesKeys::HEAT_PEAK_DETECT_TIME].is<uint16_t>()) {
-                if(minTimes.HEAT_PEAK_DETECT_TIME != json[MinTimesKeys::HEAT_PEAK_DETECT_TIME].as<uint16_t>()) {
-                    minTimes.HEAT_PEAK_DETECT_TIME = json[MinTimesKeys::HEAT_PEAK_DETECT_TIME].as<uint16_t>();
-                    saveMinTimes = true;
-                }
-            } else {
-                Log.warning(F("Invalid [HEAT_PEAK_DETECT_TIME]:(%s) received (wrong type).\r\n"), json[MinTimesKeys::HEAT_PEAK_DETECT_TIME]);
-                failCount++;
+        if(json[MinTimesKeys::HEAT_PEAK_DETECT_TIME].is<uint16_t>()) {
+            if(minTimes.HEAT_PEAK_DETECT_TIME != json[MinTimesKeys::HEAT_PEAK_DETECT_TIME].as<uint16_t>()) {
+                minTimes.HEAT_PEAK_DETECT_TIME = json[MinTimesKeys::HEAT_PEAK_DETECT_TIME].as<uint16_t>();
+                saveMinTimes = true;
             }
         }
     }
@@ -433,194 +471,383 @@ uint8_t processExtendedSettingsJson(const DynamicJsonDocument& json, bool trigge
         Log.error(F("Error: Invalid extended settings configuration.\r\n"));
     } else {
         if(saveSettings == true) {
-            extendedSettings.storeToSpiffs();
+            extendedSettings.storeToFilesystem();
             // TODO - Force upstream cascade/send
         }
         if(saveMinTimes == true) {
             minTimes.setDefaults(); // This will set defaults if defaults/lowdelay mode is set -- otherwise its a noop for custom mode
-            minTimes.storeToSpiffs();
+            minTimes.storeToFilesystem();
             // TODO - Force upstream cascade/send
         }
     }
-    return failCount;
+    return failCount == 0;
 }
 
 
-// uint8_t processSettingsUpdateJson(const JsonDocument& json) {
-//     uint8_t failCount = 0;
-//     bool hostnamechanged = false;
+bool processControlConstantsJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
+    uint8_t failCount = 0;
+    bool saveSettings = false;
+
+    // Temperature Format
+    if(json["tempFormat"].is<const char *>()) {
+        const char* formatStr = json["tempFormat"].as<const char *>();
+        if(strlen(formatStr) == 1) {
+            char format = formatStr[0];
+            if(format == 'C' || format == 'F') {
+                if(tempControl.cc.tempFormat != format) {
+                    tempControl.cc.tempFormat = format;
+                    saveSettings = true;
+                    Log.notice(F("Settings update, [tempFormat]:(%c) applied.\r\n"), format);
+                }
+            } else {
+                Log.warning(F("Invalid [tempFormat]:(%c) received.\r\n"), format);
+                failCount++;
+            }
+        } else {
+            Log.warning(F("Invalid [tempFormat]:(%s) received (wrong length).\r\n"), formatStr);
+            failCount++;
+        }
+    }
+
+    // Temperature settings (use stringToTemp for conversion)
+    // tempSetMin
+    if(json["tempSetMin"].is<double>()) {
+        char tempStr[8];
+        snprintf(tempStr, sizeof(tempStr), "%.1f", json["tempSetMin"].as<double>());
+        temperature newTemp = stringToTemp(tempStr);
+        if(tempControl.cc.tempSettingMin != newTemp) {
+            tempControl.cc.tempSettingMin = newTemp;
+            saveSettings = true;
+            Log.notice(F("Settings update, [tempSetMin]:(%s) applied.\r\n"), tempStr);
+        }
+    }
+
+    // tempSetMax
+    if(json["tempSetMax"].is<double>()) {
+        char tempStr[8];
+        snprintf(tempStr, sizeof(tempStr), "%.1f", json["tempSetMax"].as<double>());
+        temperature newTemp = stringToTemp(tempStr);
+        if(tempControl.cc.tempSettingMax != newTemp) {
+            tempControl.cc.tempSettingMax = newTemp;
+            saveSettings = true;
+            Log.notice(F("Settings update, [tempSetMax]:(%s) applied.\r\n"), tempStr);
+        }
+    }
+
+    // PID settings (use stringToFixedPoint for Kp, Ki, Kd)
+    // Kp
+    if(json["Kp"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.3f", json["Kp"].as<double>());
+        temperature newVal = stringToFixedPoint(valStr);
+        if(tempControl.cc.Kp != newVal) {
+            tempControl.cc.Kp = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [Kp]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // Ki
+    if(json["Ki"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.3f", json["Ki"].as<double>());
+        temperature newVal = stringToFixedPoint(valStr);
+        if(tempControl.cc.Ki != newVal) {
+            tempControl.cc.Ki = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [Ki]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // Kd
+    if(json["Kd"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.3f", json["Kd"].as<double>());
+        temperature newVal = stringToFixedPoint(valStr);
+        if(tempControl.cc.Kd != newVal) {
+            tempControl.cc.Kd = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [Kd]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // Temperature difference settings (use stringToTempDiff)
+    // pidMax
+    if(json["pidMax"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.1f", json["pidMax"].as<double>());
+        temperature newVal = stringToTempDiff(valStr);
+        if(tempControl.cc.pidMax != newVal) {
+            tempControl.cc.pidMax = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [pidMax]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // iMaxErr
+    if(json["iMaxErr"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.1f", json["iMaxErr"].as<double>());
+        temperature newVal = stringToTempDiff(valStr);
+        if(tempControl.cc.iMaxError != newVal) {
+            tempControl.cc.iMaxError = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [iMaxErr]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // idleRangeH
+    if(json["idleRangeH"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.1f", json["idleRangeH"].as<double>());
+        temperature newVal = stringToTempDiff(valStr);
+        if(tempControl.cc.idleRangeHigh != newVal) {
+            tempControl.cc.idleRangeHigh = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [idleRangeH]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // idleRangeL
+    if(json["idleRangeL"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.1f", json["idleRangeL"].as<double>());
+        temperature newVal = stringToTempDiff(valStr);
+        if(tempControl.cc.idleRangeLow != newVal) {
+            tempControl.cc.idleRangeLow = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [idleRangeL]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // heatTargetH
+    if(json["heatTargetH"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.1f", json["heatTargetH"].as<double>());
+        temperature newVal = stringToTempDiff(valStr);
+        if(tempControl.cc.heatingTargetUpper != newVal) {
+            tempControl.cc.heatingTargetUpper = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [heatTargetH]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // heatTargetL
+    if(json["heatTargetL"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.1f", json["heatTargetL"].as<double>());
+        temperature newVal = stringToTempDiff(valStr);
+        if(tempControl.cc.heatingTargetLower != newVal) {
+            tempControl.cc.heatingTargetLower = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [heatTargetL]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // coolTargetH
+    if(json["coolTargetH"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.1f", json["coolTargetH"].as<double>());
+        temperature newVal = stringToTempDiff(valStr);
+        if(tempControl.cc.coolingTargetUpper != newVal) {
+            tempControl.cc.coolingTargetUpper = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [coolTargetH]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // coolTargetL
+    if(json["coolTargetL"].is<double>()) {
+        char valStr[8];
+        snprintf(valStr, sizeof(valStr), "%.1f", json["coolTargetL"].as<double>());
+        temperature newVal = stringToTempDiff(valStr);
+        if(tempControl.cc.coolingTargetLower != newVal) {
+            tempControl.cc.coolingTargetLower = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [coolTargetL]:(%s) applied.\r\n"), valStr);
+        }
+    }
+
+    // Estimate time settings (uint16_t)
+    // maxHeatTimeForEst
+    if(json["maxHeatTimeForEst"].is<uint16_t>()) {
+        uint16_t newVal = json["maxHeatTimeForEst"].as<uint16_t>();
+        if(tempControl.cc.maxHeatTimeForEstimate != newVal) {
+            tempControl.cc.maxHeatTimeForEstimate = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [maxHeatTimeForEst]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // maxCoolTimeForEst
+    if(json["maxCoolTimeForEst"].is<uint16_t>()) {
+        uint16_t newVal = json["maxCoolTimeForEst"].as<uint16_t>();
+        if(tempControl.cc.maxCoolTimeForEstimate != newVal) {
+            tempControl.cc.maxCoolTimeForEstimate = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [maxCoolTimeForEst]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // Filter coefficients (uint8_t) - update both cc member and sensor
+    // fridgeFastFilt
+    if(json["fridgeFastFilt"].is<uint8_t>()) {
+        uint8_t newVal = json["fridgeFastFilt"].as<uint8_t>();
+        if(tempControl.cc.fridgeFastFilter != newVal) {
+            tempControl.cc.fridgeFastFilter = newVal;
+            tempControl.fridgeSensor->setFastFilterCoefficients(newVal);
+            saveSettings = true;
+            Log.notice(F("Settings update, [fridgeFastFilt]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // fridgeSlowFilt
+    if(json["fridgeSlowFilt"].is<uint8_t>()) {
+        uint8_t newVal = json["fridgeSlowFilt"].as<uint8_t>();
+        if(tempControl.cc.fridgeSlowFilter != newVal) {
+            tempControl.cc.fridgeSlowFilter = newVal;
+            tempControl.fridgeSensor->setSlowFilterCoefficients(newVal);
+            saveSettings = true;
+            Log.notice(F("Settings update, [fridgeSlowFilt]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // fridgeSlopeFilt
+    if(json["fridgeSlopeFilt"].is<uint8_t>()) {
+        uint8_t newVal = json["fridgeSlopeFilt"].as<uint8_t>();
+        if(tempControl.cc.fridgeSlopeFilter != newVal) {
+            tempControl.cc.fridgeSlopeFilter = newVal;
+            tempControl.fridgeSensor->setSlopeFilterCoefficients(newVal);
+            saveSettings = true;
+            Log.notice(F("Settings update, [fridgeSlopeFilt]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // beerFastFilt
+    if(json["beerFastFilt"].is<uint8_t>()) {
+        uint8_t newVal = json["beerFastFilt"].as<uint8_t>();
+        if(tempControl.cc.beerFastFilter != newVal) {
+            tempControl.cc.beerFastFilter = newVal;
+            tempControl.beerSensor->setFastFilterCoefficients(newVal);
+            saveSettings = true;
+            Log.notice(F("Settings update, [beerFastFilt]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // beerSlowFilt
+    if(json["beerSlowFilt"].is<uint8_t>()) {
+        uint8_t newVal = json["beerSlowFilt"].as<uint8_t>();
+        if(tempControl.cc.beerSlowFilter != newVal) {
+            tempControl.cc.beerSlowFilter = newVal;
+            tempControl.beerSensor->setSlowFilterCoefficients(newVal);
+            saveSettings = true;
+            Log.notice(F("Settings update, [beerSlowFilt]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // beerSlopeFilt
+    if(json["beerSlopeFilt"].is<uint8_t>()) {
+        uint8_t newVal = json["beerSlopeFilt"].as<uint8_t>();
+        if(tempControl.cc.beerSlopeFilter != newVal) {
+            tempControl.cc.beerSlopeFilter = newVal;
+            tempControl.beerSensor->setSlopeFilterCoefficients(newVal);
+            saveSettings = true;
+            Log.notice(F("Settings update, [beerSlopeFilt]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // Boolean/uint8_t settings
+    // lah (lightAsHeater)
+    if(json["lah"].is<bool>()) {
+        uint8_t newVal = json["lah"].as<bool>() ? 1 : 0;
+        if(tempControl.cc.lightAsHeater != newVal) {
+            tempControl.cc.lightAsHeater = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [lah]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // hs (rotaryHalfSteps)
+    if(json["hs"].is<bool>()) {
+        uint8_t newVal = json["hs"].as<bool>() ? 1 : 0;
+        if(tempControl.cc.rotaryHalfSteps != newVal) {
+            tempControl.cc.rotaryHalfSteps = newVal;
+            saveSettings = true;
+            Log.notice(F("Settings update, [hs]:(%u) applied.\r\n"), newVal);
+        }
+    }
+
+    // Save
+    if(failCount) {
+        Log.error(F("Error: Invalid control constants configuration.\r\n"));
+    } else {
+        if(saveSettings) {
+            TempControl::storeConstants();
+            // TODO - Force upstream cascade/send
+        }
+    }
+    return failCount == 0;
+}
 
 
-//     //////  Generic Settings
-//     // mDNS ID
-//     if(json.containsKey("mdnsID")) {
-//         // Set hostname
-//         LCBUrl url;
-//         if (!url.isValidLabel(json["mdnsID"])) {
-//             Log.warning(F("Settings update error, [mdnsID]:(%s) not valid.\r\n"), json["mdnsID"]);
-//             failCount++;
-//         } else {
-//             if (strcmp(config.mdnsID, json["mdnsID"].as<const char*>()) != 0) {
-//                 hostnamechanged = true;
-//                 strlcpy(config.mdnsID, json["mdnsID"].as<const char*>(), 32);
-//                 Log.notice(F("Settings update, [mdnsID]:(%s) applied.\r\n"), json["mdnsID"].as<const char*>());
-//             } else {
-//                 Log.notice(F("Settings update, [mdnsID]:(%s) NOT applied - no change.\r\n"), json["mdnsID"].as<const char*>());
-//             }
+bool processActionJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
 
-//         }
-//     }
+    if(!json["action"].is<const char*>()) {
+        Log.warning(F("Action error - Action key is not a string.\r\n"));
+        return false;
+    }
 
+    const char* action = json["action"].as<const char*>();
 
-//     // invertTFT
-//     if(json.containsKey("invertTFT")) {
-//         if(json["invertTFT"].is<bool>()) {
-//             if(config.invertTFT != json["invertTFT"].as<bool>())
-//                 http_server.lcd_reinit_rqd = true;
-//             config.invertTFT = json["invertTFT"];
-//             if(json["invertTFT"].as<bool>())
-//                 Log.notice(F("Settings update, [invertTFT]:(True) applied.\r\n"));
-//             else
-//                 Log.notice(F("Settings update, [invertTFT]:(False) applied.\r\n"));
-//         } else {
-//             Log.warning(F("Settings update error, [invertTFT]:(%s) not valid.\r\n"), json["invertTFT"].as<const char*>());
-//             failCount++;
-//         }
-//     }
+    if(strcmp(action, "restart") == 0) {
+        Log.notice(F("Action [restart] received\r\n"));
+        http_server.restart_requested = true;
+        return true;
+    }
 
+    if(strcmp(action, "reset_connection") == 0) {
+        Log.notice(F("Action [reset_connection] received\r\n"));
+        http_server.wifi_reset_requested = true;
+        http_server.restart_requested = true;  // A restart is implicit in wifi_reset_requested, but explicitly specifying here anyways
+        return true;
+    }
 
-//     // Process everything we were passed
-//     if (failCount) {
-//         Log.error(F("Error: Invalid controller configuration.\r\n"));
-//     } else {
-//         if (config.save()) {
-//             if (hostnamechanged) {
-//                 // We reset hostname, process
-//                 hostnamechanged = false;
-//                 http_server.name_reset_requested = true;
-//                 Log.notice(F("Received new mDNSid, queued network reset.\r\n"));
-//             }
-//         } else {
-//             Log.error(F("Error: Unable to save controller configuration data.\r\n"));
-//             failCount++;
-//         }
-//     }
-//     return failCount;
+    if(strcmp(action, "reset_config") == 0) {
+        Log.notice(F("Action [reset_config] received\r\n"));
+        http_server.config_reset_requested = true;
+        http_server.restart_requested = true;  // A restart is generally triggered when setting config_reset_requested, but explicitly specifying here anyways
+        return true;
+    }
 
-// }
-
-
-// bool processActionJson(const JsonDocument& json) {
-
-//     if(!json.containsKey("action")) {
-//         Log.warning(F("Action error - No action key found in json.\r\n"));
-//         return false;
-//     }
-
-//     if(!json["action"].is<const char*>()) {
-//         Log.warning(F("Action error - Action key is not a string.\r\n"));
-//         return false;
-//     }
-
-//     if(strcmp(json["action"], "reset_wifi") == 0) {
-//         Log.notice(F("Action [reset_wifi] received\r\n"));
-//         http_server.wifi_reset_requested = true;
-//         http_server.restart_requested = true;  // A restart is implicit in wifi_reset_requested, but explicitly specifying here anyways
-//     }
-
-//     if(strcmp(json["action"], "restart") == 0) {
-//         Log.notice(F("Action [restart] received\r\n"));
-//         http_server.restart_requested = true;
-//     }
-
-//     if(strcmp(json["action"], "reset_config") == 0) {
-//         Log.notice(F("Action [reset_config] received\r\n"));
-//         http_server.config_reset_requested = true;
-//         http_server.restart_requested = true;  // A restart is generally triggered when setting config_reset_requested, but explicitly specifying here anyways
-//     }
-
-//     if(strcmp(json["action"], "reset_all") == 0) {
-//         Log.notice(F("Action [reset_all] received\r\n"));
-//         http_server.config_reset_requested = true;
-//         http_server.wifi_reset_requested = true;
-//         http_server.restart_requested = true;
-//     }
-
-// #ifndef DISABLE_OTA_UPDATES
-//     if(strcmp(json["action"], "ota") == 0) {
-//         Log.notice(F("Action [ota] received\r\n"));
-//         http_server.ota_update_requested = true;
-//     }
-// #endif
-
-//     return true;
-// }
+    Log.warning(F("Action error - Unknown action: %s\r\n"), action);
+    return false;
+}
 
 
 
 //-----------------------------------------------------------------------------------------
 
-void httpServer::genericServeJson(void(*jsonFunc)(DynamicJsonDocument&)) {
-    String serializedJson;  // Use String here to prevent stack overflow
-    DynamicJsonDocument doc(8192);
-    jsonFunc(doc);
-    serializeJson(doc, serializedJson);
-    doc.clear();
-    web_server->send(200, "application/json", serializedJson);
-}
 
 // There may be a way to combine the following using virtual functions, but I'm not going to worry about that for now
-void httpServer::serveExtendedSettings() {
-    DynamicJsonDocument doc(2048);
-    DynamicJsonDocument extended_settings(512);
-    DynamicJsonDocument min_times(512);
+void serveExtendedSettings(JsonDocument &doc) {
+    JsonDocument extended_settings;
+    JsonDocument min_times;
 
     extendedSettings.toJson(extended_settings);
     minTimes.toJson(min_times);
 
     doc["extendedSettings"] = extended_settings;
     doc["minTimes"] = min_times;
-
-    char serializedJson[2048];
-    serializeJson(doc, serializedJson);
-    doc.clear();
-    web_server->send(200, "application/json", serializedJson);
 }
 
-void httpServer::serveUpstreamSettings() {
-    DynamicJsonDocument doc(1024);
+void serveUpstreamSettings(JsonDocument &doc) {
     upstreamSettings.toJson(doc);
-    char serializedJson[2048];
-    serializeJson(doc, serializedJson);
-    doc.clear();
-    web_server->send(200, "application/json", serializedJson);
 }
 
 
-// // About Page Handlers
-// //
-// void version_info(AsyncWebServerRequest *request) {
-//     Log.verbose(F("Serving version.\r\n"));
-//     StaticJsonDocument<96> doc;
-
-//     doc["version"] = version();
-//     doc["ota_status"] = ota_status;
-//     // doc["branch"] = branch();
-//     // doc["build"] = build();
-
-//     if(millis() > (ota_last_check_at + OTA_CHECK_PERIOD) && ota_status == no_upgrade)
-//         ota_status = pending_check;
-
-//     char output[96];
-//     serializeJson(doc, output);
-
-//     web_server->send(200, "application/json", output);
-// }
-
-
-void httpServer::uptime() {
+// About Page Handlers
+void uptime(JsonDocument &doc) {
     Log.verbose(F("Serving uptime.\r\n"));
-    StaticJsonDocument<96> doc;
 
     doc["days"] = uptimeDays();
     doc["hours"] = uptimeHours();
@@ -628,16 +855,11 @@ void httpServer::uptime() {
     doc["seconds"] = uptimeSeconds();
     doc["millis"] = uptimeMillis();
 
-    char output[96];
-    serializeJson(doc, output);
-
-    web_server->send(200, "application/json", output);
 }
 
 
-void httpServer::heap() {
+void heap(JsonDocument &doc) {
     Log.verbose(F("Serving heap information.\r\n"));
-    StaticJsonDocument<48> doc;
 
     const uint32_t free = ESP.getFreeHeap();
 #ifdef ESP32
@@ -650,17 +872,11 @@ void httpServer::heap() {
     doc["free"] = free;
     doc["max"] = max;
     doc["frag"] = frag;
-
-    char output[48];
-    serializeJson(doc, output);
-
-    web_server->send(200, "application/json", output);
 }
 
 
-void httpServer::reset_reason() {
+void reset_reason(JsonDocument &doc) {
     Log.verbose(F("Serving reset reason.\r\n"));
-    StaticJsonDocument<128> doc;
 
 #ifdef ESP32
     const int reset = (int)esp_reset_reason();
@@ -671,208 +887,104 @@ void httpServer::reset_reason() {
     doc["description"] = "N/A";
 #endif
 
-    char output[128];
-    serializeJson(doc, output);
-
-    web_server->send(200, "application/json", output);
 }
 
 
+// Static page routing
 void httpServer::setStaticPages() {
-    // Static page handlers - Vue
-    web_server->serveStatic("/", FILESYSTEM, "/index.html", "max-age=600");
-    web_server->serveStatic("/index.html", FILESYSTEM, "/index.html", "max-age=600");
+    // Define the base static page handlers
+    asyncWebServer.serveStatic("/", FILESYSTEM, "/index.html").setCacheControl("max-age=600");
+    asyncWebServer.serveStatic("/index.html", FILESYSTEM, "/index.html").setCacheControl("max-age=600");
 
-    // Vue routes
-    web_server->serveStatic("/upstream/", FILESYSTEM, "/index.html", "max-age=600");
-    web_server->serveStatic("/upstream", FILESYSTEM, "/index.html", "max-age=600");
-    web_server->serveStatic("/devices/", FILESYSTEM, "/index.html", "max-age=600");
-    web_server->serveStatic("/devices", FILESYSTEM, "/index.html", "max-age=600");
-    web_server->serveStatic("/about/", FILESYSTEM, "/index.html", "max-age=600");
-    web_server->serveStatic("/about", FILESYSTEM, "/index.html", "max-age=600");
-    web_server->serveStatic("/settings/", FILESYSTEM, "/index.html", "max-age=600");
-    web_server->serveStatic("/settings", FILESYSTEM, "/index.html", "max-age=600");
+    // Define Vue routes
+    const char* vueRoutes[] = {
+        "/upstream", 
+        "/devices",
+        "/about", 
+        "/settings"
+    };
+
+
+    // Serve static pages for Vue routes and their trailing-slash versions
+    for (const char* route : vueRoutes) {
+        asyncWebServer.serveStatic(route, FILESYSTEM, "/index.html").setCacheControl("max-age=600");
+
+        // Serve the same route with a trailing slash
+        String routeWithSlash = String(route) + "/";
+        asyncWebServer.serveStatic(routeWithSlash.c_str(), FILESYSTEM, "/index.html").setCacheControl("max-age=600");
+    }
 
     // Legacy static page handlers
-    web_server->serveStatic("/404/", FILESYSTEM, "/404.html", "max-age=600");
+    // TODO - Determine if this can be deleted
+    asyncWebServer.serveStatic("/404/", FILESYSTEM, "/404.html").setCacheControl("max-age=600");
+
 }
 
 
 void httpServer::setJsonPages() {
-    // Controller Version Stats
-    web_server->on("/api/version/", HTTP_GET, [&]() {
-        genericServeJson(&versionInfoJson);
-    });
+    struct Endpoint {
+        const char* path;
+        void (*handler)(JsonDocument&);
+    };
 
-    // Controller Legacy LCD Output
-    web_server->on("/api/lcd/", HTTP_GET, [&]() {
-        genericServeJson(&getLcdContentJson);
-    });
+    const Endpoint endpoints[] = {
+        {"/api/version/", versionInfoJson},
+        {"/api/lcd/", getLcdContentJson},
+        {"/api/temps/", printTemperaturesJson},
+        {"/api/cs/", tempControl.getControlSettingsDoc},
+        {"/api/cc/", tempControl.getControlConstantsDoc},
+        {"/api/cv/", tempControl.getControlVariablesDoc},
+        {"/api/all_temp_control/", getFullTemperatureControlJson},
+        {"/api/devices/", DeviceManager::enumerateHardware},
+        {"/api/extended/", serveExtendedSettings},
+        {"/api/upstream/", serveUpstreamSettings},
+        {"/api/uptime/", uptime},
+        {"/api/heap/", heap},
+        {"/api/resetreason/", reset_reason},
+    };
 
-    // Controller Temps (logging format)
-    web_server->on("/api/temps/", HTTP_GET, [&]() {
-        genericServeJson(&printTemperaturesJson);
-    });
-
-    // Temp Control Settings (cs)
-    web_server->on("/api/cs/", HTTP_GET, [&]() {
-        genericServeJson(&tempControl.getControlSettingsDoc);
-    });
-
-    // Temp Control Constants (cc)
-    web_server->on("/api/cc/", HTTP_GET, [&]() {
-        genericServeJson(&tempControl.getControlConstantsDoc);
-    });
-
-    // Temp Control Variables (cv)
-    web_server->on("/api/cv/", HTTP_GET, [&]() {
-        genericServeJson(&tempControl.getControlVariablesDoc);
-    });
-
-    // Full Temp Control Settings (cs, cc, cv, logging format)
-    web_server->on("/api/all_temp_control/", HTTP_GET, [&]() {
-        genericServeJson(&getFullTemperatureControlJson);
-    });
-
-    // Full Temp Control Settings (cs, cc, cv, logging format)
-    web_server->on("/api/devices/", HTTP_GET, [&]() {
-        genericServeJson(&DeviceManager::enumerateHardware);
-    });
-
-    // Extended (non-stock-brewpi) Settings
-    web_server->on("/api/extended/", HTTP_GET, [&]() {
-        serveExtendedSettings();
-    });
-
-    // "Upstream" (Fermentrack REST) Settings
-    web_server->on("/api/upstream/", HTTP_GET, [&]() {
-        serveUpstreamSettings();
-    });
-
-
-    web_server->on("/api/uptime/", HTTP_GET, [&]() {
-        uptime();
-    });
-    web_server->on("/api/heap/", HTTP_GET, [&]() {
-        heap();
-    });
-    web_server->on("/api/resetreason/", HTTP_GET, [&]() {
-        reset_reason();
-    });
-}
-
-
-void httpServer::processJsonRequest(const char* uri, uint8_t (*handler)(const DynamicJsonDocument& json, bool triggerUpstreamUpdate)) {
-    // Handler for configuration options
-    char message[200] = "";
-    uint8_t errors = 0;
-    uint16_t status_code = 200;
-    StaticJsonDocument<200> response;
-    Log.verbose(F("Processing %s\r\n"), uri);
-
-    DynamicJsonDocument json(8096);
-    DeserializationError error = deserializeJson(json, web_server->arg("plain"));
-    if (error) {
-        Log.error(F("Error parsing JSON: %s\r\n"), error.c_str());
-        response["message"] = "Unable to parse JSON";
-        status_code = 400;
-    } else {
-        errors = handler(json, true);  // Apply the handler to the data (and trigger an upstream update)
-
-        if(errors == 0) {
-            response["message"] = "Update processed successfully";
-        } else {
-            response["message"] = "Unable to process update";
-            status_code = 400;
-        }    
+    for (const auto& endpoint : endpoints) {
+        asyncWebServer.addHandler(new GetAsyncCallbackJsonWebHandler(endpoint.path, endpoint.handler));
     }
-
-    serializeJson(response, message);
-    web_server->send(status_code, "application/json", message);
-    
 }
 
 
-void httpServer::setJsonHandlers() {
+void httpServer::setPutPages() {
+    struct Endpoint {
+        const char* path;
+        bool (*handler)(const JsonDocument&, bool);
+    };
 
-    web_server->on("/api/upstream/", HTTP_PUT, [&]() {
-        processJsonRequest("/api/upstream/", &processUpstreamConfigUpdateJson);
-    });
+    const Endpoint endpoints[] = {
+        {"/api/upstream/", processUpstreamConfigUpdateJson},
+        {"/api/devices/", processDeviceUpdateJson},
+        {"/api/mode/", processUpdateModeJson},
+        {"/api/extended/", processExtendedSettingsJson},
+        {"/api/cc/", processControlConstantsJson},
+        {"/api/action/", processActionJson},
+    };
 
-    web_server->on("/api/devices/", HTTP_PUT, [&]() {
-        processJsonRequest("/api/devices/", &processDeviceUpdateJson);
-    });
-
-    web_server->on("/api/mode/", HTTP_PUT, [&]() {
-        processJsonRequest("/api/mode/", &processUpdateModeJson);
-    });
-
-    web_server->on("/api/extended/", HTTP_PUT, [&]() {
-        processJsonRequest("/api/extended/", &processExtendedSettingsJson);
-    });
-
-
-    // AsyncCallbackJsonWebHandler* processAction = new AsyncCallbackJsonWebHandler("/api/action/", [](AsyncWebServerRequest *request, JsonVariant const &json) {
-    //     // TODO - Adapt this to use the new processJsonRequest function
-    //     // Handler for configuration options
-    //     char message[200] = "";
-    //     StaticJsonDocument<200> response;
-    //     Log.verbose(F("Processing /api/action/\r\n"));
-
-    //     StaticJsonDocument<200> data;
-    //     if (json.is<JsonArray>())
-    //     {
-    //         data = json.as<JsonArray>();
-    //     }
-    //     else if (json.is<JsonObject>())
-    //     {
-    //         data = json.as<JsonObject>();
-    //     }
-
-    //     // char serialized_mesasage[400];
-    //     // Log.verbose(F("Received message: \r\n"));
-    //     // serializeJson(data, serialized_mesasage);
-    //     // Log.verbose(serialized_mesasage);
-
-    //     if(processActionJson(data)) {
-    //         response["message"] = "Update processed successfully";
-    //     } else {
-    //         response["message"] = "Unable to process update";
-    //     }
-        
-    //     serializeJson(response, message);
-    //     web_server->send(200, "application/json", message);
-    // });
-    // web_server->addHandler(processAction);
-
+    for (const auto& endpoint : endpoints) {
+        asyncWebServer.addHandler(new PutAsyncCallbackJsonWebHandler(endpoint.path, endpoint.handler));
+    }
 }
 
 
 void httpServer::init() {
-    web_server = new WEBSERVER_IMPL(WEB_SERVER_PORT);
-
     setStaticPages();
     setJsonPages();
-    setJsonHandlers();
+    setPutPages();
 
     // File not found handler
-    web_server->onNotFound([&]() {
-        String pathWithGz = web_server->uri() + ".gz";
-        if (web_server->method() == HTTP_OPTIONS) {
-            web_server->send(200);
-        } else if(FILESYSTEM.exists(web_server->uri()) || FILESYSTEM.exists(pathWithGz)) {
-            // WebServer doesn't automatically serve files, so we need to do that here unless we want to
-            // manually add every single file to setStaticPages(). 
-            handleFileRead(web_server->uri());
-        } else {
-            Log.verbose(F("Serving 404 for request to %s.\r\n"), web_server->uri().c_str());
-            redirect("/404/");
+    asyncWebServer.onNotFound([](AsyncWebServerRequest *request) {
+        if (!http_server.handleFileRead(request, request->url())) {
+            request->send(404, "text/plain", "Not Found");
         }
     });
 
     // DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
 
-    web_server->begin();
+    asyncWebServer.begin();
     Log.notice(F("HTTP server started. Open: http://%s.local/ to view application.\r\n"), WiFi.getHostname());
 }
 

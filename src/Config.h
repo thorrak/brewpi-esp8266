@@ -71,16 +71,6 @@
 
 //////////////////////////////////////////////////////////////////////////
 //
-// Enable DS2413 Actuators. 
-//
-// #ifndef BREWPI_DS2413
-// #define BREWPI_DS2413 0
-// #endif
-//
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-//
 // This flag virtualizes as much of the hardware as possible, so the code can be run in the AvrStudio simulator, which
 // only emulates the microcontroller, not any attached peripherals.
 //
@@ -153,6 +143,7 @@
 
 
 #ifdef BREWPI_TFT
+// Check for generic settings for all TFT display types
 
 #ifdef ESP8266
 #error "Unable to use TFT displays with ESP8266 (not enough pins)"
@@ -162,15 +153,23 @@
 #error "TFT displays only work with ESP32 devices"
 #endif
 
-// Pin definitions for TFT displays
+#if defined(BREWPI_TFT_ILI9341)
+// Pin definitions for TFT displays using the ILI9341 driver
 #define TFT_CS 14  //for D32 Pro
 #define TFT_DC 27  //for D32 Pro
 #define TFT_RST 33 //for D32 Pro
 #define TS_CS  12 //for D32 Pro
 #define TFT_BACKLIGHT 32
 #define BREWPI_MENU 0
+
+#elif defined(BREWPI_TFT_ESPI)
+// Pin definitions are set in platformio.ini
+#define BREWPI_MENU 0
+#else
+#error "Unknown TFT display type"
 #endif
 
+#endif // BREWPI_TFT
 //
 //////////////////////////////////////////////////////////////////////////
 
@@ -259,13 +258,13 @@
  #define coolingPin NODEMCU_PIN_D3
 #define heatingPin NODEMCU_PIN_D4
 #define doorPin    NODEMCU_PIN_D5
-#define oneWirePin NODEMCU_PIN_D6  // If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
+#define oneWirePin NODEMCU_PIN_D6
 */
 
 #define heatingPin NODEMCU_PIN_D0
 #define coolingPin NODEMCU_PIN_D5
 
-#define oneWirePin NODEMCU_PIN_D6  // If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
+#define oneWirePin NODEMCU_PIN_D6
 #define doorPin    NODEMCU_PIN_D7
 
 #define IIC_SDA NODEMCU_PIN_D2
@@ -286,7 +285,6 @@
 #define heatingPin 25
 #define coolingPin 26
 
-// If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
 #define oneWirePin 13
 #define doorPin    34 // Note - 34 is "input only" and shouldn't be repurposed
 
@@ -346,7 +344,7 @@
 
 
 
-#define FIRMWARE_REVISION "0.15"
+#define FIRMWARE_REVISION "v16"
 
 #ifdef ESP8266_WiFi
 #define WIFI_SETUP_AP_NAME "BrewPiAP"
@@ -479,11 +477,12 @@ namespace Config {
   };
 
   /**
-   * \brief Locks Chamber 1/Beer 1
+   * \brief Locks Chamber 1/Beer 1, and overrides OneWire pin numbers on sensor assignment
    *
    * Prevents the user from trying to configure probes with other chamber/beer
    * values.  All probe configurations will have their beer & chamber values
-   * overwritten with 1.
+   * overwritten with 1. Also overrides the OneWire pin number on sensor
+   * assignment to match oneWirePin as defined above.
    */
   constexpr bool forceDeviceDefaults = true;
 

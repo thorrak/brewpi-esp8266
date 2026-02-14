@@ -21,24 +21,7 @@
 
 #include "Brewpi.h"
 
-#if BREWPI_STATIC_CONFIG==BREWPI_SHIELD_REV_A
-#ifndef beerSensorPin
-#define beerSensorPin    A5 // OneWire 1
-#endif
 
-#ifndef fridgeSensorPin
-#define fridgeSensorPin  A4 // OneWire 2
-#endif
-
-#ifndef coolingPin
-#define coolingPin	6
-#endif
-
-#ifndef heatingPin
-#define heatingPin	5
-#endif
-
-#endif
 
 #if BREWPI_STATIC_CONFIG==BREWPI_SHIELD_REV_C
 
@@ -89,14 +72,9 @@
 
 // pins
 #ifndef oneWirePin // So we can specify a single bus if we prefer
-#ifndef beerSensorPin
-#define beerSensorPin    10
+#error "A single oneWirePin must be defined"
 #endif
 
-#ifndef fridgeSensorPin
-#define fridgeSensorPin  11
-#endif
-#endif
 // Pay attention when changing the pins for the rotary encoder.
 // They should be connected to external interrupt INT0, INT1 and INT3
 
@@ -124,7 +102,6 @@
 #define doorPin    A5
 #endif
 
-// TODO - Fix the code for the LCD module
 #define DISP_RS 9
 #define DISP_RW 8
 #define DISP_EN 7

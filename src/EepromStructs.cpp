@@ -1,14 +1,8 @@
-#ifdef ESP8266
 #include <LittleFS.h>
-#elif defined(ESP32S2)
-#include <LittleFS.h>
-#elif defined(ESP32)
-#include <FS.h>
-#include <SPIFFS.h>
-#endif
 
 #include <ArduinoJson.h>
 
+#include "getGuid.h"
 #include "EepromStructs.h"
 #include "TemperatureFormats.h"
 #include "TempControl.h" // For Modes definition
@@ -16,6 +10,10 @@
 #include "PiLink.h"
 #include "Display.h"
 
+#ifdef HAS_BLUETOOTH
+// Tilts have address type 1, so replicating that here (even though this is wrong based on the address)
+NimBLEAddress NoTiltDevice = NimBLEAddress("00:00:00:00:00:00", 1);
+#endif
 
 
 void JSONSaveable::writeJsonToFile(const char *filename, const ArduinoJson::JsonDocument& json_doc) {
@@ -34,8 +32,8 @@ void JSONSaveable::writeJsonToFile(const char *filename, const ArduinoJson::Json
 }
 
 
-ArduinoJson::DynamicJsonDocument JSONSaveable::readJsonFromFile(const char *filename) {
-    DynamicJsonDocument json_doc(2048);
+ArduinoJson::JsonDocument JSONSaveable::readJsonFromFile(const char *filename) {
+    JsonDocument json_doc;
 
     File file_in = FILESYSTEM.open(filename, "r");
     if (!file_in) {
@@ -109,7 +107,7 @@ void ControlConstants::setDefaults() {
 /**
  * \brief Serialize control constants to JSON
  */
-void ControlConstants::toJson(DynamicJsonDocument &doc) {
+void ControlConstants::toJson(JsonDocument &doc) {
     // Load the constants into the JSON Doc
     doc[ControlConstantsKeys::tempMin] = tempSettingMin;
     doc[ControlConstantsKeys::tempMax] = tempSettingMax;
@@ -146,41 +144,37 @@ void ControlConstants::toJson(DynamicJsonDocument &doc) {
     doc[ControlConstantsKeys::tempFormat] = formatStr;
 }
 
-void ControlConstants::storeToSpiffs() {
-    DynamicJsonDocument doc(1024);  // Should be a max of 642, per the ArduinoJson Size Assistant
+void ControlConstants::storeToFilesystem() {
+    JsonDocument doc;
 
     toJson(doc);
 
     writeJsonToFile(ControlConstants::filename, doc);  // Write the json to the file
 }
 
-void ControlConstants::loadFromSpiffs() {
+void ControlConstants::loadFromFilesystem() {
     // We start by setting the defaults, as we use them as the alternative to loaded values if the keys don't exist
     setDefaults();
 
-    DynamicJsonDocument json_doc(2048);
+    JsonDocument json_doc;
     json_doc = readJsonFromFile(ControlConstants::filename);
 
     // Load the constants from the JSON Doc
-    if(json_doc.containsKey(ControlConstantsKeys::tempMin)) tempSettingMin = json_doc[ControlConstantsKeys::tempMin];
-    if(json_doc.containsKey(ControlConstantsKeys::tempMax)) tempSettingMax = json_doc[ControlConstantsKeys::tempMax];
+    if(json_doc[ControlConstantsKeys::tempMin].is<temperature>()) tempSettingMin = json_doc[ControlConstantsKeys::tempMin];
+    if(json_doc[ControlConstantsKeys::tempMax].is<temperature>()) tempSettingMax = json_doc[ControlConstantsKeys::tempMax];
 
-    if(json_doc.containsKey(ControlConstantsKeys::kp)) Kp = json_doc[ControlConstantsKeys::kp];
-    if(json_doc.containsKey(ControlConstantsKeys::ki)) Ki = json_doc[ControlConstantsKeys::ki];
-    if(json_doc.containsKey(ControlConstantsKeys::kd)) Kd = json_doc[ControlConstantsKeys::kd];
-    if(json_doc.containsKey(ControlConstantsKeys::maxError)) iMaxError = json_doc[ControlConstantsKeys::maxError];
+    if(json_doc[ControlConstantsKeys::kp].is<temperature>()) Kp = json_doc[ControlConstantsKeys::kp];
+    if(json_doc[ControlConstantsKeys::ki].is<temperature>()) Ki = json_doc[ControlConstantsKeys::ki];
+    if(json_doc[ControlConstantsKeys::kd].is<temperature>()) Kd = json_doc[ControlConstantsKeys::kd];
+    if(json_doc[ControlConstantsKeys::maxError].is<temperature>()) iMaxError = json_doc[ControlConstantsKeys::maxError];
 
-    if(json_doc.containsKey(ControlConstantsKeys::idleHigh)) idleRangeHigh = json_doc[ControlConstantsKeys::idleHigh];
-    if(json_doc.containsKey(ControlConstantsKeys::idleLow)) idleRangeLow = json_doc[ControlConstantsKeys::idleLow];
+    if(json_doc[ControlConstantsKeys::idleHigh].is<temperature>()) idleRangeHigh = json_doc[ControlConstantsKeys::idleHigh];
+    if(json_doc[ControlConstantsKeys::idleLow].is<temperature>()) idleRangeLow = json_doc[ControlConstantsKeys::idleLow];
 
-    if(json_doc.containsKey(ControlConstantsKeys::heatingUpper))
-        heatingTargetUpper = json_doc[ControlConstantsKeys::heatingUpper];
-    if(json_doc.containsKey(ControlConstantsKeys::heatingLower))
-        heatingTargetLower = json_doc[ControlConstantsKeys::heatingLower];
-    if(json_doc.containsKey(ControlConstantsKeys::coolingUpper))
-        coolingTargetUpper = json_doc[ControlConstantsKeys::coolingUpper];
-    if(json_doc.containsKey(ControlConstantsKeys::coolingLower))
-        coolingTargetLower = json_doc[ControlConstantsKeys::coolingLower];
+    if(json_doc[ControlConstantsKeys::heatingUpper].is<temperature>()) heatingTargetUpper = json_doc[ControlConstantsKeys::heatingUpper];
+    if(json_doc[ControlConstantsKeys::heatingLower].is<temperature>()) heatingTargetLower = json_doc[ControlConstantsKeys::heatingLower];
+    if(json_doc[ControlConstantsKeys::coolingUpper].is<temperature>()) coolingTargetUpper = json_doc[ControlConstantsKeys::coolingUpper];
+    if(json_doc[ControlConstantsKeys::coolingLower].is<temperature>()) coolingTargetLower = json_doc[ControlConstantsKeys::coolingLower];
 
     maxHeatTimeForEstimate = json_doc[ControlConstantsKeys::maxHeatEst] | maxHeatTimeForEstimate;
     maxCoolTimeForEstimate = json_doc[ControlConstantsKeys::maxCoolEst] | maxCoolTimeForEstimate;
@@ -194,9 +188,9 @@ void ControlConstants::loadFromSpiffs() {
 
     lightAsHeater = json_doc[ControlConstantsKeys::lightHeater] | lightAsHeater;
     rotaryHalfSteps = json_doc[ControlConstantsKeys::rotaryHalfSteps] | rotaryHalfSteps;
-    if(json_doc.containsKey(ControlConstantsKeys::pidMax)) pidMax = json_doc[ControlConstantsKeys::pidMax];
+    if(json_doc[ControlConstantsKeys::pidMax].is<temperature>()) pidMax = json_doc[ControlConstantsKeys::pidMax];
 
-    if(json_doc.containsKey(ControlConstantsKeys::tempFormat) && json_doc[ControlConstantsKeys::tempFormat].is<const char *>()) {
+    if(json_doc[ControlConstantsKeys::tempFormat].is<const char *>()) {
         // This gets a bit strange due to the 6.20 changes to ArduinoJson
         char buf[2];
         strlcpy(buf, json_doc[ControlConstantsKeys::tempFormat].as<const char *>(), 2);
@@ -230,7 +224,7 @@ void ControlSettings::setDefaults() {
 }
 
 
-void ControlSettings::toJson(DynamicJsonDocument &doc) {
+void ControlSettings::toJson(JsonDocument &doc) {
     // Load the settings into the JSON Doc
     doc[ControlSettingsKeys::beer] = beerSetting;
     doc[ControlSettingsKeys::fridge] = fridgeSetting;
@@ -244,8 +238,8 @@ void ControlSettings::toJson(DynamicJsonDocument &doc) {
 }
 
 
-void ControlSettings::storeToSpiffs() {
-    DynamicJsonDocument doc(512);
+void ControlSettings::storeToFilesystem() {
+    JsonDocument doc;
 
     toJson(doc);
 
@@ -253,20 +247,20 @@ void ControlSettings::storeToSpiffs() {
 }
 
 
-void ControlSettings::loadFromSpiffs() {
+void ControlSettings::loadFromFilesystem() {
     // We start by setting the defaults, as we use them as the alternative to loaded values if the keys don't exist
     setDefaults();
 
-    DynamicJsonDocument json_doc(1024);
+    JsonDocument json_doc;
     json_doc = readJsonFromFile(ControlSettings::filename);
 
     // Load the settings from the JSON Doc
-    if(json_doc.containsKey(ControlSettingsKeys::beer)) beerSetting = json_doc[ControlSettingsKeys::beer];
-    if(json_doc.containsKey(ControlSettingsKeys::fridge)) fridgeSetting = json_doc[ControlSettingsKeys::fridge];
-    if(json_doc.containsKey(ControlSettingsKeys::heatEst)) heatEstimator = json_doc[ControlSettingsKeys::heatEst];
-    if(json_doc.containsKey(ControlSettingsKeys::coolEst)) coolEstimator = json_doc[ControlSettingsKeys::coolEst];
+    if(json_doc[ControlSettingsKeys::beer].is<temperature>()) beerSetting = json_doc[ControlSettingsKeys::beer];
+    if(json_doc[ControlSettingsKeys::fridge].is<temperature>()) fridgeSetting = json_doc[ControlSettingsKeys::fridge];
+    if(json_doc[ControlSettingsKeys::heatEst].is<temperature>()) heatEstimator = json_doc[ControlSettingsKeys::heatEst];
+    if(json_doc[ControlSettingsKeys::coolEst].is<temperature>()) coolEstimator = json_doc[ControlSettingsKeys::coolEst];
 
-    if(json_doc.containsKey(ControlSettingsKeys::mode) && json_doc[ControlSettingsKeys::mode].is<const char *>()) {
+    if(json_doc[ControlSettingsKeys::mode].is<const char *>()) {
         // This gets a bit strange due to the 6.20 changes to ArduinoJson
         char buf[2];
         strlcpy(buf, json_doc[ControlSettingsKeys::mode].as<const char *>(), 2);
@@ -292,24 +286,33 @@ void ExtendedSettings::setDefaults() {
     invertTFT = false;
     glycol = false;
     largeTFT = false;
+    resetScreenOnPin = false;
+#ifdef HAS_BLUETOOTH
+    tiltGravSensor = NoTiltDevice;
+#endif
+
 }
 
 
 /**
  * \brief Serialize extended settings to JSON
  */
-void ExtendedSettings::toJson(DynamicJsonDocument &doc) {
+void ExtendedSettings::toJson(JsonDocument &doc) {
     // Load the settings into the JSON Doc
     doc[ExtendedSettingsKeys::invertTFT] = invertTFT;
     doc[ExtendedSettingsKeys::glycol] = glycol;
     doc[ExtendedSettingsKeys::largeTFT] = largeTFT;
+    doc[ExtendedSettingsKeys::resetScreenOnPin] = resetScreenOnPin;
+#ifdef HAS_BLUETOOTH
+    doc[ExtendedSettingsKeys::tiltGravSensor] = tiltGravSensor.toString();
+#endif
 }
 
 /**
  * \brief Store extended settings to the filesystem
  */
-void ExtendedSettings::storeToSpiffs() {
-    DynamicJsonDocument doc(256);
+void ExtendedSettings::storeToFilesystem() {
+    JsonDocument doc;
 
     toJson(doc);
 
@@ -319,18 +322,22 @@ void ExtendedSettings::storeToSpiffs() {
 /**
  * \brief Load extended settings from the filesystem
  */
-void ExtendedSettings::loadFromSpiffs() {
+void ExtendedSettings::loadFromFilesystem() {
     // We start by setting the defaults, as we use them as the alternative to loaded values if the keys don't exist
     setDefaults();
 
-    DynamicJsonDocument json_doc(256);
+    JsonDocument json_doc;
     json_doc = readJsonFromFile(ExtendedSettings::filename);
 
     // Load the constants from the JSON Doc
-    if(json_doc.containsKey(ExtendedSettingsKeys::invertTFT)) invertTFT = json_doc[ExtendedSettingsKeys::invertTFT];
-    if(json_doc.containsKey(ExtendedSettingsKeys::glycol)) glycol = json_doc[ExtendedSettingsKeys::glycol];
-    if(json_doc.containsKey(ExtendedSettingsKeys::largeTFT)) largeTFT = json_doc[ExtendedSettingsKeys::largeTFT];
-
+    if(json_doc[ExtendedSettingsKeys::invertTFT].is<bool>()) invertTFT = json_doc[ExtendedSettingsKeys::invertTFT];
+    if(json_doc[ExtendedSettingsKeys::glycol].is<bool>()) glycol = json_doc[ExtendedSettingsKeys::glycol];
+    if(json_doc[ExtendedSettingsKeys::largeTFT].is<bool>()) largeTFT = json_doc[ExtendedSettingsKeys::largeTFT];
+    if(json_doc[ExtendedSettingsKeys::resetScreenOnPin].is<bool>()) resetScreenOnPin = json_doc[ExtendedSettingsKeys::resetScreenOnPin];
+#ifdef HAS_BLUETOOTH
+    // Tilts use address type 1 ("random", which (correctly!) indicates they didn't buy a MAC block)
+    if(json_doc[ExtendedSettingsKeys::tiltGravSensor].is<std::string>()) tiltGravSensor = NimBLEAddress(json_doc[ExtendedSettingsKeys::tiltGravSensor].as<std::string>(), 1);
+#endif
 }
 
 /**
@@ -355,7 +362,16 @@ void ExtendedSettings::processSettingKeypair(JsonPair kv) {
     setGlycol(kv.value().as<bool>());
   } else if (kv.key() == ExtendedSettingsKeys::largeTFT) {
     setLargeTFT(kv.value().as<bool>());
+  } else if (kv.key() == ExtendedSettingsKeys::resetScreenOnPin) {
+    setResetScreenOnPin(kv.value().as<bool>());
+  } 
+  #ifdef HAS_BLUETOOTH
+  else if (kv.key() == ExtendedSettingsKeys::tiltGravSensor) {
+    // Tilts use address type 1 ("random", which (correctly!) indicates they didn't buy a MAC block)
+    NimBLEAddress addr = NimBLEAddress(kv.value().as<std::string>(), 1);
+    setTiltGravSensor(addr);
   }
+  #endif
 }
 
 /**
@@ -398,6 +414,31 @@ void ExtendedSettings::setInvertTFT(bool setting) {
 	display.printState();
 }
 
+/**
+ * \brief Set if the screen should be reset when an ArduinoActuatorPin (ie. relay) toggles
+ *
+ * \param setting - The new setting
+ */
+void ExtendedSettings::setResetScreenOnPin(bool setting) {
+    resetScreenOnPin = setting;
+
+    // The only thing we must do here is change the setting, but we'll reinit the screen as well 
+    // in case the user is enabling this as a result of their screen being frozen
+    if(setting)
+        display.printAll();
+}
+
+#ifdef HAS_BLUETOOTH
+/**
+ * \brief Set the Tilt color to be used as the gravity sensor
+ *
+ * \param setting - The new setting
+ */
+void ExtendedSettings::setTiltGravSensor(NimBLEAddress setting) {
+    tiltGravSensor = setting;
+}
+#endif
+
 
 /**
  * \brief Constructor
@@ -415,37 +456,55 @@ void UpstreamSettings::setDefaults() {
     upstreamHost[0] = '\0';
     upstreamPort = 80;
     deviceID[0] = '\0';
+    username[0] = '\0';
+    apiKey[0] = '\0';
+    upstreamRegistrationError = upstreamRegErrorT::NOT_ATTEMPTED_REGISTRATION;
 }
 
 
 /**
  * \brief Serialize extended settings to JSON
  */
-void UpstreamSettings::toJson(DynamicJsonDocument &doc) {
+void UpstreamSettings::toJson(JsonDocument &doc) {
+    char guid[20];
+    getGuid(guid);
+
     // Load the settings into the JSON Doc
     doc[UpstreamSettingsKeys::upstreamHost] = upstreamHost;
     doc[UpstreamSettingsKeys::upstreamPort] = upstreamPort;
     doc[UpstreamSettingsKeys::deviceID] = deviceID;
+    doc[UpstreamSettingsKeys::username] = username;
+    doc[UpstreamSettingsKeys::apiKey] = apiKey;
+    doc[UpstreamSettingsKeys::upstreamRegistrationError] = (uint16_t) upstreamRegistrationError;
+    doc[UpstreamSettingsKeys::guid] = guid;
 }
 
-void UpstreamSettings::storeToSpiffs() {
-    DynamicJsonDocument doc(256);
+/**
+ * \brief Store extended settings to the filesystem
+ */
+void UpstreamSettings::storeToFilesystem() {
+    JsonDocument doc;
     toJson(doc);
 
     writeJsonToFile(UpstreamSettings::filename, doc);  // Write the json to the file
 }
 
-void UpstreamSettings::loadFromSpiffs() {
+/**
+ * \brief Load extended settings from the filesystem
+ */
+void UpstreamSettings::loadFromFilesystem() {
     // We start by setting the defaults, as we use them as the alternative to loaded values if the keys don't exist
     setDefaults();
 
-    DynamicJsonDocument json_doc(256);
+    JsonDocument json_doc;
     json_doc = readJsonFromFile(UpstreamSettings::filename);
 
     // Load the constants from the JSON Doc
-    if(json_doc.containsKey(UpstreamSettingsKeys::upstreamHost)) strlcpy(upstreamHost, json_doc[UpstreamSettingsKeys::upstreamHost], 128);
-    if(json_doc.containsKey(UpstreamSettingsKeys::upstreamPort)) upstreamPort = json_doc[UpstreamSettingsKeys::upstreamPort];
-    if(json_doc.containsKey(UpstreamSettingsKeys::deviceID)) strlcpy(deviceID, json_doc[UpstreamSettingsKeys::deviceID], 64);
+    if(json_doc[UpstreamSettingsKeys::upstreamHost].is<const char *>()) strlcpy(upstreamHost, json_doc[UpstreamSettingsKeys::upstreamHost], 128);
+    if(json_doc[UpstreamSettingsKeys::upstreamPort].is<uint16_t>()) upstreamPort = json_doc[UpstreamSettingsKeys::upstreamPort];
+    if(json_doc[UpstreamSettingsKeys::deviceID].is<const char *>()) strlcpy(deviceID, json_doc[UpstreamSettingsKeys::deviceID], 40);
+    if(json_doc[UpstreamSettingsKeys::username].is<const char *>()) strlcpy(username, json_doc[UpstreamSettingsKeys::username], 128);
+    if(json_doc[UpstreamSettingsKeys::apiKey].is<const char*>()) strlcpy(apiKey, json_doc[UpstreamSettingsKeys::apiKey], 40);
 
 }
 
@@ -460,6 +519,22 @@ void UpstreamSettings::processSettingKeypair(JsonPair kv) {
   } else if (kv.key() == UpstreamSettingsKeys::upstreamPort) {
     upstreamPort = kv.value().as<uint16_t>();
   } else if (kv.key() == UpstreamSettingsKeys::deviceID) {
-    strlcpy(deviceID, kv.value().as<const char *>(), 64);
+    strlcpy(deviceID, kv.value().as<const char *>(), 40);
+  } else if (kv.key() == UpstreamSettingsKeys::username) {
+    strlcpy(username, kv.value().as<const char *>(), 128);
+  } else if (kv.key() == UpstreamSettingsKeys::apiKey) {
+    strlcpy(apiKey, kv.value().as<const char *>(), 40);
   }
+
+}
+
+
+/**
+ * @brief Check if the device is registered with the upstream server
+ * 
+ * @return true - The device is registered
+ * @return false - The device is not registered
+ */
+bool UpstreamSettings::isRegistered() {
+    return (upstreamRegistrationError == UpstreamSettings::upstreamRegErrorT::NO_ERROR && strlen(deviceID) > 0 && strlen(apiKey) > 0);
 }

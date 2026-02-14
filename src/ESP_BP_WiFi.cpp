@@ -20,6 +20,7 @@
 #include "Version.h" 			// Used in mDNS announce string
 #include "Display.h"
 #include "EepromManager.h"
+#include "rest/rest_send.h"
 
 
 bool shouldSaveConfig = false;
@@ -117,7 +118,7 @@ void initialize_wifi() {
     // Not sure if wm.SetCleanConnect breaks the hack we have below for the race condition - no reason to test it.
     // wifiManager.setCleanConnect(true);       // Always disconnect before connecting
     // wm.setCountry is causing crashes under Arduino Core 2.0, apparently
-    // wifiManager.setCountry("US");            // US country code is most restrictive, use for all countries
+    wifiManager.setCountry("US");            // US country code is most restrictive, use for all countries
 
 
     // There is a race condition on some routers when processing the deauthorization that the ESP attempts as it
@@ -157,7 +158,7 @@ void initialize_wifi() {
         } else {
             // If the mDNS name is invalid, reset the WiFi configuration and restart the device
             WiFi.disconnect(true);
-            delay(2000);
+            delay(500);
             handleReset();
         }
     }
@@ -185,16 +186,25 @@ void wifi_connect_clients() {
     static unsigned long last_connection_check = 0;
 
     yield();
-    if(WiFi.isConnected()) {
-        if (server.hasClient()) {
+    if(WiFi.status() == WL_CONNECTED) {
+        // We only accept clients if we do not have a REST target defined
+        if(rest_handler.configured_for_fermentrack_rest()) {
+            // If we show a client as already being disconnected, force a disconnect
+            if (serverClient) {
+                serverClient.stop();
+            }
+        } else if (server.hasClient()) {
+            // We are handling serial connections, and have a client in queue to connect
             // If we show a client as already being disconnected, force a disconnect
             if (serverClient) serverClient.stop();
-#ifdef ESP8266
             serverClient = server.accept();
-#else
-            serverClient = server.available();
-#endif
+
+#ifdef ESP8266
             serverClient.flush();
+#else
+            serverClient.clear();
+#endif
+
         }
     } else {
         // This might be unnecessary, but let's go ahead and disconnect any
@@ -202,12 +212,12 @@ void wifi_connect_clients() {
         // we show a client as already being disconnected, force a disconnect
         if (serverClient) {
             serverClient.stop();
-#ifdef ESP8266
             serverClient = server.accept();
-#else
-            serverClient = server.available();
-#endif
+#ifdef ESP8266
             serverClient.flush();
+#else
+            serverClient.clear();
+#endif
         }
     }
     yield();
@@ -215,11 +225,10 @@ void wifi_connect_clients() {
     // Additionally, every 3 minutes either attempt to reconnect WiFi, or rebroadcast mdns info
     if(ticks.millis() - last_connection_check >= (3 * 60 * 1000)) {
         last_connection_check = ticks.millis();
-        if(!WiFi.isConnected()) {
+        if(WiFi.status() != WL_CONNECTED) {
             // If we are disconnected, reconnect. On an ESP8266 this will ALSO trigger mdns_reset due to the callback
             // but on the ESP32, this means that we'll have to wait an additional 3 minutes for mdns to come back up
-            WiFi.disconnect();
-            delay(50);
+            delay(150);
             WiFi.begin();
         } else {
             // #defining this out for now as there is a memory leak caused by this

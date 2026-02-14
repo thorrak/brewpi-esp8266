@@ -7,6 +7,7 @@
 #include <FS.h>  // Apparently this needs to be first
 #endif
 
+#include <ArduinoLog.h>
 #include "Brewpi.h"
 
 #include <Wire.h>
@@ -31,6 +32,8 @@
 #include "wireless/BTScanner.h"
 #include "tplink/TPLinkScanner.h"
 #include "http_server.h"
+
+#include "rest/rest_send.h"
 
 #if BREWPI_SIMULATE
 #include "Simulator.h"
@@ -94,6 +97,21 @@ void handleReset()
     ESP.restart();
 }
 
+// For ArduinoLog support
+void printTimestamp(Print *_logOutput)
+{
+    char c[12];
+    sprintf(c, "%10lu ", millis());
+    _logOutput->print(c);
+    Serial.flush();
+}
+
+void printPrefix(Print* _logOutput, int logLevel) {
+    printTimestamp(_logOutput);
+//    printLogLevel (_logOutput, logLevel);
+}
+
+
 /**
  * \brief Startup configuration
  *
@@ -106,19 +124,33 @@ void setup()
 {
 #ifdef ESP8266_WiFi
     Serial.begin(Config::PiLink::serialSpeed);
+
+#ifndef DISABLE_LOGGING
+    Serial.setDebugOutput(true);
+    Serial.println();
+    Serial.flush();
+    Log.begin(ARDUINO_LOG_LEVEL, &Serial, true);
+    Log.setPrefix(printPrefix);
+    Log.notice(F("Serial logging started at %l.\r\n"), Config::PiLink::serialSpeed);
+#endif
+
 #endif
 
 
     // Before anything else, let's get the filesystem working. We need to start it up, and then test if the file system
     // was formatted.
-  #ifdef ESP32
+  #ifndef ESP8266
+    // For ESP32
     FILESYSTEM.begin(true);
   #else
+    // for ESP8266
     FILESYSTEM.begin();
   #endif
 
-  extendedSettings.loadFromSpiffs();
-  upstreamSettings.loadFromSpiffs();
+  deviceManager.preloadActuatorPins();  // Preload any pin-based actuators to set their pin modes
+
+  extendedSettings.loadFromFilesystem();
+  upstreamSettings.loadFromFilesystem();
   display.init();
 
   initialize_wifi();
@@ -148,8 +180,16 @@ void setup()
 #endif
 
 	logDebug("started");
+
+#ifndef ESP8266
+	// Initialize OneWire buses
+	if (!deviceManager.initOneWireBuses()) {
+		logDebug("Failed to initialize OneWire buses");
+	}
+#endif
+
 	tempControl.init();
-	settingsManager.loadSettings();
+	settingsManager.loadSettings();  // Also fully loads devices
 
 #if BREWPI_SIMULATE
 	simulator.step();
@@ -166,6 +206,10 @@ void setup()
 	display.printState();
 
 #ifdef ENABLE_HTTP_INTERFACE
+  // Wait for WiFi to fully stabilize after initial connection from captive portal
+  if(WiFi.status() == WL_CONNECTED) {
+    delay(500);
+  }
   http_server.init();     // Initialize the web server
 #endif
 
@@ -177,6 +221,7 @@ void setup()
 //	rotaryEncoder.init();
 
 	logDebug("init complete");
+  rest_handler.init();
 }
 
 
@@ -188,7 +233,7 @@ void brewpiLoop()
 {
 	static unsigned long lastUpdate = 0;
 	uint8_t oldState;
-#ifndef BREWPI_TFT  // We don't want to do this for the TFT display
+#ifdef BREWPI_IIC  // We only want to do this for the IIC displays
     static unsigned long lastLcdUpdate = 0;
     if(ticks.millis() - lastLcdUpdate >= (180000)) { //reset lcd every 180 seconds as a workaround for screen scramble
         lastLcdUpdate = ticks.millis();
@@ -238,7 +283,10 @@ void brewpiLoop()
 
 #ifdef HAS_BLUETOOTH
 if(bt_scanner.scanning_failed()) {
-
+#ifdef ENABLE_HTTP_INTERFACE
+  // rest_handler.send_bluetooth_crash_report();
+  // TODO - Figure out if we want to keep this here
+#endif
   esp_restart();
 }
   bt_scanner.scan();        // Check/restart scan 
@@ -249,7 +297,10 @@ if(bt_scanner.scanning_failed()) {
 #endif
 
 #ifdef ENABLE_HTTP_INTERFACE
-  http_server.web_server->handleClient();
+  // The webserver is now handled asynchronously, so we don't need to call handleClient() here
+  http_server.processQueuedDeviceDefinition();  // Do this in the main loop to avoid issues with blocking to read DS18b20s
+  rest_handler.process();
+  http_server.processQueuedActions();
 #endif
 
 #ifdef ESP8266
