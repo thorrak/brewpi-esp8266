@@ -71,16 +71,6 @@
 
 //////////////////////////////////////////////////////////////////////////
 //
-// Enable DS2413 Actuators. 
-//
-// #ifndef BREWPI_DS2413
-// #define BREWPI_DS2413 0
-// #endif
-//
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-//
 // This flag virtualizes as much of the hardware as possible, so the code can be run in the AvrStudio simulator, which
 // only emulates the microcontroller, not any attached peripherals.
 //
@@ -268,13 +258,13 @@
  #define coolingPin NODEMCU_PIN_D3
 #define heatingPin NODEMCU_PIN_D4
 #define doorPin    NODEMCU_PIN_D5
-#define oneWirePin NODEMCU_PIN_D6  // If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
+#define oneWirePin NODEMCU_PIN_D6
 */
 
 #define heatingPin NODEMCU_PIN_D0
 #define coolingPin NODEMCU_PIN_D5
 
-#define oneWirePin NODEMCU_PIN_D6  // If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
+#define oneWirePin NODEMCU_PIN_D6
 #define doorPin    NODEMCU_PIN_D7
 
 #define IIC_SDA NODEMCU_PIN_D2
@@ -295,7 +285,6 @@
 #define heatingPin 25
 #define coolingPin 26
 
-// If oneWirePin is specified, beerSensorPin and fridgeSensorPin are ignored
 #define oneWirePin 13
 #define doorPin    34 // Note - 34 is "input only" and shouldn't be repurposed
 
@@ -355,7 +344,7 @@
 
 
 
-#define FIRMWARE_REVISION "v16-alpha5"
+#define FIRMWARE_REVISION "v16"
 
 #ifdef ESP8266_WiFi
 #define WIFI_SETUP_AP_NAME "BrewPiAP"

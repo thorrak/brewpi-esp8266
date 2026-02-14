@@ -17,18 +17,32 @@
  * You should have received a copy of the GNU General Public License
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+#ifndef ESP8266
 #include "Brewpi.h"
 #include "OneWireTempSensor.h"
-#include "DallasTempNG.h"
-#include "OneWireDevices.h"
+#include "EspDS18B20.h"
 #include "PiLink.h"
 #include "Ticks.h"
 #include "TemperatureFormats.h"
+#include "NumberFormats.h"
+#include "onewire_device.h"
+#include <string.h>
+
+// DS18B20 power-on default temperature is 85°C.
+// In raw 16-bit format: 85 * 16 = 1360 (0x0550).
+// This value indicates the sensor just powered on and hasn't completed a conversion.
+#define DEVICE_POWERON_RAW 1360
+
+OneWireTempSensor::OneWireTempSensor(onewire_bus_handle_t bus, DeviceAddress address, fixed4_4 calibrationOffset)
+  : m_bus(bus), m_sensor(NULL), m_connected(true), m_calibration_offset(calibrationOffset), m_conversion_failures(0) {
+  memcpy(m_sensor_address, address, sizeof(DeviceAddress));
+}
 
 OneWireTempSensor::~OneWireTempSensor(){
-	delete sensor;
-};
+  if (m_sensor) {
+    ds18b20_del_device(m_sensor);
+  }
+}
 
 /**
  * \brief Initializes the temperature sensor.
@@ -39,35 +53,90 @@ OneWireTempSensor::~OneWireTempSensor(){
  * Clients should attempt to re-initialize the sensor by calling init() again.
  */
 bool OneWireTempSensor::init() {
-	// save address and pinNr for log messages
-	char addressString[17];
-	printBytes(sensorAddress, 8, addressString);
-	// TODO - fix the following to use the defined OneWire pin
-	DEBUG_ONLY(uint8_t pinNr = oneWire->pinNr());
+  char addressString[17];
+  printBytes(m_sensor_address, 8, addressString);
 
-	bool success = false;
+  bool success = false;
 
-	if (sensor==NULL) {
-		sensor = new DallasTemperature(oneWire);
-		if (sensor==NULL) {
-			logErrorString(ERROR_SRAM_SENSOR, addressString);
-		}
-	}
-	
-	logDebug("init onewire sensor");
-	// This quickly tests if the sensor is connected and initializes the reset detection.
-	// During the main TempControl loop, we don't want to spend many seconds
-	// scanning each sensor since this brings things to a halt.
-	if (sensor && initConnection(*sensor, sensorAddress) && requestConversion()) {
-		logDebug("init onewire sensor - wait for conversion");
-		waitForConversion();
-		temperature temp = readAndConstrainTemp();
-		DEBUG_ONLY(logInfoIntStringTemp(INFO_TEMP_SENSOR_INITIALIZED, pinNr, addressString, temp));
-		success = temp!=TEMP_SENSOR_DISCONNECTED && requestConversion();
-	}	
-	setConnected(success);
-	logDebug("init onewire sensor complete %d", success);
-	return success;
+  if (m_sensor == NULL) {
+    logDebug("init onewire sensor - creating device");
+
+    // Create device from address
+    uint64_t address64 = bytesToAddress(m_sensor_address);
+
+    // Check if address is all zeros (scan for first device)
+    bool is_null_address = true;
+    for (int i = 0; i < 8; i++) {
+      if (m_sensor_address[i] != 0) {
+        is_null_address = false;
+        break;
+      }
+    }
+
+    ds18b20_config_t ds_cfg = {};
+
+    if (is_null_address) {
+      // No specific address, use first device on bus
+      esp_err_t ret = ds18b20_new_device_from_bus(m_bus, &ds_cfg, &m_sensor);
+      if (ret != ESP_OK) {
+        logErrorString(ERROR_SRAM_SENSOR, addressString);
+        setConnected(false);
+        return false;
+      }
+    } else {
+      // Enumerate devices to find the matching address
+      onewire_device_iter_handle_t iter = NULL;
+      onewire_device_t next_device;
+
+      if (onewire_new_device_iter(m_bus, &iter) != ESP_OK) {
+        logErrorString(ERROR_SRAM_SENSOR, addressString);
+        setConnected(false);
+        return false;
+      }
+
+      bool found = false;
+      while (onewire_device_iter_get_next(iter, &next_device) == ESP_OK) {
+        if (next_device.address == address64) {
+          if (ds18b20_new_device_from_enumeration(&next_device, &ds_cfg, &m_sensor) == ESP_OK) {
+            found = true;
+            break;
+          }
+        }
+      }
+      onewire_del_device_iter(iter);
+
+      if (!found) {
+        logErrorString(ERROR_SRAM_SENSOR, addressString);
+        setConnected(false);
+        return false;
+      }
+    }
+
+    // Set resolution to 12-bit (750ms conversion time)
+    ds18b20_set_resolution(m_sensor, DS18B20_RESOLUTION_12B);
+  }
+
+  logDebug("init onewire sensor");
+
+  // Set up reset detection - writes marker to scratchpad that will be
+  // cleared on sensor power cycle, allowing us to detect resets
+  if (m_sensor && ds18b20_init_connection(m_sensor) != ESP_OK) {
+    logDebug("init onewire sensor - init_connection failed");
+    setConnected(false);
+    return false;
+  }
+
+  if (m_sensor && requestConversion()) {
+    logDebug("init onewire sensor - wait for conversion");
+    waitForConversion();
+    temperature temp = readAndConstrainTemp();
+    DEBUG_ONLY(logInfoIntStringTemp(INFO_TEMP_SENSOR_INITIALIZED, oneWirePin, addressString, temp));
+    success = temp != TEMP_SENSOR_DISCONNECTED && requestConversion();
+  }
+
+  setConnected(success);
+  logDebug("init onewire sensor complete %d", success);
+  return success;
 }
 
 
@@ -75,53 +144,110 @@ bool OneWireTempSensor::init() {
  * \brief Request sensor measurement
  *
  * Sends a request to the OneWire bus for the configured device address to
- * begin the process of taking a measurement.  The length of time reqiured for
+ * begin the process of taking a measurement.  The length of time required for
  * a OneWire device to sample the temperature depend on the requested precision
  * and powered vs. parasite powered.
+ *
+ * Retries up to `attempts` times if the conversion request fails.
  *
  * @see waitForConversion()
  */
 bool OneWireTempSensor::requestConversion() {
-	bool ok = sensor->requestTemperaturesByAddress(sensorAddress);
-	setConnected(ok);
-	return ok;
+  if (!m_sensor) {
+    return false;
+  }
+
+  const uint8_t attempts = 10;
+  for (uint8_t i = 0; i < attempts; i++) {
+    if (ds18b20_trigger_temperature_conversion(m_sensor) == ESP_OK) {
+      setConnected(true);
+      return true;
+    }
+    delay(50);
+  }
+  return false;
 }
 
 /**
  * \brief Set sensor connection status
  */
 void OneWireTempSensor::setConnected(bool connected) {
-	if (this->connected==connected)
-		return; // state is stays the same
+  if (m_connected == connected)
+    return;
 
-	char addressString[17];
-	printBytes(sensorAddress, 8, addressString);
-	this->connected = connected;
-	if(connected){
-		logInfoIntString(INFO_TEMP_SENSOR_CONNECTED, oneWirePin, addressString);
-//		logInfoIntString(INFO_TEMP_SENSOR_CONNECTED, this->oneWire->pinNr(), addressString);
-	}
-	else{
-		logWarningIntString(WARNING_TEMP_SENSOR_DISCONNECTED, oneWirePin, addressString);
-//		logWarningIntString(WARNING_TEMP_SENSOR_DISCONNECTED, this->oneWire->pinNr(), addressString);
-	}
+  char addressString[17];
+  printBytes(m_sensor_address, 8, addressString);
+  m_connected = connected;
+  if (connected) {
+    logInfoIntString(INFO_TEMP_SENSOR_CONNECTED, oneWirePin, addressString);
+  } else {
+    logWarningIntString(WARNING_TEMP_SENSOR_DISCONNECTED, oneWirePin, addressString);
+  }
 }
+
+// Interval between conversion triggers (in milliseconds)
+// 2 seconds gives plenty of margin over the 750ms conversion time
+static constexpr uint32_t CONVERSION_INTERVAL_MS = 2000;
+
+// Static variables shared across all sensors on the bus
+static uint32_t s_last_conversion_time = 0;
+static uint8_t s_conversion_failures = 0;
 
 /**
  * \brief Read the value of the sensor
  *
+ * Reads from the sensor scratchpad and triggers a new conversion if enough
+ * time has passed since the last one. This allows non-blocking operation
+ * while keeping sensors converting regularly.
+ *
  * @return TEMP_SENSOR_DISCONNECTED if sensor is not connected, constrained temp otherwise.
  * @see readAndConstrainTemp()
  */
-temperature OneWireTempSensor::read(){
-	if (!connected)
-		return TEMP_SENSOR_DISCONNECTED;
+temperature OneWireTempSensor::read() {
+  if (!m_connected)
+    return TEMP_SENSOR_DISCONNECTED;
 
-	temperature temp = readAndConstrainTemp();
-	requestConversion();
-	return temp;
+  // Read the scratchpad first (this is the result of the PREVIOUS conversion)
+  temperature temp = readAndConstrainTemp();
+
+  // Trigger a new conversion if enough time has passed
+  uint32_t now = ticks.millis();
+  if (now - s_last_conversion_time >= CONVERSION_INTERVAL_MS) {
+    // Use non-blocking broadcast conversion to all sensors on bus
+    if (ds18b20_trigger_all_conversions_no_wait(m_bus) == ESP_OK) {
+      s_last_conversion_time = now;
+      s_conversion_failures = 0;
+    } else {
+      s_conversion_failures++;
+      if (s_conversion_failures >= 5) {
+        // Persistent conversion failures - mark sensor as disconnected
+        setConnected(false);
+        s_conversion_failures = 0;  // Reset to allow recovery after re-init
+        return TEMP_SENSOR_DISCONNECTED;
+      }
+    }
+  }
+
+  return temp;
 }
 
+
+/**
+ * \brief Reads the temperature with retries.
+ *
+ * Attempts to read the temperature up to a specified number of times.
+ * If successful, returns the temperature. If unsuccessful, returns DEVICE_DISCONNECTED_RAW.
+ */
+temperature OneWireTempSensor::readTempWithRetries(uint8_t attempts) {
+  int16_t temp;
+  for (uint8_t i = 0; i < attempts; i++) {
+    if (ds18b20_get_temperature_raw(m_sensor, &temp) == ESP_OK) {
+      return temp;
+    }
+    delay(50);
+  }
+  return DEVICE_DISCONNECTED_RAW;
+}
 
 /**
  * \brief Reads the temperature.
@@ -130,16 +256,26 @@ temperature OneWireTempSensor::read(){
  * and updates lastRequestTime. If unsuccessful, leaves lastRequestTime alone
  * and returns TEMP_SENSOR_DISCONNECTED.
  */
-temperature OneWireTempSensor::readAndConstrainTemp()
-{
-	// getTempRaw is the same as sensor.getTemp() but also checks for reset
-	temperature temp = getTempRaw(*sensor, sensorAddress);
-	if(temp == DEVICE_DISCONNECTED_RAW){
-		setConnected(false);
-		return TEMP_SENSOR_DISCONNECTED;
-	}
+temperature OneWireTempSensor::readAndConstrainTemp() {
+  const uint8_t attempts = 10;
+  temperature temp = readTempWithRetries(attempts);
 
-	const uint8_t shift = TEMP_FIXED_POINT_BITS - sensorPrecision; // difference in precision between DS18B20 format and temperature adt
-	temp = constrainTemp(temp+calibrationOffset+(C_OFFSET>>shift), ((int) MIN_TEMP)>>shift, ((int) MAX_TEMP)>>shift)<<shift;
-	return temp;
+  if (temp == DEVICE_DISCONNECTED_RAW) {
+    setConnected(false);
+    return TEMP_SENSOR_DISCONNECTED;
+  }
+
+  // Reject DS18B20 power-on default (85°C) - indicates sensor just powered
+  // on and hasn't completed a conversion yet
+  if (temp == DEVICE_POWERON_RAW) {
+    setConnected(false);
+    return TEMP_SENSOR_DISCONNECTED;
+  }
+
+  const uint8_t shift = TEMP_FIXED_POINT_BITS - sensorPrecision;
+  temp = constrainTemp(temp + m_calibration_offset + (C_OFFSET >> shift),
+                       ((int)MIN_TEMP) >> shift,
+                       ((int)MAX_TEMP) >> shift) << shift;
+  return temp;
 }
+#endif // ESP8266

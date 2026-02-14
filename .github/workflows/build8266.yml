@@ -1,4 +1,4 @@
-name: Build
+name: Build for ESP8266
 
 on:
   push:
@@ -22,14 +22,12 @@ jobs:
       # Ensure that a builder finishes even if another fails
       fail-fast: false
       matrix:
-        pio_env: ['esp32_wifi_tft', 'esp32_wifi_iic', 'esp8266_wifi', 'esp32_s2_wifi', 'esp32_wifi_espi']
+        pio_env: ['esp8266_wifi']
 
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4.1.1
-      with:
-        submodules: "recursive"
     - run: git fetch --prune --unshallow
 
     - name: Cache pip
@@ -39,19 +37,22 @@ jobs:
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
+
+    - name: Cache PlatformIO
+      uses: actions/cache@v4
+      with:
+        path: ~/.platformio
+        key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.13"
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-      with:
-        version: "latest"
-        enable-cache: false
-    - name: Install dependencies
+        python-version: "3.x"
+
+    - name: Install PlatformIO
       run: |
-        uv pip install --system -U https://github.com/pioarduino/platformio-core/archive/refs/tags/v6.1.18.zip
-        # pio pkg install --global --platform file://.
+        python -m pip install --upgrade pip
+        pip install --upgrade platformio
 
     - name: Build firmware
       run: |

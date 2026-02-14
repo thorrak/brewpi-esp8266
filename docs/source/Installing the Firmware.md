@@ -17,7 +17,11 @@ The firmware can also be installed using esptool (which is what BrewFlasher uses
 
 
 
-## NodeMCU Flasher for Windows (ESP8266-only)
+## NodeMCU Flasher for Windows (ESP8266-only, Deprecated)
+
+:::{note}
+ESP8266 support is deprecated. This section is retained for users with existing ESP8266 builds.
+:::
 
 ESP8266 modules can also be flashed using [NodeMCU-PyFlasher](https://github.com/marcelstoer/nodemcu-pyflasher).
 

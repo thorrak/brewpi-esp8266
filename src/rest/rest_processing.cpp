@@ -247,7 +247,8 @@ void restHandler::load_devices_from_array(JsonArray &root) {
         // serializeJsonPretty(kv, Serial);  // Print the received JSON to the console
         // piLink.receiveJsonMessage(doc);                                   // Read the JSON off the line from the Pi
         dev = DeviceManager::readJsonIntoDeviceDef(kv);                  // Parse the JSON into a DeviceDefinition object
-        DeviceConfig print = deviceManager.updateDeviceDefinition(dev);   // Save the device definition (if valid)
+        /*DeviceConfig print =*/ 
+        deviceManager.updateDeviceDefinition(dev);   // Save the device definition (if valid)
         Log.verboseln("\r\nProcessed device.");
     }
 }

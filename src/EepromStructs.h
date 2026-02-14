@@ -137,9 +137,8 @@ enum DeviceHardware {
 	DEVICE_HARDWARE_NONE = 0,
 	DEVICE_HARDWARE_PIN = 1, //!< A digital pin, either input or output
 	DEVICE_HARDWARE_ONEWIRE_TEMP = 2,	//<! A onewire temperature sensor
-#if BREWPI_DS2413
-	DEVICE_HARDWARE_ONEWIRE_2413 = 3,	//<! A onewire 2-channel PIO input or output.
-#endif
+  // DS2413 is no longer supported - leaving this here (but commented out) for historical reference
+//	DEVICE_HARDWARE_ONEWIRE_2413 = 3,	//<! A onewire 2-channel PIO input or output.
 // Skipping 4, as that is used in "modern" brewpi
   DEVICE_HARDWARE_BLUETOOTH_INKBIRD = 5,
   DEVICE_HARDWARE_BLUETOOTH_TILT = 6,
@@ -173,16 +172,8 @@ public:
 #endif
 		DeviceAddress address;        // for onewire devices, if address[0]==0 then use the first matching device type, otherwise use the device with the specific address
 
-												/* The pio and sensor calibration are never needed at the same time so they are a union.
-												* To ensure the eeprom format is stable when including/excluding DS2413 support, ensure all fields are the same size.
-												*/
-		union {
-#if BREWPI_DS2413
-			uint8_t pio;						// for ds2413 (deviceHardware==3) : the pio number (0,1)
-#endif			
-			int8_t /* fixed4_4 */ calibration;	// for temp sensors (deviceHardware==2), calibration adjustment to add to sensor readings
-												// this is intentionally chosen to match the raw value precision returned by the ds18b20 sensors
-		};
+    int8_t /* fixed4_4 */ calibration;	// for temp sensors (deviceHardware==2), calibration adjustment to add to sensor readings
+                      // this is intentionally chosen to match the raw value precision returned by the ds18b20 sensors
 	} hw;
 
     void toJson(JsonDocument &doc);
@@ -206,6 +197,7 @@ public:
     bool invertTFT;  //<! Whether or not to invert the TFT
     bool largeTFT;  //<! Whether or not to use a large TFT
     bool glycol;  //<! Whether or not to use glycol mode
+    bool resetScreenOnPin;  //<! Whether or not to reset the screen when an ActuatorArduinoPin toggles
 
     #ifdef HAS_BLUETOOTH
     NimBLEAddress tiltGravSensor; //<! The color of the Tilt hydrometer used for gravity
@@ -222,6 +214,7 @@ public:
     void setGlycol(bool setting);
     void setInvertTFT(bool setting);
     void setLargeTFT(bool setting);
+    void setResetScreenOnPin(bool setting);
 
     /**
      * \brief Filename used when reading/writing data to flash
