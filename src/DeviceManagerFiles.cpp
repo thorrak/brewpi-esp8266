@@ -54,10 +54,10 @@ void DeviceConfig::toJson(JsonDocument &doc) {
         if(deviceHardware == DEVICE_HARDWARE_BLUETOOTH_TILT) {
             tilt *th = bt_scanner.get_tilt(hw.btAddress);
             if(th != nullptr) {
-                // ArduinoJson attempts to deduplicate strings - we explicitly do not want that here
-                // char color[20];
-                // strcpy(color, th->get_color_string().c_str());
-                doc[DeviceDefinitionKeys::alias] = String(th->get_color_string().c_str());
+                // ArduinoJson attempts to deduplicate strings - use a local copy to prevent that
+                char color[20];
+                strlcpy(color, th->get_color_string().c_str(), sizeof(color));
+                doc[DeviceDefinitionKeys::alias] = color;
             }
         }
     }
@@ -68,8 +68,12 @@ void DeviceConfig::toJson(JsonDocument &doc) {
         doc[DeviceDefinitionKeys::address] = hw.tplink_mac;
         doc[DeviceDefinitionKeys::child_id] = hw.tplink_child_id;
         TPLinkPlug *tp = tp_link_scanner.get_tplink_plug(hw.tplink_mac, hw.tplink_child_id);
-        if(tp != nullptr)
-            doc[DeviceDefinitionKeys::alias] = String(tp->device_alias);  // Prevent deduplication
+        if(tp != nullptr) {
+            // Use a local copy to prevent ArduinoJson string deduplication
+            char alias[64];
+            strlcpy(alias, tp->device_alias, sizeof(alias));
+            doc[DeviceDefinitionKeys::alias] = alias;
+        }
     }
 #endif
 

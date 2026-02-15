@@ -220,6 +220,11 @@ void LcdDisplay::printAt(uint8_t x, uint8_t y, const char* text){
 	lcd.print(text);
 }
 
+void LcdDisplay::printAt(uint8_t x, uint8_t y, char* text){
+	lcd.setCursor(x, y);
+	lcd.print(text);
+}
+
 // print mode on the right location on the first line, after "Mode   "
 void LcdDisplay::printMode(){
 	lcd.setCursor(7,0);

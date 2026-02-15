@@ -20,18 +20,47 @@
 
 #pragma once
 
-#ifndef FAST_DIGITAL_PIN
-#define FAST_DIGITAL_PIN 1
+#include <driver/gpio.h>
+
+// Arduino-compatible pin mode / level constants (for legacy call sites)
+#ifndef INPUT
+#define INPUT   0x00
+#endif
+#ifndef OUTPUT
+#define OUTPUT  0x01
+#endif
+#ifndef INPUT_PULLUP
+#define INPUT_PULLUP 0x05
+#endif
+#ifndef HIGH
+#define HIGH 1
+#endif
+#ifndef LOW
+#define LOW  0
 #endif
 
-// compiler optimization required in order to resolve pin numbers to compile time constants.
-#define USE_FAST_DIGITAL_PIN FAST_DIGITAL_PIN && __OPTIMIZE__
+inline void fastPinMode(int pin, int mode) {
+	gpio_config_t io_conf = {};
+	io_conf.pin_bit_mask = (1ULL << pin);
+	io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+	io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+	io_conf.intr_type = GPIO_INTR_DISABLE;
+	if (mode == OUTPUT) {
+		io_conf.mode = GPIO_MODE_OUTPUT;
+	} else if (mode == INPUT_PULLUP) {
+		io_conf.mode = GPIO_MODE_INPUT;
+		io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+	} else { // INPUT
+		io_conf.mode = GPIO_MODE_INPUT;
+	}
+	gpio_config(&io_conf);
+}
 
-#if USE_FAST_DIGITAL_PIN
-	#include "DigitalPin.h"
-#else	
-	#define fastPinMode pinMode
-	#define fastDigitalWrite digitalWrite
-	#define fastDigitalRead digitalRead
-#endif
+inline void fastDigitalWrite(int pin, int value) {
+	gpio_set_level((gpio_num_t)pin, value);
+}
+
+inline int fastDigitalRead(int pin) {
+	return gpio_get_level((gpio_num_t)pin);
+}
 

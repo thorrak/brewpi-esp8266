@@ -6,8 +6,6 @@
 
 #include "Brewpi.h"
 #include "TempSensor.h"
-#include "FastDigitalPin.h"
-// #include "Ticks.h"
 #include <NimBLEDevice.h>
 #include "TemperatureFormats.h"
 
