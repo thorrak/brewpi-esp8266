@@ -1,5 +1,4 @@
 #pragma once
-#ifndef ESP8266
 
 #include "onewire_bus.h"
 #include "ds18b20.h"
@@ -46,4 +45,3 @@ esp_err_t ds18b20_get_temperature_raw(ds18b20_device_handle_t ds18b20, int16_t *
  */
 esp_err_t ds18b20_trigger_all_conversions_no_wait(onewire_bus_handle_t bus);
 
-#endif // ESP8266

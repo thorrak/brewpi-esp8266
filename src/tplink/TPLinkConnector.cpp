@@ -2,11 +2,9 @@
 #include "TPLinkPlug.h"
 
 #include <Arduino.h>
-#if defined(ESP8266)
-#include <ESP8266WiFi.h>
-#elif defined(ESP32)
+
 #include <WiFi.h>
-#endif
+
 #include <WiFiUdp.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -153,12 +151,7 @@ void TPLinkConnector::discover() {
 }
 
 void TPLinkConnector::init_udp() {
-#ifdef ESP32
     udp.begin(WiFi.localIP(), UDP_TPLINK_PORT);
-#elif defined(ESP8266)
-    udp.begin(UDP_TPLINK_PORT);
-#endif
-
 }
 
 std::string TPLinkConnector::receive_udp() {

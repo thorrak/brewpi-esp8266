@@ -27,7 +27,6 @@
 #endif
 
 
-#ifdef ESP32
 // Context for capturing HTTP response body via esp_http_client event handler
 struct HttpResponseCtx {
     char* buffer;
@@ -46,7 +45,6 @@ static esp_err_t http_event_handler(esp_http_client_event_t *evt) {
     }
     return ESP_OK;
 }
-#endif
 
 restHandler rest_handler; // Global data sender
 
@@ -110,64 +108,6 @@ sendResult restHandler::send_json_str(std::string &payload, const char *url, htt
 }
 
 sendResult restHandler::send_json_str(std::string &payload, const char *url, std::string &response, httpMethod method) {
-#ifdef ESP8266
-    char auth_header[64];
-    char userAgent[128];
-    int httpResponseCode;
-    sendResult result;
-
-    send_lock = true;
-
-    if (WiFi.status() != WL_CONNECTED) {
-        Log.warning("send_json_str: Wifi not connected, skipping send.\r\n");
-        send_lock = false;
-        return sendResult::retry;
-    }
-
-    get_useragent(userAgent, sizeof(userAgent));
-
-    Log.info("send_json_str: Sending %s to %s\r\n", payload.c_str(), url);
-
-    vTaskDelay(pdMS_TO_TICKS(1));  // Yield before we lock up the radio
-
-    WiFiClient client;
-    {
-        HTTPClient http;
-
-        http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
-        http.setReuse(false);
-
-        if (http.begin(client, url)) {
-            http.addHeader("Content-Type", "application/json");
-            http.setUserAgent(userAgent);
-
-            httpResponseCode = http.sendRequest(httpMethodToString(method), payload.c_str());
-
-            {
-                String tmp = http.getString();
-                response = std::string(tmp.c_str(), tmp.length());
-            }
-
-            if (httpResponseCode < HTTP_CODE_OK || httpResponseCode > HTTP_CODE_NO_CONTENT) {
-                Log.error("send_json_str: Send failed (%d): %s. Response:\r\n%s\r\n",
-                    httpResponseCode,
-                    http.errorToString(httpResponseCode).c_str(),
-                    http.getString().c_str());
-                result = sendResult::failure;
-            } else {
-                Log.info("send_json_str: success!\r\n");
-                result = sendResult::success;
-            }
-            http.end();
-        } else {
-            Log.error("send_json_str: Unable to create connection\r\n");
-            result = sendResult::failure;
-        }
-    }
-
-    send_lock = false;
-    return result;
-#else  // ESP32
     char userAgent[128];
     sendResult result;
 
@@ -246,7 +186,6 @@ sendResult restHandler::send_json_str(std::string &payload, const char *url, std
 
     send_lock = false;
     return result;
-#endif
 }
 
 
@@ -298,12 +237,7 @@ bool restHandler::send_bluetooth_crash_report() {
 
         getGuid(guid);
 
-
-#ifdef ESP8266
-        doc["uptime"] = system_get_time();
-#else
         doc["uptime"] = esp_timer_get_time();
-#endif
         doc["device_id"] = guid;
         doc["message"] = "With Arduino 3.0.4";
 
@@ -362,12 +296,7 @@ bool restHandler::send_full_config() {
         doc["es"] = es.as<JsonObject>();
         doc["mt"] = mt.as<JsonObject>();
         doc["devices"] = devices.as<JsonArray>();
-
-#ifdef ESP8266
-        doc["uptime"] = system_get_time();
-#else
         doc["uptime"] = esp_timer_get_time();
-#endif
 
         doc[UpstreamSettingsKeys::deviceID] = upstreamSettings.deviceID;
         doc[UpstreamSettingsKeys::apiKey] = upstreamSettings.apiKey;

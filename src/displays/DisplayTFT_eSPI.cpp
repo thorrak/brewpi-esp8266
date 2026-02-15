@@ -25,9 +25,6 @@
 #include "TempControl.h"
 #include "TemperatureFormats.h"
 
-#if !defined(ESP32)
-#error "Invalid chipset!"
-#endif
 
 // ESP32 Only
 #include <WiFi.h> // For printing the IP address

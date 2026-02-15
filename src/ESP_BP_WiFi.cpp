@@ -9,11 +9,6 @@
 #include <string>
 #include "Brewpi.h"
 
-#if defined(ESP8266)
-#include <ESP8266mDNS.h>
-#include <DNSServer.h>			//Local DNS Server used for redirecting all requests to the configuration portal
-#include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
-#elif defined(ESP32)
 #include <mdns.h>
 #include <DNSServer.h>			//Local DNS Server used for redirecting all requests to the configuration portal
 #include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
@@ -26,7 +21,6 @@
 #include <lwip/tcp.h>
 #include <fcntl.h>
 #include <errno.h>
-#endif
 
 #include "Version.h" 			// Used in mDNS announce string
 #include "Display.h"
@@ -53,9 +47,7 @@ void saveConfigCallback() {
 void apCallback(WiFiManager *myWiFiManager) {
     // Callback to display the WiFi LCD notification and set bandwidth
     display.printWiFiStartup();
-#ifdef ESP32
     esp_wifi_set_bandwidth(WIFI_IF_AP, WIFI_BW_HT20);  // Set the bandwidth of ESP32 interface
-#endif
 }
 
 
@@ -115,13 +107,6 @@ void initWifiServer() {
     mdns_reset();
 }
 
-#if defined(ESP8266)
-// This doesn't work for ESP32, unfortunately
-WiFiEventHandler stationConnectedHandler;
-void onStationConnected(const WiFiEventSoftAPModeStationConnected& evt) {
-    initWifiServer();
-}
-#endif
 
 void initialize_wifi() {
     std::string mdns_id;
@@ -133,10 +118,6 @@ void initialize_wifi() {
     mdns_id = eepromManager.fetchmDNSName();
 
     WiFi.mode(WIFI_STA);        // explicitly set mode, esp defaults to STA+AP
-
-#ifdef ESP8266
-    WiFi.setOutputPower(20.5);  // Max transmit power
-#endif
 
     wifiManager.setHostname(mdns_id.c_str());        // Allow DHCP to get proper name
     wifiManager.setWiFiAPChannel(1);         // Pick the most common channel, safe for all countries
@@ -199,10 +180,6 @@ void wifi_connection_info(JsonDocument& doc) {
 }
 
 void display_connect_info_and_create_callback() {
-#if defined(ESP8266)
-    // This doesn't work for ESP32, unfortunately.
-    stationConnectedHandler = WiFi.onSoftAPModeStationConnected(&onStationConnected);
-#endif
     display.printWiFi();  // Print the WiFi info (mDNS name & IP address)
     vTaskDelay(pdMS_TO_TICKS(5000));
 }
@@ -257,9 +234,7 @@ void wifi_connect_clients() {
             vTaskDelay(pdMS_TO_TICKS(150));
             WiFi.begin();
         } else {
-#ifdef ESP32
             mdns_reset();  // TODO - Add this to the WiFi.reconnect() process
-#endif
         }
     }
     vTaskDelay(pdMS_TO_TICKS(1));

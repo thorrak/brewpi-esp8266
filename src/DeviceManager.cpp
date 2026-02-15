@@ -46,11 +46,7 @@
 #include <thorlog_espidf.h>
 
 
-#ifdef ESP8266
-#include <DallasTempNG_8266.h>  // Instead of DallasTemperature.h
-#else
 #include "onewire_bus_impl_rmt.h"
-#endif
 
 #include "OneWireTempSensor.h"
 
@@ -77,23 +73,6 @@ ValueSensor<bool> defaultSensor(false);			// off
 ValueActuator defaultActuator;
 DisconnectedTempSensor defaultTempSensor;
 
-#ifdef ESP8266
-
-#if !BREWPI_SIMULATE
-OneWire DeviceManager::primaryOneWireBus(oneWirePin);
-#endif
-
-
-OneWire* DeviceManager::oneWireBus(uint8_t pin) {
-#if !BREWPI_SIMULATE
-	if (pin == oneWirePin)
-		return &primaryOneWireBus;
-#endif
-	return nullptr;
-}
-
-
-#else
 
 #if !BREWPI_SIMULATE
 #ifdef oneWirePin
@@ -132,7 +111,7 @@ onewire_bus_handle_t DeviceManager::oneWireBus(uint8_t pin) {
   return NULL;
 }
 
-#endif // ESP8266
+
 
 /**
  * Check if a given BasicTempSensor is the default temp sensor
@@ -818,11 +797,7 @@ inline void DeviceManager::readTempSensorValue(DeviceHardware hw_type, DeviceCon
 	temperature temp = INVALID_TEMP;
 
 	if(hw_type == DEVICE_HARDWARE_ONEWIRE_TEMP) {
-#ifdef ESP8266
-		OneWire* bus = oneWireBus(hw.pinNr);
-#else
 		onewire_bus_handle_t bus = oneWireBus(hw.pinNr);
-#endif
 		OneWireTempSensor sensor(bus, hw.address, 0);		// NB: this value is uncalibrated, since we don't have the calibration offset until the device is configured
 		if (sensor.init())
 			temp = sensor.read();
@@ -965,23 +940,15 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 			continue;
 		config.hw.pinNr = pin;
 		config.chamber = 1; // chamber 1 is default
-#ifdef ESP8266
-		OneWire* wire = oneWireBus(pin);
-#else
 		onewire_bus_handle_t wire = oneWireBus(pin);
-#endif
+
 		if (wire!=NULL) {
-#ifdef ESP8266
-			wire->reset_search();
-			while (wire->search(config.hw.address)) {
-#else
 			onewire_device_iter_handle_t iter = NULL;
 			if (onewire_new_device_iter(wire, &iter) == ESP_OK) {
 				onewire_device_t next_device;
 				while (onewire_device_iter_get_next(iter, &next_device) == ESP_OK) {
 					// Convert address to uint8_t array
 					addressToBytes(next_device.address, config.hw.address);
-#endif
 					// Skip if we've already processed this device in a previous scan
 					if (alreadySeen(config.hw.address)) {
 						continue;
@@ -998,32 +965,15 @@ void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCal
 
 					switch (config.deviceHardware) {
 						case DEVICE_HARDWARE_ONEWIRE_TEMP:
-#ifdef ESP8266
-		#if !ONEWIRE_PARASITE_SUPPORT
-						{	// check that device is not parasite powered
-							DallasTemperature sensor(wire);
-							if(initConnection(sensor, config.hw.address)){
-								recordAddress(config.hw.address);
-								handleEnumeratedDevice(config, h, callback, doc);
-							}
-						}
-		#else
-						recordAddress(config.hw.address);
-						handleEnumeratedDevice(config, h, callback, doc);
-		#endif
-#else
 							recordAddress(config.hw.address);
 							handleEnumeratedDevice(config, h, callback, doc);
-#endif
 							break;
 						default:
 							recordAddress(config.hw.address);
 							handleEnumeratedDevice(config, h, callback, doc);
 					}
-#ifndef ESP8266
 				}
 				onewire_del_device_iter(iter);
-#endif
 			}
 		}
 	}  // end pin iteration

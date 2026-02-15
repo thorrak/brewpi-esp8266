@@ -23,9 +23,6 @@
 #include "ESPEepromAccess.h"  // Includes filesystem headers/definition
 #include <string>
 #include <dirent.h>
-#ifdef ESP8266
-#include <LittleFS.h>
-#endif
 
 /**
  * \brief Set a human readable name for a device.
@@ -112,7 +109,6 @@ void DeviceNameManager::deleteDeviceName(const char* device) {
 }
 
 
-#if defined(ESP32)
 /**
  * \brief Get list of configured device names
  */
@@ -133,22 +129,6 @@ void DeviceNameManager::enumerateDeviceNames(JsonDocument& doc) {
   }
   closedir(dir);
 }
-
-#else
-
-/**
- * \brief Get list of configured device names
- */
-void DeviceNameManager::enumerateDeviceNames(JsonDocument& doc) {
-    // This is ESP8266 only
-  Dir dir = LittleFS.openDir(filenamePrefix);
-
-  while (dir.next()) {
-    DeviceName dn = filenameToDeviceName(dir.fileName());
-    doc[dn.device] = dn.name;
-  }
-}
-#endif
 
 
 /**

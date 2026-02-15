@@ -2,14 +2,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-#ifdef ESP8266
-#include <FS.h>  // Apparently this needs to be first
-#include <LittleFS.h>
-#include <ESP8266mDNS.h>
-#elif defined(ESP32)
 #include <esp_timer.h>
 #include <esp_littlefs.h>
-#endif
 
 #include <thorlog.h>
 #include <thorlog_espidf.h>
@@ -77,7 +71,6 @@ DisplayType DISPLAY_REF display = realDisplay;
 
 ValueActuator alarm_actuator;
 
-#ifdef ESP32
 void printMem() {
     const uint32_t free = esp_get_free_heap_size();
     const uint32_t max = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
@@ -85,14 +78,13 @@ void printMem() {
     printf("Free Heap: %lu, Largest contiguous block: %lu, Frag: %u%%\r\n",
            (unsigned long)free, (unsigned long)max, frag);
 }
-#endif
 
 /**
  * \brief Restart the board
  */
 void handleReset()
 {
-    // The asm volatile method doesn't work on ESP8266. Instead, use esp_restart
+    // The asm volatile method doesn't work on ESP32. Instead, use esp_restart
     esp_restart();
 }
 
@@ -135,7 +127,6 @@ void setup()
 
     // Before anything else, let's get the filesystem working. We need to start it up, and then test if the file system
     // was formatted.
-  #ifndef ESP8266
     // For ESP32 - mount LittleFS via ESP-IDF VFS layer using POSIX I/O
     {
         esp_vfs_littlefs_conf_t conf = {};
@@ -148,10 +139,6 @@ void setup()
             printf("Failed to mount LittleFS: %s\n", esp_err_to_name(ret));
         }
     }
-  #else
-    // for ESP8266 - uses Arduino LittleFS
-    LittleFS.begin();
-  #endif
 
   deviceManager.preloadActuatorPins();  // Preload any pin-based actuators to set their pin modes
 
@@ -187,12 +174,10 @@ void setup()
 
 	logDebug("started");
 
-#ifndef ESP8266
 	// Initialize OneWire buses
 	if (!deviceManager.initOneWireBuses()) {
 		logDebug("Failed to initialize OneWire buses");
 	}
-#endif
 
 	tempControl.init();
 	settingsManager.loadSettings();  // Also fully loads devices
@@ -307,10 +292,6 @@ if(bt_scanner.scanning_failed()) {
   http_server.processQueuedDeviceDefinition();  // Do this in the main loop to avoid issues with blocking to read DS18b20s
   rest_handler.process();
   http_server.processQueuedActions();
-#endif
-
-#ifdef ESP8266
-  MDNS.update();
 #endif
 
 }

@@ -830,11 +830,7 @@ void uptime(JsonDocument &doc) {
 void heap(JsonDocument &doc) {
     Log.verbose("Serving heap information.\r\n");
     const uint32_t free = esp_get_free_heap_size();
-#ifdef ESP32
     const uint32_t max = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
-#elif defined(ESP8266)
-    const uint32_t max = ESP.getMaxFreeBlockSize();
-#endif
     const uint8_t frag = 100 - (max * 100) / free;
     doc["free"] = free;
     doc["max"] = max;
@@ -843,14 +839,9 @@ void heap(JsonDocument &doc) {
 
 void reset_reason(JsonDocument &doc) {
     Log.verbose("Serving reset reason.\r\n");
-#ifdef ESP32
     const int reset = (int)esp_reset_reason();
     doc["reason"] = resetReason[reset];
     doc["description"] = resetDescription[reset];
-#elif defined(ESP8266)
-    doc["reason"] = ESP.getResetReason();
-    doc["description"] = "N/A";
-#endif
 }
 
 

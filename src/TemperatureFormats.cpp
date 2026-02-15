@@ -25,12 +25,11 @@
 #include "TempControl.h"
 
 /**
- * Provide missing strchrnul on ESP8266
+ * Provide missing strchrnul on ESP32
  *
  * @see https://linux.die.net/man/3/strchrnul
  */
-char *
-strchrnul(const char *s, int c_in)
+char * strchrnul(const char *s, int c_in)
 {
 	char c = c_in;
 	while (*s && (*s != c))

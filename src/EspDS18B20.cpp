@@ -1,4 +1,4 @@
-#ifndef ESP8266
+
 #include "EspDS18B20.h"
 #include "onewire_crc.h"
 #include "onewire_cmd.h"
@@ -203,4 +203,3 @@ esp_err_t ds18b20_trigger_all_conversions_no_wait(onewire_bus_handle_t bus)
   uint8_t tx_buffer[2] = {ONEWIRE_CMD_SKIP_ROM, DS18B20_CMD_CONVERT_TEMP};
   return onewire_bus_write_bytes(bus, tx_buffer, sizeof(tx_buffer));
 }
-#endif // ESP8266

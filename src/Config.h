@@ -145,14 +145,6 @@
 #ifdef BREWPI_TFT
 // Check for generic settings for all TFT display types
 
-#ifdef ESP8266
-#error "Unable to use TFT displays with ESP8266 (not enough pins)"
-#endif
-
-#ifndef ESP32
-#error "TFT displays only work with ESP32 devices"
-#endif
-
 #if defined(BREWPI_TFT_ILI9341)
 // Pin definitions for TFT displays using the ILI9341 driver
 #define TFT_CS 14  //for D32 Pro
@@ -232,53 +224,7 @@
 //
 // pins
 
-#if defined(ESP8266)
-
-#define CONTROLLER_TYPE "ESP8266"  // Used in the announce strings
-
-#define NODEMCU_PIN_A0 17	// Analog
-
-#define NODEMCU_PIN_D0 16	// No interrupt, do not use for rotary encoder
-#define NODEMCU_PIN_D1 5	// Generally used for I2C
-#define NODEMCU_PIN_D2 4	// Generally used for I2C
-#define NODEMCU_PIN_D3 0	// Has some degree of noise at startup
-#define NODEMCU_PIN_D4 2    // Also controls the LED on the ESP8266 module
-#define NODEMCU_PIN_D5 14
-#define NODEMCU_PIN_D6 12
-#define NODEMCU_PIN_D7 13
-#define NODEMCU_PIN_D8 15
-
-#define NODEMCU_PIN_D9 3	// Do not use - USB
-#define NODEMCU_PIN_D10 1	// Do not use - USB
-
-/*
- * This was the old pin configuration (waaaay back in 2016) for ESP8266 boards
- *
-
- #define coolingPin NODEMCU_PIN_D3
-#define heatingPin NODEMCU_PIN_D4
-#define doorPin    NODEMCU_PIN_D5
-#define oneWirePin NODEMCU_PIN_D6
-*/
-
-#define heatingPin NODEMCU_PIN_D0
-#define coolingPin NODEMCU_PIN_D5
-
-#define oneWirePin NODEMCU_PIN_D6
-#define doorPin    NODEMCU_PIN_D7
-
-#define IIC_SDA NODEMCU_PIN_D2
-#define IIC_SCL NODEMCU_PIN_D1
-
-
-// Pay attention when changing the pins for the rotary encoder.
-// They should be connected to external interrupt INT0, INT1 and INT3
-//#define rotaryAPin 2 // INT1
-//#define rotaryBPin 1 // INT3
-//#define rotarySwitchPin 0 // INT2
-
-
-#elif defined(ESP32_STOCK)
+#if defined(ESP32_STOCK)
 
 #define CONTROLLER_TYPE "ESP32"  // Used in the announce strings
 

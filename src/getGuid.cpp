@@ -4,10 +4,6 @@
 
 void getGuid(char *str)
 {
-#if defined(ESP8266)
-    strcpy(str, String(ESP.getChipId()).c_str());
-#elif defined(ESP32)
-
     uint8_t mac[6];
     esp_efuse_mac_get_default(mac);
     uint64_t chipid = 0;
@@ -23,7 +19,4 @@ void getGuid(char *str)
 
     strcpy(str, first);
     strcat(str, secon);
-#else
-#error "Invalid device selected!"
-#endif
 }

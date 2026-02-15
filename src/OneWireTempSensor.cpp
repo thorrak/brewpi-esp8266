@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef ESP8266
+
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
@@ -281,4 +281,3 @@ temperature OneWireTempSensor::readAndConstrainTemp() {
                        ((int)MAX_TEMP) >> shift) << shift;
   return temp;
 }
-#endif // ESP8266

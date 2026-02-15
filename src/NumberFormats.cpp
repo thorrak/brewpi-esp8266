@@ -19,9 +19,7 @@
  */
 
 #include "NumberFormats.h"
-#ifndef ESP8266
 #include <string.h>
-#endif
 
 /**
  * \brief Parse string into 8-bit bytes
@@ -49,7 +47,6 @@ void printBytes(const uint8_t *data, uint8_t len, char *buf) {
   *buf = 0;
 }
 
-#ifndef ESP8266
 /**
  * \brief Convert 64-bit OneWire address to 8-byte array
  */
@@ -65,4 +62,3 @@ uint64_t bytesToAddress(const uint8_t *bytes) {
   memcpy(&address, bytes, 8);
   return address;
 }
-#endif

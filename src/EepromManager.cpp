@@ -169,9 +169,6 @@ std::string EepromManager::fetchmDNSName()
 		}
 	}
 
-#if defined(ESP8266)
-    std::string mdns_id = "ESP" + String(ESP.getChipId());
-#elif defined(ESP32)
     // There isn't a straightforward "getChipId" function on an ESP32, so we'll have to make do
     char ssid[15]; //Create a Unique AP from MAC address
     uint8_t mac[6];
@@ -182,9 +179,6 @@ std::string EepromManager::fetchmDNSName()
     snprintf(ssid,15,"%04X",chip);
 
     std::string mdns_id = std::string("ESP") + ssid;
-#else
-#error "Invalid device selected!"
-#endif
 
 	return mdns_id;
 }

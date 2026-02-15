@@ -19,7 +19,7 @@
  */
 
 #pragma once
-#ifndef ESP8266
+
 #include "Brewpi.h"
 #include "TempSensor.h"
 #include "FastDigitalPin.h"
@@ -86,7 +86,3 @@ private:
   bool m_connected;
   uint8_t m_conversion_failures; //!< Consecutive conversion request failures
 };
-#else
-// If we're using an ESP8266, include the ESP8266-specific version
-#include "OneWireTempSensor_8266.h"
-#endif // ESP8266

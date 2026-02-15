@@ -116,7 +116,7 @@ class OLEDFourBit {
 
 	size_t print_P(const char * str) { // print a string stored in PROGMEM
 		char buf[21]; // create buffer in RAM
-		strlcpy(buf, str, 20); // ESP8266 has no concept of PROGMEM - we're good
+		strlcpy(buf, str, 20); // ESP32 has no concept of PROGMEM - we're good
 		return print(buf); // print from RAM
 	}
 	

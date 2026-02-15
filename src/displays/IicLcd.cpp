@@ -22,15 +22,7 @@
 #include <inttypes.h>
 #include "Arduino.h"
 
-#ifdef ESP32
 #include <driver/i2c_master.h>
-#else
-extern "C" {
-	// So the version slintak had used Twi. I'm using wire instead.
-	//#include "Twi.h"
-#include <Wire.h>
-}
-#endif
 
 // When the display powers up, it is configured as follows:
 //
@@ -58,15 +50,12 @@ IIClcd::IIClcd(uint8_t lcd_Addr, uint8_t lcd_cols, uint8_t lcd_rows)
 	_rows = lcd_rows;
 	_backlightval = LCD_NOBACKLIGHT;
 	_displayFound = false;
-#ifdef ESP32
 	_i2c_bus = NULL;
 	_i2c_dev = NULL;
 	_i2c_bus_initialized = false;
-#endif
 }
 
 void IIClcd::scan_address() {
-#ifdef ESP32
 	// Probe each address on the I2C bus
 	for (uint8_t i = 8; i < 120; i++)
 	{
@@ -87,24 +76,6 @@ void IIClcd::scan_address() {
 			break;
 		}
 	}
-#else
-	for (byte i = 8; i < 120; i++)
-	{
-		Wire.beginTransmission(i);
-		if (Wire.endTransmission() == 0)
-		{
-			// We found the i2c device address.
-			_Addr = i;
-			i = 120;
-			vTaskDelay(pdMS_TO_TICKS(1));
-			_displayFound = true;
-			break;
-		}
-	}
-
-	Wire.setClock(1000000);                 // Set the I2C bus rate
-	Wire.setClock(400000);               // Try and reset clock rate
-#endif
 }
 
 
@@ -116,7 +87,6 @@ void IIClcd::init() {
 
 void IIClcd::init_priv()
 {
-#ifdef ESP32
 	if (!_i2c_bus_initialized) {
 		i2c_master_bus_config_t bus_config = {};
 		bus_config.i2c_port = I2C_NUM_0;
@@ -128,9 +98,7 @@ void IIClcd::init_priv()
 		i2c_new_master_bus(&bus_config, &_i2c_bus);
 		_i2c_bus_initialized = true;
 	}
-#else
-	Wire.begin(IIC_SDA, IIC_SCL);
-#endif
+
 	scan_address();
 	_displayfunction = LCD_4BITMODE | LCD_1LINE | LCD_5x8DOTS;
 	begin(_cols, _rows);
@@ -346,14 +314,7 @@ void IIClcd::write4bits(uint8_t value) {
 void IIClcd::expanderWrite(uint8_t _data) {
 	if(_displayFound) {
 		uint8_t data = ((uint8_t)(_data) | _backlightval);
-#ifdef ESP32
 		i2c_master_transmit(_i2c_dev, &data, 1, 100);
-#else
-	//	twi_writeTo(_Addr, &data, 1, true, true);
-		Wire.beginTransmission(_Addr);
-		Wire.write(data);
-		Wire.endTransmission();
-#endif
 	}
 }
 

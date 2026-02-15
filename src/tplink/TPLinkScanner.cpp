@@ -9,13 +9,9 @@
 // #include "DeviceManager.h"
 #include "EepromManager.h"
 
-#if defined(ESP8266)
-#include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
-#elif defined(ESP32)
 #include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 #include <esp_wifi.h>
 #include <esp_timer.h>
-#endif
 
 
 TPLinkScanner tp_link_scanner;
