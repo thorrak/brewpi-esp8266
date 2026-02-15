@@ -24,10 +24,9 @@
 #include "Brewpi.h"
 #include "BrewpiStrings.h"
 #include <stdint.h>
-#include <Print.h>
 #include "Ticks.h"
 
-class NullLcdDriver : public Print {
+class NullLcdDriver {
 	public:
 	// Constants are set in initializer list of constructor
 	NullLcdDriver(){};
@@ -57,6 +56,18 @@ class NullLcdDriver : public Print {
 	void setCursor(uint8_t, uint8_t);
 
 	virtual size_t write(uint8_t);
+
+	size_t print(const char* str) {
+		size_t n = 0;
+		while (*str) {
+			write(static_cast<uint8_t>(*str));
+			str++;
+			n++;
+		}
+		return n;
+	}
+
+	void print(char c) { write(static_cast<uint8_t>(c)); }
 
 	void print_P(const char * str){ // print a string stored in PROGMEM
 		char buf[21]; // create buffer in RAM
@@ -88,8 +99,6 @@ class NullLcdDriver : public Print {
 	// Write spaces from current position to line end.
 	void printSpacesToRestOfLine();
 		
-	using Print::write;
-
 	private:
 	uint8_t _currline;
 	uint8_t _currpos;

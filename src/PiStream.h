@@ -25,137 +25,270 @@
 
 #include "Brewpi.h"
 #include <ArduinoJson.h>
-#include <StreamUtils.h>
-#include <type_traits>
 
-#if defined(ESP8266)
-#include <ESP8266WiFi.h>
-#elif defined(ESP32)
-#include <WiFi.h>
-#endif
+#include <driver/uart.h>
+#include <lwip/sockets.h>
+#include <lwip/netdb.h>
+#include <errno.h>
 
-#include "ESP_BP_WiFi.h"
+#include <cstdarg>
+#include <cstring>
+#include <string>
+
+// -----------------------------------------------------------------------
+// Backend interface
+// -----------------------------------------------------------------------
 
 /**
- * \brief Template for abstracting low level Stream interaction details
+ * \brief Abstract I/O backend for PiStream
  *
- * This encapsulates the differences required when using different Stream
- * implementations.  Writes are buffered when Config::PiLink::bufferPrints is
- * true.  StreamType must be something that implements the Stream API (like
- * Serial) The default is written for Serial.  See specializations for other
- * implementations
+ * Provides the low-level byte transport that PiStream delegates to.
+ * Two concrete implementations exist: UartBackend (serial) and
+ * TcpBackend (WiFi / telnet socket).
  */
-template <typename StreamType> class PiStream {
-  static_assert(std::is_base_of<Stream, StreamType>::value, "StreamType must be a Stream");
+class PiStreamBackend {
+public:
+  virtual ~PiStreamBackend() = default;
 
+  /** \brief Read a single byte (non-blocking). Returns -1 if nothing available. */
+  virtual int read() = 0;
+
+  /** \brief Return the number of bytes available to read without blocking. */
+  virtual int available() = 0;
+
+  /** \brief Write a buffer of bytes. Returns number of bytes written. */
+  virtual size_t write(const uint8_t *buf, size_t len) = 0;
+
+  /** \brief Return true if the transport is connected / usable. */
+  virtual bool connected() = 0;
+
+  /** \brief One-time initialisation of the transport. */
+  virtual void init() = 0;
+
+  /** \brief Return true if the transport is in a valid state. */
+  virtual operator bool() = 0;
+};
+
+// -----------------------------------------------------------------------
+// UART backend  (replaces HardwareSerial / USBCDC)
+// -----------------------------------------------------------------------
+
+/**
+ * \brief ESP-IDF UART driver backend
+ *
+ * Wraps the ESP-IDF UART driver so that PiStream can read/write a
+ * hardware serial port without any Arduino dependency.
+ */
+class UartBackend : public PiStreamBackend {
+  uart_port_t _port;
+
+public:
+  explicit UartBackend(uart_port_t port = UART_NUM_0) : _port(port) {}
+
+  void init() override {
+    uart_config_t uart_config = {
+        .baud_rate = Config::PiLink::serialSpeed,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_DEFAULT,
+    };
+    // Only configure if not already installed (UART0 is often pre-configured)
+    uart_driver_install(_port, 1024, 0, 0, nullptr, 0);
+    uart_param_config(_port, &uart_config);
+  }
+
+  int read() override {
+    uint8_t byte;
+    int len = uart_read_bytes(_port, &byte, 1, 0); // non-blocking
+    return len > 0 ? byte : -1;
+  }
+
+  int available() override {
+    size_t avail = 0;
+    uart_get_buffered_data_len(_port, &avail);
+    return static_cast<int>(avail);
+  }
+
+  size_t write(const uint8_t *buf, size_t len) override {
+    return uart_write_bytes(_port, buf, len);
+  }
+
+  bool connected() override { return true; } // UART is always "connected"
+  operator bool() override { return true; }
+};
+
+// -----------------------------------------------------------------------
+// TCP backend  (replaces WiFiClient)
+// -----------------------------------------------------------------------
+
+/**
+ * \brief BSD-socket TCP backend
+ *
+ * Wraps a connected client socket file descriptor so that PiStream can
+ * read/write over a TCP (telnet) connection without WiFiClient.
+ */
+class TcpBackend : public PiStreamBackend {
+  int &_fd; // Reference to the external client fd (e.g. telnet_client_fd)
+
+public:
+  /**
+   * \brief Construct with a reference to an externally managed socket fd.
+   *
+   * The fd variable (e.g. telnet_client_fd in ESP_BP_WiFi) is updated by
+   * wifi_connect_clients() as clients connect/disconnect.  TcpBackend
+   * always reads through the reference so it sees the latest value.
+   */
+  explicit TcpBackend(int &fd_ref) : _fd(fd_ref) {}
+
+  /** \brief Return the current socket fd (-1 if none). */
+  int getFd() const { return _fd; }
+
+  void init() override {} // Server setup is handled externally
+
+  int read() override {
+    if (_fd < 0) return -1;
+    uint8_t byte;
+    int n = recv(_fd, &byte, 1, MSG_DONTWAIT);
+    return n > 0 ? byte : -1;
+  }
+
+  int available() override {
+    if (_fd < 0) return 0;
+    int count = 0;
+    ioctl(_fd, FIONREAD, &count);
+    return count;
+  }
+
+  size_t write(const uint8_t *buf, size_t len) override {
+    if (_fd < 0) return 0;
+    int sent = send(_fd, buf, len, MSG_NOSIGNAL);
+    return sent > 0 ? static_cast<size_t>(sent) : 0;
+  }
+
+  bool connected() override {
+    if (_fd < 0) return false;
+    // Peek to check whether the peer has closed the connection
+    char tmp;
+    int n = recv(_fd, &tmp, 1, MSG_PEEK | MSG_DONTWAIT);
+    if (n == 0) return false;                                  // peer closed
+    if (n < 0 && errno != EAGAIN && errno != EWOULDBLOCK) return false;
+    return true;
+  }
+
+  operator bool() override { return _fd >= 0; }
+
+  // Note: fd lifecycle is managed externally (wifi_connect_clients)
+};
+
+// -----------------------------------------------------------------------
+// PiStream  (non-templated)
+// -----------------------------------------------------------------------
+
+/**
+ * \brief Abstraction for PiLink I/O
+ *
+ * Provides buffered printing, printf-style formatting, and JSON
+ * serialisation/deserialisation over an arbitrary PiStreamBackend.
+ * Replaces the former template class that was parameterised on an
+ * Arduino Stream type.
+ */
+class PiStream {
 public:
   /**
    * \brief Constructor
    *
-   * \param stream - Reference to the Stream object used for communications
+   * \param backend - Reference to the PiStreamBackend used for I/O
    */
-  PiStream(StreamType &stream) : intBuffOn(0), upstream(stream), stream{stream, Config::PiLink::printBufferSize()} {};
+  PiStream(PiStreamBackend &backend) : _backend(backend), intBuffOn(0) {
+    intBuff[0] = '\0';
+  }
 
   /**
-   * \brief Read data from the stream
+   * \brief One-time initialisation of the underlying transport
    */
-  int read() { return stream.read(); };
+  void init() { _backend.init(); }
+
+  // -- reading ----------------------------------------------------------
 
   /**
-   * \brief Read from the Stream, waiting if nothing is yet available to read
+   * \brief Read a single byte from the backend (non-blocking)
+   */
+  int read() { return _backend.read(); }
+
+  /**
+   * \brief Read from the backend, waiting if nothing is yet available
    *
-   * If data isn't immediately available, continue to poll until some data
-   * is.  The stream will be polled for data every millisecond, up until the
-   * timeout.
+   * Polls once per millisecond until data arrives or the timeout expires.
    *
-   * \return Data from Stream, or if no data is received before timeout, -1
+   * \return Data byte, or -1 on timeout
    * \param timeout - How long to wait for data, in milliseconds
    */
   int readPersistent(const int timeout = 10) {
     uint8_t retries = 0;
-    while (available() == 0) {
-      // Uses vTaskDelay as delayMicroseconds doesn't yield like delay does
+    while (!available()) {
       vTaskDelay(pdMS_TO_TICKS(1));
       retries++;
       if (retries >= timeout) {
         return -1;
       }
     }
-    return stream.read();
-  };
+    return _backend.read();
+  }
+
+  // -- printing ---------------------------------------------------------
 
   /**
-   * \brief Print a single char
+   * \brief Print a single char into the internal buffer
    */
-  void print(const char out) { 
-    if(Config::PiLink::bufferPrints) {
-      stream.print(out); 
-    } else {
-      if((unsigned)(intBuffOn + 1)  < Config::PiLink::intBufferSize()) {
-        intBuff[intBuffOn] = out;
-        intBuff[intBuffOn+1] = '\0';
+  void print(const char out) {
+    if (static_cast<unsigned>(intBuffOn + 1) < Config::PiLink::intBufferSize()) {
+      intBuff[intBuffOn] = out;
+      intBuff[intBuffOn + 1] = '\0';
+      intBuffOn++;
+    }
+  }
+
+  /**
+   * \brief Print a C-string into the internal buffer
+   */
+  void print(const char *out) {
+    for (uint16_t x = 0; x < strlen(out); x++) {
+      if (static_cast<unsigned>(intBuffOn + 1) < Config::PiLink::intBufferSize()) {
+        intBuff[intBuffOn] = out[x];
+        intBuff[intBuffOn + 1] = '\0';
         intBuffOn++;
       }
     }
-    
-  };
+  }
 
+  // TODO - Come back and remove this
   /**
-   * \brief Print a C-str
+   * \brief Print a C++ string
    */
-  void print(const char *out) { 
-    if(Config::PiLink::bufferPrints) {
-      stream.print(out); 
-    } else {
-      for(uint16_t x = 0; x < strlen(out) ; x++) {
-        if((unsigned)(intBuffOn + 1)  < Config::PiLink::intBufferSize()) {
-          intBuff[intBuffOn] = out[x];
-          intBuff[intBuffOn+1] = '\0';
-          intBuffOn++;
-        }
-      }
-    }
-  };
+  void print(const std::string &out) { print(out.c_str()); }
 
   /**
-   * \brief Print a String
-   */
-  void print(const String out) { print(out.c_str()); };
-
-  /**
-   * \brief Print a C++ String
-   */
-  void print(const std::string out) { print(out.c_str()); };
-
-  /**
-   * \brief A printf like interface.  Format string stored in PROGMEM
+   * \brief A printf-like interface (PROGMEM format string)
    *
-   * \param fmt - PROGMEM stored sprintf format string
+   * On ESP32 PROGMEM is a no-op, so this behaves identically to
+   * print_fmt().  Kept for source compatibility with call sites that
+   * use PSTR().
+   *
+   * \param fmt - sprintf format string
    */
   void print_P(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
-    vsnprintf_P(printfBuff, Config::PiLink::printfBufferSize, fmt, args);
+    vsnprintf(printfBuff, Config::PiLink::printfBufferSize, fmt, args);
     va_end(args);
 
     print(printfBuff);
-  };
+  }
 
   /**
-   * \brief A printf like interface to the Arduino Serial function. Format
-   * string stored in RAM
-   *
-   * This was originally named print, but it is ambiguous with the other
-   * print() methods (because the variadic could match 0 args, which then
-   * looks the same as print(const char*)
-   *
-   * I was going to use a [template
-   * solution](https://stackoverflow.com/questions/41860736/how-to-disambiguate-a-variadic-function-with-another-in-c)
-   * to disambiguate this from print(), but there is a [bug in gcc before
-   * v4.9](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=41933) that prevents
-   * that kind of template from working.  As a cheap workaround, I'm renaming
-   * the method.  If the toolchain gets updated in the future, revisiting the
-   * template would be a good idea.
+   * \brief A printf-like interface (RAM format string)
    *
    * \param fmt - sprintf format string
    */
@@ -166,42 +299,57 @@ public:
     va_end(args);
 
     print(printfBuff);
-  };
+  }
 
   /**
-   * \brief Print new line
+   * \brief Flush the internal buffer with a trailing CRLF
    *
-   * Flushes the buffer, if buffering was enabled.
+   * Writes the accumulated contents of intBuff followed by "\r\n"
+   * to the backend, then resets the buffer.
    */
   void printNewLine() {
-
-    if(Config::PiLink::bufferPrints) {
-      stream.println();
-      stream.flush();  // This currently causes a crash on ESP32, and is not required if bufferPrints is disabled
+    // Append \r\n inside the buffer if there is room, then write once
+    size_t len = intBuffOn;
+    if (len + 2 < Config::PiLink::intBufferSize()) {
+      intBuff[len] = '\r';
+      intBuff[len + 1] = '\n';
+      intBuff[len + 2] = '\0';
+      _backend.write(reinterpret_cast<const uint8_t *>(intBuff), len + 2);
     } else {
-      stream.println(intBuff);
-      intBuff[0] = '\0';
-      intBuffOn = 0;
+      // Buffer full -- write what we have, then the newline separately
+      _backend.write(reinterpret_cast<const uint8_t *>(intBuff), len);
+      const char crlf[] = "\r\n";
+      _backend.write(reinterpret_cast<const uint8_t *>(crlf), 2);
     }
+    intBuff[0] = '\0';
+    intBuffOn = 0;
+  }
 
-  };
+  // -- status -----------------------------------------------------------
 
   /**
-   * \brief Check if stream is conected
+   * \brief Check if the transport is connected
    */
-  bool connected() { return upstream.connected(); };
+  bool connected() { return _backend.connected(); }
 
   /**
    * \brief Check if data is available for reading
    */
-  bool available() { return stream.available(); };
+  bool available() { return _backend.available() > 0; }
 
   /**
-   * \brief Send a JSON document with an optional prefix
+   * \brief Bool operator -- true if the backend is in a valid state
+   */
+  operator bool() { return static_cast<bool>(_backend); }
+
+  // -- JSON helpers -----------------------------------------------------
+
+  /**
+   * \brief Send a JSON document with an optional prefix character
    *
-   * \param prefix - Used to indicate to the receiving end the nature of the
-   * message
-   * \param doc - Reference to JsonDocument that should be sent
+   * \param prefix - Character prefix (e.g. 'T' for temperatures).
+   *                 If 0/null, no prefix is printed.
+   * \param doc - Reference to JsonDocument to serialise
    */
   void sendJsonMessage(const char prefix, const JsonDocument &doc) {
     if (prefix) {
@@ -209,29 +357,20 @@ public:
       print(':');
     }
 
-    if(Config::PiLink::bufferPrints) {
-      serializeJson(doc, stream);
-    } else {
-      char buf[2048];
-      serializeJson(doc, buf, 2048);
-      print(buf);
-    }
+    char buf[2048];
+    serializeJson(doc, buf, sizeof(buf));
+    print(buf);
+
     printNewLine();
   }
 
   /**
-   * \brief Unpack a single item array
+   * \brief Unpack a single-item array and send as a top-level object
    *
-   * This allows client code to always generate arrays, even if there is only
-   * going to be a single object.  This is used to unpack that single object
-   * into the top level root before serializing over the stream.
-   *
-   * \param prefix - Used to indicate to the receiving end the nature of the
-   * message
-   * \param doc - Reference to JsonDocument that should be sent
+   * \param prefix - Character prefix for the message
+   * \param doc - Reference to JsonDocument containing a single-element array
    */
   void sendSingleItemJsonMessage(const char prefix, JsonDocument &doc) {
-    // Pull the device object from the document array and promote it to be root
     JsonDocument shallowDoc;
 
     for (auto kvp : doc.as<JsonArray>()[0].as<JsonObject>()) {
@@ -242,12 +381,36 @@ public:
   }
 
   /**
-   * \brief Parse JSON coming from the stream
+   * \brief Parse JSON arriving from the backend
    *
-   * \param doc - Reference to a JsonDocument to populate.
+   * Reads bytes into a local buffer (up to newline or timeout), then
+   * deserialises from that buffer.
+   *
+   * \param doc - Reference to a JsonDocument to populate
    */
   void receiveJsonMessage(JsonDocument &doc) {
-    const DeserializationError error = deserializeJson(doc, stream);
+    // Read bytes until we hit a newline or fill the buffer
+    char buf[2048];
+    size_t pos = 0;
+    const int timeout_ms = 500;
+    int idle_ms = 0;
+
+    while (pos < sizeof(buf) - 1) {
+      int c = _backend.read();
+      if (c < 0) {
+        // No data right now -- wait a bit
+        vTaskDelay(pdMS_TO_TICKS(1));
+        idle_ms++;
+        if (idle_ms >= timeout_ms) break;
+        continue;
+      }
+      idle_ms = 0; // reset idle counter on successful read
+      if (c == '\n' || c == '\r') break;
+      buf[pos++] = static_cast<char>(c);
+    }
+    buf[pos] = '\0';
+
+    const DeserializationError error = deserializeJson(doc, buf);
 
     if (error) {
       print("Error deserializing JSON data ");
@@ -256,90 +419,22 @@ public:
     }
   }
 
-  /**
-   * \brief bool operator
-   *
-   * This dispatches to a private _bool() method for easier templating
-   * @see _bool()
-   */
-  operator bool() { return _bool(); };
-
-  /**
-   * \brief Empty init for all other stream types types
-   */
-  template <typename U = StreamType>
-  typename std::enable_if<!std::is_same<U, HardwareSerial>::value && !std::is_same<U, WiFiClient>::value>::type
-  init(){};
-
-  /**
-   * \brief Initialize WiFi Stream
-   *
-   * \see initWifiServer()
-   */
-  template <typename U = StreamType> typename std::enable_if<std::is_same<U, WiFiClient>::value>::type init() {
-    ::initWifiServer();
-  };
-
-  /**
-   * \brief Initialize Serial Stream
-   */
-  template <typename U = StreamType> typename std::enable_if<std::is_same<U, HardwareSerial>::value>::type init() {
-    upstream.begin(Config::PiLink::serialSpeed);
-  };
-
 private:
   /**
-   * \brief Buffer used for printf operations
-   * \see Config::PiLink::printfBufferSize
+   * \brief Reference to the I/O backend
    */
-  static char printfBuff[Config::PiLink::printfBufferSize];
+  PiStreamBackend &_backend;
 
   /**
    * \brief Buffer used for printf operations
    * \see Config::PiLink::printfBufferSize
+   */
+  inline static char printfBuff[Config::PiLink::printfBufferSize];
+
+  /**
+   * \brief Internal line buffer used to accumulate output before flushing
+   * \see Config::PiLink::intBufferSize
    */
   char intBuff[Config::PiLink::intBufferSize()];
   uint16_t intBuffOn;
-
-  /**
-   * \brief Reference to the wrapped StreamType object
-   *
-   * This is used for type specific interactions.  Generic Stream usage is
-   * done via stream;
-   */
-  StreamType &upstream;
-
-  /**
-   * \brief Stream used for communications
-   *
-   * \todo
-   * To aid debugging, we could enable the ReadLoggingStream feature of
-   * StreamUtils and have it dump the content to the serial interface when
-   * we're in WiFi mode (because it shouldn't cause any interfearance with
-   * real comms).  The docs for DerserializationError has an example
-   * (https://arduinojson.org/v6/api/misc/deserializationerror/)
-   *
-   * This may be tricky to combine with the write buffering, that's why I haven't done it yet.
-   */
-  WriteBufferingStream stream;
-  // WriteBufferingClient stream;
-
-  /**
-   * \brief _bool implementation for non WiFiClient Streams
-   */
-  template <typename U = StreamType> typename std::enable_if<!std::is_same<U, WiFiClient>::value, bool>::type _bool() {
-    return bool(stream);
-  };
-
-  /**
-   * \brief _bool implementation for WiFiClient Streams
-   *
-   * This checks both the bool operator of the underlying Stream and its
-   * connected() method
-   */
-  template <typename U = StreamType> typename std::enable_if<std::is_same<U, WiFiClient>::value, bool>::type _bool() {
-    return bool(stream) && upstream.connected();
-  };
 };
-
-template <typename T> char PiStream<T>::printfBuff[Config::PiLink::printfBufferSize];

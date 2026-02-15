@@ -26,7 +26,6 @@
 #define OLEDFourBit_h
 
 #include <inttypes.h>
-#include "Print.h"
 #include "Pins.h"
 
 // commands
@@ -67,7 +66,7 @@
 #define LCD_ENGLISH_RUSSIAN    0x02
 #define LCD_WESTERN_EUROPEAN_2 0x03
 
-class OLEDFourBit : public Print {
+class OLEDFourBit {
 	public:
 	OLEDFourBit(){};
 
@@ -103,6 +102,18 @@ class OLEDFourBit : public Print {
 
 	virtual size_t write(uint8_t);
 
+	size_t print(const char* str) {
+		size_t n = 0;
+		while (*str) {
+			write(static_cast<uint8_t>(*str));
+			str++;
+			n++;
+		}
+		return n;
+	}
+
+	void print(char c) { write(static_cast<uint8_t>(c)); }
+
 	size_t print_P(const char * str) { // print a string stored in PROGMEM
 		char buf[21]; // create buffer in RAM
 		strlcpy(buf, str, 20); // ESP8266 has no concept of PROGMEM - we're good
@@ -124,8 +135,6 @@ class OLEDFourBit : public Print {
 	void resetBacklightTimer(){ /* not implemented for OLED, doesn't have a backlight. */ }
 
 	void updateBacklight(){ /* not implemented for OLED, doesn't have a backlight. */ }
-
-	using Print::write;
 
 	private:
 	void send(uint8_t, uint8_t);

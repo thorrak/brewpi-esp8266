@@ -20,7 +20,7 @@
 
 #include "Brewpi.h"
 
-class MockSerial : public Stream {
+class MockSerial {
 public:
   void print(char c) {}
   void print(const char *c) {}

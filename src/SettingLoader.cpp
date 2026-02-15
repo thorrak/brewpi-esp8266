@@ -178,7 +178,8 @@ void SettingLoader::processSettingKeypair(JsonPair kv) {
   }
 
   else {
-    Serial.printf("Unknown key \"%s\" with value \"%s\"", kv.key().c_str(), str_value);
+    // TODO - Come back and replace with ThorLog call
+    printf("Unknown key \"%s\" with value \"%s\"", kv.key().c_str(), str_value);
   }
 
 }

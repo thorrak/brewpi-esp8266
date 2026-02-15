@@ -56,20 +56,16 @@
 
 /*
  * Create the correct type of PiLink connection for how we're configured.
+ * The backend provides the low-level I/O (UART or TCP socket).
  */
 #if defined(CONNECT_VIA_WIFI)
-// Just use the serverClient object as it supports all the same functions as Serial
-// extern WiFiClient serverClient;
-PiLink<WiFiClient> piLink(serverClient);
+// TCP socket backend -- reads/writes via telnet_client_fd managed by wifi_connect_clients()
+TcpBackend piLinkBackend(telnet_client_fd);
 #else
-// Not using ESP8266 WiFi
-#if defined(ESP32S2)
-// The ESP32-S2 has USB built onto the chip, and uses USBCDC rather than HardwareSerial
-PiLink<USBCDC> piLink(Serial);
-#else
-PiLink<HardwareSerial> piLink(Serial);
+// UART backend -- reads/writes via ESP-IDF UART driver (works for both HardwareSerial and USBCDC chips)
+UartBackend piLinkBackend;
 #endif
-#endif
+PiLink piLink(piLinkBackend);
 
 /* Configure the counter and delay timer. The actual type of these will vary depending upon the environment.
 * They are non-virtual to keep code size minimal, so typedefs and preprocessing are used to select the actual compile-time type used. */
@@ -83,13 +79,11 @@ ValueActuator alarm_actuator;
 
 #ifdef ESP32
 void printMem() {
-    char buf[256];
     const uint32_t free = esp_get_free_heap_size();
     const uint32_t max = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
     const uint8_t frag = 100 - (max * 100) / free;
-    sprintf(buf, "Free Heap: %d, Largest contiguous block: %d, Frag: %d%%\r\n", free, max, frag );
-    // PiLink.print(F(), free, max, frag);
-    Serial.print(buf);
+    printf("Free Heap: %lu, Largest contiguous block: %lu, Frag: %u%%\r\n",
+           (unsigned long)free, (unsigned long)max, frag);
 }
 #endif
 
@@ -127,15 +121,13 @@ void printPrefix(ThorPrint* _logOutput, int logLevel) {
 void setup()
 {
 #ifdef CONNECT_VIA_WIFI
-    Serial.begin(Config::PiLink::serialSpeed);
+    // UART0 is initialised by the ESP-IDF console/logging subsystem.
+    // When in WiFi mode, Serial is only used for debug logging (via printf / ESP_LOG).
 
 #ifndef DISABLE_LOGGING
-    Serial.setDebugOutput(true);
-    Serial.println();
-    Serial.flush();
     Log.begin(THORLOG_LOG_LEVEL, &EspIdfOutput, true);
     Log.setPrefix(printPrefix);
-    Log.notice("Serial logging started at %l.\r\n", Config::PiLink::serialSpeed);
+    Log.notice("Serial logging started.\r\n");
 #endif
 
 #endif
@@ -153,7 +145,7 @@ void setup()
         conf.dont_mount = false;
         esp_err_t ret = esp_vfs_littlefs_register(&conf);
         if (ret != ESP_OK) {
-            Serial.printf("Failed to mount LittleFS: %s\n", esp_err_to_name(ret));
+            printf("Failed to mount LittleFS: %s\n", esp_err_to_name(ret));
         }
     }
   #else

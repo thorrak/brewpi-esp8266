@@ -5,7 +5,6 @@
 #include "Brewpi.h"
 #include "BrewpiStrings.h"
 #include <inttypes.h>
-#include <Print.h>
 #include "Ticks.h"
 
 #ifdef ESP32
@@ -58,7 +57,7 @@
 #define Rw 0b00000010  // Read/Write bit
 #define Rs 0b00000001  // Register select bit
 
-class IIClcd : public Print {
+class IIClcd {
 public:
 	IIClcd(uint8_t lcd_Addr, uint8_t lcd_cols, uint8_t lcd_rows);
 	~IIClcd() {};
@@ -95,6 +94,18 @@ public:
 
 	virtual size_t write(uint8_t);
 
+	size_t print(const char* str) {
+		size_t n = 0;
+		while (*str) {
+			write(static_cast<uint8_t>(*str));
+			str++;
+			n++;
+		}
+		return n;
+	}
+
+	void print(char c) { write(static_cast<uint8_t>(c)); }
+
 #define print_P_inline 1
 #ifdef print_P_inline
 	// print a string stored in PROGMEM
@@ -129,8 +140,6 @@ public:
 	}
 
 	void printSpacesToRestOfLine();
-
-	using Print::write;
 
 private:
 	void init_priv();

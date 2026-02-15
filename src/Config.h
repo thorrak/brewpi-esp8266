@@ -366,22 +366,8 @@ namespace Config {
    */
   namespace PiLink {
     /**
-     * \brief Buffer data coming out of PiLink
+     * \brief Speed of serial connection (UART baud rate)
      */
-    constexpr bool bufferPrints = false;
-
-    /**
-     * \brief Amount of memory used for Stream buffering.
-     * \see https://github.com/bblanchon/ArduinoStreamUtils#buffering-write-operations
-     */
-    constexpr uint_fast16_t printBufferSize() {
-      return bufferPrints ? 1024 : 0;
-    };
-
-    /**
-     * \brief Speed of serial connection
-     */
-
 #ifdef CONNECT_VIA_WIFI
     constexpr auto serialSpeed = 115200;
 #else
@@ -389,24 +375,22 @@ namespace Config {
 #endif
 
     /**
-     * \brief Size of buffer used for printf
+     * \brief Size of buffer used for printf formatting
      */
     constexpr auto printfBufferSize = 128;
 
     /**
-     * \brief Size of buffer used for internal replacement of StreamUtils when not available
+     * \brief Size of the internal line buffer used by PiStream
+     *
+     * Output is accumulated in this buffer and flushed on printNewLine().
      */
     constexpr uint_fast16_t intBufferSize() {
 #if defined(HAS_BLUETOOTH) || defined(EXTERN_SENSOR_ACTUATOR_SUPPORT)
-      return bufferPrints ? 0 : 4096;
+      return 4096;
 #else
-      // Need less space if we don't have bluetooth or external actuator support
-      return bufferPrints ? 0 : 2048;
+      return 2048;
 #endif
     };
-
-
-
 
 #ifdef CONNECT_VIA_WIFI
     constexpr bool useWifi = true;

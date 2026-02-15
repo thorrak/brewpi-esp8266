@@ -19,7 +19,7 @@
 #if defined(ESP8266)
 #include <ESP8266WiFi.h>  // For printing the IP address
 #elif defined(ESP32)
-#include <WiFi.h> // For printing the IP address
+#include <WiFi.h> // For WiFi management (WiFiManager, WiFi.status(), etc.)
 #endif
 
 
@@ -56,8 +56,8 @@ void initWifiServer();
  */
 void wifi_connection_info(JsonDocument& doc);
 
-extern WiFiServer server;
-extern WiFiClient serverClient;
+extern int telnet_server_fd;
+extern int telnet_client_fd;
 
 
 

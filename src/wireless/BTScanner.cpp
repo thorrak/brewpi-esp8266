@@ -292,7 +292,8 @@ tilt* btScanner::get_or_create_tilt(const NimBLEAddress devAddress)
 bool btScanner::scanning_failed() {
     uint64_t now=esp_timer_get_time();
     if (now > last_detected_device_at && now - last_detected_device_at > SCAN_FAIL_THRESHHOLD) {
-        Serial.printf("Scanning failed - now is %llu, last detected device at %llu\r\n", now, last_detected_device_at);
+        // TODO - Come back and replace this with thorlog call
+        printf("Scanning failed - now is %llu, last detected device at %llu\r\n", now, last_detected_device_at);
         return true;
     }
     return false;

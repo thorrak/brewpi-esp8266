@@ -21,14 +21,12 @@
 
 #pragma once
 #include <ArduinoJson.h>
-#include <type_traits>
 
 #include "Brewpi.h"
 #include "DeviceManager.h"
 #include "DeviceNameManager.h"
 #include "Logger.h"
 #include "PiStream.h"
-#include <stdarg.h>
 #include "JsonMessages.h"
 
 class DeviceConfig;
@@ -36,12 +34,12 @@ class DeviceConfig;
 /**
  * \brief Interface between brewpi controller and the outside world (Commonly a
  * RaspberryPi, hence the name).
+ *
+ * Extends PiStream with domain-specific temperature reporting methods.
  */
-template <typename StreamType> class PiLink : public PiStream<StreamType> {
-  static_assert(std::is_base_of<Stream, StreamType>::value, "StreamType must be a Stream");
-
+class PiLink : public PiStream {
 public:
-  PiLink(StreamType &stream) : PiStream<StreamType>(stream) {}
+  PiLink(PiStreamBackend &backend) : PiStream(backend) {}
 
   /**
    * \brief Notify the Pi of the current state.
@@ -71,12 +69,8 @@ public:
   void printTemperatures(const char *beerAnnotation, const char *fridgeAnnotation) {
     JsonDocument doc;
     printTemperaturesJson(doc, beerAnnotation, fridgeAnnotation);
-    this->sendJsonMessage('T', doc);
+    sendJsonMessage('T', doc);
   }
 };
 
-#if defined(ESP32S2)
-extern PiLink<std::conditional<Config::PiLink::useWifi, WiFiClient, USBCDC>::type> piLink;
-#else
-extern PiLink<std::conditional<Config::PiLink::useWifi, WiFiClient, HardwareSerial>::type> piLink;
-#endif
+extern PiLink piLink;

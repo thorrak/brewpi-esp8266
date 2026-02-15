@@ -23,7 +23,6 @@
 #include "Brewpi.h"
 #include "BrewpiStrings.h"
 #include <stdint.h>
-#include <Print.h>
 #include "Ticks.h"
 
 #ifdef BREWPI_SHIFT_LCD
@@ -84,7 +83,7 @@
  * HD44780 compatible but isn't.  Differences are some of the control commands
  * (cursor on/off), language setting and especially initialization sequence.
  */
-class SpiLcd : public Print {
+class SpiLcd {
 	public:
 	// Constants are set in initializer list of constructor
 	SpiLcd(){};
@@ -114,6 +113,18 @@ class SpiLcd : public Print {
 	void setCursor(uint8_t, uint8_t);
 
 	virtual size_t write(uint8_t);
+
+	size_t print(const char* str) {
+		size_t n = 0;
+		while (*str) {
+			write(static_cast<uint8_t>(*str));
+			str++;
+			n++;
+		}
+		return n;
+	}
+
+	void print(char c) { write(static_cast<uint8_t>(c)); }
 
 #define print_P_inline 1
 #ifdef print_P_inline
@@ -159,8 +170,6 @@ class SpiLcd : public Print {
    * \brief Write spaces from current position to line end.
    */
 	void printSpacesToRestOfLine();
-
-	using Print::write;
 
 	private:
 	void spiOut();

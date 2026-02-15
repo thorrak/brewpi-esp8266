@@ -21,6 +21,11 @@
 #include <Ticks.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <lwip/sockets.h>
+#include <lwip/netdb.h>
+#include <lwip/tcp.h>
+#include <fcntl.h>
+#include <errno.h>
 #endif
 
 #include "Version.h" 			// Used in mDNS announce string
@@ -30,8 +35,8 @@
 
 
 bool shouldSaveConfig = false;
-WiFiServer server(23);
-WiFiClient serverClient;
+int telnet_server_fd = -1;
+int telnet_client_fd = -1;
 
 extern void handleReset();  // Terrible practice. In brewpi-esp8266.cpp.
 
@@ -49,7 +54,7 @@ void apCallback(WiFiManager *myWiFiManager) {
     // Callback to display the WiFi LCD notification and set bandwidth
     display.printWiFiStartup();
 #ifdef ESP32
-    esp_wifi_set_bandwidth(WIFI_IF_AP, WIFI_BW_HT20);  // Set the bandwidth of ESP32 interface 
+    esp_wifi_set_bandwidth(WIFI_IF_AP, WIFI_BW_HT20);  // Set the bandwidth of ESP32 interface
 #endif
 }
 
@@ -87,8 +92,26 @@ void mdns_reset() {
 }
 
 void initWifiServer() {
-  server.begin();
-  server.setNoDelay(true);
+    telnet_server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (telnet_server_fd < 0) return;
+
+    int opt = 1;
+    setsockopt(telnet_server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    // TCP_NODELAY equivalent of server.setNoDelay(true)
+    setsockopt(telnet_server_fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt));
+
+    struct sockaddr_in addr = {};
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(23);
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    bind(telnet_server_fd, (struct sockaddr*)&addr, sizeof(addr));
+    listen(telnet_server_fd, 1);
+
+    // Make server socket non-blocking
+    int flags = fcntl(telnet_server_fd, F_GETFL, 0);
+    fcntl(telnet_server_fd, F_SETFL, flags | O_NONBLOCK);
+
     mdns_reset();
 }
 
@@ -96,9 +119,7 @@ void initWifiServer() {
 // This doesn't work for ESP32, unfortunately
 WiFiEventHandler stationConnectedHandler;
 void onStationConnected(const WiFiEventSoftAPModeStationConnected& evt) {
-    server.begin();
-    server.setNoDelay(true);
-    mdns_reset();
+    initWifiServer();
 }
 #endif
 
@@ -128,7 +149,7 @@ void initialize_wifi() {
     // There is a race condition on some routers when processing the deauthorization that the ESP attempts as it
     // connects. This can result in it seeming like every other connection attempt works, or only connection
     // attempts after a hard reset. One way around this bug is to just reattempt connection multiple times until
-    // it takes. 
+    // it takes.
     wifiManager.setConnectTimeout(10);
     // sets number of retries for autoconnect, force retry after wait failure exit
     wifiManager.setConnectRetries(4); // default 1
@@ -136,6 +157,7 @@ void initialize_wifi() {
     // If we're going to set up WiFi, let's get to it
     wifiManager.setConfigPortalTimeout(5*60); // Time out after 5 minutes so that we can keep managing temps
     wifiManager.setDebugOutput(false); // In case we have a serial connection to BrewPi
+
 
     wifiManager.setSaveParamsCallback(saveConfigCallback);
     wifiManager.setAPCallback(apCallback);                   // Set up when portal fires
@@ -193,35 +215,35 @@ void wifi_connect_clients() {
     if(WiFi.status() == WL_CONNECTED) {
         // We only accept clients if we do not have a REST target defined
         if(rest_handler.configured_for_fermentrack_rest()) {
-            // If we show a client as already being disconnected, force a disconnect
-            if (serverClient) {
-                serverClient.stop();
+            // If we have a telnet client connected, close it
+            if (telnet_client_fd >= 0) {
+                close(telnet_client_fd);
+                telnet_client_fd = -1;
             }
-        } else if (server.hasClient()) {
-            // We are handling serial connections, and have a client in queue to connect
-            // If we show a client as already being disconnected, force a disconnect
-            if (serverClient) serverClient.stop();
-            serverClient = server.accept();
-
-#ifdef ESP8266
-            serverClient.flush();
-#else
-            serverClient.clear();
-#endif
-
+        } else if (telnet_server_fd >= 0) {
+            // Try to accept a new connection (non-blocking)
+            struct sockaddr_in client_addr;
+            socklen_t addr_len = sizeof(client_addr);
+            int new_fd = accept(telnet_server_fd, (struct sockaddr*)&client_addr, &addr_len);
+            if (new_fd >= 0) {
+                // Close existing client if any
+                if (telnet_client_fd >= 0) {
+                    close(telnet_client_fd);
+                }
+                telnet_client_fd = new_fd;
+                // Set TCP_NODELAY on client socket
+                int opt = 1;
+                setsockopt(telnet_client_fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt));
+                // Make client socket non-blocking
+                int flags = fcntl(telnet_client_fd, F_GETFL, 0);
+                fcntl(telnet_client_fd, F_SETFL, flags | O_NONBLOCK);
+            }
         }
     } else {
-        // This might be unnecessary, but let's go ahead and disconnect any
-        // "clients" we show as connected given that WiFi isn't connected. If
-        // we show a client as already being disconnected, force a disconnect
-        if (serverClient) {
-            serverClient.stop();
-            serverClient = server.accept();
-#ifdef ESP8266
-            serverClient.flush();
-#else
-            serverClient.clear();
-#endif
+        // WiFi is disconnected -- close any telnet client
+        if (telnet_client_fd >= 0) {
+            close(telnet_client_fd);
+            telnet_client_fd = -1;
         }
     }
     vTaskDelay(pdMS_TO_TICKS(1));
@@ -235,7 +257,6 @@ void wifi_connect_clients() {
             vTaskDelay(pdMS_TO_TICKS(150));
             WiFi.begin();
         } else {
-            // #defining this out for now as there is a memory leak caused by this
 #ifdef ESP32
             mdns_reset();  // TODO - Add this to the WiFi.reconnect() process
 #endif

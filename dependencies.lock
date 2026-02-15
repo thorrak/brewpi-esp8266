@@ -394,6 +394,35 @@ dependencies:
       registry_url: https://components.espressif.com
       type: service
     version: 1.0.3
+  espressif/lan867x:
+    component_hash: 
+      651c9d6e3d96acb08bd5066144b12a12e94df0a6241127a0538d8680689de2c4
+    dependencies:
+    - name: espressif/lan86xx_common
+      registry_url: https://components.espressif.com
+      require: private
+      version: '*'
+    - name: idf
+      require: private
+      version: '>=5.3'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    targets:
+    - esp32
+    - esp32p4
+    version: 2.0.0
+  espressif/lan86xx_common:
+    component_hash: 
+      6dcb1be9f43ae940979bd628fa5bee278949b66c545e1fe2321e486102e81026
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.2'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    version: 1.0.0
   espressif/libsodium:
     component_hash: 
       6ee084dee7a4d664498274870aa65391c9ec9d38dcdb34d2ad2b8518726f8b5e
@@ -443,6 +472,31 @@ dependencies:
       registry_url: https://components.espressif.com
       type: service
     version: 1.4.6
+  h2zero/esp-nimble-cpp:
+    component_hash: 
+      ecdcabe83333948495103f9d62e4ecb651bff866fce123d00bfc106baa383e54
+    dependencies:
+    - name: espressif/esp_hosted
+      registry_url: https://components.espressif.com
+      require: private
+      rules:
+      - if: target in [esp32p4]
+      version: '*'
+    - name: espressif/esp_wifi_remote
+      registry_url: https://components.espressif.com
+      require: private
+      rules:
+      - if: target in [esp32p4]
+      version: '>=0.5.3'
+    - name: idf
+      require: private
+      rules:
+      - if: target in [esp32p4]
+      version: '>=5.3.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 2.3.4
   idf:
     source:
       type: idf
@@ -461,8 +515,9 @@ dependencies:
 direct_dependencies:
 - espressif/arduino-esp32
 - espressif/mdns
+- h2zero/esp-nimble-cpp
 - idf
 - joltwallet/littlefs
 manifest_hash: 6be5ef7b41400ea898c59ca8897009caf7904baafaca127d59b5109211ca85a4
-target: esp32s2
+target: esp32
 version: 2.0.0
