@@ -35,7 +35,7 @@
 #include "TemperatureFormats.h"
 #include "Pins.h"
 
-#ifdef ESP8266_WiFi
+#ifdef CONNECT_VIA_WIFI
 
 #if defined(ESP8266)
 #include <ESP8266WiFi.h>  // For printing the IP address
@@ -358,7 +358,7 @@ void LcdDisplay::printState(){
 }
 
 
-#ifdef ESP8266_WiFi
+#ifdef CONNECT_VIA_WIFI
 
 void LcdDisplay::printWiFiStartup(){
 	toggleBacklight = false;  // Assuming we need this

@@ -57,7 +57,7 @@
 /*
  * Create the correct type of PiLink connection for how we're configured.
  */
-#if defined(ESP8266_WiFi)
+#if defined(CONNECT_VIA_WIFI)
 // Just use the serverClient object as it supports all the same functions as Serial
 // extern WiFiClient serverClient;
 PiLink<WiFiClient> piLink(serverClient);
@@ -126,7 +126,7 @@ void printPrefix(ThorPrint* _logOutput, int logLevel) {
  */
 void setup()
 {
-#ifdef ESP8266_WiFi
+#ifdef CONNECT_VIA_WIFI
     Serial.begin(Config::PiLink::serialSpeed);
 
 #ifndef DISABLE_LOGGING

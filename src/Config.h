@@ -346,7 +346,7 @@
 
 #define FIRMWARE_REVISION "v16"
 
-#ifdef ESP8266_WiFi
+#ifdef CONNECT_VIA_WIFI
 #define WIFI_SETUP_AP_NAME "BrewPiAP"
 #define WIFI_SETUP_AP_PASS "brewpiesp"  // Must be 8-63 chars
 #endif
@@ -382,7 +382,7 @@ namespace Config {
      * \brief Speed of serial connection
      */
 
-#ifdef ESP8266_WiFi
+#ifdef CONNECT_VIA_WIFI
     constexpr auto serialSpeed = 115200;
 #else
     constexpr auto serialSpeed = 57600;
@@ -408,7 +408,7 @@ namespace Config {
 
 
 
-#ifdef ESP8266_WiFi
+#ifdef CONNECT_VIA_WIFI
     constexpr bool useWifi = true;
 #else
     constexpr bool useWifi = false;

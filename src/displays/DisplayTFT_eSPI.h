@@ -80,7 +80,7 @@ public:
     void printTemperatureAtMonoChars(uint8_t x_chars, uint8_t y_chars, temperature temp);
     void printAtMonoChars(uint8_t x_chars, uint8_t y_chars, const char *text);
 
-#ifdef ESP8266_WiFi
+#ifdef CONNECT_VIA_WIFI
     void printWiFi();
     void printWiFiStartup();
     void printWiFiConnect();

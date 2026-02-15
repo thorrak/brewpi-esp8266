@@ -3,7 +3,7 @@
 
 #include "ESP_BP_WiFi.h"
 
-#ifdef ESP8266_WiFi
+#ifdef CONNECT_VIA_WIFI
 
 #include <FS.h>  // Apparently this needs to be first
 #include <string>

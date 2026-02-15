@@ -54,7 +54,7 @@ public:
 	
 	static uint8_t saveDefaultDevices();
 
-#ifdef ESP8266_WiFi
+#ifdef CONNECT_VIA_WIFI
 	static std::string fetchmDNSName();
 	static void savemDNSName(const char* mdns_id);
 #endif

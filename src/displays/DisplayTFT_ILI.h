@@ -157,7 +157,7 @@ public:
     void printTemperature(temperature temp, uint8_t font_size);
     void printTemperatureAt(uint8_t x, uint8_t y, uint8_t font_size, temperature temp);
 
-#ifdef ESP8266_WiFi
+#ifdef CONNECT_VIA_WIFI
     void printWiFi();
     void printWiFiStartup();
     void printWiFiConnect();

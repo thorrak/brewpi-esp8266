@@ -362,7 +362,7 @@ void LcdDisplay::printState(){
 }
 
 
-#ifdef ESP8266_WiFi
+#ifdef CONNECT_VIA_WIFI
 void LcdDisplay::printWiFi(){
     clear();
 

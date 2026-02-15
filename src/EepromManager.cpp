@@ -146,7 +146,7 @@ void EepromManager::deleteDeviceWithFunction(DeviceFunction deviceFunction)
 
 // Not sure if I should put this in EepromManager or ESPEepromAccess. Oh well.
 // TODO - Make a decision & stick with it
-#ifdef ESP8266_WiFi
+#ifdef CONNECT_VIA_WIFI
 std::string EepromManager::fetchmDNSName()
 {
 	// The below loads the mDNS name from the file we saved it to (if the file exists)
