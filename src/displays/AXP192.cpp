@@ -1,445 +1,358 @@
-#include "AXP192.h"
+/**
+ * @file axp192.cpp
+ * @brief ESP-IDF compatible AXP192 power management driver implementation
+ *
+ * Uses ESP-IDF I2C master driver (driver_ng).
+ */
 
-#if defined(HAS_AXP192)
+#include "axp192.h"
+#include <thorlog.h>
+#include <cstring>
 
+// AXP192 Register definitions
+#define AXP192_REG_POWER_STATUS     0x00
+#define AXP192_REG_MODE_CHGSTATUS   0x01
+#define AXP192_REG_OTG_STATUS       0x02
+#define AXP192_REG_IC_TYPE          0x03
+#define AXP192_REG_EXTEN_DCDC2_CTL  0x10
+#define AXP192_REG_DCDC1_VOLTAGE    0x26
+#define AXP192_REG_DCDC2_VOLTAGE    0x27
+#define AXP192_REG_DCDC3_VOLTAGE    0x23
+#define AXP192_REG_LDO23_VOLTAGE    0x28
+#define AXP192_REG_DCDC13_LDO23_CTL 0x12
+#define AXP192_REG_GPIO0_CTL        0x90
+#define AXP192_REG_GPIO0_VOLTAGE    0x91
+#define AXP192_REG_GPIO1_CTL        0x92
+#define AXP192_REG_GPIO2_CTL        0x93
+#define AXP192_REG_GPIO34_CTL       0x95
+#define AXP192_REG_BACKUP_CHG       0x35
+#define AXP192_REG_VBUS_IPSOUT      0x30
 
-AXP192::AXP192() {
+// Timeout for I2C operations
+#define I2C_TIMEOUT_MS  100
+
+AXP192_Driver::AXP192_Driver(uint8_t addr)
+    : m_addr(addr)
+    , m_bus_handle(nullptr)
+    , m_dev_handle(nullptr)
+    , m_initialized(false)
+{
 }
 
-void AXP192::begin(void) {
-    Wire1.begin(21, 22);
-    Wire1.setClock(400000);
+esp_err_t AXP192_Driver::initI2C(int sda_pin, int scl_pin)
+{
+    // Configure the I2C master bus
+    i2c_master_bus_config_t bus_config = {};
+    bus_config.i2c_port = I2C_NUM_1;
+    bus_config.sda_io_num = static_cast<gpio_num_t>(sda_pin);
+    bus_config.scl_io_num = static_cast<gpio_num_t>(scl_pin);
+    bus_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    bus_config.glitch_ignore_cnt = 7;
+    bus_config.flags.enable_internal_pullup = true;
 
-    // Set LDO2 & LDO3(TFT_LED & TFT) 3.0V
-    Write1Byte(0x28, 0xcc);
-
-    // Set ADC to All Enable
-    Write1Byte(0x82, 0xff);
-
-    // Bat charge voltage to 4.2, Current 100MA
-    Write1Byte(0x33, 0xc0);
-
-    // Enable Bat,ACIN,VBUS,APS adc
-    Write1Byte(0x82, 0xff);
-
-    // Enable Ext, LDO2, LDO3, DCDC1
-    Write1Byte(0x12, Read8bit(0x12) | 0x4D);
-
-    // 128ms power on, 4s power off
-    Write1Byte(0x36, 0x0C);
-
-    // Set RTC voltage to 3.3V
-    Write1Byte(0x91, 0xF0);
-
-    // Set GPIO0 to LDO
-    Write1Byte(0x90, 0x02);
-
-    // Disable vbus hold limit
-    Write1Byte(0x30, 0x80);
-
-    // Set temperature protection
-    Write1Byte(0x39, 0xfc);
-
-    // Enable RTC BAT charge
-    Write1Byte(0x35, 0xa2);
-
-    // Enable bat detection
-    Write1Byte(0x32, 0x46);
-
-    // ScreenBreath(80);
-}
-
-void AXP192::Write1Byte(uint8_t Addr, uint8_t Data) {
-    Wire1.beginTransmission(0x34);
-    Wire1.write(Addr);
-    Wire1.write(Data);
-    Wire1.endTransmission();
-}
-
-uint8_t AXP192::Read8bit(uint8_t Addr) {
-    Wire1.beginTransmission(0x34);
-    Wire1.write(Addr);
-    Wire1.endTransmission();
-    Wire1.requestFrom(0x34, 1);
-    return Wire1.read();
-}
-
-uint16_t AXP192::Read12Bit(uint8_t Addr) {
-    uint16_t Data = 0;
-    uint8_t buf[2];
-    ReadBuff(Addr, 2, buf);
-    Data = ((buf[0] << 4) + buf[1]);  //
-    return Data;
-}
-
-uint16_t AXP192::Read13Bit(uint8_t Addr) {
-    uint16_t Data = 0;
-    uint8_t buf[2];
-    ReadBuff(Addr, 2, buf);
-    Data = ((buf[0] << 5) + buf[1]);  //
-    return Data;
-}
-
-uint16_t AXP192::Read16bit(uint8_t Addr) {
-    uint16_t ReData = 0;
-    Wire1.beginTransmission(0x34);
-    Wire1.write(Addr);
-    Wire1.endTransmission();
-    Wire1.requestFrom(0x34, 2);
-    for (int i = 0; i < 2; i++) {
-        ReData <<= 8;
-        ReData |= Wire1.read();
+    esp_err_t err = i2c_new_master_bus(&bus_config, &m_bus_handle);
+    if (err != ESP_OK) {
+        Log.error("AXP192: Failed to create I2C master bus: %d" CR, err);
+        return err;
     }
-    return ReData;
-}
 
-uint32_t AXP192::Read24bit(uint8_t Addr) {
-    uint32_t ReData = 0;
-    Wire1.beginTransmission(0x34);
-    Wire1.write(Addr);
-    Wire1.endTransmission();
-    Wire1.requestFrom(0x34, 3);
-    for (int i = 0; i < 3; i++) {
-        ReData <<= 8;
-        ReData |= Wire1.read();
+    // Add the AXP192 device to the bus
+    i2c_device_config_t dev_config = {};
+    dev_config.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+    dev_config.device_address = m_addr;
+    dev_config.scl_speed_hz = 400000;  // 400kHz
+
+    err = i2c_master_bus_add_device(m_bus_handle, &dev_config, &m_dev_handle);
+    if (err != ESP_OK) {
+        Log.error("AXP192: Failed to add device to I2C bus: %d" CR, err);
+        i2c_del_master_bus(m_bus_handle);
+        m_bus_handle = nullptr;
+        return err;
     }
-    return ReData;
+
+    return ESP_OK;
 }
 
-uint32_t AXP192::Read32bit(uint8_t Addr) {
-    uint32_t ReData = 0;
-    Wire1.beginTransmission(0x34);
-    Wire1.write(Addr);
-    Wire1.endTransmission();
-    Wire1.requestFrom(0x34, 4);
-    for (int i = 0; i < 4; i++) {
-        ReData <<= 8;
-        ReData |= Wire1.read();
+void AXP192_Driver::deinitI2C()
+{
+    if (m_dev_handle != nullptr) {
+        i2c_master_bus_rm_device(m_dev_handle);
+        m_dev_handle = nullptr;
     }
-    return ReData;
-}
-
-void AXP192::ReadBuff(uint8_t Addr, uint8_t Size, uint8_t *Buff) {
-    Wire1.beginTransmission(0x34);
-    Wire1.write(Addr);
-    Wire1.endTransmission();
-    Wire1.requestFrom(0x34, (int)Size);
-    for (int i = 0; i < Size; i++) {
-        *(Buff + i) = Wire1.read();
+    if (m_bus_handle != nullptr) {
+        i2c_del_master_bus(m_bus_handle);
+        m_bus_handle = nullptr;
     }
 }
 
-void AXP192::ScreenBreath(int brightness) {
-    if (brightness > 100 || brightness < 0) return;
-    int vol     = map(brightness, 0, 100, 2500, 3200);
-    vol         = (vol < 1800) ? 0 : (vol - 1800) / 100;
-    uint8_t buf = Read8bit(0x28);
-    Write1Byte(0x28, ((buf & 0x0f) | ((uint16_t)vol << 4)));
+esp_err_t AXP192_Driver::writeRegister(uint8_t reg, uint8_t value)
+{
+    uint8_t data[2] = {reg, value};
+    return i2c_master_transmit(m_dev_handle, data, 2, I2C_TIMEOUT_MS);
 }
 
-void AXP192::ScreenSwitch(bool state) {
-    uint8_t brightness;
-    if (state == false) {
-        brightness = 0;
-    } else if (state == true) {
-        brightness = 12;
+esp_err_t AXP192_Driver::readRegister(uint8_t reg, uint8_t* value)
+{
+    return i2c_master_transmit_receive(m_dev_handle, &reg, 1, value, 1, I2C_TIMEOUT_MS);
+}
+
+esp_err_t AXP192_Driver::setBits(uint8_t reg, uint8_t mask, uint8_t value)
+{
+    uint8_t current;
+    esp_err_t err = readRegister(reg, &current);
+    if (err != ESP_OK) {
+        return err;
     }
-    uint8_t buf = Read8bit(0x28);
-    Write1Byte(0x28, ((buf & 0x0f) | (brightness << 4)));
+
+    current = (current & ~mask) | (value & mask);
+    return writeRegister(reg, current);
 }
 
-bool AXP192::GetBatState() {
-    if (Read8bit(0x01) | 0x20)
-        return true;
-    else
+bool AXP192_Driver::detect(int sda_pin, int scl_pin)
+{
+    // Initialize I2C
+    esp_err_t err = initI2C(sda_pin, scl_pin);
+    if (err != ESP_OK) {
         return false;
-}
-//---------coulombcounter_from_here---------
-// enable: void EnableCoulombcounter(void);
-// disable: void DisableCOulombcounter(void);
-// stop: void StopCoulombcounter(void);
-// clear: void ClearCoulombcounter(void);
-// get charge data: uint32_t GetCoulombchargeData(void);
-// get discharge data: uint32_t GetCoulombdischargeData(void);
-// get coulomb val affter calculation: float GetCoulombData(void);
-//------------------------------------------
-void AXP192::EnableCoulombcounter(void) {
-    Write1Byte(0xB8, 0x80);
-}
+    }
 
-void AXP192::DisableCoulombcounter(void) {
-    Write1Byte(0xB8, 0x00);
-}
+    // Try to read the IC type register
+    uint8_t ic_type = 0;
+    err = readRegister(AXP192_REG_IC_TYPE, &ic_type);
 
-void AXP192::StopCoulombcounter(void) {
-    Write1Byte(0xB8, 0xC0);
+    // Clean up I2C
+    deinitI2C();
+
+    if (err == ESP_OK) {
+        Log.notice("AXP192: Detected IC type 0x%02X" CR, ic_type);
+        return true;
+    }
+
+    return false;
 }
 
-void AXP192::ClearCoulombcounter(void) {
-    Write1Byte(0xB8, 0xA0);
+bool AXP192_Driver::begin(int sda_pin, int scl_pin, const AXP192_InitDef& init)
+{
+    // Initialize I2C
+    esp_err_t err = initI2C(sda_pin, scl_pin);
+    if (err != ESP_OK) {
+        return false;
+    }
+
+    // Verify device is present
+    uint8_t ic_type = 0;
+    err = readRegister(AXP192_REG_IC_TYPE, &ic_type);
+    if (err != ESP_OK) {
+        Log.error("AXP192: Device not responding" CR);
+        deinitI2C();
+        return false;
+    }
+
+    Log.notice("AXP192: Initializing (IC type 0x%02X)" CR, ic_type);
+
+    m_initialized = true;
+
+    // Configure EXTEN (external power output)
+    setEXTEN(init.EXTEN);
+
+    // Configure backup battery charging
+    setBACKUP(init.BACKUP);
+
+    // Configure DC-DC converters
+    setDCDC1(init.DCDC1);
+    setDCDC2(init.DCDC2);
+    setDCDC3(init.DCDC3);
+
+    // Configure LDO outputs
+    setLDO2(init.LDO2);
+    setLDO3(init.LDO3);
+
+    // Configure GPIO0 (LDO-like voltage output)
+    setGPIO0(init.GPIO0);
+
+    // GPIO1-4 are typically used as digital outputs in M5StickC
+    // Skip if set to -1
+
+    Log.notice("AXP192: Initialization complete" CR);
+    return true;
 }
 
-uint32_t AXP192::GetCoulombchargeData(void) {
-    return Read32bit(0xB0);
+void AXP192_Driver::end()
+{
+    if (m_initialized) {
+        deinitI2C();
+        m_initialized = false;
+    }
 }
 
-uint32_t AXP192::GetCoulombdischargeData(void) {
-    return Read32bit(0xB4);
+void AXP192_Driver::setDCDC(uint8_t channel, int16_t voltage_mv)
+{
+    if (!m_initialized) return;
+
+    uint8_t enable_bit = 0;
+    uint8_t voltage_reg = 0;
+    int16_t min_mv = 700;
+    int16_t max_mv = 3500;
+    int16_t step_mv = 25;
+
+    switch (channel) {
+        case 1:
+            enable_bit = 0x01;  // Bit 0 of reg 0x12
+            voltage_reg = AXP192_REG_DCDC1_VOLTAGE;
+            break;
+        case 2:
+            enable_bit = 0x10;  // Bit 4 of reg 0x12
+            voltage_reg = AXP192_REG_DCDC2_VOLTAGE;
+            max_mv = 2275;
+            break;
+        case 3:
+            enable_bit = 0x02;  // Bit 1 of reg 0x12
+            voltage_reg = AXP192_REG_DCDC3_VOLTAGE;
+            break;
+        default:
+            return;
+    }
+
+    if (voltage_mv <= 0) {
+        // Disable this DCDC
+        setBits(AXP192_REG_DCDC13_LDO23_CTL, enable_bit, 0);
+        return;
+    }
+
+    // Clamp voltage
+    if (voltage_mv < min_mv) voltage_mv = min_mv;
+    if (voltage_mv > max_mv) voltage_mv = max_mv;
+
+    // Calculate register value
+    uint8_t reg_val = static_cast<uint8_t>((voltage_mv - min_mv) / step_mv);
+
+    // Set voltage
+    writeRegister(voltage_reg, reg_val);
+
+    // Enable output
+    setBits(AXP192_REG_DCDC13_LDO23_CTL, enable_bit, enable_bit);
 }
 
-float AXP192::GetCoulombData(void) {
-    uint32_t coin  = 0;
-    uint32_t coout = 0;
-
-    coin  = GetCoulombchargeData();
-    coout = GetCoulombdischargeData();
-
-    // c = 65536 * current_LSB * (coin - coout) / 3600 / ADC rate
-    // Adc rate can be read from 84H ,change this variable if you change the ADC
-    // reate
-    float ccc = 65536 * 0.5 * (int32_t)(coin - coout) / 3600.0 / 25.0;
-
-    return ccc;
-}
-//----------coulomb_end_at_here----------
-
-uint16_t AXP192::GetVbatData(void) {
-    uint16_t vbat = 0;
-    uint8_t buf[2];
-    ReadBuff(0x78, 2, buf);
-    vbat = ((buf[0] << 4) + buf[1]);  // V
-    return vbat;
+void AXP192_Driver::setDCDC1(int16_t voltage_mv)
+{
+    setDCDC(1, voltage_mv);
 }
 
-uint16_t AXP192::GetVinData(void) {
-    uint16_t vin = 0;
-    uint8_t buf[2];
-    ReadBuff(0x56, 2, buf);
-    vin = ((buf[0] << 4) + buf[1]);  // V
-    return vin;
+void AXP192_Driver::setDCDC2(int16_t voltage_mv)
+{
+    setDCDC(2, voltage_mv);
 }
 
-uint16_t AXP192::GetIinData(void) {
-    uint16_t iin = 0;
-    uint8_t buf[2];
-    ReadBuff(0x58, 2, buf);
-    iin = ((buf[0] << 4) + buf[1]);
-    return iin;
+void AXP192_Driver::setDCDC3(int16_t voltage_mv)
+{
+    setDCDC(3, voltage_mv);
 }
 
-uint16_t AXP192::GetVusbinData(void) {
-    uint16_t vin = 0;
-    uint8_t buf[2];
-    ReadBuff(0x5a, 2, buf);
-    vin = ((buf[0] << 4) + buf[1]);  // V
-    return vin;
-}
+void AXP192_Driver::setLDO(uint8_t channel, int16_t voltage_mv)
+{
+    if (!m_initialized) return;
 
-uint16_t AXP192::GetIusbinData(void) {
-    uint16_t iin = 0;
-    uint8_t buf[2];
-    ReadBuff(0x5C, 2, buf);
-    iin = ((buf[0] << 4) + buf[1]);
-    return iin;
-}
+    uint8_t enable_bit = 0;
+    int16_t min_mv = 1800;
+    int16_t max_mv = 3300;
+    int16_t step_mv = 100;
 
-uint16_t AXP192::GetIchargeData(void) {
-    uint16_t icharge = 0;
-    uint8_t buf[2];
-    ReadBuff(0x7A, 2, buf);
-    icharge = (buf[0] << 5) + buf[1];
-    return icharge;
-}
+    switch (channel) {
+        case 2:
+            enable_bit = 0x04;  // Bit 2 of reg 0x12
+            break;
+        case 3:
+            enable_bit = 0x08;  // Bit 3 of reg 0x12
+            break;
+        default:
+            return;
+    }
 
-uint16_t AXP192::GetIdischargeData(void) {
-    uint16_t idischarge = 0;
-    uint8_t buf[2];
-    ReadBuff(0x7C, 2, buf);
-    idischarge = (buf[0] << 5) + buf[1];
-    return idischarge;
-}
+    if (voltage_mv <= 0) {
+        // Disable this LDO
+        setBits(AXP192_REG_DCDC13_LDO23_CTL, enable_bit, 0);
+        return;
+    }
 
-uint16_t AXP192::GetTempData(void) {
-    uint16_t temp = 0;
-    uint8_t buf[2];
-    ReadBuff(0x5e, 2, buf);
-    temp = ((buf[0] << 4) + buf[1]);
-    return temp;
-}
+    // Clamp voltage
+    if (voltage_mv < min_mv) voltage_mv = min_mv;
+    if (voltage_mv > max_mv) voltage_mv = max_mv;
 
-uint32_t AXP192::GetPowerbatData(void) {
-    uint32_t power = 0;
-    uint8_t buf[3];
-    ReadBuff(0x70, 2, buf);
-    power = (buf[0] << 16) + (buf[1] << 8) + buf[2];
-    return power;
-}
+    // Calculate register value (0-15)
+    uint8_t reg_val = static_cast<uint8_t>((voltage_mv - min_mv) / step_mv);
 
-uint16_t AXP192::GetVapsData(void) {
-    uint16_t vaps = 0;
-    uint8_t buf[2];
-    ReadBuff(0x7e, 2, buf);
-    vaps = ((buf[0] << 4) + buf[1]);
-    return vaps;
-}
+    // LDO2 and LDO3 share register 0x28
+    // LDO2 is bits 7:4, LDO3 is bits 3:0
+    uint8_t current;
+    readRegister(AXP192_REG_LDO23_VOLTAGE, &current);
 
-void AXP192::SetSleep(void) {
-    Write1Byte(0x31, Read8bit(0x31) | (1 << 3));
-    Write1Byte(0x90, 0x00);                   // GPIO0 voltage 0
-    Write1Byte(0x12, 0x09);                   // CDC1, LDO3
-    Write1Byte(0x12, Read8bit(0x12) & 0xA1);  // Disable all outputs but DCDC1
-}
-
-void AXP192::WakeUpDisplayAfterLightSleep(void) {
-    // LDO2 is LCD Backlight
-    // LDO3 is LCD Power
-    // Enable Ext, LDO3, LDO2, DCDC1
-    Write1Byte(0x12, Read8bit(0x12) | 0x4D);
-}
-
-uint8_t AXP192::GetWarningLeve(void) {
-    Wire1.beginTransmission(0x34);
-    Wire1.write(0x47);
-    Wire1.endTransmission();
-    Wire1.requestFrom(0x34, 1);
-    uint8_t buf = Wire1.read();
-    return (buf & 0x01);
-}
-
-// -- sleep
-void AXP192::DeepSleep(uint64_t time_in_us) {
-    SetSleep();
-
-    if (time_in_us > 0) {
-        esp_sleep_enable_timer_wakeup(time_in_us);
+    if (channel == 2) {
+        current = (current & 0x0F) | (reg_val << 4);
     } else {
-        esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
+        current = (current & 0xF0) | (reg_val & 0x0F);
     }
-    (time_in_us == 0) ? esp_deep_sleep_start() : esp_deep_sleep(time_in_us);
+
+    writeRegister(AXP192_REG_LDO23_VOLTAGE, current);
+
+    // Enable output
+    setBits(AXP192_REG_DCDC13_LDO23_CTL, enable_bit, enable_bit);
 }
 
-void AXP192::LightSleep(uint64_t time_in_us) {
-    SetSleep();
+void AXP192_Driver::setLDO2(int16_t voltage_mv)
+{
+    setLDO(2, voltage_mv);
+}
 
-    if (time_in_us > 0) {
-        esp_sleep_enable_timer_wakeup(time_in_us);
+void AXP192_Driver::setLDO3(int16_t voltage_mv)
+{
+    setLDO(3, voltage_mv);
+}
+
+void AXP192_Driver::setGPIO0(int16_t voltage_mv)
+{
+    if (!m_initialized) return;
+
+    if (voltage_mv <= 0) {
+        // Set GPIO0 to floating/disabled
+        writeRegister(AXP192_REG_GPIO0_CTL, 0x07);  // NMOS open-drain
+        return;
+    }
+
+    // GPIO0 can output LDO voltage (1800-3300mV in 100mV steps)
+    int16_t min_mv = 1800;
+    int16_t max_mv = 3300;
+    int16_t step_mv = 100;
+
+    if (voltage_mv < min_mv) voltage_mv = min_mv;
+    if (voltage_mv > max_mv) voltage_mv = max_mv;
+
+    uint8_t reg_val = static_cast<uint8_t>((voltage_mv - min_mv) / step_mv);
+
+    // Set GPIO0 to LDO mode (0x02)
+    writeRegister(AXP192_REG_GPIO0_CTL, 0x02);
+
+    // Set voltage
+    writeRegister(AXP192_REG_GPIO0_VOLTAGE, reg_val << 4);
+}
+
+void AXP192_Driver::setEXTEN(bool enable)
+{
+    if (!m_initialized) return;
+
+    // EXTEN is bit 6 of register 0x12
+    setBits(AXP192_REG_DCDC13_LDO23_CTL, 0x40, enable ? 0x40 : 0);
+}
+
+void AXP192_Driver::setBACKUP(bool enable)
+{
+    if (!m_initialized) return;
+
+    // Backup battery charging control
+    // Register 0x35: bit 7 = enable, bits 6:5 = voltage (3.1V default), bits 1:0 = current
+    if (enable) {
+        // Enable with 3.0V, 200uA
+        writeRegister(AXP192_REG_BACKUP_CHG, 0xA2);
     } else {
-        esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
+        writeRegister(AXP192_REG_BACKUP_CHG, 0x22);
     }
-    esp_light_sleep_start();
-    WakeUpDisplayAfterLightSleep();
 }
-
-// 0 not press, 0x01 long press, 0x02 press
-uint8_t AXP192::GetBtnPress() {
-    uint8_t state = Read8bit(0x46);
-    if (state) {
-        Write1Byte(0x46, 0x03);
-    }
-    return state;
-}
-
-uint8_t AXP192::GetWarningLevel(void) {
-    return Read8bit(0x47) & 0x01;
-}
-
-float AXP192::GetBatVoltage() {
-    float ADCLSB    = 1.1 / 1000.0;
-    uint16_t ReData = Read12Bit(0x78);
-    return ReData * ADCLSB;
-}
-
-float AXP192::GetBatCurrent() {
-    float ADCLSB        = 0.5;
-    uint16_t CurrentIn  = Read13Bit(0x7A);
-    uint16_t CurrentOut = Read13Bit(0x7C);
-    return (CurrentIn - CurrentOut) * ADCLSB;
-}
-
-float AXP192::GetVinVoltage() {
-    float ADCLSB    = 1.7 / 1000.0;
-    uint16_t ReData = Read12Bit(0x56);
-    return ReData * ADCLSB;
-}
-
-float AXP192::GetVinCurrent() {
-    float ADCLSB    = 0.625;
-    uint16_t ReData = Read12Bit(0x58);
-    return ReData * ADCLSB;
-}
-
-float AXP192::GetVBusVoltage() {
-    float ADCLSB    = 1.7 / 1000.0;
-    uint16_t ReData = Read12Bit(0x5A);
-    return ReData * ADCLSB;
-}
-
-float AXP192::GetVBusCurrent() {
-    float ADCLSB    = 0.375;
-    uint16_t ReData = Read12Bit(0x5C);
-    return ReData * ADCLSB;
-}
-
-float AXP192::GetTempInAXP192() {
-    float ADCLSB             = 0.1;
-    const float OFFSET_DEG_C = -144.7;
-    uint16_t ReData          = Read12Bit(0x5E);
-    return OFFSET_DEG_C + ReData * ADCLSB;
-}
-
-float AXP192::GetBatPower() {
-    float VoltageLSB = 1.1;
-    float CurrentLCS = 0.5;
-    uint32_t ReData  = Read24bit(0x70);
-    return VoltageLSB * CurrentLCS * ReData / 1000.0;
-}
-
-float AXP192::GetBatChargeCurrent() {
-    float ADCLSB    = 0.5;
-    uint16_t ReData = Read12Bit(0x7A);
-    return ReData * ADCLSB;
-}
-float AXP192::GetAPSVoltage() {
-    float ADCLSB    = 1.4 / 1000.0;
-    uint16_t ReData = Read12Bit(0x7E);
-    return ReData * ADCLSB;
-}
-
-float AXP192::GetBatCoulombInput() {
-    uint32_t ReData = Read32bit(0xB0);
-    return ReData * 65536 * 0.5 / 3600 / 25.0;
-}
-
-float AXP192::GetBatCoulombOut() {
-    uint32_t ReData = Read32bit(0xB4);
-    return ReData * 65536 * 0.5 / 3600 / 25.0;
-}
-
-void AXP192::SetCoulombClear() {
-    Write1Byte(0xB8, 0x20);
-}
-
-void AXP192::SetLDO2(bool State) {
-    uint8_t buf = Read8bit(0x12);
-    if (State == true)
-        buf = (1 << 2) | buf;
-    else
-        buf = ~(1 << 2) & buf;
-    Write1Byte(0x12, buf);
-}
-
-// Cut all power, except for LDO1 (RTC)
-void AXP192::PowerOff() {
-    Write1Byte(0x32, Read8bit(0x32) | 0x80);  // MSB for Power Off
-}
-
-void AXP192::SetPeripherialsPower(uint8_t state) {
-    if (!state)
-        Write1Byte(0x10, Read8bit(0x10) & 0XFB);
-    else if (state)
-        Write1Byte(0x10, Read8bit(0x10) | 0X04);
-    // uint8_t data;
-    // Set EXTEN to enable 5v boost
-}
-
-#endif

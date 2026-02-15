@@ -31,8 +31,8 @@
 
 
 #if defined(HAS_AXP192)
-#include "AXP192.h"
-AXP192 Axp = AXP192();
+#include "axp192.h"  // ESP-IDF compatible AXP192 driver for M5StickC Plus
+AXP192_Driver axp192_driver;
 #endif
 
 
@@ -98,7 +98,22 @@ void LcdDisplay::init() {
 
 #ifdef HAS_AXP192
     // For m5 stick and whatnot, the LCD backlight AND the controller both are powered off the AXP192, so we need to initialize that first
-    Axp.begin();
+    // M5StickC Plus: Initialize AXP192 for power/backlight
+    AXP192_InitDef initDef = {
+        .EXTEN  = true,
+        .BACKUP = true,
+        .DCDC1  = 3300,
+        .DCDC2  = 0,
+        .DCDC3  = 0,
+        .LDO2   = 3000,
+        .LDO3   = 3000,
+        .GPIO0  = 2800,
+        .GPIO1  = -1,
+        .GPIO2  = -1,
+        .GPIO3  = -1,
+        .GPIO4  = -1,
+    };
+    axp192_driver.begin(21, 22, initDef);
     vTaskDelay(pdMS_TO_TICKS(50));
 #endif
 
