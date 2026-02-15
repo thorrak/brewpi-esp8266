@@ -36,7 +36,7 @@ AXP192_Driver axp192_driver;
 #endif
 
 
-TFT_eSPI tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
+LGFX tft;
 bool toggleBacklight = false;  // Not used for this screen type
 
 
@@ -118,19 +118,17 @@ void LcdDisplay::init() {
 #endif
 
     tft.init();
-    // reinit();
 
     stateOnDisplay = 0xFF; // set to unknown state to force update
     flags = LCD_FLAG_ALTERNATE_ROOM;  // TODO - Test with a room sensor to see what happens
 
-    tft.begin();
     if (extendedSettings.invertTFT)
         tft.setRotation(3);
     else
         tft.setRotation(1);
 
-    tft.setTextColor(TFT_WHITE, TFT_BLACK, true);
-    tft.setFreeFont(FF17);
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.setFont(&fonts::FreeMono9pt7b);
     clear();  // Clear the screen & initialize the text cache
 
 
@@ -204,8 +202,8 @@ void LcdDisplay::printTemperatureAtMonoChars(uint8_t x_chars, uint8_t y_chars, t
 }
 
 void LcdDisplay::printAtMonoChars(uint8_t x_chars, uint8_t y_chars, const char *text){
-    uint16_t x = x_chars * tft.textWidth("A", GFXFF) + 3;
-    uint16_t y = (y_chars) * tft.fontHeight(GFXFF) + 2;
+    uint16_t x = x_chars * tft.textWidth("A") + 3;
+    uint16_t y = (y_chars) * tft.fontHeight() + 2;
 
     // Ensure we aren't writing past the end of the buffer
     if(x_chars+strlen(text) > TFT_COLUMNS || y_chars >= TFT_ROWS)
@@ -215,8 +213,8 @@ void LcdDisplay::printAtMonoChars(uint8_t x_chars, uint8_t y_chars, const char *
     for(uint8_t i=0;i<strlen(text);++i)
         if(text[i] != textCache[y_chars][x_chars+i]) {
             // Manually draw a rectangle over the existing character
-            tft.fillRect(x+i*tft.textWidth("A", GFXFF), y, tft.textWidth("A", GFXFF), tft.fontHeight(GFXFF), TFT_BLACK);
-            tft.drawString(&text[i], x+i*tft.textWidth("A", GFXFF), y);
+            tft.fillRect(x+i*tft.textWidth("A"), y, tft.textWidth("A"), tft.fontHeight(), TFT_BLACK);
+            tft.drawString(&text[i], x+i*tft.textWidth("A"), y);
         }
 
     // Save the text in the cache

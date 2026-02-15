@@ -27,9 +27,6 @@
 
 #include "ESP_BP_WiFi.h"
 
-#include <SPI.h>
-#include "Adafruit_GFX.h"
-#include "Adafruit_ILI9341.h"
 
 //#include <XPT2046_Touchscreen.h>
 
@@ -52,7 +49,7 @@ bool toggleBacklight;
 
 LcdDisplay::LcdDisplay() {
     // Initialize the display device -- we can reinitialize later if needed
-    tft = new Adafruit_ILI9341(TFT_CS, TFT_DC, TFT_RST);
+    tft = new LGFX();
     // We can't do much more as this object gets created at boot
 }
 
@@ -64,12 +61,12 @@ LcdDisplay::~LcdDisplay() {
 void LcdDisplay::print_layout() {
 
     // Print the lines for the basic layout
-    tft->drawLine(0, BEER_NAME_LINE_Y, 320, BEER_NAME_LINE_Y, ILI9341_WHITE);  // Bar beneath beer name/set points
-    tft->drawLine(0, ACTUAL_SET_LINE_Y, 320, ACTUAL_SET_LINE_Y, ILI9341_DARKGREY);  // Bar between set/measured points
-    tft->drawLine(0, MIDDLE_BAR_Y_END, 320, MIDDLE_BAR_Y_END, ILI9341_WHITE);  // Bar beneath set/measured points
-    tft->drawLine(MIDDLE_BAR_X, BEER_NAME_LINE_Y, MIDDLE_BAR_X, MIDDLE_BAR_Y_END, ILI9341_WHITE);  // Middle bar
+    tft->drawLine(0, BEER_NAME_LINE_Y, 320, BEER_NAME_LINE_Y, TFT_WHITE);  // Bar beneath beer name/set points
+    tft->drawLine(0, ACTUAL_SET_LINE_Y, 320, ACTUAL_SET_LINE_Y, TFT_DARKGREY);  // Bar between set/measured points
+    tft->drawLine(0, MIDDLE_BAR_Y_END, 320, MIDDLE_BAR_Y_END, TFT_WHITE);  // Bar beneath set/measured points
+    tft->drawLine(MIDDLE_BAR_X, BEER_NAME_LINE_Y, MIDDLE_BAR_X, MIDDLE_BAR_Y_END, TFT_WHITE);  // Middle bar
 
-    tft->drawLine(GRAVITY_LINE_X, GRAVITY_LINE_START_Y, GRAVITY_LINE_X, 240, ILI9341_WHITE);  // Gravity bar
+    tft->drawLine(GRAVITY_LINE_X, GRAVITY_LINE_START_Y, GRAVITY_LINE_X, 240, TFT_WHITE);  // Gravity bar
 
 
     // Print the headers
@@ -101,18 +98,14 @@ void LcdDisplay::init(){
     stateOnDisplay = 0xFF; // set to unknown state to force update
     flags = LCD_FLAG_ALTERNATE_ROOM;  // TODO - Test with a room sensor to see what happens
 
-    tft->begin();
+    tft->init();
+    tft->setSwapBytes(true);
     if (extendedSettings.invertTFT)
         tft->setRotation(3);
     else
         tft->setRotation(1);
-    tft->fillScreen(ILI9341_BLACK);
-    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-
-#if defined(TFT_BACKLIGHT)
-    gpio_set_direction((gpio_num_t)TFT_BACKLIGHT, GPIO_MODE_OUTPUT);
-    gpio_set_level((gpio_num_t)TFT_BACKLIGHT, 1);
-#endif
+    tft->fillScreen(TFT_BLACK);
+    tft->setTextColor(TFT_WHITE, TFT_BLACK);
 }
 
 void LcdDisplay::reset(){
@@ -177,9 +170,9 @@ void LcdDisplay::printFridgeSet(){
 }
 
 void LcdDisplay::printTemperatureAt(uint8_t x, uint8_t y, uint8_t font_size, temperature temp){
-    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft->setTextColor(TFT_WHITE, TFT_BLACK);
     //tft->setTextSize(font_size);
-    //clearForText(x, y, ILI9341_BLACK, font_size, 4);  // TODO - Determine if I want this to be 4 or 5 characters
+    //clearForText(x, y, TFT_BLACK, font_size, 4);  // TODO - Determine if I want this to be 4 or 5 characters
 
     tft->setCursor(x,y);
     printTemperature(temp, font_size);
@@ -224,9 +217,9 @@ void LcdDisplay::printStationaryText(){
 }
 
 void LcdDisplay::printMode(){
-    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft->setTextColor(TFT_WHITE, TFT_BLACK);
     tft->setTextSize(MODE_FONT_SIZE);
-    clearForText(MODE_START_X, MODE_START_Y, ILI9341_BLACK, MODE_FONT_SIZE, 21);
+    clearForText(MODE_START_X, MODE_START_Y, TFT_BLACK, MODE_FONT_SIZE, 21);
 
     tft->setCursor(MODE_START_X, MODE_START_Y);
     tft->print("Mode: ");
@@ -254,9 +247,9 @@ void LcdDisplay::printMode(){
 }
 
 void LcdDisplay::printIPAddressInfo(){
-    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft->setTextColor(TFT_WHITE, TFT_BLACK);
     tft->setTextSize(IP_ADDRESS_FONT_SIZE);
-    clearForText(IP_ADDRESS_START_X, IP_ADDRESS_START_Y, ILI9341_BLACK, MODE_FONT_SIZE, 21);
+    clearForText(IP_ADDRESS_START_X, IP_ADDRESS_START_Y, TFT_BLACK, MODE_FONT_SIZE, 21);
 
     tft->setCursor(IP_ADDRESS_START_X, IP_ADDRESS_START_Y);
     tft->print("IP Address: ");
@@ -303,7 +296,7 @@ void LcdDisplay::printState(){
     uint8_t state = tempControl.getDisplayState();
     uint8_t printed_chars = 8;
 
-    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft->setTextColor(TFT_WHITE, TFT_BLACK);
     tft->setTextSize(STATUS_FONT_SIZE);
 
     tft->setCursor(STATUS_START_X, STATUS_START_Y);
@@ -398,7 +391,7 @@ void LcdDisplay::printState(){
 void LcdDisplay::printWiFi(){
     clear();
 
-    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft->setTextColor(TFT_WHITE, TFT_BLACK);
     tft->setTextSize(WIFI_FONT_SIZE);
 
     tft->setCursor(0, 0);
@@ -417,7 +410,7 @@ void LcdDisplay::printWiFi(){
 void LcdDisplay::printWiFiStartup(){
     clear();
 
-    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft->setTextColor(TFT_WHITE, TFT_BLACK);
     tft->setTextSize(WIFI_FONT_SIZE);
 
     tft->setCursor(0, 0);
@@ -439,7 +432,7 @@ void LcdDisplay::printWiFiStartup(){
 void LcdDisplay::printWiFiConnect(){
     clear();
 
-    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft->setTextColor(TFT_WHITE, TFT_BLACK);
     tft->setTextSize(WIFI_FONT_SIZE);
 
     tft->setCursor(0, 0);
@@ -457,7 +450,7 @@ void LcdDisplay::printBluetoothStartup(){
 
     clear();
 
-    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft->setTextColor(TFT_WHITE, TFT_BLACK);
     tft->setTextSize(WIFI_FONT_SIZE);
 
     tft->setCursor(0, 0);
@@ -471,10 +464,10 @@ void LcdDisplay::printBluetoothStartup(){
 }
 
 void LcdDisplay::printGravity(){
-    tft->setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    tft->setTextColor(TFT_WHITE, TFT_BLACK);
     tft->setTextSize(GRAVITY_HEADER_FONT_SIZE);
-    clearForText(GRAVITY_START_X, GRAVITY_HEADER_START_Y, ILI9341_BLACK, GRAVITY_HEADER_FONT_SIZE, 7);
-    clearForText(GRAVITY_START_X, GRAVITY_START_Y, ILI9341_BLACK, GRAVITY_HEADER_FONT_SIZE, 5);
+    clearForText(GRAVITY_START_X, GRAVITY_HEADER_START_Y, TFT_BLACK, GRAVITY_HEADER_FONT_SIZE, 7);
+    clearForText(GRAVITY_START_X, GRAVITY_START_Y, TFT_BLACK, GRAVITY_HEADER_FONT_SIZE, 5);
 
     tft->setCursor(GRAVITY_START_X, GRAVITY_HEADER_START_Y);
 
@@ -502,7 +495,7 @@ void LcdDisplay::printGravity(){
 
 
 void LcdDisplay::clear() {
-    tft->fillScreen(ILI9341_BLACK);
+    tft->fillScreen(TFT_BLACK);
 }
 
 void LcdDisplay::clearForText(uint8_t start_x, uint8_t start_y, uint16_t color, uint8_t font_size, uint8_t characters) {

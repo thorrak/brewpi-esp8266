@@ -10,7 +10,7 @@
 #include "Brewpi.h"
 #include "DisplayBase.h"
 
-#include "Adafruit_ILI9341.h"
+#include "LovyanGFX_Config.h"
 
 
 /************** Alignment Markers ****************/
@@ -173,7 +173,7 @@ public:
 
 
 private:
-    Adafruit_ILI9341 *tft;
+    LGFX *tft;
 
     uint8_t stateOnDisplay;
     uint8_t flags;

@@ -11,12 +11,8 @@
 #include "DisplayBase.h"
 
 
-#define DISABLE_ALL_LIBRARY_WARNINGS
-#include <TFT_eSPI.h>
-#undef DISABLE_ALL_LIBRARY_WARNINGS
+#include "LovyanGFX_Config.h"
 
-#define FF17                    &FreeMono9pt7b
-#define GFXFF                   1  // This can probably be removed
 #define TFT_ROWS     6
 #define TFT_COLUMNS  20
 
@@ -103,7 +99,7 @@ private:
     std::string getline_temp_string(temperature temp);
 };
 
-extern TFT_eSPI tft;
+extern LGFX tft;
 
 
 #endif  //BREWPI_TFT
