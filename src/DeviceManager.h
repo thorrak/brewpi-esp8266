@@ -282,7 +282,7 @@ public:
 	}
 
 	int8_t enumerateSensorPins(uint8_t offset) {
-#if BREWPI_SENSOR_PINS && defined(ARDUINO)
+#if BREWPI_SENSOR_PINS
 		if (offset==0)
 			return doorPin;
 #endif
@@ -293,10 +293,8 @@ public:
    * Enumerates the OneWire bus pins.
 	 */
 	int8_t enumOneWirePins(uint8_t offset) {
-#ifdef ARDUINO
 		if (offset == 0)
 			return oneWirePin;
-#endif
 		return -1;
 	}
 
@@ -353,8 +351,6 @@ private:
 
 	static onewire_bus_handle_t oneWireBus(uint8_t pin);
 
-#ifdef ARDUINO
-
 // There is no reason to separate the OneWire busses - if we have a single bus, use it.
 #ifdef oneWirePin
 	static onewire_bus_handle_t m_primary_onewire_bus;
@@ -363,7 +359,6 @@ private:
 	static onewire_bus_handle_t m_fridge_sensor_bus;
 #endif
 
-#endif
 };
 
 

@@ -4,6 +4,7 @@
 
 #include "uptime.h"
 #include <esp_timer.h>
+#include <cmath>
 
 static int refresh = UPTIME_REFRESH * 1000;
 static unsigned long uptimeNow;

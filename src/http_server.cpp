@@ -3,7 +3,6 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-#include <Arduino.h>
 #include <thorlog.h>
 #include <thorlog_espidf.h>
 #include <ArduinoJson.h>

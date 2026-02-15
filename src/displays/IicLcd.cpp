@@ -20,7 +20,6 @@
 #include <string.h>
 #include <inttypes.h>
 #include <inttypes.h>
-#include "Arduino.h"
 
 #include <driver/i2c_master.h>
 
@@ -132,15 +131,15 @@ void IIClcd::begin(uint8_t cols, uint8_t lines, uint8_t dotsize) {
 
 	// we start in 8bit mode, try to set 4 bit mode
 	write4bits(0x03 << 4);
-	delayMicroseconds(4500); // wait min 4.1ms
+	esp_rom_delay_us(4500); // wait min 4.1ms
 
 							 // second try
 	write4bits(0x03 << 4);
-	delayMicroseconds(4500); // wait min 4.1ms
+	esp_rom_delay_us(4500); // wait min 4.1ms
 
 							 // third go!
 	write4bits(0x03 << 4);
-	delayMicroseconds(150);
+	esp_rom_delay_us(150);
 
 	// finally, set to 4-bit interface
 	write4bits(0x02 << 4);
@@ -177,12 +176,12 @@ void IIClcd::clear() {
 		content[i][_cols] = '\0'; // NULL terminate string
 	}
 
-	delayMicroseconds(2000);  // this command takes a long time!
+	esp_rom_delay_us(2000);  // this command takes a long time!
 }
 
 void IIClcd::home() {
 	command(LCD_RETURNHOME);  // set cursor position to zero
-	delayMicroseconds(2000);  // this command takes a long time!
+	esp_rom_delay_us(2000);  // this command takes a long time!
 }
 
 void IIClcd::setCursor(uint8_t col, uint8_t row) {
@@ -320,10 +319,10 @@ void IIClcd::expanderWrite(uint8_t _data) {
 
 void IIClcd::pulseEnable(uint8_t _data) {
 	expanderWrite(_data | En);	// En high
-	delayMicroseconds(1);		// enable pulse must be >450ns
+	esp_rom_delay_us(1);		// enable pulse must be >450ns
 
 	expanderWrite(_data & ~En);	// En low
-	delayMicroseconds(50);		// commands need > 37us to settle
+	esp_rom_delay_us(50);		// commands need > 37us to settle
 }
 
 // This resets the backlight timer and updates the SPI output

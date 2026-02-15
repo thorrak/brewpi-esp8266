@@ -14,12 +14,6 @@
  * @{
  */
 
-// WiFiManager (Arduino library) still requires the Arduino WiFi header.
-// Our own code should use the bp_wifi_*() utility functions below instead
-// of touching the WiFi global object directly.
-#include <WiFi.h>
-
-
 /**
  * \brief Initialize the WiFi client
  *

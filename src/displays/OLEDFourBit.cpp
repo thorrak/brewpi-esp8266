@@ -21,8 +21,8 @@
 
 #if BREWPI_LCD
 #include "OLEDFourBit.h"
+#include "Ticks.h"
 
-#include <Arduino.h>
 #include <driver/gpio.h>
 #include <stdio.h>
 #include <string.h>
@@ -71,20 +71,20 @@ void OLEDFourBit::begin(uint8_t cols, uint8_t lines) {
 	}
 	
 	// SEE PAGE 20 of NHD-0420DZW-AY5 
-	delayMicroseconds(50000); // wait 50 ms just to be sure tha the lcd is initialized
+	esp_rom_delay_us(50000); // wait 50 ms just to be sure tha the lcd is initialized
  
-	delayMicroseconds(32000);
+	esp_rom_delay_us(32000);
 	write4bits(0x03);
-	delayMicroseconds(32000);
+	esp_rom_delay_us(32000);
 	write4bits(0x03);
-	delayMicroseconds(32000);
+	esp_rom_delay_us(32000);
 	write4bits(0x03);
 	  
-	delayMicroseconds(32000);
+	esp_rom_delay_us(32000);
 	write4bits(0x02);
-	delayMicroseconds(10000);
+	esp_rom_delay_us(10000);
 	write4bits(0x02);
-	delayMicroseconds(10000);
+	esp_rom_delay_us(10000);
 	write4bits(0x08);
    
 	waitBusy();
@@ -209,12 +209,12 @@ void OLEDFourBit::createChar(uint8_t location, uint8_t charmap[]) {
 /*********** mid level commands, for sending data/cmds */
 
 inline void OLEDFourBit::command(uint8_t value) {
-	send(value, LOW);
+	send(value, 0);
 	waitBusy();
 }
 
 inline size_t OLEDFourBit::write(uint8_t value) {
-	send(value, HIGH);
+	send(value, 1);
 	content[_currline][_currpos] = value;
 	_currpos++;
 	waitBusy();
@@ -235,7 +235,7 @@ void OLEDFourBit::send(uint8_t value, uint8_t mode) {
 
 void OLEDFourBit::pulseEnable() {
 	gpio_set_level((gpio_num_t)_enable_pin, 1);
-	delayMicroseconds(100); // enable pulse must be >450ns
+	esp_rom_delay_us(100); // enable pulse must be >450ns
 	gpio_set_level((gpio_num_t)_enable_pin, 0);
 }
 
@@ -244,7 +244,7 @@ void OLEDFourBit::write4bits(uint8_t value) {
 		gpio_set_direction((gpio_num_t)_data_pins[i], GPIO_MODE_OUTPUT);
 		gpio_set_level((gpio_num_t)_data_pins[i], (value >> i) & 0x01);
 	}
-	delayMicroseconds(100);
+	esp_rom_delay_us(100);
 	pulseEnable();
 }
 
@@ -257,7 +257,7 @@ void OLEDFourBit::waitBusy() {
 	do{
 		gpio_set_level((gpio_num_t)_enable_pin, 0);
 		gpio_set_level((gpio_num_t)_enable_pin, 1);
-		delayMicroseconds(10);
+		esp_rom_delay_us(10);
 		busy = gpio_get_level((gpio_num_t)_busy_pin);
 		gpio_set_level((gpio_num_t)_enable_pin, 0);
 		pulseEnable(); // get remaining 4 bits, which are not used.
@@ -279,12 +279,12 @@ char OLEDFourBit::readChar(){
 	gpio_set_level((gpio_num_t)_rs_pin, 1);
 	gpio_set_level((gpio_num_t)_rw_pin, 1);
 	pulseEnable();
-	delayMicroseconds(600);
+	esp_rom_delay_us(600);
 	for (int i = 0; i < 4; i++) {
 		value = value | (gpio_get_level((gpio_num_t)_data_pins[i]) << (i+4));
 	}
 	pulseEnable();
-	delayMicroseconds(600);
+	esp_rom_delay_us(600);
 	for (int i = 0; i < 4; i++) {
 		value = value | (gpio_get_level((gpio_num_t)_data_pins[i]) << (i));
 	}

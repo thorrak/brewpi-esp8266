@@ -1,5 +1,5 @@
-#include <Arduino.h>
 #include <esp_mac.h>
+#include <cstring>
 #include "getGuid.h"
 
 void getGuid(char *str)

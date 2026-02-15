@@ -22,7 +22,5 @@
 #endif
 
 #if BREWPI_RANDOM
-// Have to include this separately from Arduino.h, since it redefines makeWord()
 #include <WMath.cpp>
-
 #endif

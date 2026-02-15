@@ -1,7 +1,7 @@
 #ifdef HAS_BLUETOOTH
-#include <Arduino.h>
 #include "Tilt.h"
 #include "TemperatureFormats.h"
+#include <cmath>
 
 
 void tilt::update(TiltColor color_index, uint16_t temp, uint16_t grav, uint8_t i_tx_pwr, int16_t rssi)

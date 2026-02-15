@@ -56,16 +56,16 @@ void SpiLcd::begin(uint8_t cols, uint8_t lines) {
 	// The following initialization sequence should be compatible with: 
 	// - Newhaven OLED displays
 	// - Standard HD44780 or S6A0069 LCD displays
-	delayMicroseconds(50000); // wait 50 ms just to be sure that the lcd is initialized
+	esp_rom_delay_us(50000); // wait 50 ms just to be sure that the lcd is initialized
 
 	write4bits(0x03); //set to 8-bit
-	delayMicroseconds(50000); // wait > 4.1ms
+	esp_rom_delay_us(50000); // wait > 4.1ms
 	write4bits(0x03); //set to 8-bit
-	delayMicroseconds(1000); // wait > 100us
+	esp_rom_delay_us(1000); // wait > 100us
 	write4bits(0x03); //set to 8-bit
-	delayMicroseconds(50000); // wait for execution
+	esp_rom_delay_us(50000); // wait for execution
 	write4bits(0x02); //set to 4-bit
-	delayMicroseconds(50000); // wait for execution
+	esp_rom_delay_us(50000); // wait for execution
 	command(0x28); // set to 4-bit, 2-line
 		
 	clear();	// display clear
@@ -278,7 +278,7 @@ void SpiLcd::send(uint8_t value, uint8_t mode) {
 void SpiLcd::pulseEnable() {
 	bitSet(_spiByte, LCD_SHIFT_ENABLE);
 	spiOut();
-	delayMicroseconds(1); // enable pulse must be >450ns
+	esp_rom_delay_us(1); // enable pulse must be >450ns
 	bitClear(_spiByte, LCD_SHIFT_ENABLE);
 	spiOut();
 }

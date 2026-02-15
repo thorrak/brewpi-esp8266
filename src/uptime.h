@@ -5,8 +5,6 @@
 #ifndef _UPTIME_H
 #define _UPTIME_H
 
-#include <Arduino.h>
-
 #define UPTIME_REFRESH 1
 
 #define DAY_MILLIS 86400000

@@ -20,6 +20,7 @@
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <esp_timer.h>
 
 #include "Brewpi.h"
 #include "Ticks.h"
@@ -42,10 +43,6 @@ ticks_seconds_t ExternalTicks::timeSince(ticks_seconds_t previousTime){
 }
 
 
-#ifdef ARDUINO
-
-#include <esp_timer.h>
-
 // return time that has passed since timeStamp, take overflow into account
 ticks_seconds_t HardwareTicks::timeSince(ticks_seconds_t previousTime){
 	ticks_seconds_t currentTime = ticks.seconds();
@@ -58,5 +55,3 @@ ticks_seconds_t HardwareTicks::seconds() { return (unsigned long)(esp_timer_get_
 void HardwareDelay::millis(uint16_t millis) { vTaskDelay(pdMS_TO_TICKS(millis)); }
 
 void HardwareDelay::seconds(uint16_t seconds)	{ millis(seconds<<10); }
-
-#endif

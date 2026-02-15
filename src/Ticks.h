@@ -112,7 +112,7 @@ extern TicksImpl ticks;
 // For emulation, don't delay, since time in the emulator is not real time, so the delay is meaningless.
 // For regular code, use the arduino delay function.
 
-#if BREWPI_EMULATE || !defined(ARDUINO)
+#if BREWPI_EMULATE
 typedef NoOpDelay DelayImpl;		// for emulation (avr debugger), don't bother delaying, it takes ages.
 #define DELAY_IMPL_CONFIG
 #else

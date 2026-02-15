@@ -2,7 +2,6 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-#include <Arduino.h>
 #include <bitset> // for std::bitset
 #include <list>
 

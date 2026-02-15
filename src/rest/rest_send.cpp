@@ -1,9 +1,7 @@
-#include <Arduino.h>
 #include <ArduinoJson.h>
 #include <string>
 #include <ctime>
-// #define LCBURL_MDNS
-// #include <LCBUrl.h>
+
 #include <thorlog.h>
 #include <thorlog_espidf.h>
 #include <freertos/FreeRTOS.h>

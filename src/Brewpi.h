@@ -57,7 +57,7 @@
 #include "Config.h"
 #include "ConfigDefault.h"
 
-#include <Arduino.h>
+#include <stddef.h>
 
 #include "Actuator.h"
 #include "Logger.h"

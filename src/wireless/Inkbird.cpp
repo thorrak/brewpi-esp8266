@@ -1,5 +1,4 @@
 #ifdef HAS_BLUETOOTH
-#include <Arduino.h>
 #include "Inkbird.h"
 #include "TemperatureFormats.h"
 

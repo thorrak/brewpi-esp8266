@@ -20,10 +20,9 @@
 
 #pragma once
 
-#ifdef ARDUINO
-
 #include "Brewpi.h"
 #include <esp_timer.h>
+#include <esp_rom_sys.h>
 
 /*
  * The Ticks class provides the time period since the device was powered up.
@@ -44,7 +43,5 @@ public:
 	HardwareDelay() {}
 	void seconds(uint16_t seconds);
 	void millis(uint16_t millis);
-	void microseconds(uint32_t micros) { ::delayMicroseconds(micros); }	
+	void microseconds(uint32_t micros) { esp_rom_delay_us(micros); }	
 };
-
-#endif
