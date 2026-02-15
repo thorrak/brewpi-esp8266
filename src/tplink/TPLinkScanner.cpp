@@ -1,16 +1,13 @@
-
-#include <Arduino.h>
 #include <ArduinoJson.h>
 #include "TPLinkScanner.h"
 #include "TPLinkPlug.h"
 
 #include "Config.h"
 #include "EepromStructs.h"
-// #include "DeviceManager.h"
 #include "EepromManager.h"
 
-#include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 #include <esp_wifi.h>
+#include "ESP_BP_WiFi.h"
 #include <esp_timer.h>
 
 
@@ -32,7 +29,7 @@ TPLinkPlug* TPLinkScanner::get_tplink_plug(const char *deviceMAC, const char *ch
     return nullptr;
 }
 
-TPLinkPlug* TPLinkScanner::get_or_create_tplink_plug(IPAddress ip_addr, const char *deviceMAC, const char *deviceID, const char *childID, const char *alias)
+TPLinkPlug* TPLinkScanner::get_or_create_tplink_plug(uint32_t ip_addr, const char *deviceMAC, const char *deviceID, const char *childID, const char *alias)
 {
     TPLinkPlug *found_tp = get_tplink_plug(deviceMAC, childID);
 
@@ -52,7 +49,7 @@ TPLinkPlug* TPLinkScanner::get_or_create_tplink_plug(IPAddress ip_addr, const ch
 
 
 void TPLinkScanner::process_udp_incoming() {
-    IPAddress udp_ip;
+    uint32_t udp_ip = 0;
     std::string incoming_packet;
 
     uint64_t scan_until = (unsigned long)(esp_timer_get_time() / 1000ULL) + (5 * 1000); // Read replies for 5 seconds at most
@@ -155,7 +152,7 @@ void TPLinkScanner::send_refresh() {
 
 void TPLinkScanner::scan_and_refresh() {
 
-    if(!WiFi.isConnected())
+    if(!bp_wifi_is_connected())
         return;
 
     if((unsigned long)(esp_timer_get_time() / 1000ULL) > (last_discover_at + (TPLINK_DISCOVER_EVERY * 1000))) {

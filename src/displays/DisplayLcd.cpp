@@ -35,9 +35,7 @@
 #include "TemperatureFormats.h"
 #include "Pins.h"
 
-#ifdef CONNECT_VIA_WIFI
-#include <WiFi.h> // For printing the IP address
-#endif
+#include "ESP_BP_WiFi.h"
 
 
 uint8_t LcdDisplay::stateOnDisplay;
@@ -396,7 +394,7 @@ void LcdDisplay::printWiFi(){
 	lcd.printSpacesToRestOfLine();
 
 	lcd.setCursor(0,3);
-	lcd.print(WiFi.localIP());
+	lcd.print(bp_wifi_get_ip_str());
 	lcd.printSpacesToRestOfLine();
 
 	lcd.updateBacklight();

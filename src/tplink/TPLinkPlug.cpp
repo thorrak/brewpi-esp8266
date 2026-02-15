@@ -1,13 +1,12 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-#include <Arduino.h>
-#include <WiFiUdp.h>
 #include "TPLinkPlug.h"
+#include <cstring>
 #include <string>
 
 
-TPLinkPlug::TPLinkPlug(IPAddress ip, const char * deviceMAC, const char * deviceID, const char * childID, TPLinkConnector* tplink_conn) {
+TPLinkPlug::TPLinkPlug(uint32_t ip, const char * deviceMAC, const char * deviceID, const char * childID, TPLinkConnector* tplink_conn) {
     snprintf(device_mac, 18, "%s", deviceMAC);
     snprintf(device_id, 41, "%s", deviceID);
     snprintf(child_id, 3, "%s", childID);
@@ -18,7 +17,7 @@ TPLinkPlug::TPLinkPlug(IPAddress ip, const char * deviceMAC, const char * device
 }
 
 
-TPLinkPlug::TPLinkPlug(IPAddress ip, const char * deviceMAC, const char * deviceID, const char * childID, const char * devAlias, TPLinkConnector* tplink_conn) {
+TPLinkPlug::TPLinkPlug(uint32_t ip, const char * deviceMAC, const char * deviceID, const char * childID, const char * devAlias, TPLinkConnector* tplink_conn) {
     snprintf(device_mac, 18, "%s", deviceMAC);
     snprintf(device_id, 41, "%s", deviceID);
     snprintf(device_alias, 32, "%s", devAlias);

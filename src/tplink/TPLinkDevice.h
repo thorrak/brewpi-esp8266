@@ -2,8 +2,8 @@
 #define TPLINK_KASA_TPLINKDEVICE_H
 
 #include <string>
+#include <stdint.h>
 #include "TPLinkConnector.h"
-#include <IPAddress.h>
 
 enum TPLinkDeviceType {
 	TPLINK_KASA_SMARTPLUGSWITCH = 0 // e.g. HS103, KP400
@@ -12,7 +12,7 @@ enum TPLinkDeviceType {
 
 class TPLinkDevice {
 public:
-    IPAddress ip_addr;
+    uint32_t ip_addr;  // network-order IPv4 address
     TPLinkDeviceType type;
 
     char device_mac[18];

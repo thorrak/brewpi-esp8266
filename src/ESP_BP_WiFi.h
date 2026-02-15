@@ -1,5 +1,6 @@
 #pragma once
 #include <ArduinoJson.h>
+#include <stdint.h>
 
 /**
  * \file ESP_BP_WiFi.h
@@ -13,9 +14,10 @@
  * @{
  */
 
-// This library always needs to get loaded, as we're going to need to interact with the radio regardless of whether
-// we're using WiFi or not.
-#include <WiFi.h> // For WiFi management (WiFiManager, WiFi.status(), etc.)
+// WiFiManager (Arduino library) still requires the Arduino WiFi header.
+// Our own code should use the bp_wifi_*() utility functions below instead
+// of touching the WiFi global object directly.
+#include <WiFi.h>
 
 
 /**
@@ -42,7 +44,6 @@ void wifi_connect_clients();
  */
 void initWifiServer();
 
-
 /**
  * \brief Get current WiFi connection information, in JsonDocument format
  *
@@ -53,6 +54,42 @@ void wifi_connection_info(JsonDocument& doc);
 extern int telnet_server_fd;
 extern int telnet_client_fd;
 
+
+// -----------------------------------------------------------------------
+// ESP-IDF WiFi utility functions
+//
+// Thin wrappers around ESP-IDF calls that replace direct Arduino WiFi
+// object usage.  Safe to call even when WiFi is not initialised (they
+// return sensible defaults).  All functions assume single-threaded
+// main-loop usage (static buffers are not guarded).
+// -----------------------------------------------------------------------
+
+/** \brief Return true if the STA interface has a valid IP address. */
+bool bp_wifi_is_connected();
+
+/** \brief Return the STA IP address as a dotted-decimal C string. */
+const char* bp_wifi_get_ip_str();
+
+/** \brief Return the STA IP address as a raw uint32_t. */
+uint32_t bp_wifi_get_ip_addr();
+
+/** \brief Disconnect from the AP. If erase_credentials is true, clear stored config. */
+void bp_wifi_disconnect(bool erase_credentials);
+
+/** \brief Return the SSID of the currently associated AP (or empty string). */
+const char* bp_wifi_get_ssid();
+
+/** \brief Return the RSSI of the currently associated AP (or 0). */
+int8_t bp_wifi_get_rssi();
+
+/** \brief Return the hostname configured on the STA interface. */
+const char* bp_wifi_get_hostname();
+
+/** \brief Trigger a reconnect using the stored STA config. */
+void bp_wifi_reconnect();
+
+/** \brief Fully shut down the WiFi subsystem (disconnect + stop + deinit). */
+void bp_wifi_off();
 
 
 /** @} */

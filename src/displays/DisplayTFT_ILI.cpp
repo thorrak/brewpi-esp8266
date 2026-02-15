@@ -25,9 +25,7 @@
 #include "Pins.h"
 
 
-#ifdef CONNECT_VIA_WIFI
-#include <WiFi.h> // For printing the IP address
-#endif
+#include "ESP_BP_WiFi.h"
 
 #include <SPI.h>
 #include "Adafruit_GFX.h"
@@ -263,8 +261,8 @@ void LcdDisplay::printIPAddressInfo(){
     tft->setCursor(IP_ADDRESS_START_X, IP_ADDRESS_START_Y);
     tft->print("IP Address: ");
 
-    if(WiFi.isConnected()) {
-        tft->print(WiFi.localIP());
+    if(bp_wifi_is_connected()) {
+        tft->print(bp_wifi_get_ip_str());
     } else {
         tft->print("Disconnected");
     }
@@ -413,7 +411,7 @@ void LcdDisplay::printWiFi(){
 
     tft->println("IP Address: ");
 
-    tft->println(WiFi.localIP());
+    tft->println(bp_wifi_get_ip_str());
 }
 
 void LcdDisplay::printWiFiStartup(){

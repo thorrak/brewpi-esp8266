@@ -113,7 +113,7 @@ bool restHandler::reset_connection() {
     upstreamSettings.storeToFilesystem();
 
     // Then disconnect WiFi and restart
-    WiFi.disconnect(false, true);
+    bp_wifi_disconnect(false);
     vTaskDelay(pdMS_TO_TICKS(500));
     esp_restart();
     return true;

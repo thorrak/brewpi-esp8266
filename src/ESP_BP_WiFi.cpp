@@ -3,6 +3,10 @@
 
 #include "ESP_BP_WiFi.h"
 
+#include <esp_wifi.h>
+#include <esp_netif.h>
+#include <cstring>
+
 #ifdef CONNECT_VIA_WIFI
 
 #include <FS.h>  // Apparently this needs to be first
@@ -12,7 +16,6 @@
 #include <mdns.h>
 #include <DNSServer.h>			//Local DNS Server used for redirecting all requests to the configuration portal
 #include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
-#include <esp_wifi.h>
 #include <Ticks.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -164,19 +167,18 @@ void initialize_wifi() {
             eepromManager.savemDNSName(custom_mdns_name.getValue());
         } else {
             // If the mDNS name is invalid, reset the WiFi configuration and restart the device
-            WiFi.disconnect(true);
+            bp_wifi_disconnect(true);
             vTaskDelay(pdMS_TO_TICKS(500));
             handleReset();
         }
     }
-    // This will trigger autoreconnection, but will not connect if we aren't connected at this point (e.g. if the AP is
-    // not yet broadcasting)
-    WiFi.setAutoReconnect(true);
+    // Auto-reconnect is handled by our own logic in wifi_connect_clients()
+    // which re-attempts connection every 3 minutes when disconnected.
 }
 
 void wifi_connection_info(JsonDocument& doc) {
-  doc["ssid"] = WiFi.SSID();
-  doc["signalStrength"] = WiFi.RSSI();
+  doc["ssid"] = bp_wifi_get_ssid();
+  doc["signalStrength"] = bp_wifi_get_rssi();
 }
 
 void display_connect_info_and_create_callback() {
@@ -189,7 +191,7 @@ void wifi_connect_clients() {
     static unsigned long last_connection_check = 0;
 
     vTaskDelay(pdMS_TO_TICKS(1));
-    if(WiFi.status() == WL_CONNECTED) {
+    if(bp_wifi_is_connected()) {
         // We only accept clients if we do not have a REST target defined
         if(rest_handler.configured_for_fermentrack_rest()) {
             // If we have a telnet client connected, close it
@@ -228,11 +230,11 @@ void wifi_connect_clients() {
     // Additionally, every 3 minutes either attempt to reconnect WiFi, or rebroadcast mdns info
     if(ticks.millis() - last_connection_check >= (3 * 60 * 1000)) {
         last_connection_check = ticks.millis();
-        if(WiFi.status() != WL_CONNECTED) {
-            // If we are disconnected, reconnect. On an ESP8266 this will ALSO trigger mdns_reset due to the callback
-            // but on the ESP32, this means that we'll have to wait an additional 3 minutes for mdns to come back up
+        if(!bp_wifi_is_connected()) {
+            // If we are disconnected, reconnect.
+            // We'll have to wait an additional 3 minutes for mdns to come back up
             vTaskDelay(pdMS_TO_TICKS(150));
-            WiFi.begin();
+            bp_wifi_reconnect();
         } else {
             mdns_reset();  // TODO - Add this to the WiFi.reconnect() process
         }
@@ -248,8 +250,7 @@ void wifi_connect_clients() {
 void initialize_wifi() {
     // Apparently, the WiFi radio is managed by the bootloader, so not including the libraries isn't the same as
     // disabling WiFi. We'll explicitly disable it if we're running in "serial" mode
-    WiFi.disconnect(true);
-    WiFi.mode(WIFI_OFF);
+    bp_wifi_off();
 }
 
 void display_connect_info_and_create_callback() {
@@ -259,3 +260,91 @@ void wifi_connect_clients() {
     // For now, this is noop when WiFi support is disabled
 }
 #endif
+
+
+// -----------------------------------------------------------------------
+// ESP-IDF WiFi utility functions (always compiled)
+// -----------------------------------------------------------------------
+
+bool bp_wifi_is_connected() {
+    esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+    if (!netif) return false;
+
+    esp_netif_ip_info_t ip_info;
+    if (esp_netif_get_ip_info(netif, &ip_info) != ESP_OK) return false;
+
+    return ip_info.ip.addr != 0;
+}
+
+const char* bp_wifi_get_ip_str() {
+    static char ip_str[16]; // "xxx.xxx.xxx.xxx\0"
+
+    esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+    if (!netif) { strlcpy(ip_str, "0.0.0.0", sizeof(ip_str)); return ip_str; }
+
+    esp_netif_ip_info_t ip_info;
+    if (esp_netif_get_ip_info(netif, &ip_info) != ESP_OK) { strlcpy(ip_str, "0.0.0.0", sizeof(ip_str)); return ip_str; }
+
+    snprintf(ip_str, sizeof(ip_str), IPSTR, IP2STR(&ip_info.ip));
+    return ip_str;
+}
+
+uint32_t bp_wifi_get_ip_addr() {
+    esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+    if (!netif) return 0;
+
+    esp_netif_ip_info_t ip_info;
+    if (esp_netif_get_ip_info(netif, &ip_info) != ESP_OK) return 0;
+
+    return ip_info.ip.addr;
+}
+
+void bp_wifi_disconnect(bool erase_credentials) {
+    esp_wifi_disconnect();
+
+    if (erase_credentials) {
+        // Clear the stored STA config so WiFiManager re-enters AP mode on next boot
+        wifi_config_t conf;
+        memset(&conf, 0, sizeof(conf));
+        esp_wifi_set_config(WIFI_IF_STA, &conf);
+    }
+}
+
+const char* bp_wifi_get_ssid() {
+    static char ssid_buf[33]; // Max SSID length is 32 + null
+
+    wifi_ap_record_t ap_info;
+    if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
+        strlcpy(ssid_buf, (const char *)ap_info.ssid, sizeof(ssid_buf));
+    } else {
+        ssid_buf[0] = '\0';
+    }
+    return ssid_buf;
+}
+
+int8_t bp_wifi_get_rssi() {
+    wifi_ap_record_t ap_info;
+    if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
+        return ap_info.rssi;
+    }
+    return 0;
+}
+
+const char* bp_wifi_get_hostname() {
+    const char *hostname = nullptr;
+    esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+    if (netif) {
+        esp_netif_get_hostname(netif, &hostname);
+    }
+    return hostname ? hostname : "brewpi";
+}
+
+void bp_wifi_reconnect() {
+    esp_wifi_connect();
+}
+
+void bp_wifi_off() {
+    esp_wifi_disconnect();
+    esp_wifi_stop();
+    esp_wifi_deinit();
+}

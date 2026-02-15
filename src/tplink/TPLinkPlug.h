@@ -1,15 +1,15 @@
 #ifndef TPLINK_KASA_TPLINKPLUG_H
 #define TPLINK_KASA_TPLINKPLUG_H
 
-#include <IPAddress.h>
+#include <stdint.h>
 #include "TPLinkDevice.h"
 
 
 class TPLinkPlug : public TPLinkDevice {
 
 public:
-    TPLinkPlug(IPAddress ip, const char * deviceMAC, const char * deviceID, const char * childID, TPLinkConnector* tplink_conn);
-    TPLinkPlug(IPAddress ip, const char * deviceMAC, const char * deviceID, const char * childID, const char * devAlias, TPLinkConnector* tplink_conn);
+    TPLinkPlug(uint32_t ip, const char * deviceMAC, const char * deviceID, const char * childID, TPLinkConnector* tplink_conn);
+    TPLinkPlug(uint32_t ip, const char * deviceMAC, const char * deviceID, const char * childID, const char * devAlias, TPLinkConnector* tplink_conn);
 
     bool last_read_on;
 

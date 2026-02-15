@@ -301,7 +301,7 @@ void CommandProcessor::parseDeviceDefinition() {
  * \ingroup commands
  */
 void CommandProcessor::resetWiFi() { 
-  WiFi.disconnect(true);
+  bp_wifi_disconnect(true);
   vTaskDelay(pdMS_TO_TICKS(500));
   handleReset();
 }

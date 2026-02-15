@@ -1,13 +1,13 @@
 #include "TPLinkConnector.h"
 #include "TPLinkPlug.h"
 
-#include <Arduino.h>
+#include "ESP_BP_WiFi.h"
 
-#include <WiFi.h>
-
-#include <WiFiUdp.h>
+#include <lwip/sockets.h>
+#include <lwip/netdb.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <errno.h>
 
 #include <string>
 #include <stdexcept>
@@ -118,64 +118,106 @@ std::string TPLinkConnector::decrypt(std::string encr) {
 }
 
 
-void TPLinkConnector::broadcast_payload(const std::string payload, bool include_size) {
-    std::string encrypted_payload;
-
-    encrypted_payload = encrypt(payload, include_size);
-
-    //Send a packet to the targeted address consisting of the payload
-    udp.beginPacket(UDP_BROADCAST_ADDR, UDP_TPLINK_PORT);
-    udp.write((uint8_t*) encrypted_payload.c_str(), encrypted_payload.length());
-    udp.endPacket();
+TPLinkConnector::~TPLinkConnector() {
+    if (_sock_fd >= 0) {
+        lwip_close(_sock_fd);
+        _sock_fd = -1;
+    }
 }
 
-void TPLinkConnector::send_payload(const IPAddress host, const std::string payload, bool include_size) {
-    std::string encrypted_payload;
 
-    encrypted_payload = encrypt(payload, include_size);
+void TPLinkConnector::broadcast_payload(const std::string payload, bool include_size) {
+    if (_sock_fd < 0) return;
 
-    //Send a packet to the broadcast address consisting of the payload
-    udp.beginPacket(host, UDP_TPLINK_PORT);
-    udp.write((uint8_t*) encrypted_payload.c_str(), encrypted_payload.length());
-    udp.endPacket();
+    std::string encrypted_payload = encrypt(payload, include_size);
+
+    struct sockaddr_in dest;
+    memset(&dest, 0, sizeof(dest));
+    dest.sin_family = AF_INET;
+    dest.sin_port = htons(UDP_TPLINK_PORT);
+    dest.sin_addr.s_addr = INADDR_BROADCAST;
+
+    lwip_sendto(_sock_fd, encrypted_payload.c_str(), encrypted_payload.length(),
+                0, (struct sockaddr *)&dest, sizeof(dest));
+}
+
+void TPLinkConnector::send_payload(uint32_t host_ip, const std::string payload, bool include_size) {
+    if (_sock_fd < 0) return;
+
+    std::string encrypted_payload = encrypt(payload, include_size);
+
+    struct sockaddr_in dest;
+    memset(&dest, 0, sizeof(dest));
+    dest.sin_family = AF_INET;
+    dest.sin_port = htons(UDP_TPLINK_PORT);
+    dest.sin_addr.s_addr = host_ip;  // already network order
+
+    lwip_sendto(_sock_fd, encrypted_payload.c_str(), encrypted_payload.length(),
+                0, (struct sockaddr *)&dest, sizeof(dest));
 }
 
 
 
 void TPLinkConnector::discover() {
     // Newer HS103s require the "short" discovery payload
-    // const std::string discover_payload = "{\"system\": {\"get_sysinfo\": null}, \"emeter\": {\"get_realtime\": null}, \"smartlife.iot.dimmer\": {\"get_dimmer_parameters\": null}, \"smartlife.iot.common.emeter\": {\"get_realtime\": null}, \"smartlife.iot.smartbulb.lightingservice\": {\"get_light_state\": null}}";
     const std::string discover_payload = "{\"system\":{\"get_sysinfo\":{}}}";
     broadcast_payload(discover_payload, false);
     return;
 }
 
 void TPLinkConnector::init_udp() {
-    udp.begin(WiFi.localIP(), UDP_TPLINK_PORT);
+    if (_sock_fd >= 0) {
+        lwip_close(_sock_fd);
+    }
+
+    _sock_fd = lwip_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (_sock_fd < 0) return;
+
+    // Enable broadcast
+    int broadcast_en = 1;
+    lwip_setsockopt(_sock_fd, SOL_SOCKET, SO_BROADCAST, &broadcast_en, sizeof(broadcast_en));
+
+    // Set non-blocking so receive_udp doesn't block
+    int flags = lwip_fcntl(_sock_fd, F_GETFL, 0);
+    lwip_fcntl(_sock_fd, F_SETFL, flags | O_NONBLOCK);
+
+    // Bind to the TP-Link port on the local IP
+    struct sockaddr_in local;
+    memset(&local, 0, sizeof(local));
+    local.sin_family = AF_INET;
+    local.sin_port = htons(UDP_TPLINK_PORT);
+    local.sin_addr.s_addr = bp_wifi_get_ip_addr();
+
+    lwip_bind(_sock_fd, (struct sockaddr *)&local, sizeof(local));
 }
 
 std::string TPLinkConnector::receive_udp() {
     return receive_udp(nullptr);
 }
 
-std::string TPLinkConnector::receive_udp(IPAddress *udp_ip) {
-    int packetSize;
+std::string TPLinkConnector::receive_udp(uint32_t *udp_ip) {
+    if (_sock_fd < 0) return "";
 
-    char incomingPacket[4096];  // buffer for incoming packets
-    std::string packet_cppstr = "";  // std::string buffer for incoming packets
+    char incomingPacket[4096];
+    struct sockaddr_in src;
+    socklen_t src_len = sizeof(src);
 
-    packetSize = udp.parsePacket();
-    if (packetSize) {
-        int len = udp.read(incomingPacket, 4096);
-        if (len > 0) {
-            incomingPacket[len] = 0;
-        }
-        packet_cppstr = incomingPacket;
-        packet_cppstr = decrypt(packet_cppstr).c_str();
+    int len = lwip_recvfrom(_sock_fd, incomingPacket, sizeof(incomingPacket) - 1,
+                            0, (struct sockaddr *)&src, &src_len);
+
+    if (len <= 0) {
+        vTaskDelay(pdMS_TO_TICKS(1));
+        return "";
     }
 
+    incomingPacket[len] = 0;
+    std::string packet_cppstr(incomingPacket, len);
+    packet_cppstr = decrypt(packet_cppstr);
+
     vTaskDelay(pdMS_TO_TICKS(1));
-    if(udp_ip != nullptr)
-        *udp_ip = udp.remoteIP();
+
+    if (udp_ip != nullptr)
+        *udp_ip = src.sin_addr.s_addr;  // network-order uint32_t
+
     return packet_cppstr;
 }

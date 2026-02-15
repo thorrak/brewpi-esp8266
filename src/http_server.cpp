@@ -23,6 +23,7 @@
 #include "rest/rest_send.h"
 #include "EepromManager.h"
 #include "SettingsManager.h"
+#include "ESP_BP_WiFi.h"
 
 
 httpServer http_server;
@@ -275,7 +276,7 @@ void httpServer::processQueuedActions() {
         vTaskDelay(pdMS_TO_TICKS(500));
         upstreamSettings.setDefaults();
         upstreamSettings.storeToFilesystem();
-        WiFi.disconnect(false, true);
+        bp_wifi_disconnect(false);
         vTaskDelay(pdMS_TO_TICKS(500));
         esp_restart();
     }
@@ -1026,7 +1027,7 @@ void httpServer::init() {
     // Register 404 handler for file serving fallback
     httpd_register_err_handler(server_handle, HTTPD_404_NOT_FOUND, not_found_handler);
 
-    Log.notice("HTTP server started. Open: http://%s.local/ to view application.\r\n", WiFi.getHostname());
+    Log.notice("HTTP server started. Open: http://%s.local/ to view application.\r\n", bp_wifi_get_hostname());
 }
 
 

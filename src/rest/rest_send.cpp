@@ -113,7 +113,7 @@ sendResult restHandler::send_json_str(std::string &payload, const char *url, std
 
     send_lock = true;
 
-    if (WiFi.status() != WL_CONNECTED) {
+    if (!bp_wifi_is_connected()) {
         Log.warning("send_json_str: Wifi not connected, skipping send.\r\n");
         send_lock = false;
         return sendResult::retry;

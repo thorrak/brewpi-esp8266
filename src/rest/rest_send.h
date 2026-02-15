@@ -1,6 +1,6 @@
 #pragma once
 
-#include <WiFi.h>
+#include "ESP_BP_WiFi.h"
 #include <esp_http_client.h>
 
 #include <freertos/FreeRTOS.h>

@@ -198,7 +198,7 @@ void setup()
 
 #ifdef ENABLE_HTTP_INTERFACE
   // Wait for WiFi to fully stabilize after initial connection from captive portal
-  if(WiFi.status() == WL_CONNECTED) {
+  if(bp_wifi_is_connected()) {
     vTaskDelay(pdMS_TO_TICKS(500));
   }
   http_server.init();     // Initialize the web server

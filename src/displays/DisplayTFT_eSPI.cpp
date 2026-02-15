@@ -27,7 +27,7 @@
 
 
 // ESP32 Only
-#include <WiFi.h> // For printing the IP address
+#include "ESP_BP_WiFi.h"
 
 
 #if defined(HAS_AXP192)
@@ -242,8 +242,8 @@ void LcdDisplay::printMode(){
 void LcdDisplay::printIPAddressInfo(){
     printAtMonoChars(0, 5, "IP: ");
 
-    if(WiFi.isConnected()) {
-        printAtMonoChars(4, 5, WiFi.localIP().toString().c_str());
+    if(bp_wifi_is_connected()) {
+        printAtMonoChars(4, 5, bp_wifi_get_ip_str());
     } else {
         printAtMonoChars(4, 5, "Disconnected   ");
     }
@@ -368,7 +368,7 @@ void LcdDisplay::printWiFi(){
     printAtMonoChars(strlen(eepromManager.fetchmDNSName().c_str()), 1, ".local");
 
     printAtMonoChars(0, 3, "IP Address: ");
-    printAtMonoChars(0, 4, WiFi.localIP().toString().c_str());
+    printAtMonoChars(0, 4, bp_wifi_get_ip_str());
 }
 
 void LcdDisplay::printWiFiStartup(){
