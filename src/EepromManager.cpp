@@ -151,15 +151,16 @@ std::string EepromManager::fetchmDNSName()
 {
 	// The below loads the mDNS name from the file we saved it to (if the file exists)
 
-    if (FILESYSTEM.exists("/mdns.txt")) {
+    if (fs_exists("/mdns.txt")) {
         // The file exists - load it up
-        File dns_name_file = FILESYSTEM.open("/mdns.txt", "r");  //TODO - Break "mdns.txt" into something configurable
+        FILE* dns_name_file = fs_open("/mdns.txt", "r");
 
 		if (dns_name_file) {
 			// Assuming everything goes well, read in the mdns name
 			char buf[64];
-			size_t len = dns_name_file.readBytes(buf, sizeof(buf) - 1);
+			size_t len = fread(buf, 1, sizeof(buf) - 1, dns_name_file);
 			buf[len] = '\0';
+			fclose(dns_name_file);
 			// Trim trailing whitespace (newlines, spaces, carriage returns)
 			while (len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r' || buf[len - 1] == ' ')) {
 				buf[--len] = '\0';
@@ -190,12 +191,12 @@ std::string EepromManager::fetchmDNSName()
 
 void EepromManager::savemDNSName(const char* mdns_id)
 {
-	File dns_name_file = FILESYSTEM.open("/mdns.txt", "w");
+	FILE* dns_name_file = fs_open("/mdns.txt", "w");
 	if (dns_name_file) {
 		// If the above fails, we weren't able to open the file for writing
-		dns_name_file.println(mdns_id);
+		fprintf(dns_name_file, "%s\n", mdns_id);
+		fclose(dns_name_file);
 	}
-	dns_name_file.close();
 }
 
 #endif

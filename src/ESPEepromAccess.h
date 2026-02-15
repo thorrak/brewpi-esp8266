@@ -17,8 +17,44 @@
 
 #pragma once
 
+#include <cstdio>
+#include <cstring>
+#include <sys/stat.h>
+#include <esp_littlefs.h>
+
+// Mount point prefix for all filesystem paths
+#define FS_PREFIX "/littlefs"
+
+// Keep FILESYSTEM defined for Arduino-level code that still needs it (e.g. ESPAsyncWebServer)
 #define FILESYSTEM LittleFS
 #include <LittleFS.h>
+
+// Initialize the LittleFS filesystem via ESP-IDF VFS
+// Call once during setup(), before any file operations.
+bool filesystem_init(bool format_if_failed = true);
+
+// Check if a file exists
+static inline bool fs_exists(const char* path) {
+    char fullpath[64];
+    snprintf(fullpath, sizeof(fullpath), "%s%s", FS_PREFIX, path);
+    struct stat st;
+    return (stat(fullpath, &st) == 0);
+}
+
+// Remove a file
+static inline bool fs_remove(const char* path) {
+    char fullpath[64];
+    snprintf(fullpath, sizeof(fullpath), "%s%s", FS_PREFIX, path);
+    return (::remove(fullpath) == 0);
+}
+
+// Open a file (returns FILE*). Caller must fclose() the result.
+static inline FILE* fs_open(const char* path, const char* mode) {
+    char fullpath[64];
+    snprintf(fullpath, sizeof(fullpath), "%s%s", FS_PREFIX, path);
+    return fopen(fullpath, mode);
+}
+
 
 #include "EepromStructs.h"
 #include "Brewpi.h"  // Only needed for Config:: below
@@ -28,7 +64,7 @@ class ESPEepromAccess
 {
 private:
     static bool doesFileExist(const char* target_name) {
-        return FILESYSTEM.exists(target_name);
+        return fs_exists(target_name);
     }
 
 public:
@@ -36,13 +72,13 @@ public:
     static void zapData() {
         // This gets a bit tricky -- we can't just do FS.format because that would wipe out the mDNS name
         int i;
-        if(doesFileExist(ControlConstants::filename)) FILESYSTEM.remove(ControlConstants::filename);
-        if(doesFileExist(ControlSettings::filename)) FILESYSTEM.remove(ControlSettings::filename);
+        if(doesFileExist(ControlConstants::filename)) fs_remove(ControlConstants::filename);
+        if(doesFileExist(ControlSettings::filename)) fs_remove(ControlSettings::filename);
 
         char buf[20];
         for(i=0;i<Config::EepromFormat::MAX_DEVICES;i++) {
 			DeviceConfig::deviceFilename(buf, i);  // Get the filename from the function in the class
-            if(doesFileExist(buf)) FILESYSTEM.remove(buf);
+            if(doesFileExist(buf)) fs_remove(buf);
         }
     }
 };

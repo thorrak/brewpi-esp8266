@@ -7,8 +7,8 @@
 #include <LittleFS.h>
 #include <ESP8266mDNS.h>
 #elif defined(ESP32)
-#include <FS.h>  // Apparently this needs to be first
 #include <esp_timer.h>
+#include <esp_littlefs.h>
 #endif
 
 #include <thorlog.h>
@@ -144,8 +144,20 @@ void setup()
     // Before anything else, let's get the filesystem working. We need to start it up, and then test if the file system
     // was formatted.
   #ifndef ESP8266
-    // For ESP32
-    FILESYSTEM.begin(true);
+    // For ESP32 - mount LittleFS via ESP-IDF VFS layer using POSIX I/O
+    {
+        esp_vfs_littlefs_conf_t conf = {};
+        conf.base_path = "/littlefs";
+        conf.partition_label = "spiffs";  // Partition table CSV uses "spiffs" as the label
+        conf.format_if_mount_failed = true;
+        conf.dont_mount = false;
+        esp_err_t ret = esp_vfs_littlefs_register(&conf);
+        if (ret != ESP_OK) {
+            Serial.printf("Failed to mount LittleFS: %s\n", esp_err_to_name(ret));
+        }
+        // Also initialize Arduino LittleFS wrapper for ESPAsyncWebServer static file serving
+        FILESYSTEM.begin(true);
+    }
   #else
     // for ESP8266
     FILESYSTEM.begin();

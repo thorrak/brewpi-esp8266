@@ -158,7 +158,7 @@ void DeviceConfig::loadFromFilesystem(uint8_t devID) {
     // We start by setting the defaults, as we use them as the alternative to loaded values if the keys (or file!) don't exist
     setDefaults();
 
-    if(FILESYSTEM.exists(fname)) {
+    if(fs_exists(fname)) {
         JsonDocument json_doc = readJsonFromFile(fname);
         fromJson(json_doc);
     }

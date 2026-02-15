@@ -1,7 +1,7 @@
-#include <LittleFS.h>
-
 #include <ArduinoJson.h>
+#include <cstdlib>
 
+#include "ESPEepromAccess.h"
 #include "getGuid.h"
 #include "EepromStructs.h"
 #include "TemperatureFormats.h"
@@ -17,25 +17,29 @@ NimBLEAddress NoTiltDevice = NimBLEAddress("00:00:00:00:00:00", 1);
 
 
 void JSONSaveable::writeJsonToFile(const char *filename, const ArduinoJson::JsonDocument& json_doc) {
-    File file_out = FILESYSTEM.open(filename, "w");
+    FILE* file_out = fs_open(filename, "w");
 
     if (!file_out) {
         // If the above fails, we weren't able to open the file for writing
         return;
     }
 
-    if (serializeJson(json_doc, file_out) == 0) {
-        // Failed to write to the file
+    size_t len = measureJson(json_doc);
+    char* buf = (char*)malloc(len + 1);
+    if (buf) {
+        serializeJson(json_doc, buf, len + 1);
+        fwrite(buf, 1, len, file_out);
+        free(buf);
     }
 
-    file_out.close();
+    fclose(file_out);
 }
 
 
 ArduinoJson::JsonDocument JSONSaveable::readJsonFromFile(const char *filename) {
     JsonDocument json_doc;
 
-    File file_in = FILESYSTEM.open(filename, "r");
+    FILE* file_in = fs_open(filename, "r");
     if (!file_in) {
         // If the above fails, we weren't able to open the file for reading
         piLink.print("Failed to open file: ");
@@ -44,9 +48,19 @@ ArduinoJson::JsonDocument JSONSaveable::readJsonFromFile(const char *filename) {
         return json_doc;
     }
 
-    deserializeJson(json_doc, file_in);
+    fseek(file_in, 0, SEEK_END);
+    size_t size = ftell(file_in);
+    fseek(file_in, 0, SEEK_SET);
 
-    file_in.close();
+    char* buf = (char*)malloc(size + 1);
+    if (buf) {
+        fread(buf, 1, size, file_in);
+        buf[size] = '\0';
+        deserializeJson(json_doc, buf, size);
+        free(buf);
+    }
+
+    fclose(file_in);
     return json_doc;
 }
 

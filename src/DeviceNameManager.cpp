@@ -22,6 +22,7 @@
 #include "DeviceNameManager.h"
 #include "ESPEepromAccess.h"  // Includes filesystem headers/definition
 #include <string>
+#include <dirent.h>
 
 /**
  * \brief Set a human readable name for a device.
@@ -33,11 +34,11 @@ void DeviceNameManager::setDeviceName(const char* device, const char* name)
   char filename[32];
   DeviceNameManager::deviceNameFilename(filename, device);
 
-    File f = FILESYSTEM.open(filename, "w");
+  FILE* f = fs_open(filename, "w");
 
   if (f) {
-    f.print(name);
-    f.close();
+    fputs(name, f);
+    fclose(f);
   }
 }
 
@@ -53,15 +54,15 @@ std::string DeviceNameManager::getDeviceName(const char* device) {
   char filename[32];
   DeviceNameManager::deviceNameFilename(filename, device);
 
-    if (FILESYSTEM.exists(filename)) {
-        File f = FILESYSTEM.open(filename, "r");
-        if (f) {
-          char buf[64];
-          size_t len = f.readBytes(buf, sizeof(buf) - 1);
-          buf[len] = '\0';
-          f.close();
-          return std::string(buf);
-        }
+  if (fs_exists(filename)) {
+    FILE* f = fs_open(filename, "r");
+    if (f) {
+      char buf[64];
+      size_t len = fread(buf, 1, sizeof(buf) - 1, f);
+      buf[len] = '\0';
+      fclose(f);
+      return std::string(buf);
+    }
   }
 
   return std::string(device);
@@ -104,7 +105,7 @@ void DeviceNameManager::deleteDeviceName(const char* device) {
   char filename[32];
   DeviceNameManager::deviceNameFilename(filename, device);
 
-    FILESYSTEM.remove(filename);
+  fs_remove(filename);
 }
 
 
@@ -113,17 +114,21 @@ void DeviceNameManager::deleteDeviceName(const char* device) {
  * \brief Get list of configured device names
  */
 void DeviceNameManager::enumerateDeviceNames(JsonDocument& doc) {
-  File root = FILESYSTEM.open(filenamePrefix);
+  char fullpath[64];
+  snprintf(fullpath, sizeof(fullpath), "%s%s", FS_PREFIX, filenamePrefix);
 
-  File file = root.openNextFile();
+  DIR* dir = opendir(fullpath);
+  if (!dir) return;
 
-  while(file){
-    DeviceName dn = filenameToDeviceName(file.name());
+  struct dirent* entry;
+  while ((entry = readdir(dir)) != nullptr) {
+    // Build the path as filenamePrefix + entry name, matching what filenameToDeviceName expects
+    char entryPath[64];
+    snprintf(entryPath, sizeof(entryPath), "%s%s", filenamePrefix, entry->d_name);
+    DeviceName dn = filenameToDeviceName(entryPath);
     doc[dn.device] = dn.name;
-
-    // Move to the next file
-    file = root.openNextFile();
   }
+  closedir(dir);
 }
 
 #else
