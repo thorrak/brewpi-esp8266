@@ -22,11 +22,15 @@
 #include <inttypes.h>
 #include "Arduino.h"
 
+#ifdef ESP32
+#include <driver/i2c_master.h>
+#else
 extern "C" {
 	// So the version slintak had used Twi. I'm using wire instead.
 	//#include "Twi.h"
 #include <Wire.h>
 }
+#endif
 
 // When the display powers up, it is configured as follows:
 //
@@ -54,16 +58,42 @@ IIClcd::IIClcd(uint8_t lcd_Addr, uint8_t lcd_cols, uint8_t lcd_rows)
 	_rows = lcd_rows;
 	_backlightval = LCD_NOBACKLIGHT;
 	_displayFound = false;
+#ifdef ESP32
+	_i2c_bus = NULL;
+	_i2c_dev = NULL;
+	_i2c_bus_initialized = false;
+#endif
 }
 
 void IIClcd::scan_address() {
-//	Wire.begin();
+#ifdef ESP32
+	// Probe each address on the I2C bus
+	for (uint8_t i = 8; i < 120; i++)
+	{
+		esp_err_t err = i2c_master_probe(_i2c_bus, i, 100);
+		if (err == ESP_OK)
+		{
+			// We found the i2c device address.
+			_Addr = i;
+			vTaskDelay(pdMS_TO_TICKS(1));
+			_displayFound = true;
+
+			// Register the device on the bus at the discovered address
+			i2c_device_config_t dev_config = {};
+			dev_config.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+			dev_config.device_address = _Addr;
+			dev_config.scl_speed_hz = 400000;
+			i2c_master_bus_add_device(_i2c_bus, &dev_config, &_i2c_dev);
+			break;
+		}
+	}
+#else
 	for (byte i = 8; i < 120; i++)
 	{
 		Wire.beginTransmission(i);
 		if (Wire.endTransmission() == 0)
 		{
-			// We found the i2c device address. 
+			// We found the i2c device address.
 			_Addr = i;
 			i = 120;
 			vTaskDelay(pdMS_TO_TICKS(1));
@@ -74,6 +104,7 @@ void IIClcd::scan_address() {
 
 	Wire.setClock(1000000);                 // Set the I2C bus rate
 	Wire.setClock(400000);               // Try and reset clock rate
+#endif
 }
 
 
@@ -85,7 +116,21 @@ void IIClcd::init() {
 
 void IIClcd::init_priv()
 {
+#ifdef ESP32
+	if (!_i2c_bus_initialized) {
+		i2c_master_bus_config_t bus_config = {};
+		bus_config.i2c_port = I2C_NUM_0;
+		bus_config.sda_io_num = (gpio_num_t)IIC_SDA;
+		bus_config.scl_io_num = (gpio_num_t)IIC_SCL;
+		bus_config.clk_source = I2C_CLK_SRC_DEFAULT;
+		bus_config.glitch_ignore_cnt = 7;
+		bus_config.flags.enable_internal_pullup = true;
+		i2c_new_master_bus(&bus_config, &_i2c_bus);
+		_i2c_bus_initialized = true;
+	}
+#else
 	Wire.begin(IIC_SDA, IIC_SCL);
+#endif
 	scan_address();
 	_displayfunction = LCD_4BITMODE | LCD_1LINE | LCD_5x8DOTS;
 	begin(_cols, _rows);
@@ -301,10 +346,14 @@ void IIClcd::write4bits(uint8_t value) {
 void IIClcd::expanderWrite(uint8_t _data) {
 	if(_displayFound) {
 		uint8_t data = ((uint8_t)(_data) | _backlightval);
+#ifdef ESP32
+		i2c_master_transmit(_i2c_dev, &data, 1, 100);
+#else
 	//	twi_writeTo(_Addr, &data, 1, true, true);
 		Wire.beginTransmission(_Addr);
 		Wire.write(data);
 		Wire.endTransmission();
+#endif
 	}
 }
 

@@ -15,8 +15,6 @@
 #include <thorlog_espidf.h>
 #include "Brewpi.h"
 
-#include <Wire.h>
-
 #include "Ticks.h"
 #include "Display.h"
 #include "TempControl.h"
