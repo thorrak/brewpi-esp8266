@@ -14,7 +14,7 @@
 #include <DNSServer.h>			//Local DNS Server used for redirecting all requests to the configuration portal
 #include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 #elif defined(ESP32)
-#include <ESPmDNS.h>
+#include <mdns.h>
 #include <DNSServer.h>			//Local DNS Server used for redirecting all requests to the configuration portal
 #include <WiFiManager.h>		//https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 #include <esp_wifi.h>
@@ -64,24 +64,23 @@ bool isValidmDNSName(const char* mdns_name) {
     return true;
 }
 
-const char * mdns_servicename = "brewpi";
-
 void mdns_reset() {
     std::string mdns_id;
     mdns_id = eepromManager.fetchmDNSName();
 
-    MDNS.end();  // TODO - Determine if we still need to do this, given the addition of mDNS.update() to the loop
+    mdns_free();
 
-    if (MDNS.begin(mdns_id.c_str())) {
-        // mDNS will stop responding after awhile unless we query the specific service we want
-        MDNS.addService(mdns_servicename, "tcp", 23);
-        MDNS.addServiceTxt(mdns_servicename, "tcp", "board", CONTROLLER_TYPE);
-        MDNS.addServiceTxt(mdns_servicename, "tcp", "branch", "legacy");
-        MDNS.addServiceTxt(mdns_servicename, "tcp", "version", Config::Version::release);
-        MDNS.addServiceTxt(mdns_servicename, "tcp", "revision", FIRMWARE_REVISION);
+    if (mdns_init() == ESP_OK && mdns_hostname_set(mdns_id.c_str()) == ESP_OK) {
+        mdns_txt_item_t txt[] = {
+            {(char*)"board",    (char*)CONTROLLER_TYPE},
+            {(char*)"branch",   (char*)"legacy"},
+            {(char*)"version",  (char*)Config::Version::release},
+            {(char*)"revision", (char*)FIRMWARE_REVISION},
+        };
+        mdns_service_add(NULL, "_brewpi", "_tcp", 23, txt, sizeof(txt) / sizeof(txt[0]));
 
         // if(Config::Prometheus::enable())
-        //   MDNS.addService("brewpi_metrics", "tcp", Config::Prometheus::port);
+        //   mdns_service_add(NULL, "_brewpi_metrics", "_tcp", Config::Prometheus::port, NULL, 0);
     } else {
         // Serial.println("Error resetting mDNS responder.");
     }
