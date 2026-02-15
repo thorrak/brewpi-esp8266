@@ -25,10 +25,6 @@
 // Mount point prefix for all filesystem paths
 #define FS_PREFIX "/littlefs"
 
-// Keep FILESYSTEM defined for Arduino-level code that still needs it (e.g. ESPAsyncWebServer)
-#define FILESYSTEM LittleFS
-#include <LittleFS.h>
-
 // Initialize the LittleFS filesystem via ESP-IDF VFS
 // Call once during setup(), before any file operations.
 bool filesystem_init(bool format_if_failed = true);

@@ -39,151 +39,110 @@ const char PromServer::probeTemplate[] PROGMEM =
     R"PROM(brewpi_temperature{probe="%s"} %s
 )PROM";
 
-/**
- * \brief Storage for caching probe values
- */
 std::string PromServer::probeCache;
 
-// Initialize this as a negative so that we immediately are in an expired
-// state, otherwise you have to wait around before the first read actually
-// happens.
 ticks_seconds_t PromServer::dataLastUpdate = 0 - PromServer::cacheTime;
 
-/**
- * \brief Set up the request endpoints
- *
- * Maps paths to handler functions and starts the server.
- */
+
+// Replace %VAR% placeholders in the template string
+static void replaceVar(std::string& str, const char* var, const char* value) {
+    char placeholder[64];
+    snprintf(placeholder, sizeof(placeholder), "%%%s%%", var);
+    size_t pos = str.find(placeholder);
+    if (pos != std::string::npos) {
+        str.replace(pos, strlen(placeholder), value);
+    }
+}
+
+std::string PromServer::processTemplate() {
+    std::string result(metricsTemplate);
+
+    char buf[32];
+    snprintf(buf, sizeof(buf), "%lu", (unsigned long)ticks.seconds());
+    replaceVar(result, "UPTIME", buf);
+
+    replaceVar(result, "COOLER_STATUS", tempControl.stateIsCooling() ? "1" : "0");
+    replaceVar(result, "HEATER_STATUS", tempControl.stateIsHeating() ? "1" : "0");
+
+    replaceVar(result, "BEER_TEMP", formatProbeTemp(tempControl.getBeerTemp()).c_str());
+    replaceVar(result, "BEER_TARGET", formatProbeTemp(tempControl.getBeerSetting()).c_str());
+    replaceVar(result, "FRIDGE_TEMP", formatProbeTemp(tempControl.getFridgeTemp()).c_str());
+    replaceVar(result, "FRIDGE_TARGET", formatProbeTemp(tempControl.getFridgeSetting()).c_str());
+    replaceVar(result, "ROOM_TEMP", formatProbeTemp(tempControl.getRoomTemp()).c_str());
+
+    replaceVar(result, "PROBE_VALUES", probeValues().c_str());
+
+    return result;
+}
+
+
+esp_err_t PromServer::metricsHandler(httpd_req_t *req) {
+    std::string response = processTemplate();
+    httpd_resp_set_type(req, "text/plain");
+    return httpd_resp_send(req, response.c_str(), response.length());
+}
+
+
 void PromServer::setup() {
-  server.on("/metrics", HTTP_GET, PromServer::metrics);
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.server_port = Config::Prometheus::port;
+    config.max_uri_handlers = 4;
+    config.stack_size = 8192;
 
-  server.onNotFound(PromServer::onNotFound);
-  server.begin();
-}
-
-/**
- * \brief Return 404 for unknown requests
- * \param request - Request object
- */
-void PromServer::onNotFound(AsyncWebServerRequest *request) { request->send(404); }
-
-/**
- * \brief Handle the metrics request
- * \param request - Request object
- */
-void PromServer::metrics(AsyncWebServerRequest *request) {
-  request->send_P(200, "text/plain", metricsTemplate, PromServer::templateProcessor);
-}
-
-/**
- * \brief Supply template placeholder values
- *
- * Used by AsyncWebServer when handling the metrics response to supply values
- * for the placeholders used in the PromServer::metricsTemplate template
- * string.
- *
- * \param val - Placeholder string being replaced
- * \return Replacement value.  If a defined replacement for `val` isn't known,
- * an empty string is returned.
- */
-String PromServer::templateProcessor(const String &var) {
-  if (var == "UPTIME")
-    return String(ticks.seconds());
-
-  // Temp control state
-  if (var == "COOLER_STATUS")
-    return tempControl.stateIsCooling() ? "1" : "0";
-
-  if (var == "HEATER_STATUS")
-    return tempControl.stateIsHeating() ? "1" : "0";
-
-  if (var == "BEER_TEMP")
-    return String(formatProbeTemp(tempControl.getBeerTemp()).c_str());
-
-  if (var == "BEER_TARGET")
-    return String(formatProbeTemp(tempControl.getBeerSetting()).c_str());
-
-  if (var == "FRIDGE_TEMP")
-    return String(formatProbeTemp(tempControl.getFridgeTemp()).c_str());
-
-  if (var == "FRIDGE_TARGET")
-    return String(formatProbeTemp(tempControl.getFridgeSetting()).c_str());
-
-  if (var == "ROOM_TEMP")
-    return String(formatProbeTemp(tempControl.getRoomTemp()).c_str());
-
-  // Probe readings
-  if (var == "PROBE_VALUES")
-    return String(probeValues().c_str());
-
-  return String();
-}
-
-/**
- * \brief Format a probe value into a String
- *
- * The Prometheus format wants `NaN` to be used to indicate a missing/invalid
- * data. tempToString() uses `null`.  This method patches the output value to
- * replace `null` with `NaN`
- *
- * \param temp - Temperature value to format
- * \return String representation of temperature
- */
-std::string PromServer::formatProbeTemp(const temperature temp) {
-  char buf[10];
-  tempToString(buf, temp, Config::TempFormat::fixedPointDecimals, Config::TempFormat::maxLength);
-
-  // Prometheus wants 'NaN' for null data
-  if (strcmp(buf, "null") == 0)
-    return "NaN";
-
-  return std::string(buf);
-}
-
-/**
- * \brief Invalidate the probe values cache
- */
-void PromServer::invalidateCache() {
-  if (Config::Prometheus::enable())
-    PromServer::dataLastUpdate = 0 - PromServer::cacheTime;
-}
-
-/**
- * \brief Provide metrics strings for all probes
- *
- * Uses PromServer::probeTemplate to produce metrics for every attached temp
- * probe, even those that aren't used in the control loop. If the device has a
- * human readable name registered with DeviceNameManager, it will be reported.
- *
- * Because reading all probes on the OneWire bus takes a while, this will cache
- * the values internally.
- *
- * \see PromServer::cacheTime
- * \return Formatted metrics string
- */
-std::string PromServer::probeValues() {
-  if (ticks.timeSince(dataLastUpdate) > PromServer::cacheTime) {
-    JsonDocument doc;
-    deviceManager.rawDeviceValues(doc);
-
-    JsonArray root = doc.as<JsonArray>();
-    probeCache.clear();
-
-    for (JsonVariant probe : root) {
-      const char* devName = probe["device"].as<const char *>();
-      std::string humanName = DeviceNameManager::getDeviceName(devName);
-
-      char buffer[256];
-      sprintf_P(buffer, probeTemplate, humanName.c_str(), probe["value"].as<const char *>());
-
-      probeCache += buffer;
+    esp_err_t ret = httpd_start(&server, &config);
+    if (ret != ESP_OK) {
+        return;
     }
 
-    // Update the cache timestamp
-    dataLastUpdate = ticks.seconds();
-  }
+    const httpd_uri_t uri_metrics = {
+        .uri = "/metrics",
+        .method = HTTP_GET,
+        .handler = metricsHandler,
+        .user_ctx = nullptr
+    };
+    httpd_register_uri_handler(server, &uri_metrics);
+}
 
-  return probeCache;
+
+std::string PromServer::formatProbeTemp(const temperature temp) {
+    char buf[10];
+    tempToString(buf, temp, Config::TempFormat::fixedPointDecimals, Config::TempFormat::maxLength);
+
+    if (strcmp(buf, "null") == 0)
+        return "NaN";
+
+    return std::string(buf);
+}
+
+
+void PromServer::invalidateCache() {
+    if (Config::Prometheus::enable())
+        PromServer::dataLastUpdate = 0 - PromServer::cacheTime;
+}
+
+
+std::string PromServer::probeValues() {
+    if (ticks.timeSince(dataLastUpdate) > PromServer::cacheTime) {
+        JsonDocument doc;
+        deviceManager.rawDeviceValues(doc);
+
+        JsonArray root = doc.as<JsonArray>();
+        probeCache.clear();
+
+        for (JsonVariant probe : root) {
+            const char* devName = probe["device"].as<const char *>();
+            std::string humanName = DeviceNameManager::getDeviceName(devName);
+
+            char buffer[256];
+            snprintf(buffer, sizeof(buffer), probeTemplate, humanName.c_str(), probe["value"].as<const char *>());
+
+            probeCache += buffer;
+        }
+
+        dataLastUpdate = ticks.seconds();
+    }
+
+    return probeCache;
 }
 
 PromServer promServer;

@@ -155,12 +155,10 @@ void setup()
         if (ret != ESP_OK) {
             Serial.printf("Failed to mount LittleFS: %s\n", esp_err_to_name(ret));
         }
-        // Also initialize Arduino LittleFS wrapper for ESPAsyncWebServer static file serving
-        FILESYSTEM.begin(true);
     }
   #else
-    // for ESP8266
-    FILESYSTEM.begin();
+    // for ESP8266 - uses Arduino LittleFS
+    LittleFS.begin();
   #endif
 
   deviceManager.preloadActuatorPins();  // Preload any pin-based actuators to set their pin modes
