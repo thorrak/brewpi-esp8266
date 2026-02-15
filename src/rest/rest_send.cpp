@@ -27,6 +27,27 @@
 #endif
 
 
+#ifdef ESP32
+// Context for capturing HTTP response body via esp_http_client event handler
+struct HttpResponseCtx {
+    char* buffer;
+    size_t buffer_size;
+    size_t bytes_received;
+};
+
+static esp_err_t http_event_handler(esp_http_client_event_t *evt) {
+    HttpResponseCtx* ctx = (HttpResponseCtx*)evt->user_data;
+    if (evt->event_id == HTTP_EVENT_ON_DATA && ctx && ctx->buffer) {
+        size_t space = ctx->buffer_size - ctx->bytes_received - 1;
+        size_t copy = (evt->data_len < space) ? evt->data_len : space;
+        memcpy(ctx->buffer + ctx->bytes_received, evt->data, copy);
+        ctx->bytes_received += copy;
+        ctx->buffer[ctx->bytes_received] = '\0';
+    }
+    return ESP_OK;
+}
+#endif
+
 restHandler rest_handler; // Global data sender
 
 
@@ -89,13 +110,13 @@ sendResult restHandler::send_json_str(std::string &payload, const char *url, htt
 }
 
 sendResult restHandler::send_json_str(std::string &payload, const char *url, std::string &response, httpMethod method) {
+#ifdef ESP8266
     char auth_header[64];
     char userAgent[128];
     int httpResponseCode;
     sendResult result;
 
     send_lock = true;
-
 
     if (WiFi.status() != WL_CONNECTED) {
         Log.warning("send_json_str: Wifi not connected, skipping send.\r\n");
@@ -105,67 +126,127 @@ sendResult restHandler::send_json_str(std::string &payload, const char *url, std
 
     get_useragent(userAgent, sizeof(userAgent));
 
-    // snprintf(auth_header, sizeof(auth_header), "token %s", config.secret);
-   
     Log.info("send_json_str: Sending %s to %s\r\n", payload.c_str(), url);
 
     vTaskDelay(pdMS_TO_TICKS(1));  // Yield before we lock up the radio
 
-    // TODO - Determine if we can get rid of the call to new
-    // WiFiClientSecure *client = new WiFiClientSecure;
     WiFiClient client;
-    if(true) {
-        // client.setInsecure();
-        {
-            // Add a scoping block for HTTPClient https to make sure it is destroyed before WiFiClientSecure *client is 
-            HTTPClient http;
+    {
+        HTTPClient http;
 
-            http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
-#ifndef ESP8266
-            http.setConnectTimeout(6000);
-#endif
-            http.setReuse(false);
+        http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
+        http.setReuse(false);
 
-            if (http.begin(client, url)) {
-                http.addHeader("Content-Type", "application/json");
-                // http.addHeader("Authorization", auth_header);
-                http.setUserAgent(userAgent);
+        if (http.begin(client, url)) {
+            http.addHeader("Content-Type", "application/json");
+            http.setUserAgent(userAgent);
 
-                // Use whatever method we were passed
-                httpResponseCode = http.sendRequest(httpMethodToString(method), payload.c_str());
+            httpResponseCode = http.sendRequest(httpMethodToString(method), payload.c_str());
 
-                {
-                    String tmp = http.getString();
-                    response = std::string(tmp.c_str(), tmp.length());
-                }
-
-                if (httpResponseCode < HTTP_CODE_OK || httpResponseCode > HTTP_CODE_NO_CONTENT) {
-                    Log.error("send_json_str: Send failed (%d): %s. Response:\r\n%s\r\n",
-                        httpResponseCode,
-                        http.errorToString(httpResponseCode).c_str(),
-                        http.getString().c_str());
-                    // Log.error("send_json_str: Send failed (%d): %s. Response:\r\n%s\r\n",
-                    //     httpResponseCode,
-                    //     http.errorToString(httpResponseCode).c_str(),
-                    //     http.getString().c_str());
-                    result = sendResult::failure;
-                } else {
-                    Log.info("send_json_str: success!\r\n");
-                    // Log.verbose("send_json_str: Response:\r\n%s\r\n",
-                    //     http.getString().c_str());
-                    result = sendResult::success;
-                }
-                http.end();
-            } else {
-                Log.error("send_json_str: Unable to create connection\r\n");
-                result = sendResult::failure;
+            {
+                String tmp = http.getString();
+                response = std::string(tmp.c_str(), tmp.length());
             }
+
+            if (httpResponseCode < HTTP_CODE_OK || httpResponseCode > HTTP_CODE_NO_CONTENT) {
+                Log.error("send_json_str: Send failed (%d): %s. Response:\r\n%s\r\n",
+                    httpResponseCode,
+                    http.errorToString(httpResponseCode).c_str(),
+                    http.getString().c_str());
+                result = sendResult::failure;
+            } else {
+                Log.info("send_json_str: success!\r\n");
+                result = sendResult::success;
+            }
+            http.end();
+        } else {
+            Log.error("send_json_str: Unable to create connection\r\n");
+            result = sendResult::failure;
         }
-        // delete client;
     }
 
     send_lock = false;
     return result;
+#else  // ESP32
+    char userAgent[128];
+    sendResult result;
+
+    send_lock = true;
+
+    if (WiFi.status() != WL_CONNECTED) {
+        Log.warning("send_json_str: Wifi not connected, skipping send.\r\n");
+        send_lock = false;
+        return sendResult::retry;
+    }
+
+    get_useragent(userAgent, sizeof(userAgent));
+
+    Log.info("send_json_str: Sending %s to %s\r\n", payload.c_str(), url);
+
+    vTaskDelay(pdMS_TO_TICKS(1));  // Yield before we lock up the radio
+
+    // Buffer for capturing the HTTP response body
+    static constexpr size_t RESPONSE_BUF_SIZE = 2048;
+    char response_buf[RESPONSE_BUF_SIZE];
+    HttpResponseCtx response_ctx = { response_buf, RESPONSE_BUF_SIZE, 0 };
+
+    // Map our internal httpMethod enum to esp_http_client method
+    esp_http_client_method_t esp_method;
+    switch (method) {
+        case httpMethod::HTTP_PUT:    esp_method = HTTP_METHOD_PUT;    break;
+        case httpMethod::HTTP_POST:   esp_method = HTTP_METHOD_POST;   break;
+        case httpMethod::HTTP_PATCH:  esp_method = HTTP_METHOD_PATCH;  break;
+        case httpMethod::HTTP_DELETE: esp_method = HTTP_METHOD_DELETE; break;
+        case httpMethod::HTTP_GET:
+        default:                      esp_method = HTTP_METHOD_GET;    break;
+    }
+
+    esp_http_client_config_t config = {};
+    config.url = url;
+    config.method = esp_method;
+    config.event_handler = http_event_handler;
+    config.user_data = &response_ctx;
+    config.timeout_ms = 6000;
+    config.disable_auto_redirect = false;
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    if (client == nullptr) {
+        Log.error("send_json_str: Unable to create esp_http_client\r\n");
+        send_lock = false;
+        return sendResult::failure;
+    }
+
+    esp_http_client_set_header(client, "Content-Type", "application/json");
+    esp_http_client_set_header(client, "User-Agent", userAgent);
+
+    if (esp_method != HTTP_METHOD_GET && !payload.empty()) {
+        esp_http_client_set_post_field(client, payload.c_str(), payload.length());
+    }
+
+    esp_err_t err = esp_http_client_perform(client);
+
+    if (err == ESP_OK) {
+        int status_code = esp_http_client_get_status_code(client);
+        response.assign(response_buf, response_ctx.bytes_received);
+
+        if (status_code < 200 || status_code > 204) {
+            Log.error("send_json_str: Send failed (%d). Response:\r\n%s\r\n",
+                status_code, response_buf);
+            result = sendResult::failure;
+        } else {
+            Log.info("send_json_str: success!\r\n");
+            result = sendResult::success;
+        }
+    } else {
+        Log.error("send_json_str: HTTP request failed: %s\r\n", esp_err_to_name(err));
+        result = sendResult::failure;
+    }
+
+    esp_http_client_cleanup(client);
+
+    send_lock = false;
+    return result;
+#endif
 }
 
 

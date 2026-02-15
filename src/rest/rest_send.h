@@ -5,14 +5,12 @@
 #if defined(ESP8266)
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
-#elif defined(ESP32)
-#include <WiFi.h>
-#include <HTTPClient.h>
-#endif
-
-// #include <WiFiMulti.h>
 #include <WiFiClient.h>
 #include <WiFiClientSecure.h>
+#elif defined(ESP32)
+#include <WiFi.h>
+#include <esp_http_client.h>
+#endif
 #include <freertos/FreeRTOS.h>
 #include <freertos/timers.h>
 #include <string>
@@ -159,9 +157,11 @@ private:
     sendResult send_json_str(std::string &payload, const char *url, std::string &response, httpMethod method);
     void get_useragent(char *ua, size_t size);
 
+#ifdef ESP8266
     HTTPClient http;
     WiFiClient client;
     WiFiClientSecure secureClient;
+#endif
 };
 
 
