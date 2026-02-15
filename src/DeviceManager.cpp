@@ -812,7 +812,7 @@ inline void DeviceManager::readTempSensorValue(DeviceHardware hw_type, DeviceCon
 
 	tempToString(out, temp, 3, 9);
 #else
-	strcpy_P(out, PSTR("0.00"));
+	strcpy(out, "0.00");
 #endif
 }
 
@@ -1162,13 +1162,13 @@ void UpdateDeviceState(DeviceDisplay& dd, DeviceConfig& dc, char* val)
 		((Actuator*)*ppv)->setActive(dd.write!=0);
 	} else if (dd.value==1) {		// read values
 		if (dt==DEVICETYPE_SWITCH_SENSOR) {
-			sprintf_P(val, STR_FMT_U, (unsigned int) ((SwitchSensor*)*ppv)->sense()!=0); // cheaper than itoa, because it overlaps with vsnprintf
+			sprintf(val, STR_FMT_U, (unsigned int) ((SwitchSensor*)*ppv)->sense()!=0); // cheaper than itoa, because it overlaps with vsnprintf
 		} else if (dt==DEVICETYPE_TEMP_SENSOR) {
 			BasicTempSensor& s = unwrapSensor(dc.deviceFunction, *ppv);
 			temperature temp = s.read();
 			tempToString(val, temp, 3, 9);
 		} else if (dt==DEVICETYPE_SWITCH_ACTUATOR) {
-			sprintf_P(val, STR_FMT_U, (unsigned int) ((Actuator*)*ppv)->isActive()!=0);
+			sprintf(val, STR_FMT_U, (unsigned int) ((Actuator*)*ppv)->isActive()!=0);
 		}
 	}
 }

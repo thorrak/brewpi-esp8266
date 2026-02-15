@@ -103,7 +103,7 @@ class Display{
 	// print the current state on the last line of the LCD
 	DISPLAY_METHOD void printState() DISPLAY_METHOD_PURE_VIRTUAL;
 
-	DISPLAY_METHOD void printAt_P(int x, int y, const char* text) DISPLAY_METHOD_PURE_VIRTUAL;
+	DISPLAY_METHOD void printAt(int x, int y, const char* text) DISPLAY_METHOD_PURE_VIRTUAL;
 	
 	DISPLAY_METHOD void getLine(uint8_t lineNumber, char * buffer) DISPLAY_METHOD_PURE_VIRTUAL;
 	
@@ -161,7 +161,7 @@ public:
 	// print the current state on the last line of the LCD
 	DISPLAY_METHOD void printState(){}
 
-	DISPLAY_METHOD void printAt_P(uint8_t x, uint8_t y, const char* text) {}
+	DISPLAY_METHOD void printAt(uint8_t x, uint8_t y, const char* text) {}
 		
 	DISPLAY_METHOD void getLine(uint8_t lineNumber, char * buffer) {
 		for (int i=0; i<20; i++)

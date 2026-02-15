@@ -361,12 +361,3 @@ void IIClcd::printSpacesToRestOfLine() {
 		print(' ');
 	}
 }
-
-
-#ifndef print_P_inline
-void IIClcd::print_P(const char * str) { // print a string stored in PROGMEM
-	char buf[21]; // create buffer in RAM
-	strcpy_P(buf, str); // copy string to RAM
-	print(buf); // print from RAM
-}
-#endif

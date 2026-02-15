@@ -263,32 +263,13 @@ public:
     }
   }
 
-  // TODO - Come back and remove this
   /**
    * \brief Print a C++ string
    */
   void print(const std::string &out) { print(out.c_str()); }
 
   /**
-   * \brief A printf-like interface (PROGMEM format string)
-   *
-   * On ESP32 PROGMEM is a no-op, so this behaves identically to
-   * print_fmt().  Kept for source compatibility with call sites that
-   * use PSTR().
-   *
-   * \param fmt - sprintf format string
-   */
-  void print_P(const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    vsnprintf(printfBuff, Config::PiLink::printfBufferSize, fmt, args);
-    va_end(args);
-
-    print(printfBuff);
-  }
-
-  /**
-   * \brief A printf-like interface (RAM format string)
+   * \brief A printf-like interface
    *
    * \param fmt - sprintf format string
    */

@@ -142,7 +142,7 @@ volatile bool RotaryEncoder::pushFlag;
 #define HS_R_START_M 0x3
 #define HS_R_CW_BEGIN_M 0x4
 #define HS_R_CCW_BEGIN_M 0x5
-const uint8_t PROGMEM hs_ttable[7][4] = {
+const uint8_t hs_ttable[7][4] = {
 	// R_START (00)
 	{HS_R_START_M,            HS_R_CW_BEGIN,     HS_R_CCW_BEGIN,  R_START},
 	// HS_R_CCW_BEGIN
@@ -166,7 +166,7 @@ const uint8_t PROGMEM hs_ttable[7][4] = {
 #define R_CCW_FINAL 0x5
 #define R_CCW_NEXT 0x6
 
-const uint8_t PROGMEM ttable[7][4] = {
+const uint8_t ttable[7][4] = {
 	// R_START
 	{R_START,    R_CW_BEGIN,  R_CCW_BEGIN, R_START},
 	// R_CW_FINAL
@@ -238,10 +238,10 @@ void RotaryEncoder::process(){
 
 	// Determine new state from the pins and state table.
 	if(tempControl.cc.rotaryHalfSteps){
-		state = pgm_read_byte(&(hs_ttable[state & 0xf][pinstate]));	
+		state = hs_ttable[state & 0xf][pinstate];
 	}
 	else{
-		state = pgm_read_byte(&(ttable[state & 0xf][pinstate]));	
+		state = ttable[state & 0xf][pinstate];
 	}
 	
 	// Get emit bits, ie the generated event.

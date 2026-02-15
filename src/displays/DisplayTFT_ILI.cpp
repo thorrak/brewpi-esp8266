@@ -278,7 +278,7 @@ uint8_t LcdDisplay::printTime(uint16_t time) {
 #if DISPLAY_TIME_HMS  // 96 bytes more space required.
     unsigned int minutes = time/60;
     unsigned int hours = minutes/60;
-    int stringLength = sprintf_P(timeString, PSTR("%dh%02dm%02ds"), hours, minutes%60, time%60);
+    int stringLength = sprintf(timeString, "%dh%02dm%02ds", hours, minutes%60, time%60);
     char * printString = timeString;
     if(!hours){
         printString = &timeString[2];
@@ -290,7 +290,7 @@ uint8_t LcdDisplay::printTime(uint16_t time) {
 
 #else
 #warning "This has not been tested"
-    int stringLength = sprintf_P(timeString, STR_FMT_U, (unsigned int)time);
+    int stringLength = sprintf(timeString, STR_FMT_U, (unsigned int)time);
     printAt(20-stringLength, 3, timeString);
     tft->print(timeString);
     return stringLength;
@@ -648,7 +648,7 @@ void LcdDisplay::getLine(uint8_t lineNumber, char * buffer) {
                     char timeString[10];
                     unsigned int minutes = time/60;
                     unsigned int hours = minutes/60;
-                    int stringLength = sprintf_P(timeString, PSTR("%dh%02dm%02d"), hours, minutes%60, time%60);
+                    int stringLength = sprintf(timeString, "%dh%02dm%02d", hours, minutes%60, time%60);
                     char * printString = timeString;
                     if(!hours){
                         printString = &timeString[2];

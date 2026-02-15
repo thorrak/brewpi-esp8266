@@ -11,7 +11,7 @@
 #include <string>
 #include <cstring>
 
-const char PromServer::metricsTemplate[] PROGMEM =
+const char PromServer::metricsTemplate[] =
     R"PROM(# HELP brewpi_uptime_seconds Number of seconds since the last hardware reset
 # TYPE brewpi_uptime_seconds counter
 brewpi_uptime_seconds %UPTIME%
@@ -35,7 +35,7 @@ brewpi_temperature{probe="room"} %ROOM_TEMP%
 %PROBE_VALUES%
 )PROM";
 
-const char PromServer::probeTemplate[] PROGMEM =
+const char PromServer::probeTemplate[] =
     R"PROM(brewpi_temperature{probe="%s"} %s
 )PROM";
 

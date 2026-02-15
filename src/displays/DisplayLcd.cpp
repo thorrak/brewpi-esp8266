@@ -44,15 +44,15 @@ LcdDriver LcdDisplay::lcd(0x27, Config::Lcd::columns, Config::Lcd::lines);  // N
 // LcdDriver LcdDisplay::lcd;
 
 // Constant strings used multiple times
-static const char STR_Beer_[] PROGMEM = "Beer ";
-static const char STR_Fridge_[] PROGMEM = "Fridge ";
-static const char STR_Const_[] PROGMEM = "Const.";
-static const char STR_Cool[] PROGMEM = "Cool";
-static const char STR_Heat[] PROGMEM = "Heat";
-static const char STR_ing_for[] PROGMEM = "ing for";
-static const char STR_Wait_to_[] PROGMEM = "Wait to ";
-static const char STR__time_left[] PROGMEM = " time left";
-static const char STR_empty_string[] PROGMEM = "";
+static const char STR_Beer_[] = "Beer ";
+static const char STR_Fridge_[] = "Fridge ";
+static const char STR_Const_[] = "Const.";
+static const char STR_Cool[] = "Cool";
+static const char STR_Heat[] = "Heat";
+static const char STR_ing_for[] = "ing for";
+static const char STR_Wait_to_[] = "Wait to ";
+static const char STR__time_left[] = " time left";
+static const char STR_empty_string[] = "";
 
 bool toggleBacklight;
 
@@ -180,7 +180,7 @@ void LcdDisplay::printTemperatureAt(uint8_t x, uint8_t y, temperature temp){
  */
 void LcdDisplay::printTemperature(temperature temp){
 	if (temp==INVALID_TEMP) {
-		lcd.print_P(PSTR(" --.-"));
+		lcd.print(" --.-");
 		return;
 	}
 	char tempString[9];
@@ -196,9 +196,9 @@ void LcdDisplay::printTemperature(temperature temp){
  * \brief Print the stationary text on the lcd.
  */
 void LcdDisplay::printStationaryText(){
-	printAt_P(0, 0, PSTR("Mode"));
-	printAt_P(0, 1, STR_Beer_);
-	printAt_P(0, 2, (flags & LCD_FLAG_DISPLAY_ROOM) ?  PSTR("Room  ") : STR_Fridge_);
+	printAt(0, 0, "Mode");
+	printAt(0, 1, STR_Beer_);
+	printAt(0, 2, (flags & LCD_FLAG_DISPLAY_ROOM) ?  "Room  " : STR_Fridge_);
 	printDegreeUnit(18, 1);
 	printDegreeUnit(18, 2);
 }
@@ -215,13 +215,7 @@ void LcdDisplay::printDegreeUnit(uint8_t x, uint8_t y){
 	lcd.write(tempControl.cc.tempFormat);
 }
 
-void LcdDisplay::printAt_P(uint8_t x, uint8_t y, const char* text){
-	lcd.setCursor(x, y);
-	lcd.print_P(text);
-}
-
-
-void LcdDisplay::printAt(uint8_t x, uint8_t y, char* text){
+void LcdDisplay::printAt(uint8_t x, uint8_t y, const char* text){
 	lcd.setCursor(x, y);
 	lcd.print(text);
 }
@@ -232,25 +226,25 @@ void LcdDisplay::printMode(){
 	// Factoring prints out of switch has negative effect on code size in this function
 	switch(tempControl.getMode()){
     case Modes::fridgeConstant:
-			lcd.print_P(STR_Fridge_);
-			lcd.print_P(STR_Const_);
+			lcd.print(STR_Fridge_);
+			lcd.print(STR_Const_);
 			break;
     case Modes::beerConstant:
-			lcd.print_P(STR_Beer_);
-			lcd.print_P(STR_Const_);
+			lcd.print(STR_Beer_);
+			lcd.print(STR_Const_);
 			break;
     case Modes::beerProfile:
-			lcd.print_P(STR_Beer_);
-			lcd.print_P(PSTR("Profile"));
+			lcd.print(STR_Beer_);
+			lcd.print("Profile");
 			break;
     case Modes::off:
-			lcd.print_P(PSTR("Off"));
+			lcd.print("Off");
 			break;
     case Modes::test:
-			lcd.print_P(PSTR("** Testing **"));
+			lcd.print("** Testing **");
 			break;
 		default:
-			lcd.print_P(PSTR("Invalid mode"));
+			lcd.print("Invalid mode");
 			break;
 	}
 	lcd.printSpacesToRestOfLine();
@@ -267,7 +261,7 @@ void LcdDisplay::printState(){
 		const char * part2 = STR_empty_string;
 		switch (state){
 			case IDLE:
-				part1 = PSTR("Idl");
+				part1 = "Idl";
 				part2 = STR_ing_for;
 				break;
 			case WAITING_TO_COOL:
@@ -279,7 +273,7 @@ void LcdDisplay::printState(){
 				part2 = STR_Heat;
 				break;
 			case WAITING_FOR_PEAK_DETECT:
-				part1 = PSTR("Waiting for peak");
+				part1 = "Waiting for peak";
 				break;
 			case COOLING:
 				part1 = STR_Cool;
@@ -298,17 +292,17 @@ void LcdDisplay::printState(){
 				part2 = STR__time_left;
 				break;
 			case DOOR_OPEN:
-				part1 = PSTR("Door open");
+				part1 = "Door open";
 				break;
 			case STATE_OFF:
-				part1 = PSTR("Temp. control OFF");
+				part1 = "Temp. control OFF";
 				break;
 			default:
-				part1 = PSTR("Unknown status!");
+				part1 = "Unknown status!";
 				break;
 		}
-		printAt_P(0, 3, part1);
-		lcd.print_P(part2);		
+		printAt(0, 3, part1);
+		lcd.print(part2);		
 		lcd.printSpacesToRestOfLine();
 	}
 	uint16_t sinceIdleTime = tempControl.timeSinceIdle();
@@ -333,7 +327,7 @@ void LcdDisplay::printState(){
 #if DISPLAY_TIME_HMS  // 96 bytes more space required. 
 		unsigned int minutes = time/60;		
 		unsigned int hours = minutes/60;
-		int stringLength = sprintf_P(timeString, PSTR("%dh%02dm%02d"), hours, minutes%60, time%60);
+		int stringLength = sprintf(timeString, "%dh%02dm%02d", hours, minutes%60, time%60);
 		char * printString = timeString;
 		if(!hours){
 			printString = &timeString[2];
@@ -341,7 +335,7 @@ void LcdDisplay::printState(){
 		}
 		printAt(20-stringLength, 3, printString);
 #else
-		int stringLength = sprintf_P(timeString, STR_FMT_U, (unsigned int)time);
+		int stringLength = sprintf(timeString, STR_FMT_U, (unsigned int)time);
 		printAt(20-stringLength, 3, timeString);
 #endif		
 	}

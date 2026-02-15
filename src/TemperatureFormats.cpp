@@ -56,7 +56,7 @@ char * strchrnul(const char *s, int c_in)
  */
 char * tempToString(char * s, long_temperature rawValue, uint8_t numDecimals, uint8_t maxLength){
 	if(rawValue == INVALID_TEMP){
-		strcpy_P(s, PSTR("null"));
+		strcpy(s, "null");
 		return s;
 	}
 	rawValue = convertFromInternalTemp(rawValue);
@@ -92,14 +92,6 @@ char * fixedPointToString(char * s, temperature rawValue, uint8_t numDecimals, u
 	return fixedPointToString(s, long_temperature(rawValue), numDecimals, maxLength);
 }
 
-// this gets rid of snprintf_P
-void mysnprintf_P(char* buf, int len, const char* fmt, ...)
-{
-	va_list args;
-	va_start (args, fmt );
-	vsnprintf_P(buf, len, fmt, args);
-	va_end (args);
-}
 
 
 /**
@@ -127,15 +119,15 @@ char * fixedPointToString(char * s, long_temperature rawValue, uint8_t numDecima
 	switch (numDecimals)
 	{
 		case 1:
-			fmt = PSTR("%d.%01d");
+			fmt = "%d.%01d";
 			scale = 10;
 			break;
 		case 2:
-			fmt = PSTR("%d.%02d");
+			fmt = "%d.%02d";
 			scale = 100;
 			break;
 		default:
-			fmt = PSTR("%d.%03d");
+			fmt = "%d.%03d";
 			scale = 1000;
 	}
 	fracPart = ((rawValue & TEMP_FIXED_POINT_MASK) * scale + TEMP_FIXED_POINT_SCALE/2) >> TEMP_FIXED_POINT_BITS; // add 256 for rounding
@@ -144,9 +136,9 @@ char * fixedPointToString(char * s, long_temperature rawValue, uint8_t numDecima
 		fracPart = 0;
 	}
 	if(negative)
-		mysnprintf_P(&s[1], maxLength-1, fmt,  intPart, fracPart);
+		snprintf(&s[1], maxLength-1, fmt,  intPart, fracPart);
 	else
-		mysnprintf_P(&s[0], maxLength, fmt,  intPart, fracPart);
+		snprintf(&s[0], maxLength, fmt,  intPart, fracPart);
 	return s;
 }
 

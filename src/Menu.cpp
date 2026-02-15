@@ -84,7 +84,7 @@ bool blinkLoop(
 
 void clearSettingText() {
 #ifdef BREWPI_IIC
-	display.printAt_P(0, rotaryEncoder.read(), STR_6SPACES);
+	display.printAt(0, rotaryEncoder.read(), STR_6SPACES);
 #endif
 }
 
@@ -127,7 +127,7 @@ void changedMode() {
 
 void clearMode() {
 #ifdef BREWPI_IIC
-	display.printAt_P(7, 0, PSTR("             ")); // print 13 spaces
+	display.printAt(7, 0, "             "); // print 13 spaces
 #endif
 }
 
@@ -188,7 +188,7 @@ void pickTempSetting(ReadTemp readTemp, WriteTemp writeTemp, const char* tempNam
 				rotaryEncoder.resetPushed();
 				writeTemp(startVal);
 				char tempString[9];				
-				printAnnoation(PSTR("%S temp set to %s in Menu."), tempName, tempToString(tempString,startVal,1,9));
+				printAnnoation("%s temp set to %s in Menu.", tempName, tempToString(tempString,startVal,1,9));
 				return;
 			}
 		}	
@@ -200,7 +200,7 @@ void pickTempSetting(ReadTemp readTemp, WriteTemp writeTemp, const char* tempNam
 			}
 			if(blinkTimer == 128){
 #ifdef BREWPI_IIC
-				display.printAt_P(12, row, STR_6SPACES); // only 5 needed, but 6 is okay to and lets us re-use the string
+				display.printAt(12, row, STR_6SPACES); // only 5 needed, but 6 is okay to and lets us re-use the string
 #endif
 			}
 			blinkTimer++;
@@ -212,12 +212,12 @@ void pickTempSetting(ReadTemp readTemp, WriteTemp writeTemp, const char* tempNam
 
 void Menu::pickFridgeSetting(){
 	// TODO - Fix this
-//	pickTempSetting(tempControl.getFridgeSetting, tempControl.setFridgeTemp, PSTR("Fridge"), piLink.printFridgeAnnotation, 2);
+//	pickTempSetting(tempControl.getFridgeSetting, tempControl.setFridgeTemp, "Fridge", piLink.printFridgeAnnotation, 2);
 }
 
 void Menu::pickBeerSetting(){
 	// TODO - Fix This
-//	pickTempSetting(tempControl.getBeerSetting, tempControl.setBeerTemp, PSTR("Beer"), piLink.printBeerAnnotation, 1);
+//	pickTempSetting(tempControl.getBeerSetting, tempControl.setBeerTemp, "Beer", piLink.printBeerAnnotation, 1);
 }
 
 

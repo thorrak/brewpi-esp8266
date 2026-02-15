@@ -114,12 +114,6 @@ class OLEDFourBit {
 
 	void print(char c) { write(static_cast<uint8_t>(c)); }
 
-	size_t print_P(const char * str) { // print a string stored in PROGMEM
-		char buf[21]; // create buffer in RAM
-		strlcpy(buf, str, 20); // ESP32 has no concept of PROGMEM - we're good
-		return print(buf); // print from RAM
-	}
-	
 	// copy a line from the shadow copy to a string buffer and correct the degree sign
 	void getLine(uint8_t lineNumber, char * buffer); 
 	

@@ -80,7 +80,7 @@ void SettingLoader::processSettingKeypair(JsonPair kv) {
       // reprint stationary text to update to right degree unit
       display.printStationaryText();
     } else {
-      piLink.print_P(PSTR("Invalid temp format \"%c\" (0x%02X)"), format, format);
+      piLink.print_fmt("Invalid temp format \"%c\" (0x%02X)", format, format);
       piLink.printNewLine();
     }
   }

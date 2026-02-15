@@ -182,7 +182,7 @@ void CommandProcessor::receiveCommand() {
  * \param inByte - The received command
  */
 void CommandProcessor::invalidCommand(const char inByte) {
-  piLink.print_P(PSTR("Invalid command received \"%c\" (0x%02X)"), inByte, inByte);
+  piLink.print_fmt("Invalid command received \"%c\" (0x%02X)", inByte, inByte);
   piLink.printNewLine();
 }
 
@@ -198,7 +198,7 @@ void CommandProcessor::invalidCommand(const char inByte) {
  * \param message - An message explaining why the command isn't implemented.
  */
 void CommandProcessor::commandNotImplemented(const char command, const char* message) {
-  piLink.print_P(PSTR("Command \"%c\" not implemented. %s"), command, message);
+  piLink.print_fmt("Command \"%c\" not implemented. %s", command, message);
   piLink.printNewLine();
 }
 

@@ -69,12 +69,6 @@ class NullLcdDriver {
 
 	void print(char c) { write(static_cast<uint8_t>(c)); }
 
-	void print_P(const char * str){ // print a string stored in PROGMEM
-		char buf[21]; // create buffer in RAM
-		strcpy_P(buf, str); // copy string to RAM
-		print(buf); // print from RAM
-	}
-        
 	// copy a line from the shadow copy to a string buffer and correct the degree sign
 	void getLine(uint8_t lineNumber, char * buffer); 
 	

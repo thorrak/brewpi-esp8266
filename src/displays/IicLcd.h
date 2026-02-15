@@ -104,18 +104,6 @@ public:
 
 	void print(char c) { write(static_cast<uint8_t>(c)); }
 
-#define print_P_inline 1
-#ifdef print_P_inline
-	// print a string stored in PROGMEM
-	void print_P(const char * str) {
-		char buf[21]; // create buffer in RAM
-		strcpy_P(buf, str); // copy string to RAM
-		print(buf); // print from RAM
-	}
-#else
-	void print_P(const char * str);
-#endif
-
 	void getLine(uint8_t lineNumber, char * buffer);
 
 	//void readContent(void); // read the content from the display to the shadow copy buffer
