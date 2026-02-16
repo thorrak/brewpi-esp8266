@@ -418,7 +418,7 @@ DeviceDefinition DeviceManager::readJsonIntoDeviceDef(const JsonDocument& doc) {
 	if(doc[DeviceDefinitionKeys::calibrateadjust].is<double>()) {
 		temperature tempDiff = 0;
 		char buff[10];
-		dtostrf(doc[DeviceDefinitionKeys::calibrateadjust].as<double>(), 4, 6, buff);
+		snprintf(buff, sizeof(buff), "%.6f", doc[DeviceDefinitionKeys::calibrateadjust].as<double>());
 		tempDiff = stringToTempDiff(buff);
 		dev.calibrationAdjust = fixed4_4(tempDiff >> (TEMP_FIXED_POINT_BITS - TEMP_CALIBRATION_OFFSET_PRECISION));
 	} else if(doc[DeviceDefinitionKeys::calibrateadjust].is<const char *>()) {
@@ -694,8 +694,12 @@ void DeviceManager::serializeJsonDevice(JsonDocument& doc, device_slot_t slot, D
 	JsonDocument deviceObj;
 	config.toJson(deviceObj);
 
-	if(strlen(value) > 0)
-		deviceObj[DeviceDefinitionKeys::value] = String(value);  // NOTE - value must not be const char* or ArduinoJson will not copy the value - just link it
+	if(strlen(value) > 0) {
+		// Use a local copy so ArduinoJson copies the value rather than just linking the pointer
+		char val_copy[32];
+		strlcpy(val_copy, value, sizeof(val_copy));
+		deviceObj[DeviceDefinitionKeys::value] = val_copy;
+	}
 
 	deviceObj[DeviceDefinitionKeys::index] = slot;
 

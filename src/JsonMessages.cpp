@@ -21,7 +21,7 @@ void versionInfoJson(JsonDocument &doc) {
   doc["c"] = Config::Version::git_tag;
   doc["s"] = BREWPI_STATIC_CONFIG;
   doc["y"] = BREWPI_SIMULATE;
-  doc["b"] = String(BREWPI_BOARD);
+  doc["b"] = (int)BREWPI_BOARD;
   doc["l"] = BREWPI_LOG_MESSAGES_VERSION;
   doc["e"] = FIRMWARE_REVISION;
 

@@ -20,6 +20,12 @@
 
 #pragma once
 
+#include <cmath>
+
+#ifndef TWO_PI
+#define TWO_PI (2.0 * M_PI)
+#endif
+
 #include "Brewpi.h"
 #include "TempSensorExternal.h"
 #include "Logger.h"
@@ -52,6 +58,10 @@
 
 #include "limits.h"
 #include "TempControl.h"
+
+// Forward declare the project's random(long) from Random.cpp
+// (distinct from stdlib's random(void))
+long random(long howbig);
 
 /**
  * Round a value to the nearest multiple of a quantity.
@@ -293,7 +303,7 @@ private:
 	}
 	
 	double noise() {
-		return sensorNoise==0.0 ? 0.0 : random(sensorNoise*1000.0)/1000.0;
+		return sensorNoise==0.0 ? 0.0 : random((long)(sensorNoise*1000.0))/1000.0;
 	}
 
 

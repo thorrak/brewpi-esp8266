@@ -7,17 +7,15 @@
 
 #pragma once
 
-#ifdef ARDUINO
-
 #include "Brewpi.h"
 #include "FastDigitalPin.h"
 #include "Pins.h"
 #include <driver/gpio.h>
 
-/* A SwitchSensor whose state is provided by a hardware pin. 
+/* A SwitchSensor whose state is provided by a hardware pin.
   By using a template, the compiler can inline and optimize the call to digitalRead to a single instruction.
 */
-template<uint8_t pin, bool invert, bool internalPullup> 
+template<uint8_t pin, bool invert, bool internalPullup>
 class DigitalConstantPinSensor : public SwitchSensor
 {
 	public:
@@ -38,9 +36,7 @@ class DigitalPinSensor : public SwitchSensor
 private:
 	bool invert;
 	uint8_t pin;
-	
-	
-	
+
 public:
 
 	DigitalPinSensor(uint8_t pin, bool invert)
@@ -55,8 +51,6 @@ public:
 
 	virtual bool sense() {
 		return gpio_get_level((gpio_num_t)pin) ^ invert;
-	}	
+	}
 };
-
-#endif
 

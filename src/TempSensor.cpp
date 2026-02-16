@@ -22,6 +22,9 @@
 #include "PiLink.h"
 #include "Ticks.h"
 
+#include <algorithm>
+using std::min;
+
 
 /**
  * \brief Initialize the temperature filters

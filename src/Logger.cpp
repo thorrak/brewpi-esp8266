@@ -34,26 +34,38 @@ void Logger::logMessageVaArg(const char type, const LOG_ID_TYPE errorID, const c
   JsonDocument doc;
 
 	va_list args;
-  doc["logType"] = String(type);
+  { char typeStr[2] = { type, '\0' }; doc["logType"] = typeStr; }
   doc["logID"] = errorID;
   JsonArray varArray = doc["V"].to<JsonArray>();
 
 	va_start (args, varTypes);
 	uint8_t index = 0;
-	char buf[9];
+	char buf[13];
 	while(varTypes[index]){
 		switch(varTypes[index]){
 			case 'd': // integer, signed or unsigned
         varArray.add(va_arg(args, int));
 				break;
 			case 's': // string
-        varArray.add(String(va_arg(args, char*)));
+			{
+				char str_copy[64];
+				strlcpy(str_copy, va_arg(args, char*), sizeof(str_copy));
+				varArray.add(str_copy);
+			}
 				break;
 			case 't': // temperature in fixed_7_9 format
-        varArray.add(String(tempToString(buf, va_arg(args,int), 1, 12)));
+			{
+				char temp_str[13];
+				strlcpy(temp_str, tempToString(buf, va_arg(args,int), 1, 12), sizeof(temp_str));
+				varArray.add(temp_str);
+			}
 			break;
 			case 'f': // fixed point value
-        varArray.add(String(fixedPointToString(buf, (temperature) va_arg(args,int), 3, 12)));
+			{
+				char fp_str[13];
+				strlcpy(fp_str, fixedPointToString(buf, (temperature) va_arg(args,int), 3, 12), sizeof(fp_str));
+				varArray.add(fp_str);
+			}
 			break;
 		}
 

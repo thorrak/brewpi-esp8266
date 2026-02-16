@@ -34,6 +34,10 @@
 #include <esp_system.h>
 #include <esp_heap_caps.h>
 
+#include <nvs_flash.h>
+#include <esp_netif.h>
+#include <esp_event.h>
+
 #if BREWPI_SIMULATE
 #include "Simulator.h"
 #endif
@@ -308,5 +312,36 @@ void loop() {
 #else
 	brewpiLoop();
 #endif
+}
+
+extern "C" void app_main(void) {
+    // Initialize NVS (required for WiFi credential storage)
+    esp_err_t nvs_ret = nvs_flash_init();
+    if (nvs_ret == ESP_ERR_NVS_NO_FREE_PAGES || nvs_ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        nvs_ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(nvs_ret);
+
+    // Initialize TCP/IP stack and default event loop
+    ESP_ERROR_CHECK(esp_netif_init());
+    esp_err_t ret = esp_event_loop_create_default();
+    if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
+        ESP_ERROR_CHECK(ret);
+    }
+
+    // Run setup on this task (it has a large stack already)
+    setup();
+
+    // Create loop task on the app core
+    xTaskCreatePinnedToCore(
+        [](void*) { for (;;) { loop(); vTaskDelay(pdMS_TO_TICKS(10)); } },
+        "loopTask",
+        8192,
+        nullptr,
+        1,
+        nullptr,
+        1  // Core 1 = app core
+    );
 }
 

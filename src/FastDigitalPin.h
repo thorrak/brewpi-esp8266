@@ -22,45 +22,21 @@
 
 #include <driver/gpio.h>
 
-// Arduino-compatible pin mode / level constants (for legacy call sites)
-#ifndef INPUT
-#define INPUT   0x00
-#endif
-#ifndef OUTPUT
-#define OUTPUT  0x01
-#endif
-#ifndef INPUT_PULLUP
-#define INPUT_PULLUP 0x05
-#endif
-#ifndef HIGH
-#define HIGH 1
-#endif
-#ifndef LOW
-#define LOW  0
-#endif
-
-inline void fastPinMode(int pin, int mode) {
+inline void fastPinMode(gpio_num_t pin, gpio_mode_t mode, bool pullup = false) {
 	gpio_config_t io_conf = {};
 	io_conf.pin_bit_mask = (1ULL << pin);
-	io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+	io_conf.mode = mode;
+	io_conf.pull_up_en = pullup ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE;
 	io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
 	io_conf.intr_type = GPIO_INTR_DISABLE;
-	if (mode == OUTPUT) {
-		io_conf.mode = GPIO_MODE_OUTPUT;
-	} else if (mode == INPUT_PULLUP) {
-		io_conf.mode = GPIO_MODE_INPUT;
-		io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-	} else { // INPUT
-		io_conf.mode = GPIO_MODE_INPUT;
-	}
 	gpio_config(&io_conf);
 }
 
-inline void fastDigitalWrite(int pin, int value) {
-	gpio_set_level((gpio_num_t)pin, value);
+inline void fastDigitalWrite(gpio_num_t pin, uint32_t value) {
+	gpio_set_level(pin, value);
 }
 
-inline int fastDigitalRead(int pin) {
-	return gpio_get_level((gpio_num_t)pin);
+inline int fastDigitalRead(gpio_num_t pin) {
+	return gpio_get_level(pin);
 }
 

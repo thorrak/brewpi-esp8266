@@ -40,13 +40,9 @@ LGFX tft;
 bool toggleBacklight = false;  // Not used for this screen type
 
 
-#ifndef min
-#define min _min
-#endif
-
-#ifndef max
-#define max _max
-#endif
+#include <algorithm>
+using std::min;
+using std::max;
 
 
 LcdDisplay::LcdDisplay() {

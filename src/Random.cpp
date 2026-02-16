@@ -22,5 +22,16 @@
 #endif
 
 #if BREWPI_RANDOM
-#include <WMath.cpp>
+#include <esp_random.h>
+
+long random(long howbig) {
+    if (howbig == 0) return 0;
+    return esp_random() % howbig;
+}
+
+long random(long howsmall, long howbig) {
+    if (howsmall >= howbig) return howsmall;
+    long diff = howbig - howsmall;
+    return random(diff) + howsmall;
+}
 #endif

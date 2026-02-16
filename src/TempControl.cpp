@@ -79,13 +79,9 @@ uint16_t TempControl::waitTime;
 #endif
 
 
-#ifndef min
-#define min _min
-#endif
-
-#ifndef max
-#define max _max
-#endif
+#include <algorithm>
+using std::min;
+using std::max;
 
 
 /**
@@ -251,7 +247,7 @@ void TempControl::updatePID(){
 		// constrain to tempSettingMax or beerSetting + pidMax, whichever is higher.
 		temperature upperBound = (cs.beerSetting >= cc.tempSettingMax - cc.pidMax) ? cc.tempSettingMax : cs.beerSetting + cc.pidMax;
 		
-		cs.fridgeSetting = constrain(constrainTemp16(newFridgeSetting), lowerBound, upperBound);
+		cs.fridgeSetting = std::max(lowerBound, std::min(constrainTemp16(newFridgeSetting), upperBound));
 	}
 	else if(cs.mode == Modes::fridgeConstant){
 		// FridgeTemperature is set manually, use INVALID_TEMP to indicate beer temp is not active

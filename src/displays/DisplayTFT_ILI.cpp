@@ -38,13 +38,9 @@
 bool toggleBacklight;
 
 
-#ifndef min
-#define min _min
-#endif
-
-#ifndef max
-#define max _max
-#endif
+#include <algorithm>
+using std::min;
+using std::max;
 
 
 LcdDisplay::LcdDisplay() {
