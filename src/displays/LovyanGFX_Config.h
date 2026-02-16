@@ -12,8 +12,8 @@ class LGFX : public lgfx::LGFX_Device
 {
     lgfx::Panel_ILI9341 _panel_instance;
     lgfx::Bus_SPI _bus_instance;
-    lgfx::Light_PWM _light_instance;
-    lgfx::Touch_XPT2046 _touch_instance;
+    // lgfx::Light_PWM _light_instance;
+    // lgfx::Touch_XPT2046 _touch_instance;
 
 public:
     LGFX(void)
@@ -21,7 +21,7 @@ public:
         // SPI bus configuration
         {
             auto cfg = _bus_instance.config();
-            cfg.spi_host = SPI3_HOST;
+            cfg.spi_host = VSPI_HOST;
             cfg.spi_mode = 0;
             cfg.freq_write = 40000000;
             cfg.freq_read = 16000000;
@@ -31,7 +31,7 @@ public:
             cfg.pin_sclk = 18;
             cfg.pin_mosi = 23;
             cfg.pin_miso = 19;
-            cfg.pin_dc = TFT_DC;
+            cfg.pin_dc = 27;
             _bus_instance.config(cfg);
             _panel_instance.setBus(&_bus_instance);
         }
@@ -39,11 +39,9 @@ public:
         // Panel configuration
         {
             auto cfg = _panel_instance.config();
-            cfg.pin_cs = TFT_CS;
-            cfg.pin_rst = TFT_RST;
+            cfg.pin_cs = 14;
+            cfg.pin_rst = 33;
             cfg.pin_busy = -1;
-            cfg.memory_width = 240;
-            cfg.memory_height = 320;
             cfg.panel_width = 240;
             cfg.panel_height = 320;
             cfg.offset_x = 0;
@@ -60,29 +58,29 @@ public:
         }
 
         // Backlight (PWM on GPIO 32)
-        {
-            auto cfg = _light_instance.config();
-            cfg.pin_bl = TFT_BACKLIGHT;
-            cfg.pwm_channel = 7;
-            cfg.freq = 44100;
-            cfg.invert = false;
-            _light_instance.config(cfg);
-            _panel_instance.light(&_light_instance);
-        }
+        // {
+        //     auto cfg = _light_instance.config();
+        //     cfg.pin_bl = TFT_BACKLIGHT;
+        //     cfg.pwm_channel = 7;
+        //     cfg.freq = 44100;
+        //     cfg.invert = false;
+        //     _light_instance.config(cfg);
+        //     _panel_instance.light(&_light_instance);
+        // }
 
-        // Touch controller (XPT2046 sharing SPI bus, CS on GPIO 12)
-        {
-            auto cfg = _touch_instance.config();
-            cfg.bus_shared = true;
-            cfg.spi_host = SPI3_HOST;
-            cfg.pin_cs = TS_CS;
-            cfg.pin_mosi = 23;
-            cfg.pin_miso = 19;
-            cfg.pin_sclk = 18;
-            cfg.offset_rotation = 2;
-            _touch_instance.config(cfg);
-            _panel_instance.touch(&_touch_instance);
-        }
+        // Touch controller DISABLED for debugging
+        // {
+        //     auto cfg = _touch_instance.config();
+        //     cfg.bus_shared = true;
+        //     cfg.spi_host = VSPI_HOST;
+        //     cfg.pin_cs = TS_CS;
+        //     cfg.pin_mosi = 23;
+        //     cfg.pin_miso = 19;
+        //     cfg.pin_sclk = 18;
+        //     cfg.offset_rotation = 2;
+        //     _touch_instance.config(cfg);
+        //     _panel_instance.touch(&_touch_instance);
+        // }
 
         setPanel(&_panel_instance);
     }
@@ -103,9 +101,9 @@ public:
         // SPI bus configuration
         {
             auto cfg = _bus_instance.config();
-            cfg.spi_host = SPI2_HOST;
+            cfg.spi_host = VSPI_HOST;
             cfg.spi_mode = 0;
-            cfg.freq_write = 27000000;
+            cfg.freq_write = 40000000;
             cfg.freq_read = 16000000;
             cfg.spi_3wire = true;
             cfg.use_lock = true;
@@ -124,8 +122,6 @@ public:
             cfg.pin_cs = 5;
             cfg.pin_rst = 18;
             cfg.pin_busy = -1;
-            cfg.memory_width = 240;
-            cfg.memory_height = 320;
             cfg.panel_width = 135;
             cfg.panel_height = 240;
             cfg.offset_x = 52;
@@ -137,7 +133,7 @@ public:
             cfg.invert = true;
             cfg.rgb_order = false;
             cfg.dlen_16bit = false;
-            cfg.bus_shared = false;
+            cfg.bus_shared = true;
             _panel_instance.config(cfg);
         }
 

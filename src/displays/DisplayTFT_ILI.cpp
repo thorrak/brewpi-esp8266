@@ -45,7 +45,6 @@ using std::max;
 
 LcdDisplay::LcdDisplay() {
     // Initialize the display device -- we can reinitialize later if needed
-    tft = new LGFX();
     // We can't do much more as this object gets created at boot
 }
 
@@ -89,17 +88,46 @@ void LcdDisplay::print_layout() {
 
 }
 
+static inline void pinMode(int pin, gpio_mode_t mode) {
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << pin),
+        .mode = mode,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&io_conf);
+}
+
 void LcdDisplay::init(){
+    if (!tft) {
+        tft = new LGFX();
+    }
+
+    // Control backlight directly via GPIO rather than LovyanGFX Light_PWM,
+    // which interferes with SPI/display initialization on ESP-IDF.
+    pinMode(TFT_BACKLIGHT, GPIO_MODE_OUTPUT);
+    gpio_set_level((gpio_num_t)TFT_BACKLIGHT, 1);
+
     toggleBacklight = false;
     stateOnDisplay = 0xFF; // set to unknown state to force update
-    flags = LCD_FLAG_ALTERNATE_ROOM;  // TODO - Test with a room sensor to see what happens
+    flags = LCD_FLAG_ALTERNATE_ROOM;
+
+    // Manual hardware reset with generous timing before LovyanGFX init.
+    // LovyanGFX default is only 8ms pulse + 64ms wait, which may not be
+    // enough for some ILI9341 panels after cold power-on.
+    gpio_set_direction(GPIO_NUM_33, GPIO_MODE_OUTPUT);
+    gpio_set_level(GPIO_NUM_33, 0);       // RST LOW
+    vTaskDelay(pdMS_TO_TICKS(50));        // Hold reset 50ms
+    gpio_set_level(GPIO_NUM_33, 1);       // RST HIGH
+    vTaskDelay(pdMS_TO_TICKS(200));       // Wait 200ms for panel to stabilize
 
     tft->init();
-    tft->setSwapBytes(true);
     if (extendedSettings.invertTFT)
         tft->setRotation(3);
     else
         tft->setRotation(1);
+
     tft->fillScreen(TFT_BLACK);
     tft->setTextColor(TFT_WHITE, TFT_BLACK);
 }

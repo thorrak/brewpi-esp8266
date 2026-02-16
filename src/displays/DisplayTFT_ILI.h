@@ -173,7 +173,7 @@ public:
 
 
 private:
-    LGFX *tft;
+    LGFX *tft = nullptr;
 
     uint8_t stateOnDisplay;
     uint8_t flags;
