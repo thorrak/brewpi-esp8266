@@ -12,7 +12,11 @@
 
 class httpServer {
 public:
-    void init();
+    void init();          // Combined start + register (legacy)
+    void startServer();   // Start httpd only (call before WiFi init)
+    void registerRoutes(); // Register all URI handlers (call after WiFi)
+
+    httpd_handle_t getHandle() const { return server_handle; }
 
     bool lcd_reinit_rqd = false;
     bool restart_requested = false;

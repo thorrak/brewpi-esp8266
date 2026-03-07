@@ -275,7 +275,7 @@ void httpServer::processQueuedActions() {
         vTaskDelay(pdMS_TO_TICKS(500));
         upstreamSettings.setDefaults();
         upstreamSettings.storeToFilesystem();
-        bp_wifi_disconnect(false);
+        bp_wifi_disconnect(true);  // Disconnect and erase stored WiFi credentials
         vTaskDelay(pdMS_TO_TICKS(500));
         esp_restart();
     }
@@ -1006,7 +1006,9 @@ void httpServer::setPutPages() {
 }
 
 
-void httpServer::init() {
+void httpServer::startServer() {
+    if (server_handle != nullptr) return;  // Already started
+
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.server_port = WEB_SERVER_PORT;
     config.max_uri_handlers = 30;
@@ -1018,6 +1020,11 @@ void httpServer::init() {
         Log.error("Failed to start HTTP server: %s\r\n", esp_err_to_name(ret));
         return;
     }
+    Log.notice("HTTP server started.\r\n");
+}
+
+void httpServer::registerRoutes() {
+    if (server_handle == nullptr) return;
 
     setStaticPages();
     setJsonPages();
@@ -1026,7 +1033,12 @@ void httpServer::init() {
     // Register 404 handler for file serving fallback
     httpd_register_err_handler(server_handle, HTTPD_404_NOT_FOUND, not_found_handler);
 
-    Log.notice("HTTP server started. Open: http://%s.local/ to view application.\r\n", bp_wifi_get_hostname());
+    Log.notice("HTTP routes registered. Open: http://%s.local/ to view application.\r\n", bp_wifi_get_hostname());
+}
+
+void httpServer::init() {
+    startServer();
+    registerRoutes();
 }
 
 

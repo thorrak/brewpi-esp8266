@@ -37,6 +37,7 @@
 #include <nvs_flash.h>
 #include <esp_netif.h>
 #include <esp_event.h>
+#include <esp_bus.h>
 
 #if BREWPI_SIMULATE
 #include "Simulator.h"
@@ -201,11 +202,9 @@ void setup()
 	display.printState();
 
 #ifdef ENABLE_HTTP_INTERFACE
-  // Wait for WiFi to fully stabilize after initial connection from captive portal
-  if(bp_wifi_is_connected()) {
-    vTaskDelay(pdMS_TO_TICKS(500));
-  }
-  http_server.init();     // Initialize the web server
+  // HTTP server was started early in initialize_wifi() so wifi_manager can share
+  // the handle. Now register our application routes.
+  http_server.registerRoutes();
 #endif
 
 #ifdef ENABLE_PROMETHEUS_SERVER
@@ -329,6 +328,9 @@ extern "C" void app_main(void) {
     if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
         ESP_ERROR_CHECK(ret);
     }
+
+    // Initialize esp_bus (required for esp_wifi_manager events)
+    ESP_ERROR_CHECK(esp_bus_init());
 
     // Run setup on this task (it has a large stack already)
     setup();

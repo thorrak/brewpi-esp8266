@@ -48,6 +48,10 @@ void wifi_connection_info(JsonDocument& doc);
 extern int telnet_server_fd;
 extern int telnet_client_fd;
 
+/**
+ * \brief Reset (reinitialize) the mDNS responder with the current hostname.
+ */
+void mdns_reset();
 
 // -----------------------------------------------------------------------
 // ESP-IDF WiFi utility functions
