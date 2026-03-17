@@ -907,6 +907,7 @@ void httpServer::setStaticPages() {
     // Define the base static page handlers
     asyncWebServer.serveStatic("/", FILESYSTEM, "/index.html").setCacheControl("max-age=600");
     asyncWebServer.serveStatic("/index.html", FILESYSTEM, "/index.html").setCacheControl("max-age=600");
+    asyncWebServer.serveStatic("/glycol", FILESYSTEM, "/glycol.html").setCacheControl("max-age=600");
 
     // Define Vue routes
     const char* vueRoutes[] = {

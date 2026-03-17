@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Glycol Mode</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f6f8;
+        --panel: #ffffff;
+        --text: #14213d;
+        --muted: #5c677d;
+        --accent: #0f766e;
+        --accent-off: #94a3b8;
+        --border: #d7dee7;
+        --warn: #9a3412;
+        --warn-bg: #fff7ed;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(180deg, #eef4f7 0%, var(--bg) 100%);
+        color: var(--text);
+      }
+
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 32px 20px 48px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: 0 14px 32px rgba(20, 33, 61, 0.08);
+        overflow: hidden;
+      }
+
+      .hero {
+        padding: 24px 24px 16px;
+        background:
+          radial-gradient(circle at top right, rgba(15, 118, 110, 0.2), transparent 34%),
+          linear-gradient(135deg, #ffffff 0%, #f2fbfb 100%);
+        border-bottom: 1px solid var(--border);
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+        line-height: 1.1;
+      }
+
+      .subtitle {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .content {
+        padding: 24px;
+      }
+
+      .toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: #fbfdff;
+      }
+
+      .toggle-copy h2 {
+        margin: 0 0 6px;
+        font-size: 18px;
+      }
+
+      .toggle-copy p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 62px;
+        height: 36px;
+        flex: 0 0 auto;
+      }
+
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        inset: 0;
+        border-radius: 999px;
+        background: var(--accent-off);
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+
+      .slider::before {
+        content: "";
+        position: absolute;
+        width: 28px;
+        height: 28px;
+        left: 4px;
+        top: 4px;
+        border-radius: 50%;
+        background: #ffffff;
+        box-shadow: 0 2px 6px rgba(20, 33, 61, 0.16);
+        transition: transform 0.2s ease;
+      }
+
+      input:checked + .slider {
+        background: var(--accent);
+      }
+
+      input:checked + .slider::before {
+        transform: translateX(26px);
+      }
+
+      .state-pill {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 14px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #e2e8f0;
+        color: #334155;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+      }
+
+      .state-pill.enabled {
+        background: #ccfbf1;
+        color: #115e59;
+      }
+
+      .warning {
+        margin: 18px 0 0;
+        padding: 14px 16px;
+        border: 1px solid #fed7aa;
+        border-radius: 14px;
+        background: var(--warn-bg);
+        color: var(--warn);
+        line-height: 1.5;
+      }
+
+      .actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 22px;
+      }
+
+      button {
+        border: 0;
+        border-radius: 12px;
+        padding: 12px 18px;
+        background: var(--text);
+        color: #ffffff;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      button:disabled {
+        cursor: wait;
+        opacity: 0.55;
+      }
+
+      .status {
+        min-height: 24px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .status.error {
+        color: #b91c1c;
+      }
+
+      .status.success {
+        color: #166534;
+      }
+
+      .meta {
+        margin-top: 22px;
+        padding-top: 18px;
+        border-top: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      code {
+        padding: 2px 6px;
+        border-radius: 6px;
+        background: #eef2f7;
+        color: #243b53;
+      }
+
+      @media (max-width: 640px) {
+        .toggle-row {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="card">
+        <div class="hero">
+          <h1>Glycol Mode</h1>
+          <p class="subtitle">
+            Standalone control page for enabling or disabling glycol mode
+            without changing the bundled web application.
+          </p>
+        </div>
+
+        <div class="content">
+          <div class="toggle-row">
+            <div class="toggle-copy">
+              <h2>Enable glycol control</h2>
+              <p>
+                When enabled, the controller switches to the glycol-specific
+                cooling logic and no longer requires the chamber sensor for
+                cooling control.
+              </p>
+              <div id="state-pill" class="state-pill">Unknown</div>
+            </div>
+
+            <label class="switch" aria-label="Toggle glycol mode">
+              <input id="glycol-toggle" type="checkbox" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="warning">
+            Changing this flag forces the controller to <strong>OFF</strong>.
+            After saving, verify the control mode and setpoint before resuming
+            operation.
+          </div>
+
+          <div class="actions">
+            <button id="save-button" type="button">Save glycol setting</button>
+            <div id="status" class="status" aria-live="polite"></div>
+          </div>
+
+          <div class="meta">
+            This page reads from <code>/api/extended/</code> and updates the
+            setting with a <code>PUT /api/extended/</code> request while keeping
+            the other required extended settings unchanged.
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const toggleEl = document.getElementById("glycol-toggle");
+      const saveButtonEl = document.getElementById("save-button");
+      const statusEl = document.getElementById("status");
+      const statePillEl = document.getElementById("state-pill");
+
+      let cachedExtendedSettings = null;
+
+      function setStatus(message, tone) {
+        statusEl.textContent = message || "";
+        statusEl.className = "status" + (tone ? " " + tone : "");
+      }
+
+      function updateVisualState(enabled) {
+        statePillEl.textContent = enabled ? "Enabled" : "Disabled";
+        statePillEl.className = "state-pill" + (enabled ? " enabled" : "");
+      }
+
+      async function loadSettings() {
+        setStatus("Loading current settings...");
+        saveButtonEl.disabled = true;
+
+        try {
+          const response = await fetch("/api/extended/", { cache: "no-store" });
+          if (!response.ok) {
+            throw new Error("GET /api/extended/ failed with status " + response.status);
+          }
+
+          const data = await response.json();
+          if (!data || !data.extendedSettings) {
+            throw new Error("Unexpected payload from /api/extended/");
+          }
+
+          cachedExtendedSettings = data.extendedSettings;
+          toggleEl.checked = !!cachedExtendedSettings.glycol;
+          updateVisualState(toggleEl.checked);
+          setStatus("Settings loaded.");
+          saveButtonEl.disabled = false;
+        } catch (error) {
+          console.error(error);
+          setStatus("Unable to load settings from the controller.", "error");
+        }
+      }
+
+      async function saveSettings() {
+        if (!cachedExtendedSettings) {
+          setStatus("Settings are not loaded yet.", "error");
+          return;
+        }
+
+        const payload = {
+          glycol: !!toggleEl.checked,
+          largeTFT: !!cachedExtendedSettings.largeTFT,
+          invertTFT: !!cachedExtendedSettings.invertTFT,
+          resetScreenOnPin: !!cachedExtendedSettings.resetScreenOnPin
+        };
+
+        saveButtonEl.disabled = true;
+        setStatus("Saving setting...");
+
+        try {
+          const response = await fetch("/api/extended/", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            throw new Error("PUT /api/extended/ failed with status " + response.status);
+          }
+
+          cachedExtendedSettings.glycol = payload.glycol;
+          updateVisualState(payload.glycol);
+          setStatus("Glycol setting updated successfully.", "success");
+        } catch (error) {
+          console.error(error);
+          toggleEl.checked = !!cachedExtendedSettings.glycol;
+          updateVisualState(toggleEl.checked);
+          setStatus("Unable to save glycol setting.", "error");
+        } finally {
+          saveButtonEl.disabled = false;
+        }
+      }
+
+      toggleEl.addEventListener("change", function () {
+        updateVisualState(toggleEl.checked);
+      });
+
+      saveButtonEl.addEventListener("click", saveSettings);
+
+      loadSettings();
+    </script>
+  </body>
+</html>
