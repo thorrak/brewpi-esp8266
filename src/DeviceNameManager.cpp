@@ -122,7 +122,7 @@ void DeviceNameManager::enumerateDeviceNames(JsonDocument& doc) {
   struct dirent* entry;
   while ((entry = readdir(dir)) != nullptr) {
     // Build the path as filenamePrefix + entry name, matching what filenameToDeviceName expects
-    char entryPath[64];
+    char entryPath[288];
     snprintf(entryPath, sizeof(entryPath), "%s%s", filenamePrefix, entry->d_name);
     DeviceName dn = filenameToDeviceName(entryPath);
     doc[dn.device] = dn.name;

@@ -86,6 +86,7 @@ onewire_bus_handle_t DeviceManager::m_fridge_sensor_bus = NULL;
 bool DeviceManager::initOneWireBuses() {
 #if !BREWPI_SIMULATE
   onewire_bus_config_t bus_config = {
+    .bus_gpio_num = 0,  // set per-bus below
     .flags = {
       .en_pull_up = true,
     }

@@ -82,7 +82,6 @@ void LcdDisplay::print_layout() {
 
     // Print the degree symbols & units
     // TODO - Figure out how to fudge a degree symbol here, since there isn't one in the font in the library
-    const char degree_symbol = 176;
     char unitBuf[3] = {' ', tempControl.cc.tempFormat, '\0'};
 
     printAtMonoChars(18, 1, unitBuf);  // Beer Row
@@ -190,7 +189,7 @@ void LcdDisplay::printFridgeSet(){
     temperature fridgeSet = tempControl.getFridgeSetting();
     if(flags & LCD_FLAG_DISPLAY_ROOM) // beer setting is not active
         fridgeSet = INVALID_TEMP;
-	printTemperatureAtMonoChars(12, 2, fridgeSet);
+    printTemperatureAtMonoChars(12, 2, fridgeSet);
 }
 
 void LcdDisplay::printTemperatureAtMonoChars(uint8_t x_chars, uint8_t y_chars, temperature temp){

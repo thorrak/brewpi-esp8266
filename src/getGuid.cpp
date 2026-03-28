@@ -14,8 +14,8 @@ void getGuid(char *str)
     int32_2 = (chipid & 0xFFFFFFFF00000000) >> 32;
 
     char first[9], secon[9];
-    sprintf(first, "%08X", int32_1);
-    sprintf(secon, "%08X", int32_2);
+    sprintf(first, "%08lX", (unsigned long)int32_1);
+    sprintf(secon, "%08lX", (unsigned long)int32_2);
 
     strcpy(str, first);
     strcat(str, secon);

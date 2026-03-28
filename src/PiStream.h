@@ -92,7 +92,9 @@ public:
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .rx_flow_ctrl_thresh = 0,
         .source_clk = UART_SCLK_DEFAULT,
+        .flags = {},
     };
     // Only configure if not already installed (UART0 is often pre-configured)
     uart_driver_install(_port, 1024, 0, 0, nullptr, 0);
@@ -354,7 +356,8 @@ public:
   void sendSingleItemJsonMessage(const char prefix, JsonDocument &doc) {
     JsonDocument shallowDoc;
 
-    for (auto kvp : doc.as<JsonArray>()[0].as<JsonObject>()) {
+    JsonObject obj = doc.as<JsonArray>()[0].as<JsonObject>();
+    for (auto kvp : obj) {
       shallowDoc[kvp.key()] = kvp.value();
     }
 

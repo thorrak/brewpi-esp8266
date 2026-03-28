@@ -282,7 +282,7 @@ public:
    * If the door is open, the `DOOR_OPEN` state is returned instead.
    */
 	TEMP_CONTROL_METHOD unsigned char getDisplayState() {
-		return isDoorOpen() ? DOOR_OPEN : getState();
+		return isDoorOpen() ? (unsigned char)DOOR_OPEN : getState();
 	}
 
   TEMP_CONTROL_METHOD void getControlVariablesDoc(JsonDocument& doc);

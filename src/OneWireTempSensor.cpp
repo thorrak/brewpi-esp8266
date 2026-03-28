@@ -37,7 +37,7 @@
 #define DEVICE_POWERON_RAW 1360
 
 OneWireTempSensor::OneWireTempSensor(onewire_bus_handle_t bus, DeviceAddress address, fixed4_4 calibrationOffset)
-  : m_bus(bus), m_sensor(NULL), m_connected(true), m_calibration_offset(calibrationOffset), m_conversion_failures(0) {
+  : m_bus(bus), m_sensor(NULL), m_calibration_offset(calibrationOffset), m_connected(true), m_conversion_failures(0) {
   memcpy(m_sensor_address, address, sizeof(DeviceAddress));
 }
 

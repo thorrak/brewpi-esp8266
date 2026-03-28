@@ -31,7 +31,7 @@ bool filesystem_init(bool format_if_failed = true);
 
 // Check if a file exists
 static inline bool fs_exists(const char* path) {
-    char fullpath[64];
+    char fullpath[288];
     snprintf(fullpath, sizeof(fullpath), "%s%s", FS_PREFIX, path);
     struct stat st;
     return (stat(fullpath, &st) == 0);
@@ -39,14 +39,14 @@ static inline bool fs_exists(const char* path) {
 
 // Remove a file
 static inline bool fs_remove(const char* path) {
-    char fullpath[64];
+    char fullpath[288];
     snprintf(fullpath, sizeof(fullpath), "%s%s", FS_PREFIX, path);
     return (::remove(fullpath) == 0);
 }
 
 // Open a file (returns FILE*). Caller must fclose() the result.
 static inline FILE* fs_open(const char* path, const char* mode) {
-    char fullpath[64];
+    char fullpath[288];
     snprintf(fullpath, sizeof(fullpath), "%s%s", FS_PREFIX, path);
     return fopen(fullpath, mode);
 }

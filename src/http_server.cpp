@@ -950,10 +950,8 @@ void httpServer::setStaticPages() {
     const httpd_uri_t uri_index = { .uri = "/index.html", .method = HTTP_GET, .handler = static_file_handler, .user_ctx = nullptr };
     httpd_register_uri_handler(server_handle, &uri_index);
 
-    // Vue SPA routes
-    const char* vueRoutes[] = { "/upstream", "/devices", "/about", "/settings" };
-    // esp_http_server doesn't support dynamic route creation in a loop for the same handler easily,
-    // so we register each one individually
+    // Vue SPA routes - registered individually since esp_http_server needs static uri structs
+
     const httpd_uri_t uri_upstream = { .uri = "/upstream", .method = HTTP_GET, .handler = static_file_handler, .user_ctx = nullptr };
     httpd_register_uri_handler(server_handle, &uri_upstream);
     const httpd_uri_t uri_devices = { .uri = "/devices", .method = HTTP_GET, .handler = static_file_handler, .user_ctx = nullptr };

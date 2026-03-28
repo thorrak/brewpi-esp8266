@@ -99,7 +99,8 @@ void TPLinkScanner::process_udp_incoming() {
                         continue; // Children has to be populated to loop through them
 
                     // Need to loop through the children
-                    for(JsonObject plug_doc : json_doc["system"]["get_sysinfo"]["children"].as<JsonArray>()) {
+                    JsonArray children = json_doc["system"]["get_sysinfo"]["children"].as<JsonArray>();
+                    for(JsonObject plug_doc : children) {
                         if(!plug_doc["id"].is<const char *>() || !plug_doc["state"].is<int>()) {
                             continue;  // Invalid, unable to process
                         }

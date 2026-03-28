@@ -213,22 +213,22 @@ void LcdDisplay::printTemperature(temperature temp, uint8_t font_size){
 
 
     char tempString[9];
-    char tempBuf[9];
+    char tempBuf[16];
     tempToString(tempString, temp, 1 , 9);
 
     // Pad the width 
     switch(strlen(tempString)) {
         case 5:
-            snprintf(tempBuf, 9, " %s %c", tempString, tempControl.cc.tempFormat);
+            snprintf(tempBuf, sizeof(tempBuf), " %s %c", tempString, tempControl.cc.tempFormat);
             break;
         case 4:
-            snprintf(tempBuf, 9, "  %s %c", tempString, tempControl.cc.tempFormat);
+            snprintf(tempBuf, sizeof(tempBuf), "  %s %c", tempString, tempControl.cc.tempFormat);
             break;
         case 3:
-            snprintf(tempBuf, 9, "   %s %c", tempString, tempControl.cc.tempFormat);
+            snprintf(tempBuf, sizeof(tempBuf), "   %s %c", tempString, tempControl.cc.tempFormat);
             break;
         default:
-            snprintf(tempBuf, 9, "%s %c", tempString, tempControl.cc.tempFormat);
+            snprintf(tempBuf, sizeof(tempBuf), "%s %c", tempString, tempControl.cc.tempFormat);
             break;
     }
 

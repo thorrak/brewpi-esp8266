@@ -14,10 +14,10 @@
 
 void getNow();
 void setValues();
-const int uptimeDays(bool refr = false);
-const int uptimeHours(bool refr = false);
-const int uptimeMinutes(bool refr = false);
-const int uptimeSeconds(bool refr = false);
-const int uptimeMillis(bool refr = false);
+int uptimeDays(bool refr = false);
+int uptimeHours(bool refr = false);
+int uptimeMinutes(bool refr = false);
+int uptimeSeconds(bool refr = false);
+int uptimeMillis(bool refr = false);
 
 #endif // _UPTIME_H

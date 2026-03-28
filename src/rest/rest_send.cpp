@@ -191,7 +191,7 @@ bool restHandler::get_url(char *url, size_t size, const char *path) {
     if(strlen(upstreamSettings.upstreamHost) <= 3) {
         Log.error("get_url: No upstream host configured, should skip send.\r\n");
         return false;
-    } else if(upstreamSettings.upstreamPort <= 0 || upstreamSettings.upstreamPort > 65535) {
+    } else if(upstreamSettings.upstreamPort == 0) {
         Log.error("get_url: No upstream port configured, should skip send.\r\n");
         return false;
     }
@@ -317,7 +317,7 @@ bool restHandler::configured_for_fermentrack_rest() {
         return true;  // If we're registered, we're obviously configured
     if(strlen(upstreamSettings.username) == 0 && strlen(upstreamSettings.apiKey) == 0)
         return false; 
-    if(strlen(upstreamSettings.upstreamHost) <= 3 || (upstreamSettings.upstreamPort <= 0 || upstreamSettings.upstreamPort > 65535))
+    if(strlen(upstreamSettings.upstreamHost) <= 3 || upstreamSettings.upstreamPort == 0)
         return false;
 
     return true;  // We have a username/apiKey and a valid host/port, but aren't registered yet. Clearly the user wants to use fermentrack_rest
