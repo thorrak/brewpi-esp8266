@@ -1011,8 +1011,11 @@ void httpServer::startServer() {
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.server_port = WEB_SERVER_PORT;
-    config.max_uri_handlers = 30;
+    config.lru_purge_enable = true;
+    config.max_uri_handlers = 64;
+    config.max_resp_headers = 8;
     config.uri_match_fn = httpd_uri_match_wildcard;
+    config.max_open_sockets = 7;
     config.stack_size = 8192;
 
     esp_err_t ret = httpd_start(&server_handle, &config);
@@ -1020,7 +1023,7 @@ void httpServer::startServer() {
         Log.error("Failed to start HTTP server: %s\r\n", esp_err_to_name(ret));
         return;
     }
-    Log.notice("HTTP server started.\r\n");
+    Log.notice("HTTP server started on port %d.\r\n", WEB_SERVER_PORT);
 }
 
 void httpServer::registerRoutes() {

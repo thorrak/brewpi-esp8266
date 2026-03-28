@@ -201,11 +201,6 @@ void setup()
 	display.printStationaryText();
 	display.printState();
 
-#ifdef ENABLE_HTTP_INTERFACE
-  // HTTP server was started early in initialize_wifi() so wifi_manager can share
-  // the handle. Now register our application routes.
-  http_server.registerRoutes();
-#endif
 
 #ifdef ENABLE_PROMETHEUS_SERVER
   if(Config::Prometheus::enable())

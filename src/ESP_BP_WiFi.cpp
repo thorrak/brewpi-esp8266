@@ -59,6 +59,23 @@ bool isValidmDNSName(const char* mdns_name) {
 // WiFi Manager event callbacks (via esp_bus)
 // -----------------------------------------------------------------------
 
+// Event callback for WiFi connecting (attempting to connect to a network)
+static void on_wifi_connecting(const char *event, const void *data, size_t len, void *ctx) {
+    if (data == nullptr || len == 0) {
+        return;
+    }
+    const char *ssid = (const char *)data;
+    Log.info("WiFi connecting to %s\r\n", ssid);
+
+    // Don't clobber the AP screen with "connecting to..." during background reconnect attempts
+    wifi_status_t status;
+    if (wifi_manager_get_status(&status) == ESP_OK && status.ap_active) {
+        return;
+    }
+
+    display.printWiFiConnect();
+}
+
 // Event callback for WiFi connected
 static void on_wifi_connected(const char *event, const void *data, size_t len, void *ctx) {
     if (data == nullptr || len < sizeof(wifi_connected_t)) {
@@ -103,6 +120,14 @@ static void on_wifi_ap_started(const char *event, const void *data, size_t len, 
         display.printWiFiStartup();
         esp_wifi_set_bandwidth(WIFI_IF_AP, WIFI_BW_HT20);
     }
+}
+
+// Event callback for provisioning stopped — initialize the HTTP server routes
+static void on_provisioning_stopped(const char *event, const void *data, size_t len, void *ctx) {
+#ifdef ENABLE_HTTP_INTERFACE
+    Log.info("WiFi provisioning stopped, initializing HTTP server routes.\r\n");
+    http_server.registerRoutes();
+#endif
 }
 
 // Event callback for variable changes (e.g., mdns_name changed via WiFi manager API)
@@ -189,8 +214,6 @@ void initialize_wifi() {
     display.clear();
     display.printWiFiConnect();
 
-    std::string mdns_id = eepromManager.fetchmDNSName();
-
     // Start HTTP server early so we can share it with wifi_manager
     // This prevents port conflicts when wifi_manager's HTTP server is torn down
 #ifdef ENABLE_HTTP_INTERFACE
@@ -198,11 +221,13 @@ void initialize_wifi() {
 #endif
 
     // Subscribe to WiFi events via esp_bus
+    esp_bus_sub(WIFI_EVT(WIFI_MGR_EVT_CONNECTING), on_wifi_connecting, NULL);
     esp_bus_sub(WIFI_EVT(WIFI_MGR_EVT_CONNECTED), on_wifi_connected, NULL);
     esp_bus_sub(WIFI_EVT(WIFI_MGR_EVT_GOT_IP), on_wifi_got_ip, NULL);
-    esp_bus_sub(WIFI_EVT(WIFI_MGR_EVT_DISCONNECTED), on_wifi_disconnected, NULL);
+    // esp_bus_sub(WIFI_EVT(WIFI_MGR_EVT_DISCONNECTED), on_wifi_disconnected, NULL);
     esp_bus_sub(WIFI_EVT(WIFI_MGR_EVT_AP_START), on_wifi_ap_started, NULL);
     esp_bus_sub(WIFI_EVT(WIFI_MGR_EVT_VAR_CHANGED), on_var_changed, NULL);
+    esp_bus_sub(WIFI_EVT(WIFI_MGR_EVT_PROVISIONING_STOPPED), on_provisioning_stopped, NULL);
 
     // Default variables for WiFi manager - mdns_name is used to set the mDNS hostname
     // This provides a default value; if NVS has a stored value, that takes precedence
@@ -211,6 +236,7 @@ void initialize_wifi() {
     };
 
     // Configure WiFi Manager
+    // TODO - Determine if I want "WIFI_PROV_ON_FAILURE" here
     wifi_manager_config_t wifi_config = {
         .default_networks = NULL,
         .default_network_count = 0,
@@ -220,6 +246,10 @@ void initialize_wifi() {
         .retry_interval_ms = 5000,
         .retry_max_interval_ms = 60000,
         .auto_reconnect = true,
+        .provisioning_mode = WIFI_PROV_ON_FAILURE,  // If we fail to connect to any known network, start provisioning (SoftAP + captive portal)
+        .stop_provisioning_on_connect = true,       // Stop the AP and captive portal once we successfully connect to a WiFi network
+        .provisioning_teardown_delay_ms = 5000,
+        .http_post_prov_mode = WIFI_HTTP_API_ONLY,  // Unregister captive portal/webui routes after provisioning so BrewPi can register its own
         .default_ap = {
             .ssid = WIFI_SETUP_AP_NAME,
             .password = WIFI_SETUP_AP_PASS,
@@ -232,11 +262,9 @@ void initialize_wifi() {
             .dhcp_start = "192.168.4.2",
             .dhcp_end = "192.168.4.20",
         },
-        .enable_captive_portal = true,
-        .stop_ap_on_connect = true,
-        .start_ap_on_init = false,
+        .always_use_ap_defaults = true,  // Ignore any saved AP config - ensure captive portal is always available and consistent
+        .enable_ap = true,
         .http = {
-            .enable = true,
 #ifdef ENABLE_HTTP_INTERFACE
             .httpd = http_server.getHandle(),  // Share our HTTP server with wifi_manager
 #else
@@ -249,8 +277,6 @@ void initialize_wifi() {
         },
         .mdns = {
             .enable = false,  // Disabled - we manage mDNS ourselves with BrewPi-specific TXT records
-            .hostname = NULL,
-            .instance_name = NULL,
         },
         .ble = {
             .enable = false,  // Disabled - we manage BLE ourselves for sensor scanning
@@ -274,37 +300,14 @@ void initialize_wifi() {
         esp_restart();
     }
 
-    // Deinit wifi_manager now that we're connected - we don't need the AP or captive portal anymore
-    wifi_manager_deinit(false);
+    // wifi_manager handles its own provisioning teardown after the configured delay
+    // (stop_provisioning_on_connect + provisioning_teardown_delay_ms)
 
-    // Sync mDNS name from wifi_manager's NVS storage to config
-    char stored_mdns[32] = {0};
-    if (wifi_manager_get_var("mdns_name", stored_mdns, sizeof(stored_mdns)) == ESP_OK && strlen(stored_mdns) > 0) {
-        if (isValidmDNSName(stored_mdns) && strcmp(stored_mdns, mdns_id.c_str()) != 0) {
-            Log.notice("Using stored mDNS name from WiFi manager: %s\r\n", stored_mdns);
-            eepromManager.savemDNSName(stored_mdns);
-        }
-    }
-
-    // Set up mDNS with BrewPi-specific services
-    if (mdns_init() != ESP_OK || mdns_hostname_set(eepromManager.fetchmDNSName().c_str()) != ESP_OK) {
-        Log.error("Error setting up MDNS responder.\r\n");
-    } else {
-        Log.notice("mDNS responder started, hostname: %s.local\r\n", eepromManager.fetchmDNSName().c_str());
-    }
-
-    mdns_txt_item_t txt[] = {
-        {(char*)"board",    (char*)CONTROLLER_TYPE},
-        {(char*)"branch",   (char*)"legacy"},
-        {(char*)"version",  (char*)Config::Version::release},
-        {(char*)"revision", (char*)FIRMWARE_REVISION},
-    };
-    mdns_service_add(NULL, "_brewpi", "_tcp", 23, txt, sizeof(txt) / sizeof(txt[0]));
-
-    // Store the mDNS name in wifi_manager's custom variables for persistence
+    // Sync mDNS name FROM config TO wifi_manager (config file is the source of truth).
+    // The on_var_changed callback handles the reverse direction for real-time changes.
     wifi_manager_set_var("mdns_name", eepromManager.fetchmDNSName().c_str());
 
-    // Set up telnet server
+    // Set up telnet server and mDNS
     initWifiServer();
 }
 
