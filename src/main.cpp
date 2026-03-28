@@ -327,7 +327,7 @@ extern "C" void app_main(void) {
     // Initialize esp_bus (required for esp_wifi_manager events)
     ESP_ERROR_CHECK(esp_bus_init());
 
-    // Run setup on this task (it has a large stack already)
+    // Run setup on the main task (stack size set via CONFIG_ESP_MAIN_TASK_STACK_SIZE)
     setup();
 
     // Create loop task on the app core

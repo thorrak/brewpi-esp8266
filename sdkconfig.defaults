@@ -22,7 +22,11 @@ CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE=y
 CONFIG_COMPILER_OPTIMIZATION_SIZE=y
 CONFIG_ESP32_XTAL_FREQ_AUTO=y
 
+# Main task runs setup() which initializes WiFi manager, mDNS, LittleFS, BLE, display, etc.
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
 # FreeRTOS Timer task needs more stack for WiFi manager and logging callbacks
 CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH=4096
 # The host stack needs to be larger to support certain WiFi Manager operations
 CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE=6144
+CONFIG_BT_NIMBLE_LOG_LEVEL_WARNING=y
+CONFIG_BT_NIMBLE_LOG_LEVEL=2

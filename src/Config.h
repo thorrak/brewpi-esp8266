@@ -231,7 +231,9 @@
 #define heatingPin 25
 #define coolingPin 26
 
+#ifndef oneWirePin
 #define oneWirePin 13
+#endif
 #define doorPin    34 // Note - 34 is "input only" and shouldn't be repurposed
 
 #define IIC_SDA 21
