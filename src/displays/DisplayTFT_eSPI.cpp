@@ -31,7 +31,7 @@
 
 
 #if defined(HAS_AXP192)
-#include "axp192.h"  // ESP-IDF compatible AXP192 driver for M5StickC Plus
+#include "AXP192.h"  // ESP-IDF compatible AXP192 driver for M5StickC Plus
 AXP192_Driver axp192_driver;
 #endif
 

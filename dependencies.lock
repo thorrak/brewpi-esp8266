@@ -10,7 +10,7 @@ dependencies:
       type: service
     version: 1.9.1
   h2zero/esp-nimble-cpp:
-    component_hash: ecdcabe83333948495103f9d62e4ecb651bff866fce123d00bfc106baa383e54
+    component_hash: 699570eec4c64d9f518fb6abc711c1592c15c28f609e2d24584730c8d65998b1
     dependencies:
     - name: espressif/esp_hosted
       registry_url: https://components.espressif.com
@@ -32,7 +32,7 @@ dependencies:
     source:
       registry_url: https://components.espressif.com/
       type: service
-    version: 2.3.4
+    version: 2.4.0
   idf:
     source:
       type: idf
