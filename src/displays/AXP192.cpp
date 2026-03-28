@@ -5,7 +5,7 @@
  * Uses ESP-IDF I2C master driver (driver_ng).
  */
 
-#include "axp192.h"
+#include "AXP192.h"
 #include <thorlog.h>
 #include <cstring>
 
