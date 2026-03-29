@@ -50,7 +50,40 @@ enum GlycolState : uint8_t {
     GLYCOL_IDLE = 0,              //!< Monitoring temperature, waiting to cool
     GLYCOL_COOLING = 1,           //!< Pump on, actively cooling
     GLYCOL_COASTING = 2,          //!< Pump off, temperature still dropping, measuring coast
-    GLYCOL_EMERGENCY_COOLING = 3  //!< Can't keep up - running pump continuously
+    GLYCOL_EMERGENCY_COOLING = 3, //!< Can't keep up - running pump continuously
+    GLYCOL_HEATING = 4            //!< Beer-only heating via time-proportional duty cycle
+};
+
+/**
+ * Internal reason for WAITING_TO_HEAT while in glycol heating mode.
+ * The public legacy state remains WAITING_TO_HEAT, but internally we keep
+ * track of whether we're blocked by protection delays or just in the PWM off
+ * slice.
+ */
+enum GlycolHeatingWaitReason : uint8_t {
+    GLYCOL_HEATING_WAIT_NONE = 0,
+    GLYCOL_HEATING_WAIT_HEAT_OFF_DELAY = 1,
+    GLYCOL_HEATING_WAIT_SWITCH_DELAY = 2,
+    GLYCOL_HEATING_WAIT_WINDOW_OFF = 3
+};
+
+/**
+ * State of the current time-proportional heating window.
+ */
+struct GlycolHeatingWindowState {
+    uint16_t period_s;
+    uint16_t on_time_s;
+    uint16_t elapsed_in_window_s;
+    bool on_slice_active;
+};
+
+/**
+ * Result of actuator protection gating for a potential OFF->ON transition.
+ */
+struct GlycolHeatingGateResult {
+    bool allowed;
+    uint16_t wait_time_s;
+    GlycolHeatingWaitReason reason;
 };
 
 /**
@@ -84,6 +117,10 @@ struct GlycolRuntimeState {
     uint8_t negative_rate_count;          //!< Count of consecutive negative rate readings
     bool setpoint_changed_this_cycle;     //!< True if setpoint changed during this cycle
     uint16_t cooling_duration_s;          //!< Duration of current cooling cycle in seconds
+    temperature heating_output;           //!< Heat authority from PID (0..pidMax_heat)
+    uint32_t heating_window_start_ms;     //!< Start of current heating duty-cycle window
+    uint16_t heating_window_on_time_s;    //!< Requested ON time in current heating window
+    GlycolHeatingWaitReason heating_wait_reason; //!< Internal reason for WAITING_TO_HEAT
 
     // Hot glycol compensation: long runs warm the reservoir; after pump stops,
     // chiller cools it back to setpoint. Next cycle should use minimum time and re-learn.
@@ -358,18 +395,28 @@ private:
 
 	TEMP_CONTROL_METHOD void updateEstimatedPeak(uint16_t estimate, temperature estimator, uint16_t sinceIdle);
 
-	// ===== Glycol mode: Predictive bang-bang control =====
-	TEMP_CONTROL_METHOD void updateGlycolState();          //!< Main glycol state machine
-	TEMP_CONTROL_METHOD void glycolTransitionToIdle();     //!< Transition to GLYCOL_IDLE state
-	TEMP_CONTROL_METHOD void glycolTransitionToCooling();  //!< Transition to GLYCOL_COOLING state
-	TEMP_CONTROL_METHOD void glycolTransitionToCoasting(); //!< Transition to GLYCOL_COASTING state
-	TEMP_CONTROL_METHOD void glycolTransitionToEmergency();//!< Transition to GLYCOL_EMERGENCY_COOLING state
-	TEMP_CONTROL_METHOD void glycolAddRateSample(float temp);  //!< Add sample to rate buffer
-	TEMP_CONTROL_METHOD float glycolCalculateRate();       //!< Calculate rate from buffer (linear regression)
-	TEMP_CONTROL_METHOD float glycolEstimateCoast();       //!< Estimate coast using hybrid model
+		// ===== Glycol mode: predictive cooling + beer-only heating =====
+		TEMP_CONTROL_METHOD void updateGlycolState();          //!< Main glycol state machine
+		TEMP_CONTROL_METHOD void glycolTransitionToIdle();     //!< Transition to GLYCOL_IDLE state
+		TEMP_CONTROL_METHOD void glycolTransitionToCooling();  //!< Transition to GLYCOL_COOLING state
+		TEMP_CONTROL_METHOD void glycolTransitionToCoasting(); //!< Transition to GLYCOL_COASTING state
+		TEMP_CONTROL_METHOD void glycolTransitionToEmergency();//!< Transition to GLYCOL_EMERGENCY_COOLING state
+		TEMP_CONTROL_METHOD void glycolTransitionToHeating();  //!< Transition to GLYCOL_HEATING state
+		TEMP_CONTROL_METHOD bool glycolHeatingCapable();       //!< Returns true when a heater is available in glycol mode
+		TEMP_CONTROL_METHOD void glycolResetHeatingWindow();   //!< Reset the current time-proportional heating window
+		TEMP_CONTROL_METHOD GlycolHeatingWindowState glycolGetHeatingWindowState(uint32_t now); //!< Update/read current heating window state
+		TEMP_CONTROL_METHOD GlycolHeatingGateResult glycolGetHeatingGate(bool startingNewOnSlice); //!< Check protection delays for a new ON slice
+		TEMP_CONTROL_METHOD void glycolSetHeatingWaitState(uint16_t waitTimeS, GlycolHeatingWaitReason reason, bool resetWindow); //!< Publish waiting state for heating
+		TEMP_CONTROL_METHOD void glycolSetHeatingActiveState(uint16_t elapsedInWindowS); //!< Publish active heating state
+		TEMP_CONTROL_METHOD void glycolAddRateSample(float temp);  //!< Add sample to rate buffer
+		TEMP_CONTROL_METHOD float glycolCalculateRate();       //!< Calculate rate from buffer (linear regression)
+		TEMP_CONTROL_METHOD float glycolEstimateCoast();       //!< Estimate coast using hybrid model
 	TEMP_CONTROL_METHOD void glycolUpdateLearning();       //!< Update learned parameters after cycle
 	TEMP_CONTROL_METHOD bool glycolShouldStartCooling();   //!< Check if we should start cooling
 	TEMP_CONTROL_METHOD bool glycolShouldStopCooling();    //!< Check if we should stop cooling
+	TEMP_CONTROL_METHOD bool glycolShouldStartHeating();   //!< Check if we should start heating
+	TEMP_CONTROL_METHOD bool glycolShouldStopHeating();    //!< Check if we should stop heating
+	TEMP_CONTROL_METHOD uint16_t glycolHeatingOnTime();    //!< Convert heating output to on-time in current window
 	TEMP_CONTROL_METHOD bool glycolIsEmergency();          //!< Check for emergency condition
 	TEMP_CONTROL_METHOD bool glycolCanExitEmergency();     //!< Check if we can exit emergency mode
 public:

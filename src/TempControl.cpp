@@ -210,18 +210,71 @@ void TempControl::updatePID(){
         cv.beerSlope = beerSensor->readSlope();
 
         if(extendedSettings.glycol) {
-            // ===== GLYCOL MODE: Predictive Bang-Bang Control =====
-            // PID is not used in glycol mode. Control is handled by updateGlycolState().
-            // We still calculate beerDiff and beerSlope above for display/logging purposes.
+            // ===== GLYCOL MODE =====
+            // Cooling is predictive bang-bang; heating is beer-only time-proportional PID.
 
             // Set fridgeSetting to INVALID_TEMP since it's not used in glycol mode
             cs.fridgeSetting = INVALID_TEMP;
 
-            // Clear PID outputs (not used, but set for display consistency)
-            cv.p = 0;
-            cv.i = 0;
-            cv.d = 0;
-            cv.diffIntegral = 0;
+            bool heatingCapable = glycolHeatingCapable();
+            bool heatingRequested = heatingCapable && (cv.beerDiff > 0) && (cc.pidMax_heat > 0);
+
+            if(heatingRequested) {
+                if(integralUpdateCounter++ == 60){
+                    integralUpdateCounter = 0;
+
+                    temperature integratorUpdate = cv.beerDiff;
+                    bool coolingActive =
+                        glycolRuntime.state == GLYCOL_COOLING ||
+                        glycolRuntime.state == GLYCOL_COASTING ||
+                        glycolRuntime.state == GLYCOL_EMERGENCY_COOLING;
+
+                    if(coolingActive){
+                        integratorUpdate = 0;
+                    }
+                    else if(abs(integratorUpdate) >= cc.iMaxError){
+                        // Decay the integrator when we're far away from the setpoint.
+                        integratorUpdate = -(cv.diffIntegral >> 3);
+                    }
+                    else{
+                        long_temperature projectedIntegral = cv.diffIntegral + integratorUpdate;
+                        if(projectedIntegral < 0){
+                            projectedIntegral = 0;
+                        }
+
+                        temperature pTerm = multiplyFactorTemperatureDiff(cc.Kp_heat, cv.beerDiff);
+                        temperature iTerm = multiplyFactorTemperatureDiffLong(cc.Ki_heat, projectedIntegral);
+                        temperature dTerm = multiplyFactorTemperatureDiff(cc.Kd_heat, cv.beerSlope);
+                        long_temperature projectedOutput = (long_temperature) pTerm + iTerm + dTerm;
+
+                        // Prevent integral windup once the time-proportional output is saturated.
+                        if(projectedOutput >= cc.pidMax_heat){
+                            integratorUpdate = 0;
+                        }
+                    }
+
+                    cv.diffIntegral += integratorUpdate;
+                    if(cv.diffIntegral < 0){
+                        cv.diffIntegral = 0;
+                    }
+                }
+
+                cv.p = multiplyFactorTemperatureDiff(cc.Kp_heat, cv.beerDiff);
+                cv.i = multiplyFactorTemperatureDiffLong(cc.Ki_heat, cv.diffIntegral);
+                cv.d = multiplyFactorTemperatureDiff(cc.Kd_heat, cv.beerSlope);
+
+                long_temperature heatingOutput = (long_temperature) cv.p + cv.i + cv.d;
+                if(heatingOutput < 0){
+                    heatingOutput = 0;
+                }
+                glycolRuntime.heating_output = constrainTemp(heatingOutput, 0, cc.pidMax_heat);
+            } else {
+                cv.p = 0;
+                cv.i = 0;
+                cv.d = 0;
+                cv.diffIntegral = 0;
+                glycolRuntime.heating_output = 0;
+            }
 
         } else {
             // ===== COMPRESSOR MODE: Cascaded PID control =====
@@ -1046,6 +1099,10 @@ void GlycolRuntimeState::reset() {
     negative_rate_count = 0;
     setpoint_changed_this_cycle = false;
     cooling_duration_s = 0;
+    heating_output = 0;
+    heating_window_start_ms = 0;
+    heating_window_on_time_s = 0;
+    heating_wait_reason = GLYCOL_HEATING_WAIT_NONE;
     force_minimum_cooling = false;
     rate_buffer_head = 0;
     rate_buffer_count = 0;
@@ -1178,6 +1235,148 @@ bool TempControl::glycolShouldStopCooling() {
 }
 
 /**
+ * Check if we should start heating.
+ * Heating is direct beer control using a small symmetric deadband.
+ */
+bool TempControl::glycolShouldStartHeating() {
+    if (cs.beerSetting == INVALID_TEMP) return false;
+
+    if (!glycolHeatingCapable() || cc.pidMax_heat <= 0) return false;
+
+    float current_temp = tempToDouble(beerSensor->readFastFiltered(), 2);
+    float setpoint = tempToDouble(cs.beerSetting, 2);
+
+    return glycolRuntime.heating_output > 0 &&
+           current_temp <= (setpoint - glycolConfig.trigger_margin);
+}
+
+/**
+ * Check if we should stop heating.
+ * Once we're back at the setpoint, let the beer coast naturally.
+ */
+bool TempControl::glycolShouldStopHeating() {
+    if (cs.beerSetting == INVALID_TEMP) return true;
+
+    if (!glycolHeatingCapable() || glycolRuntime.heating_output <= 0) return true;
+
+    float current_temp = tempToDouble(beerSensor->readFastFiltered(), 2);
+    float setpoint = tempToDouble(cs.beerSetting, 2);
+
+    return current_temp >= setpoint;
+}
+
+/**
+ * Convert the current heating PID output into on-time within the glycol window.
+ */
+uint16_t TempControl::glycolHeatingOnTime() {
+    uint16_t windowPeriod = minTimes.GLYCOL_WINDOW_PERIOD;
+    if (windowPeriod == 0 || cc.pidMax_heat <= 0 || glycolRuntime.heating_output <= 0) {
+        return 0;
+    }
+
+    uint32_t onTime = ((uint32_t) glycolRuntime.heating_output * windowPeriod) /
+                      (uint32_t) cc.pidMax_heat;
+
+    if (onTime > 0 && onTime < minTimes.GLYCOL_MIN_ON_TIME) {
+        onTime = minTimes.GLYCOL_MIN_ON_TIME;
+    }
+    if (onTime > windowPeriod) {
+        onTime = windowPeriod;
+    }
+    return onTime;
+}
+
+bool TempControl::glycolHeatingCapable() {
+    return (heater != &defaultActuator) ||
+           (cc.lightAsHeater && (light != &defaultActuator));
+}
+
+void TempControl::glycolResetHeatingWindow() {
+    glycolRuntime.heating_window_start_ms = 0;
+    glycolRuntime.heating_window_on_time_s = 0;
+}
+
+GlycolHeatingWindowState TempControl::glycolGetHeatingWindowState(uint32_t now) {
+    GlycolHeatingWindowState windowState{};
+    windowState.period_s = minTimes.GLYCOL_WINDOW_PERIOD;
+    if (windowState.period_s == 0) {
+        windowState.period_s = 1;
+    }
+
+    uint32_t windowPeriodMs = (uint32_t) windowState.period_s * 1000UL;
+    if (glycolRuntime.heating_window_start_ms == 0) {
+        glycolRuntime.heating_window_start_ms = now;
+    } else if ((now - glycolRuntime.heating_window_start_ms) >= windowPeriodMs) {
+        uint32_t elapsedMs = now - glycolRuntime.heating_window_start_ms;
+        glycolRuntime.heating_window_start_ms = now - (elapsedMs % windowPeriodMs);
+    }
+
+    glycolRuntime.heating_window_on_time_s = glycolHeatingOnTime();
+    windowState.on_time_s = glycolRuntime.heating_window_on_time_s;
+    windowState.elapsed_in_window_s = (now - glycolRuntime.heating_window_start_ms) / 1000UL;
+    if (windowState.elapsed_in_window_s > windowState.period_s) {
+        windowState.elapsed_in_window_s = windowState.period_s;
+    }
+    windowState.on_slice_active =
+        windowState.on_time_s > 0 &&
+        windowState.elapsed_in_window_s < windowState.on_time_s;
+    return windowState;
+}
+
+GlycolHeatingGateResult TempControl::glycolGetHeatingGate(bool startingNewOnSlice) {
+    GlycolHeatingGateResult gateResult{
+        true,
+        0,
+        GLYCOL_HEATING_WAIT_NONE,
+    };
+
+    if (!startingNewOnSlice) {
+        return gateResult;
+    }
+
+    uint16_t heatOffWait = 0;
+    uint16_t sinceHeating = timeSinceHeating();
+    if (sinceHeating < minTimes.MIN_HEAT_OFF_TIME) {
+        heatOffWait = minTimes.MIN_HEAT_OFF_TIME - sinceHeating;
+    }
+
+    uint16_t switchWait = 0;
+    uint16_t sinceCooling = timeSinceCooling();
+    if (sinceCooling < minTimes.MIN_SWITCH_TIME) {
+        switchWait = minTimes.MIN_SWITCH_TIME - sinceCooling;
+    }
+
+    gateResult.wait_time_s = max(heatOffWait, switchWait);
+    if (gateResult.wait_time_s == 0) {
+        return gateResult;
+    }
+
+    gateResult.allowed = false;
+    gateResult.reason =
+        (heatOffWait >= switchWait && heatOffWait > 0)
+            ? GLYCOL_HEATING_WAIT_HEAT_OFF_DELAY
+            : GLYCOL_HEATING_WAIT_SWITCH_DELAY;
+    return gateResult;
+}
+
+void TempControl::glycolSetHeatingWaitState(uint16_t waitTimeS, GlycolHeatingWaitReason reason, bool resetWindow) {
+    if (resetWindow) {
+        glycolResetHeatingWindow();
+    }
+    glycolRuntime.heating_wait_reason = reason;
+    state = WAITING_TO_HEAT;
+    waitTime = waitTimeS;
+    lastIdleTime = ticks.seconds();
+}
+
+void TempControl::glycolSetHeatingActiveState(uint16_t elapsedInWindowS) {
+    glycolRuntime.heating_wait_reason = GLYCOL_HEATING_WAIT_NONE;
+    state = (elapsedInWindowS < minTimes.GLYCOL_MIN_ON_TIME) ? HEATING_MIN_TIME : HEATING;
+    lastHeatTime = ticks.seconds();
+    resetWaitTime();
+}
+
+/**
  * Check for emergency condition (can't cool fast enough)
  * Uses horizon-based prediction instead of instantaneous rate
  */
@@ -1243,11 +1442,16 @@ bool TempControl::glycolCanExitEmergency() {
  * Transition to GLYCOL_IDLE state
  */
 void TempControl::glycolTransitionToIdle() {
+#ifdef ENABLE_GLYCOL_LOGGING
     GlycolState prev_state = glycolRuntime.state;
+#endif
     glycolRuntime.state = GLYCOL_IDLE;
     glycolRuntime.setpoint_changed_this_cycle = false;
+    glycolResetHeatingWindow();
+    glycolRuntime.heating_wait_reason = GLYCOL_HEATING_WAIT_NONE;
     state = IDLE;
     lastIdleTime = ticks.seconds();
+    resetWaitTime();
 
     // Log transition
 #ifdef ENABLE_GLYCOL_LOGGING
@@ -1270,8 +1474,10 @@ void TempControl::glycolTransitionToIdle() {
  * Transition to GLYCOL_COOLING state
  */
 void TempControl::glycolTransitionToCooling() {
+#ifdef ENABLE_GLYCOL_LOGGING
     GlycolState prev_state = glycolRuntime.state;
     float setpoint = tempToDouble(cs.beerSetting, 2);
+#endif
 
     glycolRuntime.state = GLYCOL_COOLING;
     glycolRuntime.t_pump_on = millis();
@@ -1280,6 +1486,8 @@ void TempControl::glycolTransitionToCooling() {
     glycolRuntime.negative_rate_count = 0;
     glycolRuntime.setpoint_changed_this_cycle = false;
     glycolRuntime.cooling_duration_s = 0;
+    glycolResetHeatingWindow();
+    glycolRuntime.heating_wait_reason = GLYCOL_HEATING_WAIT_NONE;
 
     // Clear rate buffer for fresh measurements
     glycolRuntime.rate_buffer_count = 0;
@@ -1310,8 +1518,10 @@ void TempControl::glycolTransitionToCooling() {
  * Transition to GLYCOL_COASTING state
  */
 void TempControl::glycolTransitionToCoasting() {
+#ifdef ENABLE_GLYCOL_LOGGING
     GlycolState prev_state = glycolRuntime.state;
     float setpoint = tempToDouble(cs.beerSetting, 2);
+#endif
 
     glycolRuntime.state = GLYCOL_COASTING;
     glycolRuntime.t_pump_off = millis();
@@ -1323,12 +1533,9 @@ void TempControl::glycolTransitionToCoasting() {
     // Hot glycol compensation: during long runs, hot beer warms the glycol reservoir.
     // After pump stops, the chiller cools the reservoir back to its setpoint.
     // Next cycle will have cold glycol - force minimum time and re-learn.
-    const char* reason;
-    if (glycolRuntime.cooling_duration_s > glycolConfig.hot_glycol_threshold_s) {
+    bool longRun = glycolRuntime.cooling_duration_s > glycolConfig.hot_glycol_threshold_s;
+    if (longRun) {
         glycolRuntime.force_minimum_cooling = true;
-        reason = "Stopping cooling (long run - forcing min next)";
-    } else {
-        reason = "Stopping cooling (coast prediction)";
     }
 
     state = IDLE;
@@ -1336,6 +1543,9 @@ void TempControl::glycolTransitionToCoasting() {
 
     // Log transition
 #ifdef ENABLE_GLYCOL_LOGGING
+    const char* reason = longRun
+        ? "Stopping cooling (long run - forcing min next)"
+        : "Stopping cooling (coast prediction)";
     glycolLog.logTransition(
         prev_state, GLYCOL_COASTING,
         glycolRuntime.temp_at_pump_off, setpoint,
@@ -1353,12 +1563,16 @@ void TempControl::glycolTransitionToCoasting() {
  * Transition to GLYCOL_EMERGENCY_COOLING state
  */
 void TempControl::glycolTransitionToEmergency() {
+#ifdef ENABLE_GLYCOL_LOGGING
     GlycolState prev_state = glycolRuntime.state;
     float current_temp = tempToDouble(beerSensor->readFastFiltered(), 2);
     float setpoint = tempToDouble(cs.beerSetting, 2);
+#endif
 
     glycolRuntime.state = GLYCOL_EMERGENCY_COOLING;
     glycolRuntime.emergency_entry_time = millis();
+    glycolResetHeatingWindow();
+    glycolRuntime.heating_wait_reason = GLYCOL_HEATING_WAIT_NONE;
 
     state = COOLING;
     lastCoolTime = ticks.seconds();
@@ -1374,6 +1588,42 @@ void TempControl::glycolTransitionToEmergency() {
         glycolLearned.k, glycolLearned.C_off, glycolLearned.L,
         glycolRuntime.force_minimum_cooling,
         "EMERGENCY - cannot keep up with cooling demand"
+    );
+#endif
+}
+
+/**
+ * Transition to GLYCOL_HEATING state
+ */
+void TempControl::glycolTransitionToHeating() {
+#ifdef ENABLE_GLYCOL_LOGGING
+    GlycolState prev_state = glycolRuntime.state;
+    float current_temp = tempToDouble(beerSensor->readFastFiltered(), 2);
+    float setpoint = tempToDouble(cs.beerSetting, 2);
+#endif
+
+    glycolRuntime.state = GLYCOL_HEATING;
+    // Do not start consuming the duty-cycle window until actuator protection
+    // delays have elapsed; otherwise the initial ON slice can be fully missed.
+    glycolResetHeatingWindow();
+    glycolRuntime.heating_wait_reason = GLYCOL_HEATING_WAIT_NONE;
+    glycolRuntime.setpoint_changed_this_cycle = false;
+
+    state = WAITING_TO_HEAT;
+    lastIdleTime = ticks.seconds();
+    resetWaitTime();
+
+    // Log transition
+#ifdef ENABLE_GLYCOL_LOGGING
+    glycolLog.logTransition(
+        prev_state, GLYCOL_HEATING,
+        current_temp, setpoint,
+        glycolRuntime.current_cooling_rate,
+        0,
+        glycolEstimateCoast(),
+        glycolLearned.k, glycolLearned.C_off, glycolLearned.L,
+        glycolRuntime.force_minimum_cooling,
+        "Starting heating (time-proportional PID)"
     );
 #endif
 }
@@ -1448,7 +1698,9 @@ void TempControl::glycolUpdateLearning() {
 
 /**
  * Main glycol state machine update
- * Called from updateState() when in glycol mode
+ * Called from updateState() when in glycol mode.
+ * Cooling uses predictive bang-bang control; heating uses a beer-only
+ * time-proportional PID with the existing HEATING/WAITING_TO_HEAT states.
  */
 void TempControl::updateGlycolState() {
     if (!extendedSettings.glycol || !modeIsBeer()) return;
@@ -1465,9 +1717,10 @@ void TempControl::updateGlycolState() {
     // Update current cooling rate
     glycolRuntime.current_cooling_rate = glycolCalculateRate();
 
-    // Safety check: temperature too low
+    // Safety check: temperature too low while actively cooling
     if (current_temp < (setpoint - glycolConfig.safety_margin_low)) {
-        if (glycolRuntime.state != GLYCOL_IDLE && glycolRuntime.state != GLYCOL_COASTING) {
+        if (glycolRuntime.state == GLYCOL_COOLING ||
+            glycolRuntime.state == GLYCOL_EMERGENCY_COOLING) {
             logDebug("Glycol: Safety limit - beer too cold");
             glycolTransitionToIdle();
             return;
@@ -1476,6 +1729,11 @@ void TempControl::updateGlycolState() {
 
     switch (glycolRuntime.state) {
         case GLYCOL_IDLE: {
+            if (glycolShouldStartHeating()) {
+                glycolTransitionToHeating();
+                break;
+            }
+
             // Update drift rate while idle
             if (glycolRuntime.current_cooling_rate > 0) {  // Only update if warming
                 glycolLearned.drift_rate = 0.85f * glycolLearned.drift_rate +
@@ -1490,6 +1748,10 @@ void TempControl::updateGlycolState() {
 
             if (min_off_elapsed && glycolShouldStartCooling()) {
                 glycolTransitionToCooling();
+            } else {
+                state = IDLE;
+                lastIdleTime = ticks.seconds();
+                resetWaitTime();
             }
             break;
         }
@@ -1610,6 +1872,40 @@ void TempControl::updateGlycolState() {
             if (glycolCanExitEmergency()) {
                 logDebug("Glycol: Exiting emergency mode");
                 glycolTransitionToCooling();  // Return to normal predictive control
+            }
+            break;
+        }
+
+        case GLYCOL_HEATING: {
+            if (glycolShouldStopHeating()) {
+                logDebug("Glycol: Heating satisfied");
+                glycolTransitionToIdle();
+                break;
+            }
+
+            uint32_t now = millis();
+            GlycolHeatingWindowState windowState = glycolGetHeatingWindowState(now);
+            if (windowState.on_time_s == 0) {
+                glycolTransitionToIdle();
+                break;
+            }
+
+            GlycolHeatingGateResult gateResult =
+                glycolGetHeatingGate(windowState.on_slice_active && !stateIsHeating());
+            if (!gateResult.allowed) {
+                // Hold the window until the actuator is actually allowed to run.
+                glycolSetHeatingWaitState(gateResult.wait_time_s, gateResult.reason, true);
+                break;
+            }
+
+            if (windowState.on_slice_active) {
+                glycolSetHeatingActiveState(windowState.elapsed_in_window_s);
+            } else {
+                glycolSetHeatingWaitState(
+                    windowState.period_s - windowState.elapsed_in_window_s,
+                    GLYCOL_HEATING_WAIT_WINDOW_OFF,
+                    false
+                );
             }
             break;
         }
