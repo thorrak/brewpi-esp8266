@@ -16,7 +16,7 @@
 #include <mdns.h>
 #include <esp_event.h>
 #include <esp_system.h>
-#include <esp_wifi_manager.h>
+#include <esp_wifi_config.h>
 #include <esp_bus.h>
 #include <esp_log.h>
 #include <Ticks.h>
@@ -69,7 +69,7 @@ static void on_wifi_connecting(const char *event, const void *data, size_t len, 
 
     // Don't clobber the AP screen with "connecting to..." during background reconnect attempts
     wifi_status_t status;
-    if (wifi_manager_get_status(&status) == ESP_OK && status.ap_active) {
+    if (wifi_cfg_get_status(&status) == ESP_OK && status.ap_active) {
         return;
     }
 
@@ -89,7 +89,7 @@ static void on_wifi_connected(const char *event, const void *data, size_t len, v
 // Event callback for WiFi got IP
 static void on_wifi_got_ip(const char *event, const void *data, size_t len, void *ctx) {
     wifi_status_t status;
-    if (wifi_manager_get_status(&status) == ESP_OK) {
+    if (wifi_cfg_get_status(&status) == ESP_OK) {
         Log.notice("WiFi got IP: %s\r\n", status.ip);
 
         if (wifi_was_disconnected) {
@@ -115,7 +115,7 @@ static void on_wifi_disconnected(const char *event, const void *data, size_t len
 static void on_wifi_ap_started(const char *event, const void *data, size_t len, void *ctx) {
     wifi_ap_status_t ap_status;
     Log.info("WiFi AP started for configuration.\r\n");
-    if (wifi_manager_get_ap_status(&ap_status) == ESP_OK) {
+    if (wifi_cfg_get_ap_status(&ap_status) == ESP_OK) {
         Log.info("AP started: SSID: %s, IP: %s\r\n", ap_status.ssid, ap_status.ip);
         display.printWiFiStartup();
         esp_wifi_set_bandwidth(WIFI_IF_AP, WIFI_BW_HT20);
@@ -172,8 +172,8 @@ void mdns_reset() {
         Log.error("Error resetting MDNS responder.\r\n");
     }
 
-    // Sync mDNS name to wifi_manager's custom variables for persistence
-    wifi_manager_set_var("mdns_name", mdns_id.c_str());
+    // Sync mDNS name to wifi_cfg's custom variables for persistence
+    wifi_cfg_set_var("mdns_name", mdns_id.c_str());
 }
 
 
@@ -207,27 +207,27 @@ void initWifiServer() {
 
 
 // -----------------------------------------------------------------------
-// initialize_wifi() - uses esp_wifi_manager
+// initialize_wifi() - uses esp_wifi_config
 // -----------------------------------------------------------------------
 
 void initialize_wifi() {
     display.clear();
     display.printWiFiConnect();
 
-    // Start HTTP server early so we can share it with wifi_manager
-    // This prevents port conflicts when wifi_manager's HTTP server is torn down
+    // Start HTTP server early so we can share it with wifi_cfg
+    // This prevents port conflicts when wifi_cfg's HTTP server is torn down
 #ifdef ENABLE_HTTP_INTERFACE
     http_server.startServer();
 #endif
 
     // Subscribe to WiFi events via esp_bus
-    esp_bus_sub(WIFI_EVT(WIFI_MGR_EVT_CONNECTING), on_wifi_connecting, NULL);
-    esp_bus_sub(WIFI_EVT(WIFI_MGR_EVT_CONNECTED), on_wifi_connected, NULL);
-    esp_bus_sub(WIFI_EVT(WIFI_MGR_EVT_GOT_IP), on_wifi_got_ip, NULL);
-    // esp_bus_sub(WIFI_EVT(WIFI_MGR_EVT_DISCONNECTED), on_wifi_disconnected, NULL);
-    esp_bus_sub(WIFI_EVT(WIFI_MGR_EVT_AP_START), on_wifi_ap_started, NULL);
-    esp_bus_sub(WIFI_EVT(WIFI_MGR_EVT_VAR_CHANGED), on_var_changed, NULL);
-    esp_bus_sub(WIFI_EVT(WIFI_MGR_EVT_PROVISIONING_STOPPED), on_provisioning_stopped, NULL);
+    esp_bus_sub(WIFI_EVT(WIFI_CFG_EVT_CONNECTING), on_wifi_connecting, NULL);
+    esp_bus_sub(WIFI_EVT(WIFI_CFG_EVT_CONNECTED), on_wifi_connected, NULL);
+    esp_bus_sub(WIFI_EVT(WIFI_CFG_EVT_GOT_IP), on_wifi_got_ip, NULL);
+    // esp_bus_sub(WIFI_EVT(WIFI_CFG_EVT_DISCONNECTED), on_wifi_disconnected, NULL);
+    esp_bus_sub(WIFI_EVT(WIFI_CFG_EVT_AP_START), on_wifi_ap_started, NULL);
+    esp_bus_sub(WIFI_EVT(WIFI_CFG_EVT_VAR_CHANGED), on_var_changed, NULL);
+    esp_bus_sub(WIFI_EVT(WIFI_CFG_EVT_PROVISIONING_STOPPED), on_provisioning_stopped, NULL);
 
     // Default variables for WiFi manager - mdns_name is used to set the mDNS hostname
     // This provides a default value; if NVS has a stored value, that takes precedence
@@ -235,9 +235,9 @@ void initialize_wifi() {
         {"mdns_name", "brewpi"},
     };
 
-    // Configure WiFi Manager
+    // Configure WiFi Config
     // TODO - Determine if I want "WIFI_PROV_ON_FAILURE" here
-    wifi_manager_config_t wifi_config = {
+    wifi_cfg_config_t wifi_config = {
         .default_networks = NULL,
         .default_network_count = 0,
         .default_vars = default_vars,
@@ -266,7 +266,7 @@ void initialize_wifi() {
         .enable_ap = true,
         .http = {
 #ifdef ENABLE_HTTP_INTERFACE
-            .httpd = http_server.getHandle(),  // Share our HTTP server with wifi_manager
+            .httpd = http_server.getHandle(),  // Share our HTTP server with wifi_cfg
 #else
             .httpd = NULL,
 #endif
@@ -275,37 +275,34 @@ void initialize_wifi() {
             .auth_username = NULL,
             .auth_password = NULL,
         },
-        .mdns = {
-            .enable = false,  // Disabled - we manage mDNS ourselves with BrewPi-specific TXT records
-        },
         .ble = {
             .enable = false,  // Disabled - we manage BLE ourselves for sensor scanning
             .device_name = NULL,
         },
     };
 
-    // Initialize WiFi Manager
-    esp_err_t err = wifi_manager_init(&wifi_config);
+    // Initialize WiFi Config
+    esp_err_t err = wifi_cfg_init(&wifi_config);
     if (err != ESP_OK) {
-        Log.error("Failed to initialize WiFi Manager: %d\r\n", err);
+        Log.error("Failed to initialize WiFi Config: %d\r\n", err);
         vTaskDelay(pdMS_TO_TICKS(1000));
         esp_restart();
     }
 
     // Wait for connection (5 minute timeout)
-    err = wifi_manager_wait_connected(5 * 60 * 1000);
+    err = wifi_cfg_wait_connected(5 * 60 * 1000);
     if (err != ESP_OK) {
         Log.error("WiFi connection timeout. Restarting device.\r\n");
         vTaskDelay(pdMS_TO_TICKS(1000));
         esp_restart();
     }
 
-    // wifi_manager handles its own provisioning teardown after the configured delay
+    // wifi_cfg handles its own provisioning teardown after the configured delay
     // (stop_provisioning_on_connect + provisioning_teardown_delay_ms)
 
-    // Sync mDNS name FROM config TO wifi_manager (config file is the source of truth).
+    // Sync mDNS name FROM config TO wifi_cfg (config file is the source of truth).
     // The on_var_changed callback handles the reverse direction for real-time changes.
-    wifi_manager_set_var("mdns_name", eepromManager.fetchmDNSName().c_str());
+    wifi_cfg_set_var("mdns_name", eepromManager.fetchmDNSName().c_str());
 
     // Set up telnet server and mDNS
     initWifiServer();
@@ -435,10 +432,10 @@ uint32_t bp_wifi_get_ip_addr() {
 }
 
 void bp_wifi_disconnect(bool erase_credentials) {
-    wifi_manager_disconnect();
+    wifi_cfg_disconnect();
 
     if (erase_credentials) {
-        wifi_manager_factory_reset();
+        wifi_cfg_factory_reset();
     }
 }
 
@@ -472,7 +469,7 @@ const char* bp_wifi_get_hostname() {
 }
 
 void bp_wifi_reconnect() {
-    wifi_manager_connect(NULL);
+    wifi_cfg_connect(NULL);
 }
 
 void bp_wifi_off() {

@@ -324,7 +324,7 @@ extern "C" void app_main(void) {
         ESP_ERROR_CHECK(ret);
     }
 
-    // Initialize esp_bus (required for esp_wifi_manager events)
+    // Initialize esp_bus (required for esp_wifi_config events)
     ESP_ERROR_CHECK(esp_bus_init());
 
     // Run setup on the main task (stack size set via CONFIG_ESP_MAIN_TASK_STACK_SIZE)
