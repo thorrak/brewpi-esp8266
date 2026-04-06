@@ -260,7 +260,7 @@ public:
 
 	int8_t enumerateActuatorPins(uint8_t offset)
 	{
-#if BREWPI_ACTUATOR_PINS && defined(ARDUINO)
+#if BREWPI_ACTUATOR_PINS
 #if BREWPI_STATIC_CONFIG<=BREWPI_SHIELD_REV_A
 		switch (offset) {
 			case 0: return heatingPin;
