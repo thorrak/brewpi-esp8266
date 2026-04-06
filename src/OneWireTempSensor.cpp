@@ -124,7 +124,9 @@ bool OneWireTempSensor::init() {
   // Set up reset detection - writes marker to scratchpad that will be
   // cleared on sensor power cycle, allowing us to detect resets
   if (m_sensor && ds18b20_init_connection(m_sensor) != ESP_OK) {
-    logDebug("init onewire sensor - init_connection failed");
+    logDebug("init onewire sensor - init_connection failed, deleting stale handle");
+    ds18b20_del_device(m_sensor);
+    m_sensor = NULL;
     setConnected(false);
     return false;
   }
@@ -135,6 +137,12 @@ bool OneWireTempSensor::init() {
     temperature temp = readAndConstrainTemp();
     DEBUG_ONLY(logInfoIntStringTemp(INFO_TEMP_SENSOR_INITIALIZED, oneWirePin, addressString, temp));
     success = temp != TEMP_SENSOR_DISCONNECTED && requestConversion();
+  }
+
+  if (!success && m_sensor) {
+    logDebug("init onewire sensor - failed, deleting handle for fresh retry");
+    ds18b20_del_device(m_sensor);
+    m_sensor = NULL;
   }
 
   setConnected(success);
