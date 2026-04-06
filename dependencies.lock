@@ -1,4 +1,15 @@
 dependencies:
+  espressif/ds18b20:
+    component_hash: e637047f6142a837dee081334298aed94ba221029794817649e781b6c3cd14a3
+    dependencies:
+    - name: espressif/onewire_bus
+      registry_url: https://components.espressif.com
+      require: private
+      version: ^1.0.0
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 0.3.0
   espressif/mdns:
     component_hash: 29e47564b1a7ee778135e17fbbf2a2773f71c97ebabfe626c8eda7c958a7ad16
     dependencies:
@@ -9,6 +20,16 @@ dependencies:
       registry_url: https://components.espressif.com/
       type: service
     version: 1.9.1
+  espressif/onewire_bus:
+    component_hash: d709015ba466095259228521cf1bad9c0cdaaa42a92ea5d9c88ec6c28ae89e9b
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    version: 1.1.0
   h2zero/esp-nimble-cpp:
     component_hash: 720050476f7fb47bd0aa08a94642fd09a50536391d60081858702a789405d76f
     dependencies:
@@ -48,10 +69,11 @@ dependencies:
       type: service
     version: 1.20.4
 direct_dependencies:
+- espressif/ds18b20
 - espressif/mdns
 - h2zero/esp-nimble-cpp
 - idf
 - joltwallet/littlefs
-manifest_hash: de43da03da9561504a35dbac5b62d66372bcc2b174f9d9b013793fd3fabab85d
+manifest_hash: ccde1aec8d4d2c51b3f879a8be56d0bf73ac1f02fea44d519ac764fe7e2efa4a
 target: esp32
 version: 2.0.0
