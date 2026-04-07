@@ -23,6 +23,7 @@
 #include "EepromManager.h"
 #include "SettingsManager.h"
 #include "ESP_BP_WiFi.h"
+#include "GlycolLog.h"
 
 
 httpServer http_server;
@@ -821,6 +822,14 @@ bool processActionJson(const JsonDocument& json, bool triggerUpstreamUpdate) {
         http_server.restart_requested = true;
         return true;
     }
+
+#ifdef ENABLE_GLYCOL_LOGGING
+    if(strcmp(action, "clear_glycol_log") == 0) {
+        Log.notice("Action [clear_glycol_log] received\r\n");
+        glycolLog.clearLog();
+        return true;
+    }
+#endif
 
     Log.warning("Action error - Unknown action: %s\r\n", action);
     return false;

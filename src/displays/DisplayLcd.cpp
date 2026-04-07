@@ -46,6 +46,7 @@ LcdDriver LcdDisplay::lcd(0x27, Config::Lcd::columns, Config::Lcd::lines);  // N
 // Constant strings used multiple times
 static const char STR_Beer_[] = "Beer ";
 static const char STR_Fridge_[] = "Fridge ";
+static const char STR_Glycol_[] = "Glycol ";
 static const char STR_Const_[] = "Const.";
 static const char STR_Cool[] = "Cool";
 static const char STR_Heat[] = "Heat";
@@ -194,7 +195,7 @@ void LcdDisplay::printTemperature(temperature temp){
 void LcdDisplay::printStationaryText(){
 	printAt(0, 0, "Mode");
 	printAt(0, 1, STR_Beer_);
-	printAt(0, 2, (flags & LCD_FLAG_DISPLAY_ROOM) ?  "Room  " : STR_Fridge_);
+	printAt(0, 2, (flags & LCD_FLAG_DISPLAY_ROOM) ?  "Room  " : (extendedSettings.glycol ? STR_Glycol_ : STR_Fridge_));
 	printDegreeUnit(18, 1);
 	printDegreeUnit(18, 2);
 }
@@ -227,7 +228,7 @@ void LcdDisplay::printMode(){
 	// Factoring prints out of switch has negative effect on code size in this function
 	switch(tempControl.getMode()){
     case Modes::fridgeConstant:
-			lcd.print(STR_Fridge_);
+			lcd.print(extendedSettings.glycol ? STR_Glycol_ : STR_Fridge_);
 			lcd.print(STR_Const_);
 			break;
     case Modes::beerConstant:

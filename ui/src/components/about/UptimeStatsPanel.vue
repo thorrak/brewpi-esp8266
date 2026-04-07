@@ -112,13 +112,13 @@
               {{ $t("about.controller_actions.reset_config_button") }}
             </button>
 
-            <!-- GLYCOL_DISABLED_ON_ESP_IDF START: Clear Glycol Log button
+            <!-- TODO: REMOVE BEFORE FINAL RELEASE - Clear Glycol Log Button (temporary debugging feature) -->
             <button @click="openConfirmModal('clear_glycol_log')" type="button"
               class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-slate-600 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500">
               <ArchiveBoxXMarkIcon class="h-5 w-5 mr-2" aria-hidden="true" />
               {{ $t("about.controller_actions.clear_glycol_log_button") }}
             </button>
-            GLYCOL_DISABLED_ON_ESP_IDF END -->
+            <!-- END TODO: REMOVE BEFORE FINAL RELEASE -->
           </div>
         </div>
 
@@ -250,7 +250,7 @@ import {
   ArrowPathIcon,
   WifiIcon,
   TrashIcon,
-  // GLYCOL_DISABLED_ON_ESP_IDF: ArchiveBoxXMarkIcon, // used for clear_glycol_log button
+  ArchiveBoxXMarkIcon, // TODO: REMOVE BEFORE FINAL RELEASE - used for clear_glycol_log button
 } from '@heroicons/vue/24/outline';
 import { useLoading } from "vue-loading-overlay";
 import { useI18n } from 'vue-i18n';
@@ -342,10 +342,10 @@ function getConfirmTitle() {
       return t('about.controller_actions.confirm_reset_connection_title');
     case 'reset_config':
       return t('about.controller_actions.confirm_reset_config_title');
-    // GLYCOL_DISABLED_ON_ESP_IDF START: clear_glycol_log case
-    // case 'clear_glycol_log':
-    //   return t('about.controller_actions.confirm_clear_glycol_log_title');
-    // GLYCOL_DISABLED_ON_ESP_IDF END
+    // TODO: REMOVE BEFORE FINAL RELEASE - clear_glycol_log case
+    case 'clear_glycol_log':
+      return t('about.controller_actions.confirm_clear_glycol_log_title');
+    // END TODO: REMOVE BEFORE FINAL RELEASE
     default:
       return '';
   }
@@ -359,10 +359,10 @@ function getConfirmMessage() {
       return t('about.controller_actions.confirm_reset_connection_msg');
     case 'reset_config':
       return t('about.controller_actions.confirm_reset_config_msg');
-    // GLYCOL_DISABLED_ON_ESP_IDF START: clear_glycol_log case
-    // case 'clear_glycol_log':
-    //   return t('about.controller_actions.confirm_clear_glycol_log_msg');
-    // GLYCOL_DISABLED_ON_ESP_IDF END
+    // TODO: REMOVE BEFORE FINAL RELEASE - clear_glycol_log case
+    case 'clear_glycol_log':
+      return t('about.controller_actions.confirm_clear_glycol_log_msg');
+    // END TODO: REMOVE BEFORE FINAL RELEASE
     default:
       return '';
   }

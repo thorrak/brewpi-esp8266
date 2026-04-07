@@ -58,6 +58,10 @@ public:
     uint8_t lightAsHeater;		//!< Use the light to heat rather than the configured heater device
     uint8_t rotaryHalfSteps; //!< Define whether to use full or half steps for the rotary encoder
     temperature pidMax;
+    temperature Kp_heat;    //!< Separate heating Kp for glycol mode
+    temperature Ki_heat;    //!< Separate heating Ki for glycol mode
+    temperature Kd_heat;    //!< Separate heating Kd for glycol mode
+    temperature pidMax_heat; //!< Separate heating pidMax for glycol mode
     char tempFormat; //!< Temperature format (F/C)
 
     void toJson(JsonDocument &doc);

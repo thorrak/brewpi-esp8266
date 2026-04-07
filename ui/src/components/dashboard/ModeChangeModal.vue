@@ -192,12 +192,10 @@ const modes = computed(() => {
     { name: i18n.global.t('sitewide.brewpi_modes.off'), value: 'o' },
     { name: i18n.global.t('sitewide.brewpi_modes.beer_constant'), value: 'b' },
   ];
-  // GLYCOL_DISABLED_ON_ESP_IDF START: always push fridge_constant
   // Fridge Constant is not available in glycol mode
-  // if (!ExtendedSettingsStore.glycol) {
+  if (!ExtendedSettingsStore.glycol) {
     availableModes.push({ name: i18n.global.t('sitewide.brewpi_modes.fridge_constant'), value: 'f' });
-  // }
-  // GLYCOL_DISABLED_ON_ESP_IDF END
+  }
   return availableModes;
 })
 

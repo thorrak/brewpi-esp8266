@@ -60,13 +60,13 @@ void TempSensor::update()
 {
 	temperature temp;
 	if (!_sensor || (temp=_sensor->read())==TEMP_SENSOR_DISCONNECTED) {
-		if(failedReadCount >= 0)
+		if(failedReadCount >= 0)  // Don't increment if we haven't had a successful read yet (meaning failedReadCount is -1, and the filters are uninitialized)
 			failedReadCount++;
 		failedReadCount = min(failedReadCount,int8_t(120));	// limit
 		return;
 	}
 
-	// We successfully read the temp. If this is the initial read, initialize the filters.
+	// We successfully read the temp. If this is the initial read (-1), initialize the filters.
 	// Also reinitialize the filters if we had more than 60 failed reads. 
 	if(failedReadCount < 0 || failedReadCount > 60){
 		initialize_filters(temp);

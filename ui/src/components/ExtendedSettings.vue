@@ -28,7 +28,6 @@
 <!--                  </SwitchLabel>-->
 <!--                </SwitchGroup>-->
 
-                <!-- GLYCOL_DISABLED_ON_ESP_IDF START
                 <SwitchGroup as="div" class="flex items-center my-3">
                   <Switch v-model="glycol" :class="[glycol ? 'bg-indigo-600' : 'bg-gray-200', 'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2']">
                     <span aria-hidden="true" :class="[glycol ? 'translate-x-5' : 'translate-x-0', 'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out']" />
@@ -52,7 +51,6 @@
                     </div>
                   </div>
                 </div>
-                GLYCOL_DISABLED_ON_ESP_IDF END -->
 
                 <!-- InvertTFT -->
                 <!-- TODO - hide this if using an IIC display -->

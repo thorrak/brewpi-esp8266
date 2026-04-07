@@ -114,6 +114,10 @@ void ControlConstants::setDefaults() {
     lightAsHeater = 0;
     rotaryHalfSteps = 0;
     pidMax = intToTempDiff(10);	// +/- 10 deg Celsius
+    Kp_heat = Kp;
+    Ki_heat = Ki;
+    Kd_heat = Kd;
+    pidMax_heat = pidMax;
     tempFormat = 'C';
 }
 
@@ -152,6 +156,10 @@ void ControlConstants::toJson(JsonDocument &doc) {
     doc[ControlConstantsKeys::lightHeater] = lightAsHeater;
     doc[ControlConstantsKeys::rotaryHalfSteps] = rotaryHalfSteps;
     doc[ControlConstantsKeys::pidMax] = pidMax;
+    doc[ControlConstantsKeys::kpHeat] = Kp_heat;
+    doc[ControlConstantsKeys::kiHeat] = Ki_heat;
+    doc[ControlConstantsKeys::kdHeat] = Kd_heat;
+    doc[ControlConstantsKeys::pidMaxHeat] = pidMax_heat;
     char formatStr[2];
     formatStr[0] = tempFormat;
     formatStr[1] = '\0';
@@ -203,6 +211,10 @@ void ControlConstants::loadFromFilesystem() {
     lightAsHeater = json_doc[ControlConstantsKeys::lightHeater] | lightAsHeater;
     rotaryHalfSteps = json_doc[ControlConstantsKeys::rotaryHalfSteps] | rotaryHalfSteps;
     if(json_doc[ControlConstantsKeys::pidMax].is<temperature>()) pidMax = json_doc[ControlConstantsKeys::pidMax];
+    if(json_doc[ControlConstantsKeys::kpHeat].is<temperature>()) Kp_heat = json_doc[ControlConstantsKeys::kpHeat];
+    if(json_doc[ControlConstantsKeys::kiHeat].is<temperature>()) Ki_heat = json_doc[ControlConstantsKeys::kiHeat];
+    if(json_doc[ControlConstantsKeys::kdHeat].is<temperature>()) Kd_heat = json_doc[ControlConstantsKeys::kdHeat];
+    if(json_doc[ControlConstantsKeys::pidMaxHeat].is<temperature>()) pidMax_heat = json_doc[ControlConstantsKeys::pidMaxHeat];
 
     if(json_doc[ControlConstantsKeys::tempFormat].is<const char *>()) {
         // This gets a bit strange due to the 6.20 changes to ArduinoJson
@@ -392,16 +404,22 @@ void ExtendedSettings::processSettingKeypair(JsonPair kv) {
 /**
  * \brief Set the glycol mode
  *
+ * When switching between compressor and glycol modes, the controller is
+ * set to 'off' to prevent unexpected behavior. Sensor assignments remain
+ * unchanged.
+ *
  * \param setting - The new setting
  */
 void ExtendedSettings::setGlycol(bool setting) {
+    if (glycol != setting) {
+        // Controller type is changing - force mode to 'off'
+        // This is done via TempControl to ensure proper state management
+        extern TempControl tempControl;
+        tempControl.setMode(Modes::off, true);
+    }
     glycol = setting;
     minTimes.setDefaults();
-    if (glycol) {
-        // Glycol mode
-    } else {
-        // Non-glycol mode
-    }
+    storeToFilesystem();
 }
 
 

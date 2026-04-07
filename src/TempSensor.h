@@ -92,7 +92,7 @@ class TempSensor {
   /**
    * \brief Check if the sensor is connected.
    */
-	bool isConnected() { return _sensor->isConnected(); }
+	bool isConnected() { return _sensor != NULL && _sensor->isConnected(); }
 
 	void update();
 
@@ -113,6 +113,14 @@ class TempSensor {
 	void setSlopeFilterCoefficients(uint8_t b);
 
 	BasicTempSensor& sensor();
+
+  /**
+   * \brief Get the number of consecutive failed reads.
+   *
+   * @return -1 if uninitialized, 0 if currently connected and reading successfully,
+   *         1-120 if sensor is failing/disconnected (capped at 120)
+   */
+	int8_t getFailedReadCount() { return failedReadCount; }
 
 	private:
 	BasicTempSensor* _sensor; //!< Wrapped basic sensor

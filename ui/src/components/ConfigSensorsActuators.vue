@@ -18,7 +18,7 @@
 <!--            </div>-->
           </div>
 
-          <!-- GLYCOL_DISABLED_ON_ESP_IDF START: glycol-mode no-beer warning removed
+          <!-- Glycol mode: Beer sensor is required, fridge sensor is not used -->
           <div class="border-l-4 border-red-400 bg-red-50 p-4 mt-8" v-if="ExtendedSettingsStore.glycol && !hasBeerSensor">
             <div class="flex">
               <div class="flex-shrink-0">
@@ -31,9 +31,8 @@
               </div>
             </div>
           </div>
-          GLYCOL_DISABLED_ON_ESP_IDF END -->
           <!-- Compressor mode: Fridge sensor is required -->
-          <div class="border-l-4 border-red-400 bg-red-50 p-4 mt-8" v-if="!hasFridgeSensor"><!-- GLYCOL_DISABLED_ON_ESP_IDF: was v-else-if="!ExtendedSettingsStore.glycol && !hasFridgeSensor" -->
+          <div class="border-l-4 border-red-400 bg-red-50 p-4 mt-8" v-else-if="!ExtendedSettingsStore.glycol && !hasFridgeSensor">
             <div class="flex">
               <div class="flex-shrink-0">
                 <ExclamationTriangleIcon class="h-5 w-5 text-red-400" aria-hidden="true" />
@@ -46,7 +45,7 @@
             </div>
           </div>
           <!-- Compressor mode: Beer sensor is optional but recommended -->
-          <div class="border-l-4 border-yellow-400 bg-yellow-50 p-4 mt-8" v-else-if="!hasBeerSensor"><!-- GLYCOL_DISABLED_ON_ESP_IDF: was v-else-if="!ExtendedSettingsStore.glycol && !hasBeerSensor" -->
+          <div class="border-l-4 border-yellow-400 bg-yellow-50 p-4 mt-8" v-else-if="!ExtendedSettingsStore.glycol && !hasBeerSensor">
             <div class="flex">
               <div class="flex-shrink-0">
                 <ExclamationTriangleIcon class="h-5 w-5 text-yellow-400" aria-hidden="true" />
