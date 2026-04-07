@@ -6,7 +6,7 @@
 #include <thorlog_espidf.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <freertos/timers.h>
+#include <esp_timer.h>
 
 #include "rest_send.h"
 #include "http_server.h"
@@ -47,39 +47,42 @@ static esp_err_t http_event_handler(esp_http_client_event_t *evt) {
 restHandler rest_handler; // Global data sender
 
 
-// FreeRTOS timer callbacks
-static void fullConfigTimerCallback(TimerHandle_t xTimer) {
-    rest_handler.send_full_config_ticker = true;
-}
-
-static void statusTimerCallback(TimerHandle_t xTimer) {
-    rest_handler.send_status_ticker = true;
-}
-
-static void registerDeviceTimerCallback(TimerHandle_t xTimer) {
-    rest_handler.register_device_ticker = true;
+static uint32_t rest_millis() {
+    return (uint32_t)(esp_timer_get_time() / 1000);
 }
 
 
 restHandler::restHandler() {
-    send_full_config_ticker = false;
-    send_status_ticker = false;
-    register_device_ticker = false;
     messages_pending_on_server = false;
+    needs_config_fetch = false;
+    prefetch_messages_done = false;
     pendingDeviceName[0] = '\0';
 }
 
 void restHandler::init()
 {
-    // Create one-shot FreeRTOS software timers
-    fullConfigTicker = xTimerCreate("fullCfg", pdMS_TO_TICKS(15 * 1000), pdFALSE, nullptr, fullConfigTimerCallback);
-    statusTicker = xTimerCreate("status", pdMS_TO_TICKS(25 * 1000), pdFALSE, nullptr, statusTimerCallback);
-    registerDeviceTicker = xTimerCreate("regDev", pdMS_TO_TICKS(5 * 1000), pdFALSE, nullptr, registerDeviceTimerCallback);
+    // Set initial timestamps so first sends are staggered:
+    //   register: ~5s, full config: ~15s, status: ~25s
+    uint32_t now = rest_millis();
+    last_register_attempt_ms = now - (REGISTER_DEVICE_DELAY * 1000) + 5000;
+    last_full_config_send_ms = now - (FULL_CONFIG_PUSH_DELAY * 1000) + 15000;
+    last_status_send_ms = now;
+}
 
-    // Start all three timers
-    xTimerStart(fullConfigTicker, 0);
-    xTimerStart(statusTicker, 0);
-    xTimerStart(registerDeviceTicker, 0);
+
+bool restHandler::status_send_due() {
+    if (force_status_send) return true;
+    return (rest_millis() - last_status_send_ms >= LCD_PUSH_DELAY * 1000);
+}
+
+bool restHandler::full_config_send_due() {
+    if (force_full_config_send) return true;
+    return (rest_millis() - last_full_config_send_ms >= FULL_CONFIG_PUSH_DELAY * 1000);
+}
+
+bool restHandler::register_attempt_due() {
+    if (force_register_attempt) return true;
+    return (rest_millis() - last_register_attempt_ms >= REGISTER_DEVICE_DELAY * 1000);
 }
 
 
@@ -93,11 +96,58 @@ void restHandler::get_useragent(char *ua, size_t size) {
 
 
 void restHandler::process() {
-    register_device();
-    send_status();
-    get_messages(false);
-    process_messages();
-    send_full_config();
+    if (!configured_for_fermentrack_rest())
+        return;
+
+    // Always apply locally-pending messages (no HTTP, just local processing + queue acks)
+    if (messages.requires_processing()) {
+        apply_pending_messages();
+    }
+
+    // P1: Device registration (must happen before anything else)
+    if (!upstreamSettings.isRegistered() && register_attempt_due()) {
+        register_device();
+        return;
+    }
+
+    // Everything below requires registration
+    if (!upstreamSettings.isRegistered())
+        return;
+
+    // P2: Status sends — highest data priority, most frequent
+    if (status_send_due()) {
+        send_status();
+        return;
+    }
+
+    // P3: Fetch messages from server (when status response indicated messages exist)
+    if (messages_pending_on_server) {
+        get_messages(false);
+        return;
+    }
+
+    // P4: Acknowledge processed messages — one HTTP PATCH per call
+    if (ack_next_pending_message()) {
+        return;
+    }
+
+    // P5: Fetch updated config from server (triggered by updated_cs/cc/mt/devices messages)
+    if (needs_config_fetch) {
+        fetch_and_apply_config();
+        return;
+    }
+
+    // P6: Full config send (fetch messages first on one call, send on the next)
+    if (full_config_send_due()) {
+        if (!prefetch_messages_done) {
+            get_messages(true);
+            prefetch_messages_done = true;
+            return;
+        }
+        send_full_config();
+        prefetch_messages_done = false;
+        return;
+    }
 }
 
 sendResult restHandler::send_json_str(std::string &payload, const char *url, httpMethod method) {
@@ -109,11 +159,8 @@ sendResult restHandler::send_json_str(std::string &payload, const char *url, std
     char userAgent[128];
     sendResult result;
 
-    send_lock = true;
-
     if (!bp_wifi_is_connected()) {
         Log.warning("send_json_str: Wifi not connected, skipping send.\r\n");
-        send_lock = false;
         return sendResult::retry;
     }
 
@@ -150,7 +197,6 @@ sendResult restHandler::send_json_str(std::string &payload, const char *url, std
     esp_http_client_handle_t client = esp_http_client_init(&config);
     if (client == nullptr) {
         Log.error("send_json_str: Unable to create esp_http_client\r\n");
-        send_lock = false;
         return sendResult::failure;
     }
 
@@ -182,7 +228,6 @@ sendResult restHandler::send_json_str(std::string &payload, const char *url, std
 
     esp_http_client_cleanup(client);
 
-    send_lock = false;
     return result;
 }
 
@@ -252,22 +297,13 @@ bool restHandler::send_full_config() {
     char url[256] = "";
     std::string payload;
 
-    // Only send if the semaphore is set - otherwise return
-    if(!send_full_config_ticker)
-        return false;
-
-    // Force getting messages before sending the full config
-    // We do this here, before setting send_full_config_ticker false, as get_messages() will set it to true if there are config updates.
-    // We can just send them as part of this full config push instead of having to queue up a second
-    xTimerStop(fullConfigTicker, 0);
-    get_messages(true);
-    send_full_config_ticker = false;
-    xTimerChangePeriod(fullConfigTicker, pdMS_TO_TICKS(FULL_CONFIG_PUSH_DELAY * 1000), 0);
+    last_full_config_send_ms = rest_millis();
+    force_full_config_send = false;
 
     if(!upstreamSettings.isRegistered())
-        return false;  // If we aren't registered, we have nowhere to send the data
+        return false;
     if(!get_url(url, sizeof(url), UpstreamAPIEndpoints::fullConfig))
-        return false;  // Skip send if the URL is not set
+        return false;
 
     {
         JsonDocument doc;
@@ -329,14 +365,8 @@ bool restHandler::register_device() {
     std::string payload;
     std::string response;
 
-    // Only send if the semaphore is set - otherwise return
-    if(!register_device_ticker)
-        return false;
-    else
-        register_device_ticker = false;
-
-    xTimerStop(registerDeviceTicker, 0);
-    xTimerChangePeriod(registerDeviceTicker, pdMS_TO_TICKS(REGISTER_DEVICE_DELAY * 1000), 0);
+    last_register_attempt_ms = rest_millis();
+    force_register_attempt = false;
 
     // If we've already registered or are missing critical information necessary to register, skip this attempt
     if(upstreamSettings.isRegistered() || (strlen(upstreamSettings.username) == 0 && strlen(upstreamSettings.apiKey) == 0))
@@ -395,8 +425,8 @@ bool restHandler::register_device() {
                 upstreamSettings.storeToFilesystem(); 
 
                 // Also, trigger sends
-                send_status_ticker = true;
-                send_full_config_ticker = true;
+                force_status_send = true;
+                force_full_config_send = true;
 
             } else {
                 // We didn't set the device ID (were unable to register). Set an error code.
@@ -419,14 +449,8 @@ bool restHandler::send_status() {
     char url[256] = "";
     std::string response;
 
-    // Only send if the semaphore is set - otherwise return
-    if(!send_status_ticker)
-        return false;
-    else
-        send_status_ticker = false;
-
-    xTimerStop(statusTicker, 0);
-    xTimerChangePeriod(statusTicker, pdMS_TO_TICKS(LCD_PUSH_DELAY * 1000), 0);
+    last_status_send_ms = rest_millis();
+    force_status_send = false;
 
     if(upstreamSettings.isRegistered() == false)
         return false;
@@ -461,7 +485,9 @@ bool restHandler::send_status() {
         serializeJson(doc, payload);
     }
 
-    send_json_str(payload, url, response, httpMethod::HTTP_PUT);
+    sendResult result = send_json_str(payload, url, response, httpMethod::HTTP_PUT);
+    if (result != sendResult::success)
+        return false;
 
     // Check if we have any messages pending on the server, and set the flag if so
     {
@@ -484,7 +510,7 @@ bool restHandler::send_status() {
                     if(tempControl.cs.mode != updated_mode) {
                         Log.info("Updating to valid mode \"%c\" (0x%02X)\r\n", updated_mode, updated_mode);
                         tempControl.setMode(updated_mode);
-                        send_status_ticker = true;  // Trigger a send to update the LCD
+                        force_status_send = true;  // Trigger a send to update the LCD
                     }
             } else {
                 Log.error("Invalid mode \"%c\" (0x%02X)\r\n", updated_mode, updated_mode);
@@ -495,13 +521,13 @@ bool restHandler::send_status() {
             switch(tempControl.cs.mode) {
                 case Modes::fridgeConstant:
                     SettingLoader::setFridgeSetting(doc["updated_setpoint"].as<const char *>());
-                    send_status_ticker = true;  // Trigger a send to update the LCD
+                    force_status_send = true;  // Trigger a send to update the LCD
                     break;
                 case Modes::beerConstant:
                 case Modes::beerProfile:
                     SettingLoader::setBeerSetting(doc["updated_setpoint"].as<const char *>());
                     Log.info("Received updated setpoint \"%s\"\r\n", doc["updated_setpoint"].as<const char *>());
-                    send_status_ticker = true;  // Trigger a send to update the LCD
+                    force_status_send = true;  // Trigger a send to update the LCD
                     break;
                 default:
                     break;
@@ -541,7 +567,9 @@ bool restHandler::get_messages(bool override=false) {
     //     serializeJson(doc, payload);
     // }
 
-    send_json_str(payload, url, response, httpMethod::HTTP_GET);
+    sendResult result = send_json_str(payload, url, response, httpMethod::HTTP_GET);
+    if (result != sendResult::success)
+        return false;
 
     // Parse any messages that are on the server
     {
@@ -573,10 +601,10 @@ bool restHandler::get_messages(bool override=false) {
             if(doc[RestMessagesKeys::messages][RestMessagesKeys::refresh_config].is<bool>())
                 messages.refresh_config = doc[RestMessagesKeys::messages][RestMessagesKeys::refresh_config].as<bool>();
         }
-     
+
     }
 
-    messages_pending_on_server = false;  // TODO - Remove once done with testing, as we should only unset this if we have a confirmed message count of 0
+    messages_pending_on_server = false;
     return true;
 }
 

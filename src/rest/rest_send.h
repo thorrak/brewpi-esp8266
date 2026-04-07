@@ -4,7 +4,7 @@
 #include <esp_http_client.h>
 
 #include <freertos/FreeRTOS.h>
-#include <freertos/timers.h>
+#include <esp_timer.h>
 #include <string>
 #include <ArduinoJson.hpp>
 
@@ -96,51 +96,55 @@ class restHandler
     }
 public:
 
-    // Timers and semaphores
-    TimerHandle_t fullConfigTicker = nullptr;
-    TimerHandle_t statusTicker = nullptr;
-    TimerHandle_t registerDeviceTicker = nullptr;
-
-    bool send_full_config_ticker;
-    bool send_status_ticker;
-    bool register_device_ticker;
-
-    bool trigger_unregister_device;
-
-    char pendingDeviceName[64];  // Temporary storage for device name during registration
-
     restHandler();
     void init();
     bool configured_for_fermentrack_rest();
-
     bool send_bluetooth_crash_report();
-
-    // Everything below this MAY no longer be in use. Need to check. 
     void process();
 
-    bool send_lock = false;
+    // Force-send flags — set to trigger an immediate send on the next process() cycle
+    // Used by http_server.cpp (registration) and internally (mode/setpoint changes)
+    bool force_status_send = false;
+    bool force_full_config_send = false;
+    bool force_register_attempt = false;
+
+    char pendingDeviceName[64];  // Temporary storage for device name during registration
 
 
 private:
 
-    bool messages_pending_on_server;
+    // Timing — millis timestamps of last action
+    uint32_t last_status_send_ms = 0;
+    uint32_t last_full_config_send_ms = 0;
+    uint32_t last_register_attempt_ms = 0;
 
+    bool status_send_due();
+    bool full_config_send_due();
+    bool register_attempt_due();
+
+    // Message state
+    bool messages_pending_on_server = false;
+    bool needs_config_fetch = false;
+    bool prefetch_messages_done = false;
+
+    // Core operations (each does at most one HTTP call)
     bool send_full_config();
     bool register_device();
     bool send_status();
-    bool unregister_device();
     bool get_messages(bool override);
     bool set_message_processed(const char* message_type_key);
 
-    // Message processing
+    // Message processing — split into local apply + one-at-a-time HTTP acks
     restMessages messages;
-    void process_messages();
+    restMessages pending_acks;
+    void apply_pending_messages();
+    bool ack_next_pending_message();
     bool reset_eeprom();
     bool reset_connection();
     bool restart_device();
     bool default_cs();
     bool default_cc();
-    bool process_updated_settings();
+    bool fetch_and_apply_config();
     void load_devices_from_array(JsonArray &root);
 
     bool get_url(char *url, size_t size, const char *path);

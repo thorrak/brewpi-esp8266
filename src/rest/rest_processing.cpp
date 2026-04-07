@@ -23,80 +23,122 @@
 #include "SettingLoader.h"
 
 
-void restHandler::process_messages() {
-
-
-    // Restarting the device is second to last
+void restHandler::apply_pending_messages() {
+    // Restart and reset_connection are special — they ack inline then restart the device.
+    // These are one-time events where one blocking HTTP call is acceptable.
     if(messages.restart_device) {
-        restart_device();
+        restart_device();  // acks then calls esp_restart() — never returns
+        return;
     }
 
-    // If we have an EEPROM reset, process that first (as it will cancel processing cs/cc/mt/devices)
+    if(messages.reset_connection) {
+        Log.infoln("Message received: reset_connection");
+        reset_connection();  // acks then calls esp_restart() — never returns
+        return;
+    }
+
+    // For everything else: apply locally and queue acks for one-at-a-time processing
+
     if(messages.reset_eeprom) {
-        reset_eeprom();
+        Log.infoln("Message received: reset_eeprom");
+        if(eepromManager.initializeEeprom()) {
+            logInfo(INFO_EEPROM_INITIALIZED);
+            settingsManager.loadSettings();
+        }
+        messages.reset_eeprom = false;
+        pending_acks.reset_eeprom = true;
+        // Discard dependent updates and queue their acks too
+        if(messages.updated_cs) { messages.updated_cs = false; pending_acks.updated_cs = true; }
+        if(messages.updated_cc) { messages.updated_cc = false; pending_acks.updated_cc = true; }
+        if(messages.updated_mt) { messages.updated_mt = false; pending_acks.updated_mt = true; }
+        if(messages.updated_devices) { messages.updated_devices = false; pending_acks.updated_devices = true; }
+        force_full_config_send = true;
     }
 
-    // Additionally, proces default_cc/cs as those will cancel processing their respective messages
     if(messages.default_cc) {
-        default_cc();
+        Log.infoln("Message received: default_cc");
+        TempControl::loadDefaultConstants();
+        messages.default_cc = false;
+        pending_acks.default_cc = true;
+        // Cancel pending cc update
+        messages.updated_cc = false;
+        pending_acks.updated_cc = true;
     }
 
     if(messages.default_cs) {
-        default_cs();
+        Log.infoln("Message received: default_cs");
+        TempControl::loadDefaultSettings();
+        messages.default_cs = false;
+        pending_acks.default_cs = true;
+        // Cancel pending cs update
+        messages.updated_cs = false;
+        pending_acks.updated_cs = true;
     }
 
-    // Next, process updated_cc/cs/mt/devices
+    // Settings updates require an HTTP GET to fetch config — defer to fetch_and_apply_config()
     if(messages.updated_cs || messages.updated_cc || messages.updated_mt || messages.updated_devices) {
-        process_updated_settings();
+        needs_config_fetch = true;
     }
 
-
-    // Next, process refresh config request
     if(messages.refresh_config) {
-        send_full_config_ticker = true;
-        set_message_processed(RestMessagesKeys::refresh_config);
         messages.refresh_config = false;
+        pending_acks.refresh_config = true;
+        force_full_config_send = true;
     }
+}
 
-    // Process resetting WiFi last, as we will lose the ability to signal that we processed it
-    if(messages.reset_connection) {
-        Log.infoln("Message received: reset_connection");
-        reset_connection();
+bool restHandler::ack_next_pending_message() {
+    // Send one HTTP PATCH per call, in priority order. Returns true if an ack was sent.
+    if(pending_acks.reset_eeprom) {
+        set_message_processed(RestMessagesKeys::reset_eeprom);
+        pending_acks.reset_eeprom = false;
+        return true;
     }
-
-    // bool updated_es = false;
-    // bool updated_devices = false;
-
-
+    if(pending_acks.default_cc) {
+        set_message_processed(RestMessagesKeys::default_cc);
+        pending_acks.default_cc = false;
+        return true;
+    }
+    if(pending_acks.default_cs) {
+        set_message_processed(RestMessagesKeys::default_cs);
+        pending_acks.default_cs = false;
+        return true;
+    }
+    if(pending_acks.updated_cs) {
+        set_message_processed(RestMessagesKeys::updated_cs);
+        pending_acks.updated_cs = false;
+        return true;
+    }
+    if(pending_acks.updated_cc) {
+        set_message_processed(RestMessagesKeys::updated_cc);
+        pending_acks.updated_cc = false;
+        return true;
+    }
+    if(pending_acks.updated_mt) {
+        set_message_processed(RestMessagesKeys::updated_mt);
+        pending_acks.updated_mt = false;
+        return true;
+    }
+    if(pending_acks.updated_devices) {
+        set_message_processed(RestMessagesKeys::updated_devices);
+        pending_acks.updated_devices = false;
+        return true;
+    }
+    if(pending_acks.updated_es) {
+        set_message_processed(RestMessagesKeys::updated_es);
+        pending_acks.updated_es = false;
+        return true;
+    }
+    if(pending_acks.refresh_config) {
+        set_message_processed(RestMessagesKeys::refresh_config);
+        pending_acks.refresh_config = false;
+        return true;
+    }
+    return false;
 }
 
 bool restHandler::reset_eeprom() {
-    Log.infoln("Message received: reset_eeprom");
-    if(eepromManager.initializeEeprom()) {
-        logInfo(INFO_EEPROM_INITIALIZED);
-        settingsManager.loadSettings();
-    }
-    messages.reset_eeprom = false;
-    set_message_processed(RestMessagesKeys::reset_eeprom);
-
-    // If we reset the EEPROM, we discard any pending messages/updates
-    if(messages.updated_cs)
-        set_message_processed(RestMessagesKeys::updated_cs);
-    if(messages.updated_cc)
-        set_message_processed(RestMessagesKeys::updated_cc);
-    if(messages.updated_mt)
-        set_message_processed(RestMessagesKeys::updated_mt);
-    if(messages.updated_devices)
-        set_message_processed(RestMessagesKeys::updated_devices);
-
-    messages.updated_cs = false;
-    messages.updated_cc = false;
-    messages.updated_mt = false;
-    messages.updated_devices = false;
-
-    // ...also, trigger a send of settings next time we can
-    send_full_config_ticker = true;
-
+    // Now handled inline in apply_pending_messages()
     return true;
 }
 
@@ -127,32 +169,12 @@ bool restHandler::restart_device() {
 }
 
 bool restHandler::default_cc() {
-    Log.infoln("Message received: default_cc");
-
-    TempControl::loadDefaultConstants();
-
-    messages.default_cc = false;
-    set_message_processed(RestMessagesKeys::default_cc);
-
-    // Also, cancel any pending cc update, as we just defaulted them
-    messages.updated_cc = false;
-    set_message_processed(RestMessagesKeys::updated_cc);
-
+    // Now handled inline in apply_pending_messages()
     return true;
 }
 
 bool restHandler::default_cs() {
-    Log.infoln("Message received: default_cs");
-
-    TempControl::loadDefaultSettings();
-
-    messages.default_cs = false;
-    set_message_processed(RestMessagesKeys::default_cs);
-
-    // Also, cancel any pending cs update, as we just defaulted them
-    messages.updated_cs = false;
-    set_message_processed(RestMessagesKeys::updated_cs);
-
+    // Now handled inline in apply_pending_messages()
     return true;
 }
 
@@ -164,7 +186,7 @@ void load_settings_from_doc(JsonObject &root) {
     }
 }
 
-bool restHandler::process_updated_settings() {
+bool restHandler::fetch_and_apply_config() {
     Log.infoln("Message received: updated_cs/cc/mt");
 
     std::string payload;
@@ -172,12 +194,21 @@ bool restHandler::process_updated_settings() {
     std::string response;
 
     // We can't retrieve config if we're not registered
-    if(upstreamSettings.isRegistered() == false)
+    if(upstreamSettings.isRegistered() == false) {
+        needs_config_fetch = false;
         return false;
-    if(!get_url(url, sizeof(url), UpstreamAPIEndpoints::fullConfig, upstreamSettings.deviceID, upstreamSettings.apiKey))
+    }
+    if(!get_url(url, sizeof(url), UpstreamAPIEndpoints::fullConfig, upstreamSettings.deviceID, upstreamSettings.apiKey)) {
+        needs_config_fetch = false;
         return false;
+    }
 
-    send_json_str(payload, url, response, httpMethod::HTTP_GET);
+    sendResult result = send_json_str(payload, url, response, httpMethod::HTTP_GET);
+    if (result != sendResult::success) {
+        needs_config_fetch = false;
+        return false;
+    }
+
     Log.verbose("Response: %s\r\n", response.c_str());
 
     {
@@ -186,12 +217,14 @@ bool restHandler::process_updated_settings() {
 
         if(error) {
             Log.warning("deserializeJson() failed: %s\r\n", error.c_str());
+            needs_config_fetch = false;
             return false;
         }
 
         if((doc["success"].is<bool>() && doc["success"].as<bool>() == false) || !doc["config"].is<JsonObject>()) {
             Log.warning("Error retrieving full config: ");
             Log.warningln(doc["message"].as<const char *>());
+            needs_config_fetch = false;
             return false;
         }
 
@@ -200,7 +233,7 @@ bool restHandler::process_updated_settings() {
             JsonObject root = doc["config"]["cs"].as<JsonObject>();
             load_settings_from_doc(root);
             TempControl::storeSettings();
-            set_message_processed(RestMessagesKeys::updated_cs);
+            pending_acks.updated_cs = true;
         }
 
         if(doc["config"]["cc"].is<JsonObject>() && messages.updated_cc) {
@@ -208,33 +241,31 @@ bool restHandler::process_updated_settings() {
             JsonObject root = doc["config"]["cc"].as<JsonObject>();
             load_settings_from_doc(root);
             TempControl::storeConstants();
-            set_message_processed(RestMessagesKeys::updated_cc);
+            pending_acks.updated_cc = true;
         }
 
         if(doc["config"]["devices"].is<JsonArray>() && messages.updated_devices) {
             Log.verboseln("Updating devices");
             JsonArray root = doc["config"]["devices"].as<JsonArray>();
             load_devices_from_array(root);
-            // TempControl::storeConstants();
-            set_message_processed(RestMessagesKeys::updated_devices);
+            pending_acks.updated_devices = true;
         }
 
         if(doc["config"]["mt"].is<JsonArray>() && messages.updated_mt) {
             Log.verboseln("Updating minimum times");
             // TODO - Write this
-            // JsonObject root = doc["config"]["cc"].as<JsonObject>();
-            // load_settings_from_doc(root);
-            set_message_processed(RestMessagesKeys::updated_mt);
+            pending_acks.updated_mt = true;
         }
     }
 
-    // We clear the flag locally in every case, so as to not spam the server if something goes wrong
+    // Clear message flags regardless of outcome, to avoid spamming the server
     messages.updated_cs = false;
     messages.updated_cc = false;
     messages.updated_devices = false;
     messages.updated_mt = false;
 
-    rest_handler.send_full_config_ticker=true;  // We always want to send a full config after processing an update
+    needs_config_fetch = false;
+    force_full_config_send = true;  // Always send a full config after processing an update
 
     return true;
 }

@@ -205,7 +205,7 @@ bool processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUpstr
             upstreamSettings.storeToFilesystem();
         }
         upstreamSettings.upstreamRegistrationError = UpstreamSettings::upstreamRegErrorT::NOT_ATTEMPTED_REGISTRATION;
-        rest_handler.register_device_ticker = true;
+        rest_handler.force_register_attempt = true;
     }
     return failCount == 0;
 }
