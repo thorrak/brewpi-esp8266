@@ -328,6 +328,15 @@ public:
 
 	static bool initOneWireBuses();
 
+	/**
+	 * \brief Reset the OneWire bus by tearing down and recreating the RMT peripheral.
+	 *
+	 * Called when sensors have been persistently disconnected, indicating the bus
+	 * or RMT peripheral may be in a bad state. Invalidates all OneWireTempSensor
+	 * device handles so they re-enumerate on next init().
+	 */
+	static bool resetOneWireBus();
+
 private:
 	static void enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc);
 	static void enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc);

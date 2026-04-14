@@ -36,14 +36,35 @@
 // This value indicates the sensor just powered on and hasn't completed a conversion.
 #define DEVICE_POWERON_RAW 1360
 
+// Static member initialization
+OneWireTempSensor* OneWireTempSensor::s_instances[MAX_INSTANCES] = {};
+uint8_t OneWireTempSensor::s_instance_count = 0;
+bool OneWireTempSensor::s_bus_failing = false;
+uint32_t OneWireTempSensor::s_first_bus_failure_time = 0;
+uint32_t OneWireTempSensor::s_last_bus_reset_time = 0;
+
 OneWireTempSensor::OneWireTempSensor(onewire_bus_handle_t bus, DeviceAddress address, fixed4_4 calibrationOffset)
   : m_bus(bus), m_sensor(NULL), m_calibration_offset(calibrationOffset), m_connected(false), m_conversion_failures(0) {
   memcpy(m_sensor_address, address, sizeof(DeviceAddress));
+
+  // Register this instance for bus recovery
+  if (s_instance_count < MAX_INSTANCES) {
+    s_instances[s_instance_count++] = this;
+  }
 }
 
 OneWireTempSensor::~OneWireTempSensor(){
   if (m_sensor) {
     ds18b20_del_device(m_sensor);
+  }
+
+  // Deregister this instance
+  for (uint8_t i = 0; i < s_instance_count; i++) {
+    if (s_instances[i] == this) {
+      s_instances[i] = s_instances[--s_instance_count];
+      s_instances[s_instance_count] = nullptr;
+      break;
+    }
   }
 }
 
@@ -147,6 +168,15 @@ bool OneWireTempSensor::init() {
 
   setConnected(success);
   logDebug("init onewire sensor complete %d", success);
+
+  // Track bus-level failures for recovery
+  if (success) {
+    s_bus_failing = false;
+  } else if (!s_bus_failing) {
+    s_bus_failing = true;
+    s_first_bus_failure_time = ticks.millis();
+  }
+
   return success;
 }
 
@@ -221,6 +251,12 @@ temperature OneWireTempSensor::read() {
   // Read the scratchpad first (this is the result of the PREVIOUS conversion)
   temperature temp = readAndConstrainTemp();
 
+  // A successful scratchpad read proves the bus is working — reset the
+  // conversion failure counter even if the broadcast trigger had been failing.
+  if (temp != TEMP_SENSOR_DISCONNECTED) {
+    s_conversion_failures = 0;
+  }
+
   // Trigger a new conversion if enough time has passed
   uint32_t now = ticks.millis();
   if (now - s_last_conversion_time >= CONVERSION_INTERVAL_MS) {
@@ -288,4 +324,54 @@ temperature OneWireTempSensor::readAndConstrainTemp() {
                        ((int)MIN_TEMP) >> shift,
                        ((int)MAX_TEMP) >> shift) << shift;
   return temp;
+}
+
+
+/**
+ * \brief Invalidate this sensor's device handle after a bus reset.
+ */
+void OneWireTempSensor::invalidateDevice(onewire_bus_handle_t newBus) {
+  if (m_sensor) {
+    // Safe to call after bus teardown — ds18b20_del_device() just calls free()
+    ds18b20_del_device(m_sensor);
+    m_sensor = NULL;
+  }
+  m_bus = newBus;
+  setConnected(false);
+}
+
+/**
+ * \brief Invalidate all tracked OneWireTempSensor instances.
+ */
+void OneWireTempSensor::invalidateAllDevices(onewire_bus_handle_t newBus) {
+  for (uint8_t i = 0; i < s_instance_count; i++) {
+    if (s_instances[i]) {
+      s_instances[i]->invalidateDevice(newBus);
+    }
+  }
+  // Reset the shared conversion state so sensors start fresh
+  s_conversion_failures = 0;
+  s_last_conversion_time = 0;
+}
+
+/**
+ * \brief Check if bus-level recovery is needed.
+ */
+bool OneWireTempSensor::needsBusRecovery() {
+  if (!s_bus_failing || s_instance_count == 0)
+    return false;
+  uint32_t now = ticks.millis();
+  if (now - s_first_bus_failure_time < BUS_RECOVERY_TIMEOUT_MS)
+    return false;
+  if (now - s_last_bus_reset_time < BUS_RECOVERY_COOLDOWN_MS)
+    return false;
+  return true;
+}
+
+/**
+ * \brief Notify that a bus reset was performed.
+ */
+void OneWireTempSensor::notifyBusReset() {
+  s_bus_failing = false;
+  s_last_bus_reset_time = ticks.millis();
 }

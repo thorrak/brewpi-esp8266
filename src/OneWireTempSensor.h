@@ -58,6 +58,32 @@ public:
   bool init();
   temperature read();
 
+  /**
+   * \brief Invalidate this sensor's device handle after a bus reset.
+   *
+   * Deletes the ds18b20 device handle (which references the old bus),
+   * updates the bus handle, and marks disconnected so init() re-enumerates.
+   */
+  void invalidateDevice(onewire_bus_handle_t newBus);
+
+  /**
+   * \brief Invalidate all OneWireTempSensor instances after a bus reset.
+   */
+  static void invalidateAllDevices(onewire_bus_handle_t newBus);
+
+  /**
+   * \brief Check if a bus-level recovery (teardown + recreate) is needed.
+   *
+   * Returns true when all OneWire init attempts have failed for longer
+   * than BUS_RECOVERY_TIMEOUT_MS and the cooldown period has elapsed.
+   */
+  static bool needsBusRecovery();
+
+  /**
+   * \brief Notify that a bus reset was performed, resetting failure tracking.
+   */
+  static void notifyBusReset();
+
 private:
   /**
    * \brief The sensor precision, in bits.
@@ -85,4 +111,16 @@ private:
   fixed4_4 m_calibration_offset;
   bool m_connected;
   uint8_t m_conversion_failures; //!< Consecutive conversion request failures
+
+  // --- Static instance tracking for bus recovery ---
+  static constexpr uint8_t MAX_INSTANCES = 8;
+  static OneWireTempSensor* s_instances[MAX_INSTANCES];
+  static uint8_t s_instance_count;
+
+  // --- Bus failure tracking ---
+  static constexpr uint32_t BUS_RECOVERY_TIMEOUT_MS = 30000;   // 30s of failed inits before bus reset
+  static constexpr uint32_t BUS_RECOVERY_COOLDOWN_MS = 120000;  // Don't reset bus more than once per 2 min
+  static bool s_bus_failing;
+  static uint32_t s_first_bus_failure_time;
+  static uint32_t s_last_bus_reset_time;
 };

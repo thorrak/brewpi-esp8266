@@ -104,6 +104,53 @@ bool DeviceManager::initOneWireBuses() {
   return true;
 }
 
+bool DeviceManager::resetOneWireBus() {
+#if !BREWPI_SIMULATE
+  Log.warning("Resetting OneWire bus - tearing down RMT peripheral");
+
+  // Invalidate all sensor device handles BEFORE deleting the bus.
+  // ds18b20_del_device() just calls free() so it's safe regardless of bus state.
+  // Pass NULL temporarily; we'll update with the new handle below.
+  OneWireTempSensor::invalidateAllDevices(NULL);
+
+  // Tear down old bus
+  if (m_primary_onewire_bus) {
+    onewire_bus_del(m_primary_onewire_bus);
+    m_primary_onewire_bus = NULL;
+  }
+
+  // Small delay to let the RMT peripheral fully release
+  vTaskDelay(pdMS_TO_TICKS(100));
+
+  // Recreate bus
+  onewire_bus_config_t bus_config = {
+    .bus_gpio_num = 0,
+    .flags = {
+      .en_pull_up = true,
+    }
+  };
+  onewire_bus_rmt_config_t rmt_config = {
+    .max_rx_bytes = 10,
+  };
+
+  bus_config.bus_gpio_num = oneWirePin;
+  if (onewire_new_bus_rmt(&bus_config, &rmt_config, &m_primary_onewire_bus) != ESP_OK) {
+    Log.warning("OneWire bus reset failed - could not recreate bus");
+    OneWireTempSensor::notifyBusReset();  // Reset timers even on failure to avoid tight loop
+    return false;
+  }
+
+  // Update all sensors with the new bus handle
+  OneWireTempSensor::invalidateAllDevices(m_primary_onewire_bus);
+  OneWireTempSensor::notifyBusReset();
+
+  Log.warning("OneWire bus reset complete - sensors will re-enumerate");
+  return true;
+#else
+  return true;
+#endif
+}
+
 onewire_bus_handle_t DeviceManager::oneWireBus(uint8_t pin) {
 #if !BREWPI_SIMULATE
   if (pin == oneWirePin)
