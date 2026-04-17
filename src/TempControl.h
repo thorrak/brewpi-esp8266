@@ -389,37 +389,7 @@ public:
   TEMP_CONTROL_METHOD void getControlConstantsDoc(JsonDocument& doc);
   TEMP_CONTROL_METHOD void getControlSettingsDoc(JsonDocument& doc);
 
-private:
-	TEMP_CONTROL_METHOD void increaseEstimator(temperature * estimator, temperature error);
-	TEMP_CONTROL_METHOD void decreaseEstimator(temperature * estimator, temperature error);
-
-	TEMP_CONTROL_METHOD void updateEstimatedPeak(uint16_t estimate, temperature estimator, uint16_t sinceIdle);
-
-		// ===== Glycol mode: predictive cooling + beer-only heating =====
-		TEMP_CONTROL_METHOD void updateGlycolState();          //!< Main glycol state machine
-		TEMP_CONTROL_METHOD void glycolTransitionToIdle();     //!< Transition to GLYCOL_IDLE state
-		TEMP_CONTROL_METHOD void glycolTransitionToCooling();  //!< Transition to GLYCOL_COOLING state
-		TEMP_CONTROL_METHOD void glycolTransitionToCoasting(); //!< Transition to GLYCOL_COASTING state
-		TEMP_CONTROL_METHOD void glycolTransitionToEmergency();//!< Transition to GLYCOL_EMERGENCY_COOLING state
-		TEMP_CONTROL_METHOD void glycolTransitionToHeating();  //!< Transition to GLYCOL_HEATING state
-		TEMP_CONTROL_METHOD bool glycolHeatingCapable();       //!< Returns true when a heater is available in glycol mode
-		TEMP_CONTROL_METHOD void glycolResetHeatingWindow();   //!< Reset the current time-proportional heating window
-		TEMP_CONTROL_METHOD GlycolHeatingWindowState glycolGetHeatingWindowState(uint32_t now); //!< Update/read current heating window state
-		TEMP_CONTROL_METHOD GlycolHeatingGateResult glycolGetHeatingGate(bool startingNewOnSlice); //!< Check protection delays for a new ON slice
-		TEMP_CONTROL_METHOD void glycolSetHeatingWaitState(uint16_t waitTimeS, GlycolHeatingWaitReason reason, bool resetWindow); //!< Publish waiting state for heating
-		TEMP_CONTROL_METHOD void glycolSetHeatingActiveState(uint16_t elapsedInWindowS); //!< Publish active heating state
-		TEMP_CONTROL_METHOD void glycolAddRateSample(float temp);  //!< Add sample to rate buffer
-		TEMP_CONTROL_METHOD float glycolCalculateRate();       //!< Calculate rate from buffer (linear regression)
-		TEMP_CONTROL_METHOD float glycolEstimateCoast();       //!< Estimate coast using hybrid model
-	TEMP_CONTROL_METHOD void glycolUpdateLearning();       //!< Update learned parameters after cycle
-	TEMP_CONTROL_METHOD bool glycolShouldStartCooling();   //!< Check if we should start cooling
-	TEMP_CONTROL_METHOD bool glycolShouldStopCooling();    //!< Check if we should stop cooling
-	TEMP_CONTROL_METHOD bool glycolShouldStartHeating();   //!< Check if we should start heating
-	TEMP_CONTROL_METHOD bool glycolShouldStopHeating();    //!< Check if we should stop heating
-	TEMP_CONTROL_METHOD uint16_t glycolHeatingOnTime();    //!< Convert heating output to on-time in current window
-	TEMP_CONTROL_METHOD bool glycolIsEmergency();          //!< Check for emergency condition
-	TEMP_CONTROL_METHOD bool glycolCanExitEmergency();     //!< Check if we can exit emergency mode
-public:
+	public:
 	TEMP_CONTROL_FIELD TempSensor* beerSensor; //!< Temp sensor monitoring beer
 	TEMP_CONTROL_FIELD TempSensor* fridgeSensor; //!< Temp sensor monitoring fridge
 	TEMP_CONTROL_FIELD BasicTempSensor* ambientSensor; //!< Ambient room temp sensor
