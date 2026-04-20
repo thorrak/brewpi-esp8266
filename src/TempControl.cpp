@@ -95,6 +95,52 @@ uint16_t TempControl::waitTime;
 #define max _max
 #endif
 
+namespace {
+
+bool isBeerMode(const ControlSettings& settings) {
+    return settings.mode == Modes::beerConstant || settings.mode == Modes::beerProfile;
+}
+
+bool useGlycolBeerMode(const ControlSettings& settings) {
+    return extendedSettings.glycol && isBeerMode(settings);
+}
+
+ControlContext makeControlContext(
+    ControlConstants& cc,
+    ControlSettings& cs,
+    ControlVariables& cv,
+    MinTimes& minTimes,
+    TempSensor* beerSensor,
+    TempSensor* fridgeSensor,
+    Actuator* heater,
+    Actuator* cooler,
+    Actuator* light,
+    uint8_t& state,
+    uint16_t& lastIdleTime,
+    uint16_t& lastHeatTime,
+    uint16_t& lastCoolTime,
+    uint16_t& waitTime
+) {
+    return ControlContext{
+        cc,
+        cs,
+        cv,
+        minTimes,
+        beerSensor,
+        fridgeSensor,
+        heater,
+        cooler,
+        light,
+        state,
+        lastIdleTime,
+        lastHeatTime,
+        lastCoolTime,
+        waitTime,
+    };
+}
+
+} // namespace
+
 
 /**
  * Initialize the temp control system.  Done at startup.
@@ -185,7 +231,7 @@ void TempControl::updateTemperatures(){
 
 void TempControl::updatePID(){
     static unsigned char integralUpdateCounter = 0;
-    if(tempControl.modeIsBeer()){
+    if(isBeerMode(cs)){
         if(cs.beerSetting == INVALID_TEMP){
             // beer setting is not updated yet
             // set fridge to unknown too
@@ -210,49 +256,34 @@ void TempControl::updatePID(){
         cv.beerDiff =  cs.beerSetting - beerSensor->readSlowFiltered();
         cv.beerSlope = beerSensor->readSlope();
 
-        if(extendedSettings.glycol) {
+        ControlContext controlCtx = makeControlContext(
+            cc,
+            cs,
+            cv,
+            minTimes,
+            beerSensor,
+            fridgeSensor,
+            heater,
+            cooler,
+            light,
+            state,
+            lastIdleTime,
+            lastHeatTime,
+            lastCoolTime,
+            waitTime
+        );
+
+        if(useGlycolBeerMode(cs)) {
             // ===== GLYCOL MODE =====
             // Cooling is predictive bang-bang; heating is beer-only time-proportional PID.
 
             // Set fridgeSetting to INVALID_TEMP since it's not used in glycol mode
             cs.fridgeSetting = INVALID_TEMP;
 
-            ControlContext controlCtx{
-                cc,
-                cs,
-                cv,
-                minTimes,
-                beerSensor,
-                fridgeSensor,
-                heater,
-                cooler,
-                light,
-                state,
-                lastIdleTime,
-                lastHeatTime,
-                lastCoolTime,
-                waitTime,
-            };
             GlycolMode::Context glycolCtx(controlCtx, glycolLearned, glycolConfig, glycolRuntime);
             GlycolMode::updatePID(glycolCtx, integralUpdateCounter);
 
         } else {
-            ControlContext controlCtx{
-                cc,
-                cs,
-                cv,
-                minTimes,
-                beerSensor,
-                fridgeSensor,
-                heater,
-                cooler,
-                light,
-                state,
-                lastIdleTime,
-                lastHeatTime,
-                lastCoolTime,
-                waitTime,
-            };
             ChamberMode::Context chamberCtx(controlCtx, doPosPeakDetect, doNegPeakDetect);
             ChamberMode::updatePID(chamberCtx, integralUpdateCounter);
         }
@@ -284,7 +315,7 @@ void TempControl::updateState(){
         // In glycol mode, fridge sensor is optional; in compressor mode it's required
         bool fridgeRequired = !extendedSettings.glycol;
         bool fridgeInvalid = (fridgeRequired && (!fridgeSensor->isConnected() || cs.fridgeSetting == INVALID_TEMP));
-        bool beerInvalid = (!beerSensor->isConnected() && tempControl.modeIsBeer());
+        bool beerInvalid = (!beerSensor->isConnected() && isBeerMode(cs));
 
         if(fridgeInvalid || beerInvalid) {
             // Stay idle when a required sensor is disconnected or settings are invalid
@@ -293,32 +324,7 @@ void TempControl::updateState(){
         }
     }
 
-    // ===== GLYCOL MODE STATE MACHINE =====
-    // Uses predictive bang-bang control (see GLYCOL_COOLING_ALGORITHM.md)
-    if(extendedSettings.glycol && tempControl.modeIsBeer() && !stayIdle) {
-        ControlContext controlCtx{
-            cc,
-            cs,
-            cv,
-            minTimes,
-            beerSensor,
-            fridgeSensor,
-            heater,
-            cooler,
-            light,
-            state,
-            lastIdleTime,
-            lastHeatTime,
-            lastCoolTime,
-            waitTime,
-        };
-        GlycolMode::Context glycolCtx(controlCtx, glycolLearned, glycolConfig, glycolRuntime);
-        GlycolMode::updateState(glycolCtx);
-        // Glycol mode uses its own state machine - skip compressor mode logic
-        return;
-    }
-
-    ControlContext controlCtx{
+    ControlContext controlCtx = makeControlContext(
         cc,
         cs,
         cv,
@@ -332,8 +338,18 @@ void TempControl::updateState(){
         lastIdleTime,
         lastHeatTime,
         lastCoolTime,
-        waitTime,
-    };
+        waitTime
+    );
+
+    // ===== GLYCOL MODE STATE MACHINE =====
+    // Uses predictive bang-bang control (see GLYCOL_COOLING_ALGORITHM.md)
+    if(useGlycolBeerMode(cs) && !stayIdle) {
+        GlycolMode::Context glycolCtx(controlCtx, glycolLearned, glycolConfig, glycolRuntime);
+        GlycolMode::updateState(glycolCtx);
+        // Glycol mode uses its own state machine - skip compressor mode logic
+        return;
+    }
+
     ChamberMode::Context chamberCtx(controlCtx, doPosPeakDetect, doNegPeakDetect);
     ChamberMode::updateState(chamberCtx, stayIdle);
 }
@@ -358,7 +374,7 @@ void TempControl::detectPeaks(){
     if(extendedSettings.glycol) {
         return;
     }
-    ControlContext controlCtx{
+    ControlContext controlCtx = makeControlContext(
         cc,
         cs,
         cv,
@@ -372,8 +388,8 @@ void TempControl::detectPeaks(){
         lastIdleTime,
         lastHeatTime,
         lastCoolTime,
-        waitTime,
-    };
+        waitTime
+    );
     ChamberMode::Context chamberCtx(controlCtx, doPosPeakDetect, doNegPeakDetect);
     ChamberMode::detectPeaks(chamberCtx);
 }
