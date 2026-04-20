@@ -1,0 +1,14 @@
+{
+  "instructions": "This is the on-device user interface for a beer/wine brewing fermentation temperature controller. Use terminology appropriate for homebrewing and beer/wine making. The general model employed by the controller is to have a fermenter (bucket, conical, etc.) placed inside of a refrigerator (or other chamber that can be cooled) to indirectly control the temperature of the beer. The fridge is turned on/off to control the temperature of the air inside in order to tightly control the temperature of the beer that is fermenting. There is also support for toggling a pump on/off to circulate glycol around the beer.",
+  "glossary": {
+    "controller": "The device the UI is installed on. A temperature controller, such as a BrewPi",
+    "Fermentrack": "A web-based interface the controller can optionally be connected to, which will both log data sent by the controller and can control the controller",
+    "profile": "temperature control profile - a schedule of temperatures",
+    "actuator": "Another word for relay or switch. A control point for either cooling or heating",
+    "sensors": "temperature sensors",
+    "Tilt Hydrometer": "a bluetooth hydrometer which sits in the fermenting beer and detects both the gravity of the beer and the beer's temperature",
+    "Inkbird": "a brand of bluetooth temperature sensors",
+    "Gravity": "specific gravity - the measure of sugar content in fermenting liquid",
+    "OG": "original gravity - the starting gravity of the liquid"
+  }
+}

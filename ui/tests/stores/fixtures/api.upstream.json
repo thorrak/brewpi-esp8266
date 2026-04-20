@@ -1,0 +1,8 @@
+{
+    "upstreamHost": "localhost.localdomain",
+    "upstreamPort": 80,
+    "deviceID": "abcd-1234-12121212",
+    "username": "thorrak",
+    "apiKey": "abcd-1234-12121212",
+    "upstreamRegistrationError": 8
+}

@@ -1,0 +1,48 @@
+{
+    "cc": {
+        "tempFormat": "C",
+        "tempSetMin": 1,
+        "tempSetMax": 30,
+        "pidMax": 10,
+        "Kp": 5,
+        "Ki": 0.25,
+        "Kd": -1.5,
+        "iMaxErr": 0.5,
+        "idleRangeH": 1,
+        "idleRangeL": -1,
+        "heatTargetH": 0.299,
+        "heatTargetL": -0.199,
+        "coolTargetH": 0.199,
+        "coolTargetL": -0.299,
+        "maxHeatTimeForEst": 600
+    },
+    "cs": {
+        "mode": "o",
+        "beerSet": 0,
+        "fridgeSet": 0,
+        "heatEst": 0.199,
+        "coolEst": 5
+    },
+    "cv": {
+        "beerDiff": 0,
+        "diffIntegral": 0,
+        "beerSlope": 0,
+        "p": 0,
+        "i": 0,
+        "d": 0,
+        "estPeak": 48,
+        "negPeakEst": 48,
+        "posPeakEst": 48,
+        "negPeak": 48,
+        "posPeak": 48
+    },
+    "temp": {
+        "FridgeTemp": 21.9,
+        "FridgeSet": 0,
+        "RoomTemp": "",
+        "BeerAnn": "",
+        "FridgeAnn": "",
+        "State": 1,
+        "BeerTemp": ""
+    }
+}

@@ -1,0 +1,4 @@
+{
+    "reason": "ESP_RST_WDT",
+    "description": "Reset due to other watchdogs"
+}

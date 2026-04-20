@@ -40,3 +40,19 @@ managed_components/
 sdkconfig.*.old
 CMakeLists.txt
 dependencies.lock
+
+# Web UI — generated artifacts (see scripts/build_ui.py)
+ui/node_modules/
+ui/dist/
+ui/coverage/
+ui/.env
+ui/.env.local
+ui/.env.*.local
+# Files produced by `npm run build` and copied into data/ by build_ui.py.
+# Rebuild them locally with: pio run -e <env> -t buildfs
+data/5x8_lcd.eot
+data/5x8_lcd.woff
+data/brewpiesp_logo.svg
+data/index.css.gz
+data/index.html
+data/index.js.gz
