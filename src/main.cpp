@@ -152,6 +152,13 @@ void setup()
   upstreamSettings.loadFromFilesystem();
   display.init();
 
+  // Initialize tempControl before bringing up WiFi. The HTTP server starts
+  // answering requests as soon as WiFi associates, and its JSON handlers
+  // dereference tempControl.beerSensor / fridgeSensor. Those static pointers
+  // are NULL until TempControl::init() allocates default sensors, so a
+  // browser auto-refresh during boot would otherwise crash the device.
+  tempControl.init();
+
   initialize_wifi();
 
 #if BREWPI_BUZZER
@@ -185,7 +192,6 @@ void setup()
 		logDebug("Failed to initialize OneWire buses");
 	}
 
-	tempControl.init();
 	settingsManager.loadSettings();  // Also fully loads devices
 
 #if BREWPI_SIMULATE
