@@ -44,6 +44,7 @@
 #include "NumberFormats.h"
 #include <thorlog.h>
 #include <thorlog_espidf.h>
+#include <esp_log.h>
 
 
 #include "onewire_bus_impl_rmt.h"
@@ -85,6 +86,12 @@ onewire_bus_handle_t DeviceManager::m_fridge_sensor_bus = NULL;
 
 bool DeviceManager::initOneWireBuses() {
 #if !BREWPI_SIMULATE
+  // Silence ESP-IDF's "reset bus failed: no devices found" warning from the
+  // 1-Wire device iterator. An empty bus is a valid configuration, and our
+  // own code emits a one-shot warning when a previously-populated bus goes
+  // empty (see OneWireTempSensor::init).
+  esp_log_level_set("1-wire.device", ESP_LOG_ERROR);
+
   onewire_bus_config_t bus_config = {
     .bus_gpio_num = 0,  // set per-bus below
     .flags = {

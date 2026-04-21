@@ -120,7 +120,15 @@ private:
   // --- Bus failure tracking ---
   static constexpr uint32_t BUS_RECOVERY_TIMEOUT_MS = 30000;   // 30s of failed inits before bus reset
   static constexpr uint32_t BUS_RECOVERY_COOLDOWN_MS = 120000;  // Don't reset bus more than once per 2 min
+  // While the bus is failing, don't hit it more often than this. Each bus
+  // scan emits an ESP-IDF "reset bus failed: no devices found" warning when
+  // the bus is empty, so a faster retry cadence spams the serial log.
+  static constexpr uint32_t INIT_RETRY_INTERVAL_MS = 10000;
   static bool s_bus_failing;
   static uint32_t s_first_bus_failure_time;
   static uint32_t s_last_bus_reset_time;
+  static uint32_t s_last_init_attempt_time;
+  // True once any sensor has successfully initialized on the bus. Used to
+  // decide whether a bus-empty condition is worth warning about.
+  static bool s_any_device_seen;
 };

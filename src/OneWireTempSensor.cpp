@@ -29,6 +29,7 @@
 #include "TemperatureFormats.h"
 #include "NumberFormats.h"
 #include "onewire_device.h"
+#include <thorlog.h>
 #include <string.h>
 
 // DS18B20 power-on default temperature is 85°C.
@@ -42,6 +43,8 @@ uint8_t OneWireTempSensor::s_instance_count = 0;
 bool OneWireTempSensor::s_bus_failing = false;
 uint32_t OneWireTempSensor::s_first_bus_failure_time = 0;
 uint32_t OneWireTempSensor::s_last_bus_reset_time = 0;
+uint32_t OneWireTempSensor::s_last_init_attempt_time = 0;
+bool OneWireTempSensor::s_any_device_seen = false;
 
 OneWireTempSensor::OneWireTempSensor(onewire_bus_handle_t bus, DeviceAddress address, fixed4_4 calibrationOffset)
   : m_bus(bus), m_sensor(NULL), m_calibration_offset(calibrationOffset), m_connected(false), m_conversion_failures(0) {
@@ -80,7 +83,19 @@ bool OneWireTempSensor::init() {
   char addressString[17];
   printBytes(m_sensor_address, 8, addressString);
 
+  // Throttle rescans once the bus is in a failing state. Each rescan
+  // performs a 1-Wire search that emits an ESP-IDF warning when the bus
+  // is empty; without this, the 1Hz update cycle floods the serial log.
+  // The first attempt and any attempt while the bus is healthy proceed
+  // immediately.
+  if (s_bus_failing && s_last_init_attempt_time != 0 &&
+      (ticks.millis() - s_last_init_attempt_time) < INIT_RETRY_INTERVAL_MS) {
+    return false;
+  }
+  s_last_init_attempt_time = ticks.millis();
+
   bool success = false;
+  bool device_creation_failed = false;
 
   if (m_sensor == NULL) {
     logDebug("init onewire sensor - creating device");
@@ -101,11 +116,9 @@ bool OneWireTempSensor::init() {
 
     if (is_null_address) {
       // No specific address, use first device on bus
-      esp_err_t ret = ds18b20_new_device_from_bus(m_bus, &ds_cfg, &m_sensor);
-      if (ret != ESP_OK) {
+      if (ds18b20_new_device_from_bus(m_bus, &ds_cfg, &m_sensor) != ESP_OK) {
         logErrorString(ERROR_SRAM_SENSOR, addressString);
-        setConnected(false);
-        return false;
+        device_creation_failed = true;
       }
     } else {
       // Enumerate devices to find the matching address
@@ -114,42 +127,41 @@ bool OneWireTempSensor::init() {
 
       if (onewire_new_device_iter(m_bus, &iter) != ESP_OK) {
         logErrorString(ERROR_SRAM_SENSOR, addressString);
-        setConnected(false);
-        return false;
-      }
-
-      bool found = false;
-      while (onewire_device_iter_get_next(iter, &next_device) == ESP_OK) {
-        if (next_device.address == address64) {
-          if (ds18b20_new_device_from_enumeration(&next_device, &ds_cfg, &m_sensor) == ESP_OK) {
-            found = true;
-            break;
+        device_creation_failed = true;
+      } else {
+        bool found = false;
+        while (onewire_device_iter_get_next(iter, &next_device) == ESP_OK) {
+          if (next_device.address == address64) {
+            if (ds18b20_new_device_from_enumeration(&next_device, &ds_cfg, &m_sensor) == ESP_OK) {
+              found = true;
+              break;
+            }
           }
         }
-      }
-      onewire_del_device_iter(iter);
+        onewire_del_device_iter(iter);
 
-      if (!found) {
-        logErrorString(ERROR_SRAM_SENSOR, addressString);
-        setConnected(false);
-        return false;
+        if (!found) {
+          logErrorString(ERROR_SRAM_SENSOR, addressString);
+          device_creation_failed = true;
+        }
       }
     }
 
-    // Set resolution to 12-bit (750ms conversion time)
-    ds18b20_set_resolution(m_sensor, DS18B20_RESOLUTION_12B);
+    if (!device_creation_failed && m_sensor) {
+      // Set resolution to 12-bit (750ms conversion time)
+      ds18b20_set_resolution(m_sensor, DS18B20_RESOLUTION_12B);
+    }
   }
 
   logDebug("init onewire sensor");
 
   // Set up reset detection - writes marker to scratchpad that will be
   // cleared on sensor power cycle, allowing us to detect resets
-  if (m_sensor && ds18b20_init_connection(m_sensor) != ESP_OK) {
+  if (!device_creation_failed && m_sensor &&
+      ds18b20_init_connection(m_sensor) != ESP_OK) {
     logDebug("init onewire sensor - init_connection failed, deleting stale handle");
     ds18b20_del_device(m_sensor);
     m_sensor = NULL;
-    setConnected(false);
-    return false;
   }
 
   if (m_sensor && requestConversion()) {
@@ -172,9 +184,16 @@ bool OneWireTempSensor::init() {
   // Track bus-level failures for recovery
   if (success) {
     s_bus_failing = false;
+    s_any_device_seen = true;
   } else if (!s_bus_failing) {
     s_bus_failing = true;
     s_first_bus_failure_time = ticks.millis();
+    // Only surface a bus-empty warning if the bus has previously had a
+    // device on it. A bus that has always been empty is assumed to be an
+    // intentional configuration and stays silent.
+    if (s_any_device_seen) {
+      Log.warning("OneWire bus scan returned no devices");
+    }
   }
 
   return success;
