@@ -47,9 +47,8 @@
 #include <esp_log.h>
 
 
-#include "onewire_bus_impl_rmt.h"
-
 #include "OneWireTempSensor.h"
+#include "OneWireScanner.h"
 
 #include "ActuatorArduinoPin.h"
 #include "SensorArduinoPin.h"
@@ -75,95 +74,23 @@ ValueActuator defaultActuator;
 DisconnectedTempSensor defaultTempSensor;
 
 
-#if !BREWPI_SIMULATE
-#ifdef oneWirePin
-onewire_bus_handle_t DeviceManager::m_primary_onewire_bus = NULL;
-#else
-onewire_bus_handle_t DeviceManager::m_beer_sensor_bus = NULL;
-onewire_bus_handle_t DeviceManager::m_fridge_sensor_bus = NULL;
-#endif
-#endif
-
 bool DeviceManager::initOneWireBuses() {
 #if !BREWPI_SIMULATE
-  // Silence ESP-IDF's "reset bus failed: no devices found" warning from the
-  // 1-Wire device iterator. An empty bus is a valid configuration, and our
-  // own code emits a one-shot warning when a previously-populated bus goes
-  // empty (see OneWireTempSensor::init).
-  esp_log_level_set("1-wire.device", ESP_LOG_ERROR);
-
-  onewire_bus_config_t bus_config = {
-    .bus_gpio_num = 0,  // set per-bus below
-    .flags = {
-      .en_pull_up = true,
-    }
-  };
-  onewire_bus_rmt_config_t rmt_config = {
-    .max_rx_bytes = 10,
-  };
-
-  bus_config.bus_gpio_num = oneWirePin;
-  if (onewire_new_bus_rmt(&bus_config, &rmt_config, &m_primary_onewire_bus) != ESP_OK) {
-    return false;
-  }
-
-#endif
-  return true;
-}
-
-bool DeviceManager::resetOneWireBus() {
-#if !BREWPI_SIMULATE
-  Log.warning("Resetting OneWire bus - tearing down RMT peripheral");
-
-  // Invalidate all sensor device handles BEFORE deleting the bus.
-  // ds18b20_del_device() just calls free() so it's safe regardless of bus state.
-  // Pass NULL temporarily; we'll update with the new handle below.
-  OneWireTempSensor::invalidateAllDevices(NULL);
-
-  // Tear down old bus
-  if (m_primary_onewire_bus) {
-    onewire_bus_del(m_primary_onewire_bus);
-    m_primary_onewire_bus = NULL;
-  }
-
-  // Small delay to let the RMT peripheral fully release
-  vTaskDelay(pdMS_TO_TICKS(100));
-
-  // Recreate bus
-  onewire_bus_config_t bus_config = {
-    .bus_gpio_num = 0,
-    .flags = {
-      .en_pull_up = true,
-    }
-  };
-  onewire_bus_rmt_config_t rmt_config = {
-    .max_rx_bytes = 10,
-  };
-
-  bus_config.bus_gpio_num = oneWirePin;
-  if (onewire_new_bus_rmt(&bus_config, &rmt_config, &m_primary_onewire_bus) != ESP_OK) {
-    Log.warning("OneWire bus reset failed - could not recreate bus");
-    OneWireTempSensor::notifyBusReset();  // Reset timers even on failure to avoid tight loop
-    return false;
-  }
-
-  // Update all sensors with the new bus handle
-  OneWireTempSensor::invalidateAllDevices(m_primary_onewire_bus);
-  OneWireTempSensor::notifyBusReset();
-
-  Log.warning("OneWire bus reset complete - sensors will re-enumerate");
-  return true;
+  // Bring up the scanner, which creates the bus and starts its worker task.
+  // All subsequent OneWire I/O (enumeration, conversion, read) happens inside
+  // the worker — no bus handle is exposed to the rest of the firmware.
+  return ow_scanner.init(oneWirePin);
 #else
   return true;
 #endif
 }
 
-onewire_bus_handle_t DeviceManager::oneWireBus(uint8_t pin) {
+bool DeviceManager::isValidOneWirePin(uint8_t pin) {
 #if !BREWPI_SIMULATE
-  if (pin == oneWirePin)
-    return m_primary_onewire_bus;
+  return pin == oneWirePin;
+#else
+  return false;
 #endif
-  return NULL;
 }
 
 
@@ -220,7 +147,7 @@ void* DeviceManager::createDevice(DeviceConfig& config, DeviceType dt)
 		#if BREWPI_SIMULATE
 			return new ExternalTempSensor(false);// initially disconnected, so init doesn't populate the filters with the default value of 0.0
 		#else
-			return new OneWireTempSensor(oneWireBus(config.hw.pinNr), config.hw.address, config.hw.calibration);
+			return new OneWireTempSensor(config.hw.address, config.hw.calibration);
 		#endif
 
 #ifdef HAS_BLUETOOTH
@@ -704,7 +631,7 @@ bool DeviceManager::isDeviceValid(DeviceConfig& config, DeviceConfig& original, 
 
 	/* pinNr for a onewire device must be a valid bus. While this won't cause a crash, it's a good idea to validate this. */
 	if (isOneWire(config.deviceHardware)) {
-		if (!oneWireBus(config.hw.pinNr)) {
+		if (!isValidOneWirePin(config.hw.pinNr)) {
 			logErrorInt(ERROR_NOT_ONEWIRE_BUS, config.hw.pinNr);
 			return false;
 		}
@@ -856,11 +783,13 @@ inline void DeviceManager::readTempSensorValue(DeviceHardware hw_type, DeviceCon
 	temperature temp = INVALID_TEMP;
 
 	if(hw_type == DEVICE_HARDWARE_ONEWIRE_TEMP) {
-		onewire_bus_handle_t bus = oneWireBus(hw.pinNr);
-		OneWireTempSensor sensor(bus, hw.address, 0);		// NB: this value is uncalibrated, since we don't have the calibration offset until the device is configured
-		if (sensor.init())
-			temp = sensor.read();
-	} 
+		// Report the uncalibrated cached reading if the scanner has one.
+		onewire_device_record* rec = ow_scanner.get_by_bytes(hw.address);
+		if (rec && rec->isConnected()) {
+			long_temperature t = rec->getTempFixedPoint();
+			temp = constrainTemp(t, MIN_TEMP, MAX_TEMP);
+		}
+	}
 #ifdef HAS_BLUETOOTH
 	else if(hw_type == DEVICE_HARDWARE_BLUETOOTH_INKBIRD) {
 		temp = bt_scanner.get_inkbird(hw.btAddress)->getTempFixedPoint();
@@ -952,92 +881,27 @@ void DeviceManager::enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallbac
 
 
 /**
- * \brief Enumerate all OneWire devices
+ * \brief Enumerate all OneWire devices the scanner has discovered.
  *
- * \param h - Hardware spec, used to filter sensors
- * \param callback - Callback function, called for every found hardware device
- * \param output -
- * \param doc - JsonDocument to populate
- *
- * \note Scans the bus multiple times to work around transient detection issues
- *       where a single scan may return an incomplete list of devices.
+ * Reads the cached device list maintained by OneWireScanner — no live bus I/O
+ * happens here. A newly-plugged sensor will appear within one scanner cycle
+ * (~15s by default). This mirrors how BLE sensors are enumerated.
  */
 void DeviceManager::enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc)
 {
 #if !BREWPI_SIMULATE
-	// Track seen device addresses to avoid duplicate enumeration
-	// Max 16 devices should be plenty for any realistic setup
-	static const uint8_t MAX_SEEN_DEVICES = 16;
-	DeviceAddress seenAddresses[MAX_SEEN_DEVICES];
-	uint8_t seenCount = 0;
+	// Filter by pin if specified: we only have a single bus on oneWirePin.
+	if (h.pin != -1 && h.pin != oneWirePin) return;
 
-	// Helper lambda to check if address was already seen
-	auto alreadySeen = [&](const DeviceAddress& addr) -> bool {
-		for (uint8_t i = 0; i < seenCount; i++) {
-			if (memcmp(seenAddresses[i], addr, sizeof(DeviceAddress)) == 0) {
-				return true;
-			}
-		}
-		return false;
-	};
+	DeviceConfig config;
+	config.hw.pinNr = oneWirePin;
+	config.chamber = 1; // chamber 1 is default
+	config.deviceHardware = DEVICE_HARDWARE_ONEWIRE_TEMP;
 
-	// Helper lambda to record a new address
-	auto recordAddress = [&](const DeviceAddress& addr) {
-		if (seenCount < MAX_SEEN_DEVICES) {
-			memcpy(seenAddresses[seenCount], addr, sizeof(DeviceAddress));
-			seenCount++;
-		}
-	};
-
-	// Scan the bus multiple times to catch transient detection failures
-	static const uint8_t SCAN_ITERATIONS = 3;
-	for (uint8_t scanPass = 0; scanPass < SCAN_ITERATIONS; scanPass++) {
-		int8_t pin;
-		for (uint8_t count=0; (pin=deviceManager.enumOneWirePins(count))>=0; count++) {
-		DeviceConfig config;
-		if (h.pin!=-1 && h.pin!=pin)
-			continue;
-		config.hw.pinNr = pin;
-		config.chamber = 1; // chamber 1 is default
-		onewire_bus_handle_t wire = oneWireBus(pin);
-
-		if (wire!=NULL) {
-			onewire_device_iter_handle_t iter = NULL;
-			if (onewire_new_device_iter(wire, &iter) == ESP_OK) {
-				onewire_device_t next_device;
-				while (onewire_device_iter_get_next(iter, &next_device) == ESP_OK) {
-					// Convert address to uint8_t array
-					addressToBytes(next_device.address, config.hw.address);
-					// Skip if we've already processed this device in a previous scan
-					if (alreadySeen(config.hw.address)) {
-						continue;
-					}
-
-					// hardware device type from OneWire family ID
-					switch (config.hw.address[0]) {
-						case 0x28:  // DS18B20MODEL
-							config.deviceHardware = DEVICE_HARDWARE_ONEWIRE_TEMP;
-							break;
-						default:
-							config.deviceHardware = DEVICE_HARDWARE_NONE;
-					}
-
-					switch (config.deviceHardware) {
-						case DEVICE_HARDWARE_ONEWIRE_TEMP:
-							recordAddress(config.hw.address);
-							handleEnumeratedDevice(config, h, callback, doc);
-							break;
-						default:
-							recordAddress(config.hw.address);
-							handleEnumeratedDevice(config, h, callback, doc);
-					}
-				}
-				onewire_del_device_iter(iter);
-			}
-		}
-	}  // end pin iteration
-	vTaskDelay(pdMS_TO_TICKS(100)); // brief delay between scans
-	}  // end scan iteration
+	ow_scanner.for_each([&](const onewire_device_record& rec) {
+		addressToBytes(rec.deviceAddress, config.hw.address);
+		handleEnumeratedDevice(config, h, callback, doc);
+	});
 #endif
 }
 

@@ -253,11 +253,6 @@ void brewpiLoop()
 
 		tempControl.updateTemperatures();
 
-		// If OneWire sensors have been persistently failing, reset the bus
-		if (OneWireTempSensor::needsBusRecovery()) {
-			deviceManager.resetOneWireBus();
-		}
-
 		tempControl.detectPeaks();
 		tempControl.updatePID();
 		oldState = tempControl.getState();

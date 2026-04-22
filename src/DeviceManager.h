@@ -26,7 +26,6 @@
 #include "Sensor.h"
 #include "TempSensor.h"
 #include "OneWireDevices.h"
-#include "onewire_bus.h"
 #include "Pins.h"
 #include "EepromStructs.h"
 #include "Ticks.h"
@@ -328,15 +327,6 @@ public:
 
 	static bool initOneWireBuses();
 
-	/**
-	 * \brief Reset the OneWire bus by tearing down and recreating the RMT peripheral.
-	 *
-	 * Called when sensors have been persistently disconnected, indicating the bus
-	 * or RMT peripheral may be in a bad state. Invalidates all OneWireTempSensor
-	 * device handles so they re-enumerate on next init().
-	 */
-	static bool resetOneWireBus();
-
 private:
 	static void enumerateOneWireDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc);
 	static void enumeratePinDevices(EnumerateHardware& h, EnumDevicesCallback callback, JsonDocument* doc);
@@ -358,15 +348,11 @@ private:
 	static void* createDevice(DeviceConfig& config, DeviceType dc);
 	static void* createOneWireGPIO(DeviceConfig& config, DeviceType dt);
 
-	static onewire_bus_handle_t oneWireBus(uint8_t pin);
-
-// There is no reason to separate the OneWire busses - if we have a single bus, use it.
-#ifdef oneWirePin
-	static onewire_bus_handle_t m_primary_onewire_bus;
-#else
-	static onewire_bus_handle_t m_beer_sensor_bus;
-	static onewire_bus_handle_t m_fridge_sensor_bus;
-#endif
+	/**
+	 * \brief Check whether the given pin hosts the managed OneWire bus.
+	 * Used by isDeviceValid() to validate configured OneWire sensor pins.
+	 */
+	static bool isValidOneWirePin(uint8_t pin);
 
 };
 
