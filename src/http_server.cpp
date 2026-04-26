@@ -111,6 +111,15 @@ bool processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUpstr
     uint8_t failCount = 0;
     bool saveSettings = false;
 
+    // Snapshot pre-update credentials so we can drop them if the host changes but the
+    // form re-submitted the old apiKey/username (credentials are tied to a specific host).
+    char prev_host[sizeof(upstreamSettings.upstreamHost)];
+    char prev_apiKey[sizeof(upstreamSettings.apiKey)];
+    char prev_username[sizeof(upstreamSettings.username)];
+    strlcpy(prev_host, upstreamSettings.upstreamHost, sizeof(prev_host));
+    strlcpy(prev_apiKey, upstreamSettings.apiKey, sizeof(prev_apiKey));
+    strlcpy(prev_username, upstreamSettings.username, sizeof(prev_username));
+
     // Upstream Host
     if(json[UpstreamSettingsKeys::upstreamHost].is<const char*>()) {
         if (strlen(json[UpstreamSettingsKeys::upstreamHost]) <= 0) {
@@ -195,6 +204,25 @@ bool processUpstreamConfigUpdateJson(const JsonDocument& json, bool triggerUpstr
         }
     } else {
         rest_handler.pendingDeviceName[0] = '\0';
+    }
+
+    // If the host changed, drop any apiKey/username that wasn't explicitly updated by
+    // this request — those credentials belong to the previous Fermentrack instance and
+    // would otherwise produce misleading registration errors against the new host.
+    if (failCount == 0 && strcmp(prev_host, upstreamSettings.upstreamHost) != 0) {
+        if (strlen(upstreamSettings.apiKey) > 0 &&
+            strcmp(upstreamSettings.apiKey, prev_apiKey) == 0) {
+            upstreamSettings.apiKey[0] = '\0';
+            upstreamSettings.deviceID[0] = '\0';
+            Log.notice("Host changed, clearing stale apiKey.\r\n");
+            saveSettings = true;
+        }
+        if (strlen(upstreamSettings.username) > 0 &&
+            strcmp(upstreamSettings.username, prev_username) == 0) {
+            upstreamSettings.username[0] = '\0';
+            Log.notice("Host changed, clearing stale username.\r\n");
+            saveSettings = true;
+        }
     }
 
     // Save

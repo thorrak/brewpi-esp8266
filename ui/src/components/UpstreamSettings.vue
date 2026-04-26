@@ -17,15 +17,15 @@
                   <p class="mt-1 text-sm text-gray-500">{{ $t('upstream_settings.fermentrack_settings_desc') }}</p>
                 </div>
 
-                <Listbox as="div" v-model="selectedSettingSet">
+                <Listbox as="div" v-model="selectedSettingSet" :disabled="isRegistered">
                   <ListboxLabel class="sr-only">{{ $t('upstream_settings.fermentrack_settings') }}</ListboxLabel>
                   <div class="relative">
-                    <div class="inline-flex divide-x divide-indigo-700 rounded-md shadow-sm">
-                      <div class="inline-flex items-center gap-x-1.5 rounded-l-md bg-indigo-600 py-2 px-3 text-white shadow-sm">
+                    <div class="inline-flex divide-x rounded-md shadow-sm" :class="isRegistered ? 'divide-gray-500' : 'divide-indigo-700'">
+                      <div class="inline-flex items-center gap-x-1.5 rounded-l-md py-2 px-3 text-white shadow-sm" :class="isRegistered ? 'bg-gray-400' : 'bg-indigo-600'">
                         <CheckIcon class="-ml-0.5 h-5 w-5" aria-hidden="true" />
                         <p class="text-sm font-semibold">{{ selectedSettingSet.title }}</p>
                       </div>
-                      <ListboxButton class="inline-flex items-center rounded-l-none rounded-r-md bg-indigo-600 p-2 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 focus:ring-offset-gray-50">
+                      <ListboxButton class="inline-flex items-center rounded-l-none rounded-r-md p-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-50" :class="isRegistered ? 'bg-gray-400 cursor-not-allowed focus:ring-gray-400' : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-600'" :disabled="isRegistered">
                         <span class="sr-only">{{ $t('upstream_settings.upstream_settings_sr_text') }}</span>
                         <ChevronDownIcon class="h-5 w-5 text-white" aria-hidden="true" />
                       </ListboxButton>
@@ -138,14 +138,14 @@
                     </div>
                   </div>
                   <div class="border-l-4 border-red-400 bg-red-50 p-4 mb-4 mt-4" v-else-if="UpstreamSettingsStore.upstreamRegistrationError === 9">
-                    <!-- Error 9 - Registration endpoint error -->
+                    <!-- Error 9 - Registration endpoint error (unreachable, or credentials/config rejected) -->
                     <div class="flex">
                       <div class="flex-shrink-0">
                         <ExclamationTriangleIcon class="h-5 w-5 text-red-400" aria-hidden="true" />
                       </div>
                       <div class="ml-3">
                         <p class="text-sm text-red-700">
-                          {{ $t("upstream_settings.unable_to_reach_fermentrack_error") }}
+                          {{ $t("upstream_settings.registration_failed_error") }}
                         </p>
                       </div>
                     </div>
@@ -377,6 +377,11 @@ async function clearRegistration() {
   // this.alertOpen = true;
   // this.UpstreamSettingsStore.saveUpstreamSettings();
 }
+
+const isRegistered = computed(() =>
+  UpstreamSettingsStore.loadedUpstreamSettingsFromDevice
+  && UpstreamSettingsStore.upstreamRegistrationError === 0
+);
 
 const device_uri = computed(() => {
   let http_protocol = "http://";

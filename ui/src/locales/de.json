@@ -174,7 +174,7 @@
     "missing_brewhouse_error": "Der angegebene Fermentrack-Benutzer hat kein Brauhaus. Bitte schließen Sie die Einrichtung dieses Benutzers in Fermentrack ab und versuchen Sie es erneut.",
     "no_username_error": "Kein Benutzername oder API-Schlüssel angegeben.",
     "waiting_to_register_error": "Das Gerät wartet darauf, sich bei Fermentrack zu registrieren. Bitte warten Sie bis zu 3 Minuten und aktualisieren Sie diese Seite.",
-    "unable_to_reach_fermentrack_error": "Der Controller kann Fermentrack nicht erreichen. Bitte überprüfen Sie, ob Fermentrack unter dem angegebenen Hostnamen/Port erreichbar ist.",
+    "registration_failed_error": "Der Controller konnte sich nicht bei Fermentrack registrieren. Bitte überprüfen Sie, ob Hostname/Port korrekt sind, Fermentrack erreichbar ist und der Benutzername oder API-Schlüssel für die angegebene Fermentrack-Installation gültig ist.",
     "successful_registration_msg": "Controller wurde erfolgreich bei Fermentrack registriert",
     "telnet_interface_unavailable": "Die Telnet-Schnittstelle (für das alte Fermentrack/Brewpi-Remix) ist deaktiviert, solange der Controller für die REST-Steuerung bei Fermentrack registriert ist",
     "unknown error": "Ein unbekannter Fehler wurde von Fermentrack gesendet. Das bedeutet höchstwahrscheinlich, dass entweder die Controller-Firmware oder die Version von Fermentrack veraltet ist. Bitte aktualisieren Sie die Controller-Firmware und/oder Fermentrack und versuchen Sie es erneut.",
