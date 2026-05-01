@@ -159,6 +159,15 @@ void setup()
   // browser auto-refresh during boot would otherwise crash the device.
   tempControl.init();
 
+#ifdef HAS_BLUETOOTH
+  // Bring NimBLE up before wifi_cfg. wifi_cfg's BLE provisioning backend
+  // checks esp_bt_controller_get_status() at init time; if the stack is
+  // already running it registers as service-only and leaves the host task
+  // to us. Otherwise it claims ownership of NimBLE and bt_scanner.init()
+  // later fails with "BLE_INIT: controller init failed".
+  bt_scanner.init();
+#endif
+
   initialize_wifi();
 
 #if BREWPI_BUZZER
@@ -179,7 +188,6 @@ void setup()
 #endif
 
 #ifdef HAS_BLUETOOTH
-    bt_scanner.init();
     bt_scanner.scan();
     display.printBluetoothStartup();  // Alert the user about the startup delay
     vTaskDelay(pdMS_TO_TICKS(10000));
