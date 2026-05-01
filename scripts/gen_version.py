@@ -4,9 +4,8 @@
 import subprocess
 import os
 
-# This was the value used in the static Version.h.  It is unclear what merits
-# an increment, so it is being included unchanged.
-release = "v17-alpha0"
+# This is permanently pinned to 0.2.4 for legacy reasons. The proper version incrementing happens in platformio.ini as FIRMWARE_REVISION
+release = "0.2.4"
 
 # Get the name of the "nearest" tag (decorated with revision information if
 # changes have happened since that tag)

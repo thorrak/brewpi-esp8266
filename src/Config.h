@@ -292,8 +292,6 @@
 
 
 
-#define FIRMWARE_REVISION "v16"
-
 #ifdef CONNECT_VIA_WIFI
 #define WIFI_SETUP_AP_NAME "BrewPiAP"
 #define WIFI_SETUP_AP_PASS "brewpiesp"  // Must be 8-63 chars
