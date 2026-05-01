@@ -1,17 +1,17 @@
 dependencies:
   espressif/ds18b20:
-    component_hash: e637047f6142a837dee081334298aed94ba221029794817649e781b6c3cd14a3
+    component_hash: 13c5310b993bda17bd507b2c25cacce6962fe092029a5232815814d40339cec0
     dependencies:
     - name: espressif/onewire_bus
       registry_url: https://components.espressif.com
       require: private
-      version: ^1.0.0
+      version: ^1.1.0
     source:
       registry_url: https://components.espressif.com/
       type: service
-    version: 0.3.0
+    version: 0.3.1
   espressif/mdns:
-    component_hash: 29e47564b1a7ee778135e17fbbf2a2773f71c97ebabfe626c8eda7c958a7ad16
+    component_hash: 8bcf12e37c58c1d584aef32a02b92548124c7a3a9fcf548d3235c844a035e0f0
     dependencies:
     - name: idf
       require: private
@@ -19,7 +19,7 @@ dependencies:
     source:
       registry_url: https://components.espressif.com/
       type: service
-    version: 1.9.1
+    version: 1.11.1
   espressif/onewire_bus:
     component_hash: d709015ba466095259228521cf1bad9c0cdaaa42a92ea5d9c88ec6c28ae89e9b
     dependencies:
@@ -59,7 +59,7 @@ dependencies:
       type: idf
     version: 5.5.3
   joltwallet/littlefs:
-    component_hash: dcea25bcef2de023f089f5f01e8d8c46ad1b8ffef75861ad5ffb4098555839df
+    component_hash: 29eff7921c4e8bce021aeb7fff2723bfcafed661756de700646ea0f6223c2a32
     dependencies:
     - name: idf
       require: private
@@ -67,13 +67,51 @@ dependencies:
     source:
       registry_url: https://components.espressif.com/
       type: service
-    version: 1.20.4
+    version: 1.21.1
+  thorrak/esp_bus:
+    component_hash: 605ccb6d50f533093df2ebae17cf82e21d79d3e2f1add5afe2c78e9620ab94a0
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    targets:
+    - esp32
+    - esp32s2
+    - esp32s3
+    - esp32c2
+    - esp32c3
+    - esp32c6
+    - esp32h2
+    version: 1.0.3
+  thorrak/esp_wifi_config:
+    component_hash: cf378c6c8881fcdcd398391b583128c8259e0fe0e8181f694fe4d2069534bb20
+    dependencies:
+    - name: idf
+      version: '>=5.0.0'
+    - name: thorrak/esp_bus
+      version: ^1.0.3
+    source:
+      git: https://github.com/thorrak/esp_wifi_config.git
+      path: .
+      type: git
+    targets:
+    - esp32
+    - esp32s2
+    - esp32s3
+    - esp32c3
+    - esp32c6
+    - esp32h2
+    version: 10d958dbf17bdb3462a0d64a27732705f1232a3f
 direct_dependencies:
 - espressif/ds18b20
 - espressif/mdns
 - h2zero/esp-nimble-cpp
 - idf
 - joltwallet/littlefs
-manifest_hash: ccde1aec8d4d2c51b3f879a8be56d0bf73ac1f02fea44d519ac764fe7e2efa4a
+- thorrak/esp_wifi_config
+manifest_hash: 2db90c4c4c6a43277017dc0ec90d56027e7e3318787198c76ceba31053ad18f3
 target: esp32
 version: 2.0.0

@@ -276,8 +276,7 @@ void initialize_wifi() {
             .auth_password = NULL,
         },
         .ble = {
-            .enable = false,  // Disabled - we manage BLE ourselves for sensor scanning
-            .device_name = NULL,
+            .device_name = "BrewPiESP-{id}",
         },
     };
 
