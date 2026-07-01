@@ -16,6 +16,8 @@ struct Context : ControlContext {
 
 void updatePID(Context& ctx, unsigned char& integralUpdateCounter);
 void updateState(Context& ctx, bool stayIdle);
-void detectPeaks(Context& ctx);
+// Returns true when peak detection updates a learned estimator and the caller
+// should persist the control settings.
+bool detectPeaks(Context& ctx);
 
 } // namespace ChamberMode

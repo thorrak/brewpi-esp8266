@@ -391,7 +391,11 @@ void TempControl::detectPeaks(){
         waitTime
     );
     ChamberMode::Context chamberCtx(controlCtx, doPosPeakDetect, doNegPeakDetect);
-    ChamberMode::detectPeaks(chamberCtx);
+    // Mode controllers own their learning algorithms; TempControl owns
+    // persistence and performs it only when learned settings actually change.
+    if (ChamberMode::detectPeaks(chamberCtx)) {
+        storeSettings();
+    }
 }
 
 /**

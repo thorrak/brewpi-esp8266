@@ -72,14 +72,12 @@ void increaseEstimator(temperature* estimator, temperature error) {
     if (*estimator < 25) {
         *estimator = intToTempDiff(5) / 100;
     }
-    tempControl.storeSettings();
 }
 
 void decreaseEstimator(temperature* estimator, temperature error) {
     temperature factor =
         426 - constrainTemp((temperature) abs(error) >> 5, 0, 85);
     *estimator = multiplyFactorTemperatureDiff(factor, *estimator);
-    tempControl.storeSettings();
 }
 
 } // namespace
@@ -260,8 +258,9 @@ void updateState(Context& ctx, bool stayIdle) {
     }
 }
 
-void detectPeaks(Context& ctx) {
+bool detectPeaks(Context& ctx) {
     LOG_ID_TYPE detected = 0;
+    bool estimatorChanged = false;
     temperature peak, estimate, error, oldEstimator, newEstimator;
 
     if (ctx.doPosPeakDetect && !stateIsHeating(ctx)) {
@@ -272,9 +271,11 @@ void detectPeaks(Context& ctx) {
         if (peak != INVALID_TEMP) {
             if (error > ctx.cc.heatingTargetUpper) {
                 increaseEstimator(&(ctx.cs.heatEstimator), error);
+                estimatorChanged = true;
             }
             if (error < ctx.cc.heatingTargetLower) {
                 decreaseEstimator(&(ctx.cs.heatEstimator), error);
+                estimatorChanged = true;
             }
             detected = INFO_POSITIVE_PEAK;
         } else if (timeSinceHeating(ctx) > ctx.minTimes.HEAT_PEAK_DETECT_TIME) {
@@ -282,6 +283,7 @@ void detectPeaks(Context& ctx) {
                 (ctx.cv.posPeakEstimate + ctx.cc.heatingTargetLower)) {
                 peak = ctx.fridgeSensor->readFastFiltered();
                 decreaseEstimator(&(ctx.cs.heatEstimator), error);
+                estimatorChanged = true;
                 detected = INFO_POSITIVE_DRIFT;
             } else {
                 ctx.doPosPeakDetect = false;
@@ -300,9 +302,11 @@ void detectPeaks(Context& ctx) {
         if (peak != INVALID_TEMP) {
             if (error < ctx.cc.coolingTargetLower) {
                 increaseEstimator(&(ctx.cs.coolEstimator), error);
+                estimatorChanged = true;
             }
             if (error > ctx.cc.coolingTargetUpper) {
                 decreaseEstimator(&(ctx.cs.coolEstimator), error);
+                estimatorChanged = true;
             }
             detected = INFO_NEGATIVE_PEAK;
         } else if (timeSinceCooling(ctx) > ctx.minTimes.COOL_PEAK_DETECT_TIME) {
@@ -310,6 +314,7 @@ void detectPeaks(Context& ctx) {
                 (ctx.cv.negPeakEstimate + ctx.cc.coolingTargetUpper)) {
                 peak = ctx.fridgeSensor->readFastFiltered();
                 decreaseEstimator(&(ctx.cs.coolEstimator), error);
+                estimatorChanged = true;
                 detected = INFO_NEGATIVE_DRIFT;
             } else {
                 ctx.doNegPeakDetect = false;
@@ -325,6 +330,8 @@ void detectPeaks(Context& ctx) {
     if (detected) {
         logInfoTempTempFixedFixed(detected, peak, estimate, oldEstimator, newEstimator);
     }
+
+    return estimatorChanged;
 }
 
 } // namespace ChamberMode
