@@ -105,22 +105,9 @@ bool useGlycolBeerMode(const ControlSettings& settings) {
     return extendedSettings.glycol && isBeerMode(settings);
 }
 
-ControlContext makeControlContext(
-    ControlConstants& cc,
-    ControlSettings& cs,
-    ControlVariables& cv,
-    MinTimes& minTimes,
-    TempSensor* beerSensor,
-    TempSensor* fridgeSensor,
-    Actuator* heater,
-    Actuator* cooler,
-    Actuator* light,
-    uint8_t& state,
-    uint16_t& lastIdleTime,
-    uint16_t& lastHeatTime,
-    uint16_t& lastCoolTime,
-    uint16_t& waitTime
-) {
+} // namespace
+
+ControlContext TempControl::makeControlContext() {
     return ControlContext{
         cc,
         cs,
@@ -138,8 +125,6 @@ ControlContext makeControlContext(
         waitTime,
     };
 }
-
-} // namespace
 
 
 /**
@@ -256,22 +241,7 @@ void TempControl::updatePID(){
         cv.beerDiff =  cs.beerSetting - beerSensor->readSlowFiltered();
         cv.beerSlope = beerSensor->readSlope();
 
-        ControlContext controlCtx = makeControlContext(
-            cc,
-            cs,
-            cv,
-            minTimes,
-            beerSensor,
-            fridgeSensor,
-            heater,
-            cooler,
-            light,
-            state,
-            lastIdleTime,
-            lastHeatTime,
-            lastCoolTime,
-            waitTime
-        );
+        ControlContext controlCtx = makeControlContext();
 
         if(useGlycolBeerMode(cs)) {
             // ===== GLYCOL MODE =====
@@ -324,22 +294,7 @@ void TempControl::updateState(){
         }
     }
 
-    ControlContext controlCtx = makeControlContext(
-        cc,
-        cs,
-        cv,
-        minTimes,
-        beerSensor,
-        fridgeSensor,
-        heater,
-        cooler,
-        light,
-        state,
-        lastIdleTime,
-        lastHeatTime,
-        lastCoolTime,
-        waitTime
-    );
+    ControlContext controlCtx = makeControlContext();
 
     // ===== GLYCOL MODE STATE MACHINE =====
     // Uses predictive bang-bang control (see GLYCOL_COOLING_ALGORITHM.md)
@@ -374,22 +329,7 @@ void TempControl::detectPeaks(){
     if(extendedSettings.glycol) {
         return;
     }
-    ControlContext controlCtx = makeControlContext(
-        cc,
-        cs,
-        cv,
-        minTimes,
-        beerSensor,
-        fridgeSensor,
-        heater,
-        cooler,
-        light,
-        state,
-        lastIdleTime,
-        lastHeatTime,
-        lastCoolTime,
-        waitTime
-    );
+    ControlContext controlCtx = makeControlContext();
     ChamberMode::Context chamberCtx(controlCtx, doPosPeakDetect, doNegPeakDetect);
     // Mode controllers own their learning algorithms; TempControl owns
     // persistence and performs it only when learned settings actually change.

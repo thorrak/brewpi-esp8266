@@ -31,6 +31,8 @@
 #include "GlycolParams.h"
 #include <ArduinoJson.h>
 
+struct ControlContext;
+
 
 /**
  * \defgroup tempcontrol Temperature PID Control
@@ -418,6 +420,9 @@ public:
 
 
 private:
+	/** Build a mode-controller view over the current TempControl state. */
+	TEMP_CONTROL_METHOD ControlContext makeControlContext();
+
 	/**
    * Keep track of beer setting stored in EEPROM
    */
