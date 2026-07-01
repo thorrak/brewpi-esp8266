@@ -22,6 +22,7 @@ struct Context : ControlContext {
 };
 
 void updatePID(Context& ctx, unsigned char& integralUpdateCounter);
-void updateState(Context& ctx);
+// Returns true when learned glycol parameters should be persisted by the caller.
+bool updateState(Context& ctx);
 
 } // namespace GlycolMode

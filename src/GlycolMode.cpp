@@ -468,7 +468,7 @@ void transitionToHeating(GlycolMode::Context& ctx) {
 #endif
 }
 
-void updateLearning(GlycolMode::Context& ctx) {
+bool updateLearning(GlycolMode::Context& ctx) {
     if (ctx.runtime.force_minimum_cooling) {
         ctx.runtime.force_minimum_cooling = false;
         logDebug("Glycol: Cleared force_minimum_cooling after cycle");
@@ -482,7 +482,7 @@ void updateLearning(GlycolMode::Context& ctx) {
 
     if (!cycle_valid) {
         logDebug("Glycol: Cycle not valid for training");
-        return;
+        return false;
     }
 
     float actual_coast = ctx.runtime.temp_at_pump_off - ctx.runtime.min_temp_reached;
@@ -518,7 +518,7 @@ void updateLearning(GlycolMode::Context& ctx) {
     }
 
     logDebug("Glycol: Learning update - k=%.2f, C_off=%.3f", ctx.learned.k, ctx.learned.C_off);
-    ctx.learned.storeToFilesystem();
+    return true;
 }
 
 } // namespace
@@ -584,10 +584,12 @@ void updatePID(Context& ctx, unsigned char& integralUpdateCounter) {
     ctx.runtime.heating_output = 0;
 }
 
-void updateState(Context& ctx) {
+bool updateState(Context& ctx) {
+    bool learnedParamsChanged = false;
+
     if (ctx.cs.beerSetting == INVALID_TEMP) {
         transitionToIdle(ctx);
-        return;
+        return false;
     }
 
     float current_temp = tempToDouble(ctx.beerSensor->readFastFiltered(), 2);
@@ -600,7 +602,7 @@ void updateState(Context& ctx) {
             ctx.runtime.state == GLYCOL_EMERGENCY_COOLING) {
             logDebug("Glycol: Safety limit - beer too cold");
             transitionToIdle(ctx);
-            return;
+            return false;
         }
     }
 
@@ -652,12 +654,12 @@ void updateState(Context& ctx) {
             if (ctx.runtime.cooling_duration_s > max_on_s) {
                 logDebug("Glycol: Max continuous on time exceeded");
                 transitionToCoasting(ctx);
-                return;
+                return false;
             }
 
             if (isEmergency(ctx)) {
                 transitionToEmergency(ctx);
-                return;
+                return false;
             }
 
             if (ctx.runtime.cooling_duration_s < ctx.config.min_on_time_s) {
@@ -697,7 +699,7 @@ void updateState(Context& ctx) {
                     logDebug("Glycol: Coast ineffective, extending cooling");
                     transitionToCooling(ctx);
                 } else {
-                    updateLearning(ctx);
+                    learnedParamsChanged = updateLearning(ctx);
                     transitionToIdle(ctx);
                 }
             }
@@ -711,13 +713,13 @@ void updateState(Context& ctx) {
             if (emergency_duration > max_on_s) {
                 logDebug("Glycol: Max on time in emergency, forcing off");
                 transitionToCoasting(ctx);
-                return;
+                return false;
             }
 
             if (current_temp < (setpoint - ctx.config.safety_margin_low)) {
                 logDebug("Glycol: Safety limit in emergency");
                 transitionToIdle(ctx);
-                return;
+                return false;
             }
 
             if (canExitEmergency(ctx)) {
@@ -761,6 +763,8 @@ void updateState(Context& ctx) {
             break;
         }
     }
+
+    return learnedParamsChanged;
 }
 
 } // namespace GlycolMode

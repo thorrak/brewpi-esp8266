@@ -300,7 +300,9 @@ void TempControl::updateState(){
     // Uses predictive bang-bang control (see GLYCOL_COOLING_ALGORITHM.md)
     if(useGlycolBeerMode(cs) && !stayIdle) {
         GlycolMode::Context glycolCtx(controlCtx, glycolLearned, glycolConfig, glycolRuntime);
-        GlycolMode::updateState(glycolCtx);
+        if (GlycolMode::updateState(glycolCtx)) {
+            storeGlycolParams();
+        }
         // Glycol mode uses its own state machine - skip compressor mode logic
         return;
     }
