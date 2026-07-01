@@ -639,7 +639,7 @@ void updateState(Context& ctx) {
                     ctx.runtime.negative_rate_count++;
                     if (ctx.runtime.negative_rate_count >= 3) {
                         float L_observed = (millis() - ctx.runtime.t_pump_on) / 1000.0f;
-                        L_observed = constrain(L_observed, 5.0f, 120.0f);
+                        L_observed = constrain(L_observed, 5.0f, 300.0f);
                         ctx.learned.L = 0.8f * ctx.learned.L + 0.2f * L_observed;
                         ctx.runtime.cooling_confirmed = true;
                     }
