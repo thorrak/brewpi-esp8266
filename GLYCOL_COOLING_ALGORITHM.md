@@ -4,10 +4,9 @@
 
 This document describes a predictive, adaptive bang-bang control algorithm for glycol-based fermentation cooling. The algorithm uses a single temperature sensor (beer temperature) and a single control output (pump on/off) to maintain precise temperature control despite significant thermal delays in the system.
 
-## Activation (Temporary Implementation)
+## Activation
 
-Glycol mode can currently be activated by opening `<ip>/glycol` in a browser.
-This is a temporary activation method and will be integrated into the dedicated setup sections in future releases.
+Glycol mode can be enabled and configured from the main web interface.
 
 ## System Characteristics
 
