@@ -21,6 +21,7 @@ const char* GlycolLogger::stateToString(GlycolState state) {
         case GLYCOL_COOLING:          return "COOLING";
         case GLYCOL_COASTING:         return "COASTING";
         case GLYCOL_EMERGENCY_COOLING: return "EMERGENCY";
+        case GLYCOL_HEATING:          return "HEATING";
         default:                       return "UNKNOWN";
     }
 }
